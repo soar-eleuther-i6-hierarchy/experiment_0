@@ -120,9 +120,9 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = HERE / "outputs"
 OUT_DIR.mkdir(exist_ok=True)
 
-EXP0_STATS_PATH = OUT_DIR / "exp0_stats.pt"          # written by 01_cache_stats
-METRICS_JSON_PATH = OUT_DIR / "metrics_report.json"  # written by 02_run_metrics
-METRICS_MD_PATH = OUT_DIR / "metrics_report.md"      # written by 02_run_metrics
+EXP0_STATS_PATH = OUT_DIR / "exp0_stats.pt"          # written by cache_stats.py
+METRICS_JSON_PATH = OUT_DIR / "metrics_report.json"  # written by run_metrics.py
+METRICS_MD_PATH = OUT_DIR / "metrics_report.md"      # written by run_metrics.py
 
 DEVICE_OVERRIDE: str | None = None
 

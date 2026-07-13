@@ -1,0 +1,946 @@
+{
+  "config": {
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_id": "blocks.6.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "n_docs": 400,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4
+  },
+  "total_tokens": 48971,
+  "pairs": [
+    {
+      "pair": "0->1",
+      "n_candidate_edges": 8156,
+      "degree": {
+        "n_parents_with_children": 104,
+        "n_children_with_parent": 383,
+        "n_multi_parented": 383,
+        "top1_edge_share": 0.0469592937714566,
+        "outdeg_gini": 0.5092742306277587,
+        "max_outdeg": 383
+      },
+      "joint_child_cov_mean": 0.924166862778223,
+      "reconstruction": {
+        "n_pass": 512,
+        "frac_pass": 0.06277587052476705
+      },
+      "freq_control": {
+        "n_testable": 8156,
+        "mean_survival": 0.44090396738671395,
+        "n_freq_driven": 4962,
+        "frac_freq_driven": 0.6083864639529181
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 98,
+        "mean_redundancy": 0.35103781897904623,
+        "n_flagged": 0
+      },
+      "n_superparents": 15,
+      "superparents": [
+        {
+          "parent_local": 15,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.989585673153499,
+          "parent_global": 15,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15"
+        },
+        {
+          "parent_local": 105,
+          "outdeg": 358,
+          "outdeg_frac": 0.9322916666666666,
+          "fire_frac": 0.5143860652222744,
+          "parent_global": 105,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/105"
+        },
+        {
+          "parent_local": 42,
+          "outdeg": 320,
+          "outdeg_frac": 0.8333333333333334,
+          "fire_frac": 0.942864144085275,
+          "parent_global": 42,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/42"
+        },
+        {
+          "parent_local": 126,
+          "outdeg": 296,
+          "outdeg_frac": 0.7708333333333334,
+          "fire_frac": 0.431153131445141,
+          "parent_global": 126,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/126"
+        },
+        {
+          "parent_local": 39,
+          "outdeg": 277,
+          "outdeg_frac": 0.7213541666666666,
+          "fire_frac": 0.42104510832941944,
+          "parent_global": 39,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/39"
+        },
+        {
+          "parent_local": 24,
+          "outdeg": 245,
+          "outdeg_frac": 0.6380208333333334,
+          "fire_frac": 0.34097731310367363,
+          "parent_global": 24,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/24"
+        },
+        {
+          "parent_local": 104,
+          "outdeg": 237,
+          "outdeg_frac": 0.6171875,
+          "fire_frac": 0.3884952318719242,
+          "parent_global": 104,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/104"
+        },
+        {
+          "parent_local": 37,
+          "outdeg": 227,
+          "outdeg_frac": 0.5911458333333334,
+          "fire_frac": 0.7053562312388965,
+          "parent_global": 37,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/37"
+        },
+        {
+          "parent_local": 98,
+          "outdeg": 197,
+          "outdeg_frac": 0.5130208333333334,
+          "fire_frac": 0.3204753833901697,
+          "parent_global": 98,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/98"
+        },
+        {
+          "parent_local": 1,
+          "outdeg": 177,
+          "outdeg_frac": 0.4609375,
+          "fire_frac": 0.6021522942149435,
+          "parent_global": 1,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 15,
+          "child": 158,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.009822331359237324,
+          "recon_parent_gain": 0.03804002286278819,
+          "recon_child_gain": -5.2948481591199335e-06,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/158"
+        },
+        {
+          "parent": 15,
+          "child": 456,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.013474752894079775,
+          "recon_parent_gain": 0.03807023883123844,
+          "recon_child_gain": 0.00030956168152290086,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/456"
+        },
+        {
+          "parent": 15,
+          "child": 227,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.014135077691339428,
+          "recon_parent_gain": 0.038102337516739304,
+          "recon_child_gain": -1.7102876630317758e-06,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/227"
+        },
+        {
+          "parent": 15,
+          "child": 235,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.009017560512577124,
+          "recon_parent_gain": 0.038035892898008475,
+          "recon_child_gain": 0.001038101178439211,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235"
+        },
+        {
+          "parent": 15,
+          "child": 258,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.018303377974040982,
+          "recon_parent_gain": 0.03813303137034264,
+          "recon_child_gain": -0.0009777014455748098,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/258"
+        },
+        {
+          "parent": 15,
+          "child": 380,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.011782670601101917,
+          "recon_parent_gain": 0.03805894419232637,
+          "recon_child_gain": -0.0005075229163334109,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/380"
+        },
+        {
+          "parent": 15,
+          "child": 177,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.019355770619673553,
+          "recon_parent_gain": 0.0381397860925946,
+          "recon_child_gain": -4.411173610894493e-05,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/177"
+        },
+        {
+          "parent": 15,
+          "child": 479,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.029900332225913623,
+          "recon_parent_gain": 0.03830415679245212,
+          "recon_child_gain": -0.001960729552175591,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/479"
+        },
+        {
+          "parent": 15,
+          "child": 188,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.08229297785848415,
+          "recon_parent_gain": 2.43739515146411,
+          "recon_child_gain": 0.004379639499475858,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/188"
+        },
+        {
+          "parent": 15,
+          "child": 425,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.00047460844803037496,
+          "recon_parent_gain": 0.606205281827269,
+          "recon_child_gain": 0.6359142744385128,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/425"
+        },
+        {
+          "parent": 15,
+          "child": 433,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.018014485875239884,
+          "recon_parent_gain": 0.03813100250707043,
+          "recon_child_gain": -0.0007125611777909059,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/433"
+        },
+        {
+          "parent": 15,
+          "child": 486,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.01685891748003549,
+          "recon_parent_gain": 0.03813496157710144,
+          "recon_child_gain": 0.00011862875037756286,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/486"
+        },
+        {
+          "parent": 15,
+          "child": 211,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.012773157796991395,
+          "recon_parent_gain": 0.03806338090809829,
+          "recon_child_gain": -0.001317970775454331,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/211"
+        },
+        {
+          "parent": 15,
+          "child": 133,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.015930335733889106,
+          "recon_parent_gain": 0.03809833772186758,
+          "recon_child_gain": 4.17514260503878e-05,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/133"
+        },
+        {
+          "parent": 15,
+          "child": 344,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.014114442541425064,
+          "recon_parent_gain": 0.038085260481536556,
+          "recon_child_gain": 0.000488789715546493,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.11596715761626482,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/344"
+        }
+      ]
+    },
+    {
+      "pair": "1->2",
+      "n_candidate_edges": 271644,
+      "degree": {
+        "n_parents_with_children": 300,
+        "n_children_with_parent": 1230,
+        "n_multi_parented": 1150,
+        "top1_edge_share": 0.004167218859978501,
+        "outdeg_gini": 0.2577917927508062,
+        "max_outdeg": 1132
+      },
+      "joint_child_cov_mean": 0.9688948624107225,
+      "reconstruction": {
+        "n_pass": 20,
+        "frac_pass": 7.362577491128094e-05
+      },
+      "freq_control": {
+        "n_testable": 266439,
+        "mean_survival": 0.051527603672664846,
+        "n_freq_driven": 264783,
+        "frac_freq_driven": 0.9937846936822312
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 293,
+        "mean_redundancy": 0.43140751055720056,
+        "n_flagged": 0
+      },
+      "n_superparents": 9,
+      "superparents": [
+        {
+          "parent_local": 234,
+          "outdeg": 1132,
+          "outdeg_frac": 0.7369791666666666,
+          "fire_frac": 0.28153396908374345,
+          "parent_global": 362,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/362"
+        },
+        {
+          "parent_local": 79,
+          "outdeg": 1091,
+          "outdeg_frac": 0.7102864583333334,
+          "fire_frac": 0.1711829450082702,
+          "parent_global": 207,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/207"
+        },
+        {
+          "parent_local": 76,
+          "outdeg": 1085,
+          "outdeg_frac": 0.7063802083333334,
+          "fire_frac": 0.13955197974311326,
+          "parent_global": 204,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/204"
+        },
+        {
+          "parent_local": 111,
+          "outdeg": 1074,
+          "outdeg_frac": 0.69921875,
+          "fire_frac": 0.1472912540074738,
+          "parent_global": 239,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/239"
+        },
+        {
+          "parent_local": 187,
+          "outdeg": 1064,
+          "outdeg_frac": 0.6927083333333334,
+          "fire_frac": 0.13934777725592698,
+          "parent_global": 315,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/315"
+        },
+        {
+          "parent_local": 198,
+          "outdeg": 1042,
+          "outdeg_frac": 0.6783854166666666,
+          "fire_frac": 0.15954340323865146,
+          "parent_global": 326,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/326"
+        },
+        {
+          "parent_local": 21,
+          "outdeg": 1039,
+          "outdeg_frac": 0.6764322916666666,
+          "fire_frac": 0.13371178860958527,
+          "parent_global": 149,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/149"
+        },
+        {
+          "parent_local": 117,
+          "outdeg": 1025,
+          "outdeg_frac": 0.6673177083333334,
+          "fire_frac": 0.10146821588286946,
+          "parent_global": 245,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/245"
+        },
+        {
+          "parent_local": 310,
+          "outdeg": 1002,
+          "outdeg_frac": 0.65234375,
+          "fire_frac": 0.10134569439055768,
+          "parent_global": 438,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/438"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 227,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.5854014598540146,
+          "recon_parent_gain": -3.602976575591419e-06,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4473403937403695,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/227",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 302,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.14829881656804733,
+          "recon_parent_gain": -0.0011681930879393883,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.42292041500897254,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/302",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 479,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.27674258109040717,
+          "recon_parent_gain": -0.001971608893872872,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4342154051096828,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/479",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 278,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.2702156334231806,
+          "recon_parent_gain": 3.7416782802755103e-06,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.43435295935485635,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/278",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 362,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.029085370276347285,
+          "recon_parent_gain": -0.0003873977470898036,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.33618155653243265,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/362",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 357,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.3210568454763811,
+          "recon_parent_gain": 0.00012923241970345316,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4431185777031536,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/357",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 209,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.4001996007984032,
+          "recon_parent_gain": -0.0006040717066926923,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4424982032046393,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/209",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 261,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.4316469321851453,
+          "recon_parent_gain": 0.00022333412163309812,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4439766927309509,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/261",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 311,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.21329787234042552,
+          "recon_parent_gain": 4.164514959050968e-05,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.42966325231454483,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/311",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 431,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.12726118692478577,
+          "recon_parent_gain": 7.864109371651891e-05,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.428145225048815,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/431",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 260,
+          "child": 977,
+          "reverse_cov": 0.9975124378109452,
+          "forward_cov": 0.21734417344173443,
+          "recon_parent_gain": -0.0002613344007277777,
+          "recon_child_gain": 2.1147051443978296e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.43693767207746326,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/260",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+        },
+        {
+          "parent": 204,
+          "child": 1404,
+          "reverse_cov": 0.9950738916256158,
+          "forward_cov": 0.059116183786947614,
+          "recon_parent_gain": -0.00256026478314185,
+          "recon_child_gain": -8.093216252378053e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.36055143690288294,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/204",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1404"
+        },
+        {
+          "parent": 386,
+          "child": 1721,
+          "reverse_cov": 0.9950617283950617,
+          "forward_cov": 0.12566261303398815,
+          "recon_parent_gain": -0.000172740325713832,
+          "recon_child_gain": 4.438066626819164e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.42097979764075805,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/386",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+        },
+        {
+          "parent": 300,
+          "child": 1721,
+          "reverse_cov": 0.9950617283950617,
+          "forward_cov": 0.2765957446808511,
+          "recon_parent_gain": 0.0002233057832516152,
+          "recon_child_gain": 4.438066626819164e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.44139571593935195,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/300",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+        },
+        {
+          "parent": 172,
+          "child": 1721,
+          "reverse_cov": 0.9950617283950617,
+          "forward_cov": 0.3931707317073171,
+          "recon_parent_gain": -0.00032155506549666815,
+          "recon_child_gain": 4.438066626819164e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.44378111391974595,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/172",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+        }
+      ]
+    },
+    {
+      "pair": "2->3",
+      "n_candidate_edges": 4704312,
+      "degree": {
+        "n_parents_with_children": 1326,
+        "n_children_with_parent": 4337,
+        "n_multi_parented": 4090,
+        "top1_edge_share": 0.0008783431030935023,
+        "outdeg_gini": 0.17251413381932013,
+        "max_outdeg": 4132
+      },
+      "joint_child_cov_mean": 0.964274061112885,
+      "reconstruction": {
+        "n_pass": 113,
+        "frac_pass": 2.4020515646071093e-05
+      },
+      "freq_control": {
+        "n_testable": 4225215,
+        "mean_survival": 0.015282458783192834,
+        "n_freq_driven": 4220754,
+        "frac_freq_driven": 0.9989441957391517
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 1294,
+        "mean_redundancy": 0.4005227156178717,
+        "n_flagged": 2
+      },
+      "n_superparents": 5,
+      "superparents": [
+        {
+          "parent_local": 679,
+          "outdeg": 4132,
+          "outdeg_frac": 0.6725260416666666,
+          "fire_frac": 0.2290539298768659,
+          "parent_global": 1191,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1191"
+        },
+        {
+          "parent_local": 1268,
+          "outdeg": 3908,
+          "outdeg_frac": 0.6360677083333334,
+          "fire_frac": 0.16352535173878419,
+          "parent_global": 1780,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1780"
+        },
+        {
+          "parent_local": 868,
+          "outdeg": 3872,
+          "outdeg_frac": 0.6302083333333334,
+          "fire_frac": 0.13281329766596559,
+          "parent_global": 1380,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1380"
+        },
+        {
+          "parent_local": 351,
+          "outdeg": 3857,
+          "outdeg_frac": 0.6277669270833334,
+          "fire_frac": 0.13932735700720836,
+          "parent_global": 863,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/863"
+        },
+        {
+          "parent_local": 797,
+          "outdeg": 3831,
+          "outdeg_frac": 0.62353515625,
+          "fire_frac": 0.12680974454268854,
+          "parent_global": 1309,
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1309"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 1524,
+          "child": 6544,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.5847953216374269,
+          "recon_parent_gain": -0.00036830787312570326,
+          "recon_child_gain": -0.00028668390287669515,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4069168731800457,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1524",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/6544"
+        },
+        {
+          "parent": 701,
+          "child": 3987,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7407407407407407,
+          "recon_parent_gain": -5.472994602960003e-05,
+          "recon_child_gain": -7.55752133404286e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.407886078586182,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/701",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+        },
+        {
+          "parent": 1476,
+          "child": 3987,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.26936026936026936,
+          "recon_parent_gain": -0.00023199247868248862,
+          "recon_child_gain": -7.55752133404286e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.39637432198663036,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1476",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+        },
+        {
+          "parent": 1371,
+          "child": 2379,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7299270072992701,
+          "recon_parent_gain": -0.0001299498668200652,
+          "recon_child_gain": 2.925846784389268e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.40816602299656146,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1371",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2379"
+        },
+        {
+          "parent": 775,
+          "child": 3987,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3058103975535168,
+          "recon_parent_gain": 8.374172145818956e-05,
+          "recon_child_gain": -7.55752133404286e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3966958273485586,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/775",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+        },
+        {
+          "parent": 1036,
+          "child": 3994,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.5347593582887701,
+          "recon_parent_gain": 0.0001137882388760585,
+          "recon_child_gain": -9.954064648031743e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.40560655238861604,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1036",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
+        },
+        {
+          "parent": 699,
+          "child": 5554,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.547945205479452,
+          "recon_parent_gain": -0.0007739472278947012,
+          "recon_child_gain": 3.384412129958243e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4063705238407005,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/699",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+        },
+        {
+          "parent": 1231,
+          "child": 5554,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7575757575757576,
+          "recon_parent_gain": -0.00016777701462989157,
+          "recon_child_gain": 3.384412129958243e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.40844768309035484,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1231",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+        },
+        {
+          "parent": 791,
+          "child": 5554,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4722550177095632,
+          "recon_parent_gain": -9.062152284298226e-05,
+          "recon_child_gain": 3.384412129958243e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4029102500406464,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/791",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+        },
+        {
+          "parent": 1199,
+          "child": 3994,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.37418147801683815,
+          "recon_parent_gain": 7.248393888791346e-05,
+          "recon_child_gain": -9.954064648031743e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4031230048856874,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1199",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
+        },
+        {
+          "parent": 1025,
+          "child": 3994,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.5194805194805194,
+          "recon_parent_gain": -0.00011074183195700972,
+          "recon_child_gain": -9.954064648031743e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4062040799489529,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1025",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
+        },
+        {
+          "parent": 821,
+          "child": 3987,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.8097165991902834,
+          "recon_parent_gain": 0.00021641840551676417,
+          "recon_child_gain": -7.55752133404286e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4078780581664194,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/821",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+        },
+        {
+          "parent": 726,
+          "child": 2379,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7619047619047619,
+          "recon_parent_gain": -0.0005594619555132532,
+          "recon_child_gain": 2.925846784389268e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4081790187664986,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/726",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2379"
+        },
+        {
+          "parent": 1199,
+          "child": 3987,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.37418147801683815,
+          "recon_parent_gain": 7.248393888791346e-05,
+          "recon_child_gain": -7.55752133404286e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4031230048856874,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1199",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+        },
+        {
+          "parent": 1916,
+          "child": 5554,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7633587786259542,
+          "recon_parent_gain": 0.0001585758976070815,
+          "recon_child_gain": 3.384412129958243e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.40762325570500024,
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1916",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+        }
+      ]
+    }
+  ],
+  "block_ranges": [
+    [
+      0,
+      128
+    ],
+    [
+      128,
+      512
+    ],
+    [
+      512,
+      2048
+    ],
+    [
+      2048,
+      8192
+    ],
+    [
+      8192,
+      32768
+    ]
+  ]
+}
