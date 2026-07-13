@@ -15,11 +15,7 @@ __pycache__/
 venv/
 .venv/
 *.egg-info/
+outputs/*.log
 
 # OS
 .DS_Store
-
-# Generated / regenerable artifacts (rebuild with cache_stats.py + visualize.py)
-outputs/exp0_stats.pt
-outputs/*.html
-outputs/*.log
