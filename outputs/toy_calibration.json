@@ -1,0 +1,37 @@
+[
+  {
+    "metric": "1. coverage (edge set)",
+    "job": "recover genuine tree edges",
+    "pass": true,
+    "detail": "20/20 genuine edges kept; edge set also holds 28 non-genuine (that is what metrics 2-5 must prune)",
+    "margin": 1.0
+  },
+  {
+    "metric": "2. reconstruction",
+    "job": "reject superparent edges, keep genuine",
+    "pass": true,
+    "detail": "24/24 superparent edges rejected, 20/20 genuine kept (parent-gain: genuine>=3.05, superparent<=0.0046, thr=0.01)",
+    "margin": 661.4276990065217
+  },
+  {
+    "metric": "3. sibling redundancy",
+    "job": "flag feature-split parent, spare healthy",
+    "pass": true,
+    "detail": "split parent redundancy=1.00 (flagged); healthy parents max=0.01 (thr=0.5)",
+    "margin": 92.0
+  },
+  {
+    "metric": "4. out-degree / superparent",
+    "job": "identify superparent, spare genuine parents",
+    "pass": true,
+    "detail": "detected superparents [7] (truth [7]); Gini=0.432, top-1 share=50%",
+    "margin": 1.0
+  },
+  {
+    "metric": "5. frequency control",
+    "job": "reject frequency-coincidence edge, keep genuine",
+    "pass": true,
+    "detail": "1/1 freq edges rejected (survival=[0.0]); 20/20 genuine survive (min genuine survival=1.00, thr=0.5)",
+    "margin": 999999999.9999999
+  }
+]
