@@ -54,8 +54,8 @@ from metrics import (
     keep_edges,
 )
 
-NPEDIA_API = "https://www.neuronpedia.org/api/feature/gemma-2-2b/6-res-matryoshka-dc/{}"
-CACHE_PATH = C.OUT_DIR / "npedia_labels_cache.json"
+NPEDIA_API = C.NEURONPEDIA_API
+CACHE_PATH = C.RUN_DIR / "npedia_labels_cache.json"
 
 
 # ---------------------------------------------------------------------------
@@ -249,10 +249,10 @@ def main():
         CACHE_PATH.write_text(json.dumps(cache, indent=2))
 
     md = to_markdown(all_rows, fetch_enabled)
-    (C.OUT_DIR / "qualitative_check.md").write_text(md)
-    (C.OUT_DIR / "qualitative_check.json").write_text(json.dumps(all_rows, indent=2))
-    print(f"[02b] wrote {C.OUT_DIR / 'qualitative_check.md'}")
-    print(f"[02b] wrote {C.OUT_DIR / 'qualitative_check.json'}")
+    (C.RUN_DIR / "qualitative_check.md").write_text(md)
+    (C.RUN_DIR / "qualitative_check.json").write_text(json.dumps(all_rows, indent=2))
+    print(f"[02b] wrote {C.RUN_DIR / 'qualitative_check.md'}")
+    print(f"[02b] wrote {C.RUN_DIR / 'qualitative_check.json'}")
 
 
 if __name__ == "__main__":

@@ -77,6 +77,7 @@ def main():
     args = ap.parse_args()
 
     device = args.device or C.pick_device()
+    print(f"[01] layer = {C.LAYER}  ({C.SAE_ID})")
     print(f"[01] device = {device}")
     print(f"[01] block structure:\n{U.human_block_table()}\n")
 
@@ -86,8 +87,9 @@ def main():
     W_dec = sae.W_dec.detach()                    # [D_SAE, d_model]
 
     # MPS has no float64; a pass this size stays well within float32's exact-int
-    # range for counts, and recon sums are only read as ratios afterwards.
-    acc_dtype = torch.float32 if device == "mps" else torch.float64
+    # range for counts, and recon sums are only read as ratios afterwards. On
+    # CUDA / CPU we keep float64. (str check so "mps:0" / "cuda:5" both work.)
+    acc_dtype = torch.float32 if C.is_mps(device) else torch.float64
 
     print(f"[01] loading {C.DATASET} (first {args.docs} docs) ...")
     ds = load_dataset(C.DATASET, split=f"train[:{args.docs}]")
@@ -211,7 +213,9 @@ def main():
         "fire_c_by_bucket": {b: v.cpu() for b, v in fire_c_by_bucket.items()},
         "within_cofire": {b: v.cpu() for b, v in within_cofire.items()},
         "config": {
+            "layer": C.LAYER,
             "sae_release": C.SAE_RELEASE,
+            "sae_source": C.SAE_SOURCE,
             "sae_id": C.SAE_ID,
             "matryoshka_steps": C.MATRYOSHKA_STEPS,
             "block_ranges": C.BLOCK_RANGES,

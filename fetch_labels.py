@@ -8,15 +8,17 @@ Neuronpedia API returns, but pulled in one sweep instead of one HTTP call per
 feature - so it is faster, complete, and works offline once cached.
 
     https://neuronpedia-datasets.s3.us-east-1.amazonaws.com/
-        v1/gemma-2-2b/6-res-matryoshka-dc/explanations/batch-{i}.jsonl.gz
+        v1/gemma-2-2b/<LAYER>-res-matryoshka-dc/explanations/batch-{i}.jsonl.gz
 
-Each JSONL line has (among other fields) "index" and "description"; we keep
-only those two.
+The layer is taken from config (EXP0_LAYER env var); labels land in that layer's
+outputs/layer_NN/feature_labels.json. Each JSONL line has (among other fields)
+"index" and "description"; we keep only those two.
 
 Run:
     cd experiment_0
     python3 fetch_labels.py                 # all 256 batches -> feature_labels.json
     python3 fetch_labels.py --batches 4     # smoke: first 4 batches only
+    EXP0_LAYER=12 python3 fetch_labels.py   # labels for a different layer
 """
 
 from __future__ import annotations
@@ -28,12 +30,9 @@ import urllib.request
 
 import config as C
 
-BASE = (
-    "https://neuronpedia-datasets.s3.us-east-1.amazonaws.com/"
-    "v1/gemma-2-2b/6-res-matryoshka-dc/explanations/batch-{}.jsonl.gz"
-)
+BASE = C.S3_EXPLANATIONS
 N_BATCHES = 256  # 256 * 128 == 32768 == D_SAE
-LABELS_PATH = C.OUT_DIR / "feature_labels.json"
+LABELS_PATH = C.FEATURE_LABELS_PATH
 
 
 def fetch_batch(i: int) -> dict[str, str]:

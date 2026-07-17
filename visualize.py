@@ -530,12 +530,12 @@ def build_qualitative_dashboard(report):
 
 
 def run_qualitative():
-    path = C.OUT_DIR / "qualitative_check.json"
+    path = C.RUN_DIR / "qualitative_check.json"
     if not path.exists():
         raise SystemExit(f"missing {path} - run qualitative_check.py first")
     report = json.loads(path.read_text())
     fig = build_qualitative_dashboard(report)
-    out = C.OUT_DIR / "qualitative_check.html"
+    out = C.RUN_DIR / "qualitative_check.html"
     fig.write_html(str(out), include_plotlyjs=True)
     print(f"saved: {out}")
 
@@ -566,7 +566,7 @@ def main():
               "to show descriptions instead of bare indices")
 
     dash = build_dashboard(pairs_data, feat_labels)
-    dash_path = C.OUT_DIR / "metrics_dashboard.html"
+    dash_path = C.RUN_DIR / "metrics_dashboard.html"
     dash.write_html(str(dash_path), include_plotlyjs=True)
     print(f"saved: {dash_path}")
 
@@ -574,7 +574,7 @@ def main():
     for (p, c), pd_ in zip(pairs, pairs_data):
         if pd_["superparents"]:
             sk = build_superparent_sankey(stats, pd_, p, c, feat_labels=feat_labels)
-            sk_path = C.OUT_DIR / "superparent_sankey.html"
+            sk_path = C.RUN_DIR / "superparent_sankey.html"
             sk.write_html(str(sk_path), include_plotlyjs=True)
             print(f"saved: {sk_path}")
             break
