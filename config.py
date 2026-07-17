@@ -151,3 +151,31 @@ NEURONPEDIA_BASE = "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc"
 
 def npedia_url(feature_idx: int) -> str:
     return f"{NEURONPEDIA_BASE}/{int(feature_idx)}"
+
+
+# ---------------------------------------------------------------------------
+# Feature labels (autointerp descriptions), one per feature.
+# Written by fetch_labels.py from the Neuronpedia dataset export; a dict
+# {index_str: description}. A handful of features have no export description
+# and simply fall back to "feature <idx>".
+# ---------------------------------------------------------------------------
+FEATURE_LABELS_PATH = OUT_DIR / "feature_labels.json"
+
+
+def load_feature_labels() -> dict[str, str]:
+    """Return {index_str: description}, or {} if fetch_labels.py hasn't run."""
+    import json
+
+    if FEATURE_LABELS_PATH.exists():
+        return json.loads(FEATURE_LABELS_PATH.read_text())
+    return {}
+
+
+def feature_label(feature_idx: int, labels: dict[str, str] | None = None) -> str:
+    """Human-readable label for a global feature index, with a graceful
+    fallback for the ~26 features that have no export description."""
+    if labels:
+        text = labels.get(str(int(feature_idx)))
+        if text:
+            return text
+    return f"feature {int(feature_idx)}"
