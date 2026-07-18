@@ -154,7 +154,10 @@ def main():
         feats = sae.encode(resid)                           # [n, D_SAE]
         x_hat = sae.decode(feats)                           # [n, d_model]
         resid_err = resid - x_hat                           # [n, d_model]
-        err = (resid_err * resid_err).sum(dim=1)            # [n] base recon error
+        # Cast to acc_dtype: on CUDA/CPU the accumulators are float64 while the
+        # model runs in float32, so `fc.T @ err` below would hit a Double-vs-Float
+        # mismatch. (On MPS both are float32, which is why this only bit on CUDA.)
+        err = (resid_err * resid_err).sum(dim=1).to(acc_dtype)  # [n] base recon error
 
         fired = (feats > C.FIRE_THRESHOLD).to(acc_dtype)    # [n, D_SAE]
         g = per_token_ablation_gain(feats, resid_err, W_dec).to(acc_dtype)  # [n, D_SAE]
