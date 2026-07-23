@@ -47,6 +47,7 @@ from metrics import (
 PURPLE, BLUE, TEAL = "#7C22CE", "#2196F3", "#0EA5A4"
 PAIR_COLORS = [PURPLE, BLUE, TEAL]
 GREEN, GREY, RED = "#22C55E", "#CBD5E1", "#EF4444"
+GREEN_DARK = "#15803D"          # readable green for heading text on white
 INK = "#5A6B7B"
 FONT = dict(family="DejaVu Sans Mono, Courier New, monospace", size=11, color=INK)
 
@@ -219,20 +220,26 @@ def build_dashboard(pairs_data, labels=None):
     fig.update_yaxes(title_text="firing rate", row=3, col=2)
 
     fig.update_layout(
+        # Title and legend both live above the plot area: pin them to separate
+        # paper-space rows (title on top, legend under it) or they overlap.
         title=dict(text="Exp 0 - grading coverage edges with the five metrics "
                         f"({pairs_data[0]['n_edges']:,} -> {pairs_data[-1]['n_edges']:,} candidate edges)",
-                   x=0.01, xanchor="left", font=dict(size=14, color=INK)),
+                   x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
+                   font=dict(size=14, color=INK)),
         barmode="group", bargap=0.15, font=FONT,
         paper_bgcolor="white", plot_bgcolor="#FbFcFd",
-        width=1200, height=1350, margin=dict(l=60, r=40, t=90, b=50),
-        legend=dict(orientation="h", y=1.05, x=0.5, xanchor="center"),
+        width=1200, height=1350, margin=dict(l=60, r=40, t=150, b=50),
+        legend=dict(orientation="h", y=1.012, yanchor="bottom", x=0.01, xanchor="left"),
     )
     return fig
 
 
-def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=None):
-    """One superparent's flow to its top_n children; colour separates edges that
-    survive (reconstruction AND frequency) from frequency-captured ones."""
+def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=None):
+    """Build the Sankey trace + title for one block pair's top superparent.
+
+    Returns (trace, title) or None when the pair has no superparent.
+    Shared by the single-pair figure and the stacked all-pairs figure.
+    """
     feat_labels = feat_labels or {}
     sp = pd_["superparents"]
     if not sp:
@@ -264,22 +271,80 @@ def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=Non
         target.append(i)
         value.append(float(pd_["cofire"][parent_local, ci]))
 
-    fig = go.Figure(
-        go.Sankey(
-            arrangement="snap",
-            node=dict(label=labels, color=node_colors, pad=18, thickness=14, line=dict(width=0)),
-            link=dict(source=source, target=target, value=value, color=link_colors,
-                      hovertemplate="%{source.label} -> %{target.label}<br>"
-                                    "co-fire: %{value}<extra></extra>"),
-        )
+    trace = go.Sankey(
+        arrangement="snap",
+        node=dict(label=labels, color=node_colors, pad=18, thickness=14, line=dict(width=0)),
+        link=dict(source=source, target=target, value=value, color=link_colors,
+                  hovertemplate="%{source.label} -> %{target.label}<br>"
+                                "co-fire: %{value}<extra></extra>"),
     )
     n_real = sum(1 for c in node_colors[1:] if c == GREEN)
+    # Rendered as a panel heading: bold, and the survivor count coloured by
+    # whether anything survived at all (green if some, red if none).
+    count_color = GREEN_DARK if n_real else RED
+    title = (f"<b>B{p_blk} → B{c_blk}</b>"
+             f"<span style='color:{INK}'>　 superparent </span>"
+             f"<b>B{p_blk}:{gp}</b>"
+             f"<span style='color:{INK}'> → top {len(kids)} children 　 survives recon &amp; frequency: </span>"
+             f"<b><span style='color:{count_color}'>{n_real}/{len(kids)}</span></b>")
+    return trace, title
+
+
+def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=None):
+    """One superparent's flow to its top_n children; colour separates edges that
+    survive (reconstruction AND frequency) from frequency-captured ones."""
+    built = _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n, feat_labels)
+    if built is None:
+        return None
+    trace, title = built
+    fig = go.Figure(trace)
     fig.update_layout(
-        title=dict(text=f"Superparent B{p_blk}:{gp} -> top {len(kids)} children  "
-                        f"(green = survives recon & frequency: {n_real}/{len(kids)})",
-                   x=0.01, xanchor="left", font=dict(size=13, color=INK)),
+        title=dict(text=title, x=0.01, xanchor="left", font=dict(size=13, color=INK)),
         font=FONT, paper_bgcolor="white", plot_bgcolor="white",
         width=1150, height=680, margin=dict(l=50, r=90, t=70, b=40),
+    )
+    return fig
+
+
+def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_labels=None):
+    """Every block pair's top superparent, stacked in ONE figure.
+
+    Stacking keeps a single embedded plotly.js bundle, so the file stays the
+    size of one dashboard instead of one per pair.
+    """
+    built = []
+    for (p, c), pd_ in zip(pairs, pairs_data):
+        got = _superparent_sankey_trace(stats, pd_, p, c, top_n, feat_labels)
+        if got is not None:
+            built.append((p, c, *got))
+    if not built:
+        return None
+
+    n = len(built)
+    panel_h = 660                      # px per panel
+    title_gap = 0.055                  # fraction of figure height reserved per heading
+    fig = go.Figure()
+    annotations = []
+    for i, (p, c, trace, title) in enumerate(built):
+        top = 1.0 - i / n
+        bottom = 1.0 - (i + 1) / n
+        trace.domain = dict(x=[0, 1], y=[bottom, top - title_gap])
+        fig.add_trace(trace)
+        annotations.append(dict(
+            text=title, x=0.0, xref="paper", xanchor="left",
+            y=top - 0.006, yref="paper", yanchor="top",
+            showarrow=False, align="left",
+            font=dict(size=14, color=PURPLE),
+            bgcolor="#F6F3FE", bordercolor="#E3DAFB", borderwidth=1, borderpad=8,
+        ))
+
+    fig.update_layout(
+        title=dict(text="Superparent fan-out, every block pair  "
+                        "(one feature adopting most of the next block)",
+                   x=0.005, xanchor="left", font=dict(size=14, color=INK)),
+        annotations=annotations,
+        font=FONT, paper_bgcolor="white", plot_bgcolor="white",
+        width=1250, height=90 + panel_h * n, margin=dict(l=50, r=90, t=80, b=40),
     )
     return fig
 
@@ -432,10 +497,11 @@ def build_calibration_dashboard(data):
         title=dict(text=f"Exp 0 - metric calibration on synthetic ground truth "
                         f"({n_pass}/{len(data['rows'])} metrics recover the tree & reject their pathology)  "
                         f"<span style='color:{RED}'>- - dashed = config threshold</span>",
-                   x=0.01, xanchor="left", font=dict(size=14, color=INK)),
+                   x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
+                   font=dict(size=14, color=INK)),
         font=FONT, paper_bgcolor="white", plot_bgcolor="#FbFcFd",
-        width=1200, height=1250, margin=dict(l=60, r=40, t=90, b=50),
-        legend=dict(orientation="h", y=1.03, x=0.5, xanchor="center"),
+        width=1200, height=1250, margin=dict(l=60, r=40, t=140, b=50),
+        legend=dict(orientation="h", y=1.008, yanchor="bottom", x=0.01, xanchor="left"),
     )
     return fig
 
@@ -570,14 +636,15 @@ def main():
     dash.write_html(str(dash_path), include_plotlyjs=True)
     print(f"saved: {dash_path}")
 
-    # Sankey for the first pair that has a clear superparent (B0->B1: feature 15 fires ~99%).
-    for (p, c), pd_ in zip(pairs, pairs_data):
-        if pd_["superparents"]:
-            sk = build_superparent_sankey(stats, pd_, p, c, feat_labels=feat_labels)
-            sk_path = C.RUN_DIR / "superparent_sankey.html"
-            sk.write_html(str(sk_path), include_plotlyjs=True)
-            print(f"saved: {sk_path}")
-            break
+    # One Sankey per block pair that has a superparent, stacked in a single file.
+    sk = build_all_superparent_sankeys(stats, pairs, pairs_data, feat_labels=feat_labels)
+    if sk is None:
+        print("note: no superparent found in any block pair - skipping sankey")
+    else:
+        n_panels = len(sk.data)
+        sk_path = C.RUN_DIR / "superparent_sankey.html"
+        sk.write_html(str(sk_path), include_plotlyjs=True)
+        print(f"saved: {sk_path}  ({n_panels} block pair{'s' if n_panels != 1 else ''})")
 
 
 if __name__ == "__main__":
