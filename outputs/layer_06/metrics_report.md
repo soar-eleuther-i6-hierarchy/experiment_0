@@ -1,8 +1,8 @@
+<a href="../../" title="Back to the experiment_0 index" style="position:fixed;top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;padding:9px 13px;text-decoration:none">&#8592; Back to index</a>
+
 # Exp 0 - metrics report
 
-- model / SAE: `gemma-2-2b-res-matryoshka-dc` @ `blocks.6.hook_resid_post`
-- tokens sampled: **48971** over 400 docs
-- edge criterion: reverse coverage >= 0.5, both endpoints fire >= 20
+**Layer 6**　·　gemma-2-2b / 6-res-matryoshka-dc　·　blocks.6.hook_resid_post　·　48,971 tokens over 400 docs　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
 ## Block pair 0->1  -  8156 candidate edges
 
@@ -15,14 +15,14 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 15 -> 348 | 1.00 | 0.01 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | references to scientific publications |
 | 15 -> 158 | 1.00 | 0.01 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | code-like structures and spacing |
-| 15 -> 177 | 1.00 | 0.02 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | sentences containing the word "must" or… |
-| 15 -> 486 | 1.00 | 0.02 | 0.04/0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | mathematical equations or references to… |
-| 15 -> 479 | 1.00 | 0.03 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | leading whitespace followed by numerica… |
 | 15 -> 456 | 1.00 | 0.01 | 0.04/0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | mathematical fractions |
-| 15 -> 433 | 1.00 | 0.02 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | occurrences of the word "then" and near… |
-| 15 -> 425 | 1.00 | 0.00 | 0.61/0.64 | Y | 1.00 | 0.12 | technical documentation-like language, … | legal citations with the letter 'd' in … |
+| 15 -> 227 | 1.00 | 0.01 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | the word "analysis" |
+| 15 -> 235 | 1.00 | 0.01 | 0.04/0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | math-related symbols like multiplicatio… |
+| 15 -> 258 | 1.00 | 0.02 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | the word "while" or "While" when used t… |
+| 15 -> 380 | 1.00 | 0.01 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | mathematical expressions, like those fo… |
+| 15 -> 177 | 1.00 | 0.02 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | sentences containing the word "must" or… |
+| 15 -> 479 | 1.00 | 0.03 | 0.04/-0.00 | n | 1.00 | 0.12 | technical documentation-like language, … | leading whitespace followed by numerica… |
 
 ## Block pair 1->2  -  271644 candidate edges
 
@@ -35,14 +35,14 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 431 -> 977 | 1.00 | 0.13 | 0.00/0.00 | n | - | 0.43 | words and phrases used in formal or abs… | strings that are not ASCII characters |
-| 357 -> 977 | 1.00 | 0.32 | 0.00/0.00 | n | - | 0.44 | the word "but" and the immediately surr… | strings that are not ASCII characters |
-| 278 -> 977 | 1.00 | 0.27 | 0.00/0.00 | n | - | 0.43 | the words "real" or "actual" and relate… | strings that are not ASCII characters |
 | 302 -> 977 | 1.00 | 0.15 | -0.00/0.00 | n | - | 0.42 | source code and/or documents with very … | strings that are not ASCII characters |
-| 260 -> 977 | 1.00 | 0.22 | -0.00/0.00 | n | - | 0.44 | sentences that use first person pronouns | strings that are not ASCII characters |
-| 227 -> 977 | 1.00 | 0.59 | -0.00/0.00 | n | - | 0.45 | the word "analysis" | strings that are not ASCII characters |
-| 362 -> 977 | 1.00 | 0.03 | -0.00/0.00 | n | - | 0.34 | marketing and promotional content relat… | strings that are not ASCII characters |
+| 278 -> 977 | 1.00 | 0.27 | 0.00/0.00 | n | - | 0.43 | the words "real" or "actual" and relate… | strings that are not ASCII characters |
+| 431 -> 977 | 1.00 | 0.13 | 0.00/0.00 | n | - | 0.43 | words and phrases used in formal or abs… | strings that are not ASCII characters |
 | 261 -> 977 | 1.00 | 0.43 | 0.00/0.00 | n | - | 0.44 | decimal numbers | strings that are not ASCII characters |
+| 357 -> 977 | 1.00 | 0.32 | 0.00/0.00 | n | - | 0.44 | the word "but" and the immediately surr… | strings that are not ASCII characters |
+| 260 -> 977 | 1.00 | 0.22 | -0.00/0.00 | n | - | 0.44 | sentences that use first person pronouns | strings that are not ASCII characters |
+| 479 -> 977 | 1.00 | 0.28 | -0.00/0.00 | n | - | 0.43 | leading whitespace followed by numerica… | strings that are not ASCII characters |
+| 311 -> 977 | 1.00 | 0.21 | 0.00/0.00 | n | - | 0.43 | something, but it's too difficult to de… | strings that are not ASCII characters |
 
 ## Block pair 2->3  -  4704312 candidate edges
 
@@ -55,11 +55,11 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 774 -> 2379 | 1.00 | 0.86 | -0.00/0.00 | n | - | 0.41 | closing curly brackets, especially nest… | code or date formats containing "dd". |
-| 1203 -> 3987 | 1.00 | 0.54 | -0.00/-0.00 | n | - | 0.41 | language around commercial transactions | citations to academic papers |
-| 1946 -> 5554 | 1.00 | 0.18 | -0.00/0.00 | n | - | 0.39 | words related to movies, film festivals… | math formulas and code, specifically pa… |
-| 1245 -> 3987 | 1.00 | 0.77 | -0.00/-0.00 | n | - | 0.41 | the word "until" usually followed by an… | citations to academic papers |
-| 771 -> 3987 | 1.00 | 0.37 | -0.00/-0.00 | n | - | 0.40 | terms related to race and diversity | citations to academic papers |
-| 1245 -> 3994 | 1.00 | 0.77 | -0.00/-0.00 | n | - | 0.41 | the word "until" usually followed by an… | an unusual whitespace character in refe… |
-| 1770 -> 3987 | 1.00 | 0.44 | 0.00/-0.00 | n | - | 0.40 | words starting with 'co' followed by a … | citations to academic papers |
-| 1306 -> 6544 | 1.00 | 0.79 | -0.00/-0.00 | n | - | 0.41 | the word "relative" followed by a measu… | the Greek letter "xi" (ξ) in mathematic… |
+| 1524 -> 6544 | 1.00 | 0.58 | -0.00/-0.00 | n | - | 0.41 | code comments | the Greek letter "xi" (ξ) in mathematic… |
+| 701 -> 3987 | 1.00 | 0.74 | -0.00/-0.00 | n | - | 0.41 | instances of measuring something | citations to academic papers |
+| 1476 -> 3987 | 1.00 | 0.27 | -0.00/-0.00 | n | - | 0.40 | scientific publication citations and re… | citations to academic papers |
+| 1371 -> 2379 | 1.00 | 0.73 | -0.00/0.00 | n | - | 0.41 | the word "establish" sometimes followed… | code or date formats containing "dd". |
+| 775 -> 3987 | 1.00 | 0.31 | 0.00/-0.00 | n | - | 0.40 | words, acronyms, or prefixes starting w… | citations to academic papers |
+| 1036 -> 3994 | 1.00 | 0.53 | 0.00/-0.00 | n | - | 0.41 | mentions of the word "company" | an unusual whitespace character in refe… |
+| 699 -> 5554 | 1.00 | 0.55 | -0.00/0.00 | n | - | 0.41 | sentences starting with the conjunction… | math formulas and code, specifically pa… |
+| 1231 -> 5554 | 1.00 | 0.76 | -0.00/0.00 | n | - | 0.41 | numbers written in scientific notation | math formulas and code, specifically pa… |

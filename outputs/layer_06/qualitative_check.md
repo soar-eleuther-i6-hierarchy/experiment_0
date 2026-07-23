@@ -1,6 +1,10 @@
+<a href="../../" title="Back to the experiment_0 index" style="position:fixed;top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;padding:9px 13px;text-decoration:none">&#8592; Back to index</a>
+
 # Exp 0 - qualitative agreement check (real gemma-2-2b SAE)
 
-For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia (not fetched - URLs only).
+**Layer 6**　·　gemma-2-2b / 6-res-matryoshka-dc　·　blocks.6.hook_resid_post　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
+
+For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia.
 
 ## Block pair 0->1
 
@@ -18,7 +22,7 @@ For each block pair we compare edges the metrics KEEP (survivors) against edges 
 - **72 -> 159**  `R=0.79 F=0.06 recon_gain=0.146 recon=Y surv=1.07 p_fires=2%`
     - parent [72](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/72): _various elements and separators within tables and structured data, especially statistical or scientific tables_
     - child  [159](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/159): _horizontal lines of dashes used within tables_
-- **43 -> 383**  `R=0.66 F=0.08 recon_gain=0.133 recon=Y surv=1.02 p_fires=12%`
+- **43 -> 383**  `R=0.66 F=0.08 recon_gain=0.133 recon=Y surv=1.04 p_fires=12%`
     - parent [43](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/43): _discourse markers indicating argumentation, comparison/contrast, or qualification._
     - child  [383](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/383): _words or phrases used to transition to the next thought or idea_
 - **72 -> 462**  `R=0.59 F=0.05 recon_gain=0.132 recon=Y surv=1.32 p_fires=2%`

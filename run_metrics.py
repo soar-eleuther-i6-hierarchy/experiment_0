@@ -180,11 +180,11 @@ def analyse_pair(stats, p_blk, c_blk, labels=None):
 
 
 def to_markdown(report) -> str:
-    L = ["# Exp 0 - metrics report", ""]
-    cfg = report["config"]
-    L.append(f"- model / SAE: `{cfg['sae_release']}` @ `{cfg['sae_id']}`")
-    L.append(f"- tokens sampled: **{report['total_tokens']}** over {cfg['n_docs']} docs")
-    L.append(f"- edge criterion: reverse coverage >= {C.EDGE_TAU}, both endpoints fire >= {C.MIN_FIRE_COUNT}")
+    # Jekyll renders this file to .html on GitHub Pages; the raw HTML passes
+    # through and gives the report the same back-to-index button as the
+    # generated dashboards, so navigation is consistent across the site.
+    L = [C.BACK_LINK_HTML, "", "# Exp 0 - metrics report", ""]
+    L.append(C.scope_line(report["total_tokens"]))
     L.append("")
     for pr in report["pairs"]:
         d = pr["degree"]

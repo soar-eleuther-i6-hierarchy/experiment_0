@@ -183,7 +183,10 @@ def select(d, n_survivor=8, n_each_reject=4):
 # Report
 # ---------------------------------------------------------------------------
 def to_markdown(all_rows, fetched) -> str:
-    L = ["# Exp 0 - qualitative agreement check (real gemma-2-2b SAE)", ""]
+    # Raw HTML passes through Jekyll's markdown rendering, giving this report the
+    # same back-to-index button as the generated dashboards.
+    L = [C.BACK_LINK_HTML, "", "# Exp 0 - qualitative agreement check (real gemma-2-2b SAE)", "",
+         C.scope_line(), ""]
     L.append("For each block pair we compare edges the metrics KEEP (survivors) "
              "against edges they REJECT despite passing the crude coverage test. "
              "Read the parent/child labels: survivors should be semantically "

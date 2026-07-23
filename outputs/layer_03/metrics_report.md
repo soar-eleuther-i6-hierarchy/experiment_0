@@ -1,8 +1,8 @@
+<a href="../../" title="Back to the experiment_0 index" style="position:fixed;top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;padding:9px 13px;text-decoration:none">&#8592; Back to index</a>
+
 # Exp 0 - metrics report
 
-- model / SAE: `gemma-2-2b-res-matryoshka-dc` @ `blocks.3.hook_resid_post`
-- tokens sampled: **48971** over 400 docs
-- edge criterion: reverse coverage >= 0.5, both endpoints fire >= 20
+**Layer 3**　·　gemma-2-2b / 3-res-matryoshka-dc　·　blocks.3.hook_resid_post　·　48,971 tokens over 400 docs　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
 ## Block pair 0->1  -  3067 candidate edges
 
@@ -15,14 +15,14 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 70 -> 392 | 1.00 | 0.01 | 0.88/0.21 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | the word "so" in various contexts |
-| 70 -> 352 | 1.00 | 0.00 | 1.95/0.01 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | square brackets surrounding numbers and… |
-| 70 -> 505 | 1.00 | 0.00 | 0.49/0.49 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | legal and scientific research article f… |
+| 70 -> 459 | 1.00 | 0.01 | 1.50/0.10 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | the word "work" and any words that coll… |
+| 70 -> 238 | 1.00 | 0.01 | 1.01/0.03 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | code terms related to calculating maxim… |
 | 70 -> 148 | 1.00 | 0.01 | 0.88/0.00 | n | 1.00 | 0.02 | proper nouns that have mixed upper and … | trademarked product names |
 | 70 -> 158 | 1.00 | 0.00 | 0.62/-0.00 | n | 1.00 | 0.02 | proper nouns that have mixed upper and … | the string "pone" which appears to be p… |
-| 70 -> 164 | 1.00 | 0.00 | 0.92/0.16 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | LaTeX mathmatical notation |
-| 70 -> 258 | 1.00 | 0.00 | 1.25/0.23 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | lines that start with a plus (+) sign, … |
-| 70 -> 351 | 1.00 | 0.01 | 1.23/0.11 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | mentions of `value` or `values` in vari… |
+| 70 -> 441 | 1.00 | 0.00 | 1.00/0.48 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | the word "such" |
+| 70 -> 439 | 1.00 | 0.00 | 0.60/1.02 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | statistical data from scientific public… |
+| 70 -> 436 | 1.00 | 0.02 | 1.04/-0.00 | n | 1.00 | 0.02 | proper nouns that have mixed upper and … | LaTeX mathematical notation. |
+| 70 -> 409 | 1.00 | 0.01 | 2.01/0.19 | Y | 1.00 | 0.02 | proper nouns that have mixed upper and … | the word "patients" and words immediate… |
 
 ## Block pair 1->2  -  28588 candidate edges
 
@@ -55,11 +55,11 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 1457 -> 5465 | 1.00 | 0.00 | 0.02/0.13 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "unknown" |
-| 726 -> 6552 | 1.00 | 0.07 | -0.00/0.00 | n | 1.00 | 0.50 | a hodgepodge of terms related to variou… | mentions of dark matter halos |
-| 1457 -> 6897 | 1.00 | 0.00 | 0.03/0.32 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "voice" |
-| 1179 -> 6997 | 1.00 | 0.10 | -0.00/-0.00 | n | - | 0.28 | HTML markup and attributes | the word "spatial" |
-| 1457 -> 2263 | 1.00 | 0.00 | 0.02/0.21 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "attack" and its variations an… |
-| 908 -> 2940 | 1.00 | 0.12 | 0.00/-0.00 | n | 1.00 | 0.55 | terms that could be proper names or acr… | the string 'gh' |
-| 1457 -> 2261 | 1.00 | 0.00 | 0.02/-0.00 | n | 1.00 | 0.04 | words used in official documents and sc… | the string "base64" |
-| 1457 -> 6849 | 1.00 | 0.00 | 0.03/0.82 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "worldwide." |
+| 1457 -> 8146 | 1.00 | 0.00 | 0.02/0.41 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "unique" within code snippets |
+| 1457 -> 4507 | 1.00 | 0.00 | 0.02/0.09 | Y | 1.00 | 0.04 | words used in official documents and sc… | the word "excited" or other forms of th… |
+| 1457 -> 7343 | 1.00 | 0.00 | 0.03/0.11 | Y | - | 0.04 | words used in official documents and sc… | the word "to", often preceding a variab… |
+| 923 -> 6997 | 1.00 | 0.37 | -0.00/-0.00 | n | - | 0.67 | mathematical equations and expressions | the word "spatial" |
+| 1258 -> 6997 | 1.00 | 0.40 | -0.00/-0.00 | n | - | 0.67 | the terms "get" and "set" that appear i… | the word "spatial" |
+| 875 -> 6997 | 1.00 | 0.33 | -0.01/-0.00 | n | - | 0.67 | LaTeX math symbols | the word "spatial" |
+| 916 -> 6952 | 1.00 | 0.09 | -0.00/-0.00 | n | - | 0.54 | biological or technological research te… | backslashes following by numbers |
+| 1457 -> 4512 | 1.00 | 0.00 | 0.03/0.21 | Y | - | 0.04 | words used in official documents and sc… | hyphens |

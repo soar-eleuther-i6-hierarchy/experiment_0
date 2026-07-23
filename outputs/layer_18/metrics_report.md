@@ -1,8 +1,8 @@
+<a href="../../" title="Back to the experiment_0 index" style="position:fixed;top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;padding:9px 13px;text-decoration:none">&#8592; Back to index</a>
+
 # Exp 0 - metrics report
 
-- model / SAE: `gemma-2-2b-res-matryoshka-dc` @ `blocks.18.hook_resid_post`
-- tokens sampled: **48971** over 400 docs
-- edge criterion: reverse coverage >= 0.5, both endpoints fire >= 20
+**Layer 18**　·　gemma-2-2b / 18-res-matryoshka-dc　·　blocks.18.hook_resid_post　·　48,971 tokens over 400 docs　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
 ## Block pair 0->1  -  4901 candidate edges
 
@@ -20,8 +20,8 @@
 | 89 -> 132 | 1.00 | 0.02 | 1.30/0.13 | Y | 1.00 | 0.07 | technical or scientific language relate… | hyphens used to connect words |
 | 89 -> 166 | 1.00 | 0.02 | 0.03/-0.00 | n | 1.00 | 0.07 | technical or scientific language relate… | the noun "response" |
 | 89 -> 261 | 1.00 | 0.08 | 0.03/-0.00 | n | 1.00 | 0.07 | technical or scientific language relate… | passages with emotional and personal re… |
-| 89 -> 348 | 1.00 | 0.04 | 0.03/-0.00 | n | 1.00 | 0.07 | technical or scientific language relate… | references to older people and adults |
 | 89 -> 467 | 1.00 | 0.02 | 2.87/0.03 | Y | 1.00 | 0.07 | technical or scientific language relate… | sentences using the word "I" or "you" i… |
+| 89 -> 348 | 1.00 | 0.04 | 0.03/-0.00 | n | 1.00 | 0.07 | technical or scientific language relate… | references to older people and adults |
 | 89 -> 243 | 1.00 | 0.06 | 0.03/-0.00 | n | 1.00 | 0.07 | technical or scientific language relate… | mentions of the Peshekee River in Michi… |
 
 ## Block pair 1->2  -  141272 candidate edges
@@ -37,12 +37,12 @@
 |---|---|---|---|---|---|---|---|---|
 | 492 -> 905 | 0.99 | 0.03 | -0.00/-0.00 | n | 0.50 | 0.29 | LaTeX equations and other math and code… | character strings containing a combinat… |
 | 183 -> 706 | 0.99 | 0.26 | 0.00/0.00 | n | - | 0.47 | code or configuration snippets | code snippets |
-| 341 -> 905 | 0.99 | 0.17 | -0.00/-0.00 | n | 0.51 | 0.46 | content from blog posts, including nume… | character strings containing a combinat… |
-| 389 -> 905 | 0.99 | 0.10 | -0.00/-0.00 | n | 0.51 | 0.45 | mentions of dark matter, galaxies, and … | character strings containing a combinat… |
-| 427 -> 905 | 0.99 | 0.23 | -0.00/-0.00 | n | 0.67 | 0.47 | mentions of the US Marine Corps and rel… | character strings containing a combinat… |
 | 220 -> 905 | 0.99 | 0.13 | 0.00/-0.00 | n | 0.51 | 0.46 | a mix of code, URLs, formatting, and ma… | character strings containing a combinat… |
 | 295 -> 905 | 0.99 | 0.15 | -0.00/-0.00 | n | 0.67 | 0.46 | clauses and question-like structures of… | character strings containing a combinat… |
-| 134 -> 706 | 0.99 | 0.20 | -0.00/0.00 | n | - | 0.46 | Objective-C code | code snippets |
+| 341 -> 905 | 0.99 | 0.17 | -0.00/-0.00 | n | 0.51 | 0.46 | content from blog posts, including nume… | character strings containing a combinat… |
+| 427 -> 905 | 0.99 | 0.23 | -0.00/-0.00 | n | 0.67 | 0.47 | mentions of the US Marine Corps and rel… | character strings containing a combinat… |
+| 389 -> 905 | 0.99 | 0.10 | -0.00/-0.00 | n | 0.51 | 0.45 | mentions of dark matter, galaxies, and … | character strings containing a combinat… |
+| 492 -> 706 | 0.99 | 0.03 | -0.00/0.00 | n | - | 0.29 | LaTeX equations and other math and code… | code snippets |
 
 ## Block pair 2->3  -  3820801 candidate edges
 
@@ -55,11 +55,11 @@
 
 | parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |
 |---|---|---|---|---|---|---|---|---|
-| 1617 -> 3660 | 1.00 | 0.55 | -0.00/-0.00 | n | - | 0.39 | references to figures, alphanumeric ide… | html code related to navigation element… |
-| 636 -> 3825 | 1.00 | 0.30 | -0.00/-0.00 | n | - | 0.38 | descriptions of fashionable dresses | hexadecimal color codes |
-| 1906 -> 3660 | 1.00 | 0.79 | -0.00/-0.00 | n | - | 0.39 | the imperative verb "check" | html code related to navigation element… |
-| 1740 -> 3660 | 1.00 | 0.35 | -0.00/-0.00 | n | - | 0.39 | HTML code related to website structure … | html code related to navigation element… |
-| 1484 -> 3825 | 1.00 | 0.29 | -0.00/-0.00 | n | - | 0.38 | descriptions of genetic syndromes and m… | hexadecimal color codes |
-| 1007 -> 3825 | 1.00 | 0.42 | -0.00/-0.00 | n | - | 0.38 | the words "another" and "other" followe… | hexadecimal color codes |
-| 1811 -> 3660 | 1.00 | 0.62 | 0.00/-0.00 | n | - | 0.39 | text from programming or chat contexts,… | html code related to navigation element… |
-| 1761 -> 3825 | 1.00 | 0.81 | -0.00/-0.00 | n | - | 0.39 | the word "phase" in scientific/technica… | hexadecimal color codes |
+| 749 -> 3660 | 1.00 | 0.39 | -0.00/-0.00 | n | - | 0.38 | specifications for computer CPU coolers | html code related to navigation element… |
+| 592 -> 3660 | 1.00 | 0.82 | -0.00/-0.00 | n | - | 0.39 | references to figures | html code related to navigation element… |
+| 793 -> 3660 | 1.00 | 0.69 | -0.00/-0.00 | n | - | 0.39 | strings of digits and hyphens often use… | html code related to navigation element… |
+| 881 -> 3660 | 1.00 | 0.81 | 0.00/-0.00 | n | - | 0.39 | the phrases "consider" or "considering"… | html code related to navigation element… |
+| 654 -> 3825 | 1.00 | 0.24 | -0.00/-0.00 | n | - | 0.37 | language related to performing a study … | hexadecimal color codes |
+| 1781 -> 3660 | 1.00 | 0.52 | -0.00/-0.00 | n | - | 0.39 | words relating to fighting and weight | html code related to navigation element… |
+| 1389 -> 3660 | 1.00 | 0.52 | 0.00/-0.00 | n | - | 0.39 | mathematical equations and symbols, esp… | html code related to navigation element… |
+| 1296 -> 3825 | 1.00 | 0.92 | 0.00/-0.00 | n | - | 0.39 | the word "along" | hexadecimal color codes |

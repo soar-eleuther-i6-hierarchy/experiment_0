@@ -134,6 +134,33 @@ OUT_DIR.mkdir(exist_ok=True)
 RUN_DIR = OUT_DIR / f"layer_{LAYER:02d}"
 RUN_DIR.mkdir(parents=True, exist_ok=True)
 
+def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　"):
+    """Which layer, and the knobs a reader needs to interpret the numbers.
+
+    Single source for the context line shown on every page and report, so the
+    dashboards and the markdown digests can never drift apart. `bold` selects the
+    emphasis syntax: ("**", "**") for markdown, ("<b>", "</b>") for HTML.
+    """
+    b0, b1 = bold
+    bits = [f"{b0}Layer {LAYER}{b1}", f"gemma-2-2b / {SAE_SOURCE}", SAE_ID]
+    if total_tokens:
+        bits.append(f"{int(total_tokens):,} tokens over {N_DOCS} docs")
+    bits.append(f"edge: reverse coverage ≥ {EDGE_TAU}, both endpoints fire ≥ {MIN_FIRE_COUNT}")
+    return sep.join(bits)
+
+
+# Back-to-index button, shared by every generated page so navigation is uniform.
+# Pages are only reachable by deep link, so each needs its own way back. Emitted
+# into the markdown reports too: Jekyll passes raw HTML through when it renders
+# them. The href is relative (two levels up from outputs/layer_NN/) so it works
+# on GitHub Pages and when the file is opened locally.
+BACK_LINK_HTML = (
+    '<a href="../../" title="Back to the experiment_0 index" style="position:fixed;'
+    'top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;'
+    'color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;'
+    'padding:9px 13px;text-decoration:none">&#8592; Back to index</a>'
+)
+
 EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by cache_stats.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
 METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py

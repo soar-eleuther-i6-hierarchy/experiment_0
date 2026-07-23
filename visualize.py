@@ -57,16 +57,24 @@ def page_subtitle(stats=None):
     layer it is, so state it up front together with the run knobs a reader
     needs to interpret the numbers.
     """
-    bits = [
-        f"<b>Layer {C.LAYER}</b>",
-        f"gemma-2-2b / {C.SAE_SOURCE}",
-        C.SAE_ID,
-    ]
-    if stats is not None and "total_tokens" in stats:
-        bits.append(f"{int(stats['total_tokens']):,} tokens over {C.N_DOCS} docs")
-    # Plotly does not decode HTML entities in titles/annotations: use literal glyphs.
-    bits.append(f"edge: reverse coverage ≥ {C.EDGE_TAU}, both endpoints fire ≥ {C.MIN_FIRE_COUNT}")
-    return "　·　".join(bits)
+    tokens = stats.get("total_tokens") if stats is not None else None
+    # Plotly does not decode HTML entities, so config.scope_line uses literal glyphs.
+    return C.scope_line(tokens, bold=("<b>", "</b>"))
+
+
+def write_page(fig, path, up=2):
+    """Write a plotly figure and pin a 'back to index' link to its top-right.
+
+    Every page is reachable only by a deep link from the README, so without this
+    there is no way back to the index. The href is relative (`up` levels to the
+    site root), so it works both on GitHub Pages and when opening the file
+    locally. Injected after write_html because plotly gives no layout slot for a
+    fixed-position element.
+    """
+    fig.write_html(str(path), include_plotlyjs=True)
+    link = C.BACK_LINK_HTML.replace('href="../../"', f'href="{"../" * up}"')
+    html = path.read_text().replace("<body>", "<body>\n" + link, 1)
+    path.write_text(html)
 
 
 def scope_subtitle(text):
@@ -564,7 +572,7 @@ def run_calibration():
     data = _calibration_data()
     fig = build_calibration_dashboard(data)
     out = C.OUT_DIR / "toy_calibration.html"
-    fig.write_html(str(out), include_plotlyjs=True)
+    write_page(fig, out, up=1)          # lives in outputs/
     print(f"saved: {out}")
 
 
@@ -661,7 +669,7 @@ def run_qualitative():
     # qualitative_check.html would shadow Jekyll's render of qualitative_check.md,
     # leaving the text report unreachable on the published site.
     out = C.RUN_DIR / "qualitative_dashboard.html"
-    fig.write_html(str(out), include_plotlyjs=True)
+    write_page(fig, out, up=2)          # lives in outputs/layer_NN/
     print(f"saved: {out}")
 
 
@@ -692,7 +700,7 @@ def main():
 
     dash = build_dashboard(pairs_data, feat_labels, stats=stats)
     dash_path = C.RUN_DIR / "metrics_dashboard.html"
-    dash.write_html(str(dash_path), include_plotlyjs=True)
+    write_page(dash, dash_path, up=2)
     print(f"saved: {dash_path}")
 
     # One Sankey per block pair that has a superparent, stacked in a single file.
@@ -702,7 +710,7 @@ def main():
     else:
         n_panels = len(sk.data)
         sk_path = C.RUN_DIR / "superparent_sankey.html"
-        sk.write_html(str(sk_path), include_plotlyjs=True)
+        write_page(sk, sk_path, up=2)
         print(f"saved: {sk_path}  ({n_panels} block pair{'s' if n_panels != 1 else ''})")
 
 
