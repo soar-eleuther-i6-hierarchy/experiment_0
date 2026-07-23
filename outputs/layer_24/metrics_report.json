@@ -1,0 +1,981 @@
+{
+  "config": {
+    "layer": 24,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "24-res-matryoshka-dc",
+    "sae_id": "blocks.24.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "n_docs": 400,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4
+  },
+  "total_tokens": 48971,
+  "pairs": [
+    {
+      "pair": "0->1",
+      "n_candidate_edges": 4940,
+      "degree": {
+        "n_parents_with_children": 97,
+        "n_children_with_parent": 384,
+        "n_multi_parented": 384,
+        "top1_edge_share": 0.07773279352226721,
+        "outdeg_gini": 0.5702302631578948,
+        "max_outdeg": 384
+      },
+      "joint_child_cov_mean": 0.9441488415529523,
+      "reconstruction": {
+        "n_pass": 879,
+        "frac_pass": 0.17793522267206477
+      },
+      "freq_control": {
+        "n_testable": 4940,
+        "mean_survival": 0.5174611338466819,
+        "n_freq_driven": 2635,
+        "frac_freq_driven": 0.5334008097165992
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 92,
+        "mean_redundancy": 0.3503577881121283,
+        "n_flagged": 0
+      },
+      "n_superparents": 6,
+      "superparents": [
+        {
+          "parent_local": 32,
+          "outdeg": 384,
+          "outdeg_frac": 1.0,
+          "fire_frac": 0.9947724163280309,
+          "parent_global": 32,
+          "label": "numbers within a document",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32"
+        },
+        {
+          "parent_local": 85,
+          "outdeg": 384,
+          "outdeg_frac": 1.0,
+          "fire_frac": 0.8591002838414572,
+          "parent_global": 85,
+          "label": "code and jargon related to technology and electronics",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/85"
+        },
+        {
+          "parent_local": 92,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.75640685303547,
+          "parent_global": 92,
+          "label": "technical terms, questions, and answers related to professional contexts",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/92"
+        },
+        {
+          "parent_local": 49,
+          "outdeg": 190,
+          "outdeg_frac": 0.4947916666666667,
+          "fire_frac": 0.6114230871332013,
+          "parent_global": 49,
+          "label": "what appears to be the start of a disjointed large quantity of mixed news stories and blog posts about various topics.",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/49"
+        },
+        {
+          "parent_local": 19,
+          "outdeg": 159,
+          "outdeg_frac": 0.4140625,
+          "fire_frac": 0.5629045761777378,
+          "parent_global": 19,
+          "label": "Japanese names or media terms plus numbers",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/19"
+        },
+        {
+          "parent_local": 21,
+          "outdeg": 126,
+          "outdeg_frac": 0.328125,
+          "fire_frac": 0.27634722590921157,
+          "parent_global": 21,
+          "label": "programming source code",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/21"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 32,
+          "child": 421,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.02346299907625988,
+          "recon_parent_gain": 0.00021143725297544455,
+          "recon_child_gain": -0.0002928986643214839,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "text related to the game World of Warcraft.",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/421"
+        },
+        {
+          "parent": 32,
+          "child": 365,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.010181668890485477,
+          "recon_parent_gain": -1.915075729647479e-05,
+          "recon_child_gain": -9.418869342067105e-05,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "citations in research papers",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/365"
+        },
+        {
+          "parent": 32,
+          "child": 336,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.026028943857128194,
+          "recon_parent_gain": 1.2446187788937908,
+          "recon_child_gain": 0.16487031129468868,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "numbers, especially as part of references, code and data samples",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/336"
+        },
+        {
+          "parent": 32,
+          "child": 387,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.02073283382941599,
+          "recon_parent_gain": 0.00014733425965700564,
+          "recon_child_gain": 3.5813265310903215e-05,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "contractions with the word \"not.\"",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/387"
+        },
+        {
+          "parent": 32,
+          "child": 193,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.004475007697834343,
+          "recon_parent_gain": 1.1023450702454047,
+          "recon_child_gain": 0.00023291696170878762,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "language common to legal opinions.",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/193"
+        },
+        {
+          "parent": 32,
+          "child": 201,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.032679872729138866,
+          "recon_parent_gain": 1.1457276753389805,
+          "recon_child_gain": 0.023986305811365818,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "names of people and titles or abbreviations referring to people",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/201"
+        },
+        {
+          "parent": 32,
+          "child": 502,
+          "reverse_cov": 0.9994438264738599,
+          "forward_cov": 0.11066406650928871,
+          "recon_parent_gain": 1.8788194906640552,
+          "recon_child_gain": 0.023896349516000486,
+          "recon_pass": true,
+          "freq_survival": 0.9994529280827523,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words and phrases associated with political language",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/502"
+        },
+        {
+          "parent": 32,
+          "child": 162,
+          "reverse_cov": 0.9994314951677089,
+          "forward_cov": 0.07217489479626399,
+          "recon_parent_gain": 0.0013035367916438385,
+          "recon_child_gain": 8.312826843330414e-06,
+          "recon_pass": false,
+          "freq_survival": 0.9994533668669298,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "terminology used in scientific publications about cancer research",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/162"
+        },
+        {
+          "parent": 32,
+          "child": 146,
+          "reverse_cov": 0.9993662864385298,
+          "forward_cov": 0.06474391871086935,
+          "recon_parent_gain": 2.1447094791959205,
+          "recon_child_gain": 0.009206134385600898,
+          "recon_pass": false,
+          "freq_survival": 1.0006341154090044,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words related to teaching and education",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/146"
+        },
+        {
+          "parent": 32,
+          "child": 207,
+          "reverse_cov": 0.9993489583333334,
+          "forward_cov": 0.09452940572718875,
+          "recon_parent_gain": 1.8170638929034497,
+          "recon_child_gain": 0.03126253348061196,
+          "recon_pass": true,
+          "freq_survival": 1.0002319054350275,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words related to biological research and medical terminology",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/207"
+        },
+        {
+          "parent": 32,
+          "child": 211,
+          "reverse_cov": 0.9993131868131868,
+          "forward_cov": 0.029867597249307196,
+          "recon_parent_gain": 0.00039402015460699845,
+          "recon_child_gain": -0.00040972416403911864,
+          "recon_pass": false,
+          "freq_survival": 1.0006872852233677,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words related to storytelling and imagination in quotes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/211"
+        },
+        {
+          "parent": 32,
+          "child": 475,
+          "reverse_cov": 0.9990808823529411,
+          "forward_cov": 0.044626911628861746,
+          "recon_parent_gain": 0.000778231186720157,
+          "recon_child_gain": 3.4387209162069406e-06,
+          "recon_pass": false,
+          "freq_survival": 0.9994011165198309,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "clinical study reports referring to patients and subjects in research investigations",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/475"
+        },
+        {
+          "parent": 32,
+          "child": 287,
+          "reverse_cov": 0.9990794722307457,
+          "forward_cov": 0.06683772965205789,
+          "recon_parent_gain": 0.0012908643628466014,
+          "recon_child_gain": -1.588607991296754e-06,
+          "recon_pass": false,
+          "freq_survival": 0.9995136102731039,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words and phrases related to healthcare, particularly those associated with providing and receiving care for specific conditions.",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/287"
+        },
+        {
+          "parent": 32,
+          "child": 509,
+          "reverse_cov": 0.9990710636321412,
+          "forward_cov": 0.044154777789181976,
+          "recon_parent_gain": 0.000619600223714942,
+          "recon_child_gain": -0.00018701157439315443,
+          "recon_pass": false,
+          "freq_survival": 0.9998512119463281,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "language specific to American football games",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/509"
+        },
+        {
+          "parent": 32,
+          "child": 470,
+          "reverse_cov": 0.9990291262135922,
+          "forward_cov": 0.0844914297444319,
+          "recon_parent_gain": 0.0016592127765936917,
+          "recon_child_gain": -0.00029517937861144256,
+          "recon_pass": false,
+          "freq_survival": 1.0004327910100883,
+          "parent_redundancy": 0.051082836593649185,
+          "parent_label": "numbers within a document",
+          "child_label": "words related to computer systems and processing information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/32",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/470"
+        }
+      ]
+    },
+    {
+      "pair": "1->2",
+      "n_candidate_edges": 108810,
+      "degree": {
+        "n_parents_with_children": 233,
+        "n_children_with_parent": 989,
+        "n_multi_parented": 816,
+        "top1_edge_share": 0.008188585607940446,
+        "outdeg_gini": 0.5158785957173053,
+        "max_outdeg": 891
+      },
+      "joint_child_cov_mean": 0.8412123216726345,
+      "reconstruction": {
+        "n_pass": 83,
+        "frac_pass": 0.0007627975369910853
+      },
+      "freq_control": {
+        "n_testable": 105552,
+        "mean_survival": 0.0561346497534931,
+        "n_freq_driven": 104570,
+        "frac_freq_driven": 0.9906965287251781
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 206,
+        "mean_redundancy": 0.48494727803060667,
+        "n_flagged": 163
+      },
+      "n_superparents": 7,
+      "superparents": [
+        {
+          "parent_local": 227,
+          "outdeg": 891,
+          "outdeg_frac": 0.580078125,
+          "fire_frac": 0.3184537787670254,
+          "parent_global": 355,
+          "label": "words related to medical and business processes or programs",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/355"
+        },
+        {
+          "parent_local": 161,
+          "outdeg": 697,
+          "outdeg_frac": 0.4537760416666667,
+          "fire_frac": 0.18176063384452024,
+          "parent_global": 289,
+          "label": "mentions of studies, research, and statistics related to children",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/289"
+        },
+        {
+          "parent_local": 66,
+          "outdeg": 675,
+          "outdeg_frac": 0.439453125,
+          "fire_frac": 0.1607686181617692,
+          "parent_global": 194,
+          "label": "a wide variety of words that seem to relate to a number of different possible topics, including crime, scheduling, scientific study, film, satisfaction, religion, and medicine",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/194"
+        },
+        {
+          "parent_local": 319,
+          "outdeg": 672,
+          "outdeg_frac": 0.4375,
+          "fire_frac": 0.16511813113883728,
+          "parent_global": 447,
+          "label": "javascript code syntax",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/447"
+        },
+        {
+          "parent_local": 175,
+          "outdeg": 652,
+          "outdeg_frac": 0.4244791666666667,
+          "fire_frac": 0.12683016479140716,
+          "parent_global": 303,
+          "label": "numbers and some words relating to data processing or statistics",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/303"
+        },
+        {
+          "parent_local": 199,
+          "outdeg": 645,
+          "outdeg_frac": 0.419921875,
+          "fire_frac": 0.12572747136060117,
+          "parent_global": 327,
+          "label": "words related to negative impacts, especially in finances, medicine, or technology, and studies/opinions about these",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/327"
+        },
+        {
+          "parent_local": 302,
+          "outdeg": 643,
+          "outdeg_frac": 0.4186197916666667,
+          "fire_frac": 0.11631373670131302,
+          "parent_global": 430,
+          "label": "a variety of keywords (including \"the,\" \"of\", \"a\", \"in\", \"to\", \"per\", and \"each\"), dates, nouns related to race, and more.",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/430"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 281,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.27359781121751026,
+          "recon_parent_gain": -2.2096288690403404e-06,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.52404620814007,
+          "parent_label": "words associated with cells and molecules involved in the immune system",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/281",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 390,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.21119324181626187,
+          "recon_parent_gain": -0.000105607160932459,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5262554163729999,
+          "parent_label": "glowing reviews of role playing games",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/390",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 367,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4287245444801715,
+          "recon_parent_gain": -0.00029614477033214934,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5325744952838617,
+          "parent_label": "mathematical expressions and notation dealing with graphs",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/367",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 448,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.7054673721340388,
+          "recon_parent_gain": -9.194322391050029e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5388824286433619,
+          "parent_label": "HTML tags, particularly paragraph beginnings, hyperlinks, and images",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/448",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 396,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.29282576866764276,
+          "recon_parent_gain": -1.5981885220668386e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5205305109160534,
+          "parent_label": "names of chemical structures and analysis",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/396",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 476,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3032600454890068,
+          "recon_parent_gain": -0.0008282776021263227,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5349810903365857,
+          "parent_label": "code samples and mathematical equations",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/476",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 132,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3424657534246575,
+          "recon_parent_gain": -1.1530882424863879e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5335641338945952,
+          "parent_label": "numerical values involving measurements of time and temperature in scientific contexts",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/132",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 190,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.2482929857231533,
+          "recon_parent_gain": 6.0312534151730195e-06,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5254646357890276,
+          "parent_label": "phrases referring to political concepts, parties, and figures.",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/190",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 329,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.19074868860276586,
+          "recon_parent_gain": -8.841691218547581e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5067665965725264,
+          "parent_label": "technical language related to neuroscience, particularly about calcium and brain function",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/329",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 356,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.13179571663920922,
+          "recon_parent_gain": -0.00028504031713005943,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4992301254072413,
+          "parent_label": "words related to academic research or scientific studies",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/356",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 395,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4484304932735426,
+          "recon_parent_gain": -0.0003361766969467518,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5324538622023878,
+          "parent_label": "code syntax with underscores and hyphens",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/395",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 287,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.122737035900583,
+          "recon_parent_gain": -1.6802283349868955e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.49722086145048905,
+          "parent_label": "words and phrases related to healthcare, particularly those associated with providing and receiving care for specific conditions.",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/287",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 327,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.064966704563911,
+          "recon_parent_gain": -0.00014343578192136687,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.45065986437003275,
+          "parent_label": "words related to negative impacts, especially in finances, medicine, or technology, and studies/opinions about these",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/327",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 178,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.40080160320641284,
+          "recon_parent_gain": -0.00011183441435736129,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.534777898804989,
+          "parent_label": "words and symbols related to physics experiments and particle physics, including energy and radiation",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/178",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        },
+        {
+          "parent": 292,
+          "child": 791,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.91324200913242,
+          "recon_parent_gain": -7.883842038860151e-05,
+          "recon_child_gain": -0.00013719175422820276,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.547279495031873,
+          "parent_label": "conditional statements and array iteration in code",
+          "child_label": "LaTeX labels within a mathematical document",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/292",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/791"
+        }
+      ]
+    },
+    {
+      "pair": "2->3",
+      "n_candidate_edges": 3695288,
+      "degree": {
+        "n_parents_with_children": 1105,
+        "n_children_with_parent": 5343,
+        "n_multi_parented": 4450,
+        "top1_edge_share": 0.001160667314699152,
+        "outdeg_gini": 0.37880406257126187,
+        "max_outdeg": 4289
+      },
+      "joint_child_cov_mean": 0.8862903566472982,
+      "reconstruction": {
+        "n_pass": 247,
+        "frac_pass": 6.684188079521813e-05
+      },
+      "freq_control": {
+        "n_testable": 3248273,
+        "mean_survival": 0.016777551322952933,
+        "n_freq_driven": 3243688,
+        "frac_freq_driven": 0.9985884807095955
+      },
+      "sibling_redundancy": {
+        "n_parents_scored": 1005,
+        "mean_redundancy": 0.3790306271603699,
+        "n_flagged": 0
+      },
+      "n_superparents": 2,
+      "superparents": [
+        {
+          "parent_local": 1526,
+          "outdeg": 4289,
+          "outdeg_frac": 0.6980794270833334,
+          "fire_frac": 0.21919094974576792,
+          "parent_global": 2038,
+          "label": "first-person narratives, especially where opinions or personal experiences are being shared or where there is dialogue.",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/2038"
+        },
+        {
+          "parent_local": 842,
+          "outdeg": 4159,
+          "outdeg_frac": 0.6769205729166666,
+          "fire_frac": 0.19190949745767905,
+          "parent_global": 1354,
+          "label": "words related to the operation of a computer program",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1354"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 1478,
+          "child": 4983,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.37735849056603776,
+          "recon_parent_gain": -0.00012425375651375215,
+          "recon_child_gain": -0.00016197813739016808,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3911706140571122,
+          "parent_label": "first-person pronouns such as \"I\" and \"my\"",
+          "child_label": "academic research, specifically related to methods",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1478",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/4983"
+        },
+        {
+          "parent": 1347,
+          "child": 7954,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.6956521739130435,
+          "recon_parent_gain": -9.237094118906596e-06,
+          "recon_child_gain": -0.0003884639466889344,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.394085136288127,
+          "parent_label": "sentences that begin with \"There are\"",
+          "child_label": "legal citations",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1347",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/7954"
+        },
+        {
+          "parent": 1877,
+          "child": 8084,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.21253985122210414,
+          "recon_parent_gain": -1.8284090823509353e-06,
+          "recon_child_gain": -0.00026574940524743437,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3795272617334346,
+          "parent_label": "words and phrases related to user authentication, especially passwords and accounts.",
+          "child_label": "equations and references in academic papers",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1877",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/8084"
+        },
+        {
+          "parent": 921,
+          "child": 3019,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.15772870662460567,
+          "recon_parent_gain": 1.3987655224433502e-05,
+          "recon_child_gain": -6.725437776473646e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.37136307063600366,
+          "parent_label": "concepts of duality and co-existence",
+          "child_label": "parentheses",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/921",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/3019"
+        },
+        {
+          "parent": 1877,
+          "child": 8130,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.21253985122210414,
+          "recon_parent_gain": -1.8284090823509353e-06,
+          "recon_child_gain": -0.00010717011757372793,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3795272617334346,
+          "parent_label": "words and phrases related to user authentication, especially passwords and accounts.",
+          "child_label": "LaTeX commands for typesetting mathematics",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1877",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/8130"
+        },
+        {
+          "parent": 1191,
+          "child": 6898,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.42598509052183176,
+          "recon_parent_gain": -0.00016570522727240292,
+          "recon_child_gain": -0.0005374426431254816,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.38895821226458904,
+          "parent_label": "technical language related to online search engine optimization",
+          "child_label": "HTML input tags",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1191",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/6898"
+        },
+        {
+          "parent": 921,
+          "child": 3089,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.15772870662460567,
+          "recon_parent_gain": 1.3987655224433502e-05,
+          "recon_child_gain": 3.389113669791316e-06,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.37136307063600366,
+          "parent_label": "concepts of duality and co-existence",
+          "child_label": "LaTeX code snippets",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/921",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/3089"
+        },
+        {
+          "parent": 1110,
+          "child": 3361,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.1797752808988764,
+          "recon_parent_gain": -1.774236312065815e-05,
+          "recon_child_gain": -5.3559170527059094e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3691554719977492,
+          "parent_label": "content related to customer experience and service",
+          "child_label": "LaTeX commands related to commutative diagrams",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1110",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/3361"
+        },
+        {
+          "parent": 1191,
+          "child": 6919,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.42598509052183176,
+          "recon_parent_gain": -0.00016570522727240292,
+          "recon_child_gain": -9.529408273941887e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.38895821226458904,
+          "parent_label": "technical language related to online search engine optimization",
+          "child_label": "feature 6919",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1191",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/6919"
+        },
+        {
+          "parent": 1347,
+          "child": 7744,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.6956521739130435,
+          "recon_parent_gain": -9.237094118906596e-06,
+          "recon_child_gain": -0.0001491294178822979,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.394085136288127,
+          "parent_label": "sentences that begin with \"There are\"",
+          "child_label": "numerical data, particularly with parentheses and decimal points, and also the word \"com\"",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1347",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/7744"
+        },
+        {
+          "parent": 1584,
+          "child": 8130,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4287245444801715,
+          "recon_parent_gain": 5.224013080020488e-05,
+          "recon_child_gain": -0.00010717011757372793,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3920202391647905,
+          "parent_label": "personal biographies and professional details",
+          "child_label": "LaTeX commands for typesetting mathematics",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1584",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/8130"
+        },
+        {
+          "parent": 1347,
+          "child": 7647,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.6956521739130435,
+          "recon_parent_gain": -9.237094118906596e-06,
+          "recon_child_gain": -7.597525927244994e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.394085136288127,
+          "parent_label": "sentences that begin with \"There are\"",
+          "child_label": "unicode strings and escape sequences",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/1347",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/7647"
+        },
+        {
+          "parent": 770,
+          "child": 4519,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4975124378109453,
+          "recon_parent_gain": -0.0006242209569787052,
+          "recon_child_gain": -0.0002073135084570873,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.39359071384126854,
+          "parent_label": "labels within scientific papers, especially those referencing figures or data points with letters or numbers.",
+          "child_label": "C code defining a struct",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/770",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/4519"
+        },
+        {
+          "parent": 666,
+          "child": 6674,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.5617977528089888,
+          "recon_parent_gain": -5.4270598422059085e-05,
+          "recon_child_gain": 9.941025560483359e-05,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3960416609807734,
+          "parent_label": "math formulas and mathematical vocabulary",
+          "child_label": "the words \"for\", \"do\", \"eaten\", and \"enos\" together",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/666",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/6674"
+        },
+        {
+          "parent": 666,
+          "child": 6581,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.5617977528089888,
+          "recon_parent_gain": -5.4270598422059085e-05,
+          "recon_child_gain": -0.00035360097524598675,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.3960416609807734,
+          "parent_label": "math formulas and mathematical vocabulary",
+          "child_label": "lines of code describing edges between nodes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/666",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/24-res-matryoshka-dc/6581"
+        }
+      ]
+    }
+  ],
+  "block_ranges": [
+    [
+      0,
+      128
+    ],
+    [
+      128,
+      512
+    ],
+    [
+      512,
+      2048
+    ],
+    [
+      2048,
+      8192
+    ],
+    [
+      8192,
+      32768
+    ]
+  ]
+}

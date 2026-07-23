@@ -19,3 +19,4 @@ outputs/*.log
 
 # OS
 .DS_Store
+.env

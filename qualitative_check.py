@@ -20,9 +20,11 @@ We contrast, per block pair:
                  - no-recon    : ablating the parent doesn't hurt the child's recon
                -> should read as frequency/co-occurrence artifacts (unrelated labels).
 
-Feature labels come from Neuronpedia's public API (gemma-2-2b Matryoshka IS on
-Neuronpedia), cached to outputs/npedia_labels_cache.json. Pass --no-fetch to emit
-just the URLs.
+Feature labels come from the bulk export in outputs/feature_labels.json (built
+by fetch_labels.py - all 32768 descriptions in one sweep, no per-feature HTTP).
+For the ~26 features missing from that export we fall back to Neuronpedia's
+public API (cached to outputs/npedia_labels_cache.json). Pass --no-fetch to skip
+the API fallback and emit URLs for anything the bulk file doesn't cover.
 
 Run:
     cd experiment_0
@@ -52,8 +54,8 @@ from metrics import (
     keep_edges,
 )
 
-NPEDIA_API = "https://www.neuronpedia.org/api/feature/gemma-2-2b/6-res-matryoshka-dc/{}"
-CACHE_PATH = C.OUT_DIR / "npedia_labels_cache.json"
+NPEDIA_API = C.NEURONPEDIA_API
+CACHE_PATH = C.RUN_DIR / "npedia_labels_cache.json"
 
 
 # ---------------------------------------------------------------------------
@@ -65,8 +67,13 @@ def load_cache() -> dict:
     return {}
 
 
-def fetch_label(idx: int, cache: dict, enabled: bool) -> str:
+def fetch_label(idx: int, cache: dict, enabled: bool, bulk: dict | None = None) -> str:
     key = str(idx)
+    # Prefer the bulk export (complete, offline); it covers all but ~26 features.
+    if bulk:
+        text = bulk.get(key)
+        if text:
+            return text
     if key in cache:
         return cache[key]
     if not enabled:
@@ -221,16 +228,20 @@ def main():
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
 
     cache = load_cache()
+    bulk = C.load_feature_labels()
+    if not bulk:
+        print("[02b] note: outputs/feature_labels.json not found - run fetch_labels.py "
+              "for offline bulk labels (falling back to Neuronpedia API)")
     fetch_enabled = not args.no_fetch
     all_rows: dict[str, list] = {}
     for key in args.pairs:
         p_blk, c_blk = (int(x) for x in key.split("->"))
         d = compute(stats, p_blk, c_blk)
         rows = select(d, args.n_survivor, args.n_reject)
-        # attach labels (unique features, cached)
+        # attach labels (bulk export first, Neuronpedia API only for gaps)
         for r in rows:
-            r["parent_label"] = fetch_label(r["parent"], cache, fetch_enabled)
-            r["child_label"] = fetch_label(r["child"], cache, fetch_enabled)
+            r["parent_label"] = fetch_label(r["parent"], cache, fetch_enabled, bulk)
+            r["child_label"] = fetch_label(r["child"], cache, fetch_enabled, bulk)
         all_rows[key] = rows
         print(f"[02b]   {key}: {len(rows)} edges selected")
 
@@ -238,10 +249,10 @@ def main():
         CACHE_PATH.write_text(json.dumps(cache, indent=2))
 
     md = to_markdown(all_rows, fetch_enabled)
-    (C.OUT_DIR / "qualitative_check.md").write_text(md)
-    (C.OUT_DIR / "qualitative_check.json").write_text(json.dumps(all_rows, indent=2))
-    print(f"[02b] wrote {C.OUT_DIR / 'qualitative_check.md'}")
-    print(f"[02b] wrote {C.OUT_DIR / 'qualitative_check.json'}")
+    (C.RUN_DIR / "qualitative_check.md").write_text(md)
+    (C.RUN_DIR / "qualitative_check.json").write_text(json.dumps(all_rows, indent=2))
+    print(f"[02b] wrote {C.RUN_DIR / 'qualitative_check.md'}")
+    print(f"[02b] wrote {C.RUN_DIR / 'qualitative_check.json'}")
 
 
 if __name__ == "__main__":

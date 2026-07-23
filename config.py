@@ -19,6 +19,7 @@ SAME sampled corpus.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -36,9 +37,16 @@ WARMUP_GRAPH = WARMUP_DIR / "outputs" / "parent_child_graph.pt"     # stage 02 w
 # ---------------------------------------------------------------------------
 MODEL_NAME = "google/gemma-2-2b"
 SAE_RELEASE = "gemma-2-2b-res-matryoshka-dc"
-SAE_ID = "blocks.6.hook_resid_post"
-HOOK_NAME = "blocks.6.hook_resid_post"
-LAYER = 6
+
+# Which transformer layer's residual-stream Matryoshka SAE to analyse.
+# Override per run with the EXP0_LAYER env var, e.g. `EXP0_LAYER=12 python3 ...`.
+# The matryoshka SAE is released for layers 0-24; the SAE id, hook name, the
+# Neuronpedia / dataset "source" name, and the per-layer output dir are all
+# derived from this single number so nothing has to be edited by hand per layer.
+LAYER = int(os.environ.get("EXP0_LAYER", "6"))
+SAE_ID = f"blocks.{LAYER}.hook_resid_post"
+HOOK_NAME = SAE_ID
+SAE_SOURCE = f"{LAYER}-res-matryoshka-dc"  # e.g. "6-res-matryoshka-dc"
 MODEL_KWARGS = {"center_writing_weights": False}
 PREPEND_BOS = True
 
@@ -120,25 +128,31 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = HERE / "outputs"
 OUT_DIR.mkdir(exist_ok=True)
 
-EXP0_STATS_PATH = OUT_DIR / "exp0_stats.pt"          # written by cache_stats.py
-METRICS_JSON_PATH = OUT_DIR / "metrics_report.json"  # written by run_metrics.py
-METRICS_MD_PATH = OUT_DIR / "metrics_report.md"      # written by run_metrics.py
+# Per-layer artifacts live in outputs/layer_NN/ so runs on different layers never
+# clobber each other. Layer-independent artifacts (e.g. the synthetic toy
+# calibration) stay directly in OUT_DIR.
+RUN_DIR = OUT_DIR / f"layer_{LAYER:02d}"
+RUN_DIR.mkdir(parents=True, exist_ok=True)
 
-DEVICE_OVERRIDE: str | None = None
+EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by cache_stats.py
+METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
+METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
+
+# Force a device with the EXP0_DEVICE env var or a script's --device flag:
+#   local Mac      -> auto-picks "mps"
+#   server (A40)   -> auto-picks "cuda"; pin your assigned GPU with either
+#                     CUDA_VISIBLE_DEVICES=<n> (recommended) or EXP0_DEVICE=cuda:<n>
+DEVICE_OVERRIDE: str | None = os.environ.get("EXP0_DEVICE")
 
 
 def pick_device() -> str:
     import torch
 
-    if DEVICE_OVERRIDE is not None:
-        if DEVICE_OVERRIDE == "mps":
-            import os
-
+    if DEVICE_OVERRIDE:
+        if DEVICE_OVERRIDE.startswith("mps"):
             os.environ.setdefault("TRANSFORMERLENS_ALLOW_MPS", "1")
         return DEVICE_OVERRIDE
     if torch.backends.mps.is_available():
-        import os
-
         os.environ.setdefault("TRANSFORMERLENS_ALLOW_MPS", "1")
         return "mps"
     if torch.cuda.is_available():
@@ -146,8 +160,49 @@ def pick_device() -> str:
     return "cpu"
 
 
-NEURONPEDIA_BASE = "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc"
+def is_mps(device: str) -> bool:
+    """True for 'mps' (and any 'mps:0' form). MPS has no float64, so accumulators
+    fall back to float32 there; CUDA/CPU keep float64."""
+    return str(device).startswith("mps")
+
+
+NEURONPEDIA_BASE = f"https://www.neuronpedia.org/gemma-2-2b/{SAE_SOURCE}"
+NEURONPEDIA_API = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/{SAE_SOURCE}/{{}}"
+
+# Bulk autointerp explanation export on S3 (one gzipped JSONL batch / 128 feats).
+S3_EXPLANATIONS = (
+    "https://neuronpedia-datasets.s3.us-east-1.amazonaws.com/"
+    f"v1/gemma-2-2b/{SAE_SOURCE}/explanations/batch-{{}}.jsonl.gz"
+)
 
 
 def npedia_url(feature_idx: int) -> str:
     return f"{NEURONPEDIA_BASE}/{int(feature_idx)}"
+
+
+# ---------------------------------------------------------------------------
+# Feature labels (autointerp descriptions), one per feature.
+# Written by fetch_labels.py from the Neuronpedia dataset export; a dict
+# {index_str: description}. A handful of features have no export description
+# and simply fall back to "feature <idx>".
+# ---------------------------------------------------------------------------
+FEATURE_LABELS_PATH = RUN_DIR / "feature_labels.json"
+
+
+def load_feature_labels() -> dict[str, str]:
+    """Return {index_str: description}, or {} if fetch_labels.py hasn't run."""
+    import json
+
+    if FEATURE_LABELS_PATH.exists():
+        return json.loads(FEATURE_LABELS_PATH.read_text())
+    return {}
+
+
+def feature_label(feature_idx: int, labels: dict[str, str] | None = None) -> str:
+    """Human-readable label for a global feature index, with a graceful
+    fallback for the ~26 features that have no export description."""
+    if labels:
+        text = labels.get(str(int(feature_idx)))
+        if text:
+            return text
+    return f"feature {int(feature_idx)}"

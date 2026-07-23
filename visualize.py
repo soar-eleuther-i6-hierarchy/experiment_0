@@ -128,7 +128,23 @@ def compute_pair(stats, p_blk, c_blk):
     }
 
 
-def build_dashboard(pairs_data):
+def _wrap(text, width=28):
+    """Soft-wrap a label onto <br> lines so long descriptions stay readable
+    inside plotly hover boxes / sankey nodes."""
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    if cur:
+        lines.append(cur)
+    return "<br>".join(lines)
+
+
+def build_dashboard(pairs_data, labels=None):
+    labels = labels or {}
     fig = make_subplots(
         rows=3,
         cols=2,
@@ -175,12 +191,15 @@ def build_dashboard(pairs_data):
         # (3,2) superparents
         sp = pd_["superparents"]
         if sp:
+            p_base = C.BLOCK_RANGES[int(name.split('->')[0])][0]
             fig.add_trace(
                 go.Scatter(
                     x=[s["outdeg_frac"] for s in sp],
                     y=[s["fire_frac"] for s in sp],
                     mode="markers", marker=dict(color=col, size=12, line=dict(width=1, color="white")),
-                    text=[f"feature {C.BLOCK_RANGES[int(name.split('->')[0])][0] + s['parent_local']}" for s in sp],
+                    text=[f"feature {p_base + s['parent_local']}<br>"
+                          f"{_wrap(C.feature_label(p_base + s['parent_local'], labels))}"
+                          for s in sp],
                     hovertemplate="%{text}<br>child coverage %{x:.2f}<br>firing rate %{y:.2f}<extra></extra>",
                     name=name, legendgroup=name, showlegend=False,
                 ),
@@ -211,9 +230,10 @@ def build_dashboard(pairs_data):
     return fig
 
 
-def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25):
+def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=None):
     """One superparent's flow to its top_n children; colour separates edges that
     survive (reconstruction AND frequency) from frequency-captured ones."""
+    feat_labels = feat_labels or {}
     sp = pd_["superparents"]
     if not sp:
         return None
@@ -227,7 +247,8 @@ def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25):
     order = torch.argsort(cof, descending=True)[:top_n]
     kids = kids[order]
 
-    labels = [f"B{p_blk}:{gp} (fires {100 * sp[0]['fire_frac']:.0f}%)"]
+    labels = [f"B{p_blk}:{gp} {C.feature_label(gp, feat_labels)} "
+              f"(fires {100 * sp[0]['fire_frac']:.0f}%)"]
     node_colors = [PURPLE]
     source, target, value, link_colors = [], [], [], []
     for i, ci in enumerate(kids.tolist(), start=1):
@@ -236,7 +257,7 @@ def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25):
         s = pd_["survival"][parent_local, ci]
         survives = (not torch.isnan(s)) and float(s) >= C.FREQ_SURVIVAL_MIN
         real = passes and survives
-        labels.append(f"B{c_blk}:{gc}")
+        labels.append(f"B{c_blk}:{gc} {C.feature_label(gc, feat_labels)}")
         node_colors.append(GREEN if real else GREY)
         link_colors.append("rgba(34,197,94,0.55)" if real else "rgba(203,213,225,0.5)")
         source.append(0)
@@ -509,12 +530,12 @@ def build_qualitative_dashboard(report):
 
 
 def run_qualitative():
-    path = C.OUT_DIR / "qualitative_check.json"
+    path = C.RUN_DIR / "qualitative_check.json"
     if not path.exists():
         raise SystemExit(f"missing {path} - run qualitative_check.py first")
     report = json.loads(path.read_text())
     fig = build_qualitative_dashboard(report)
-    out = C.OUT_DIR / "qualitative_check.html"
+    out = C.RUN_DIR / "qualitative_check.html"
     fig.write_html(str(out), include_plotlyjs=True)
     print(f"saved: {out}")
 
@@ -539,16 +560,21 @@ def main():
     pairs = stats["pairs"]
     pairs_data = [compute_pair(stats, p, c) for (p, c) in pairs]
 
-    dash = build_dashboard(pairs_data)
-    dash_path = C.OUT_DIR / "metrics_dashboard.html"
+    feat_labels = C.load_feature_labels()
+    if not feat_labels:
+        print("note: outputs/feature_labels.json not found - run fetch_labels.py "
+              "to show descriptions instead of bare indices")
+
+    dash = build_dashboard(pairs_data, feat_labels)
+    dash_path = C.RUN_DIR / "metrics_dashboard.html"
     dash.write_html(str(dash_path), include_plotlyjs=True)
     print(f"saved: {dash_path}")
 
     # Sankey for the first pair that has a clear superparent (B0->B1: feature 15 fires ~99%).
     for (p, c), pd_ in zip(pairs, pairs_data):
         if pd_["superparents"]:
-            sk = build_superparent_sankey(stats, pd_, p, c)
-            sk_path = C.OUT_DIR / "superparent_sankey.html"
+            sk = build_superparent_sankey(stats, pd_, p, c, feat_labels=feat_labels)
+            sk_path = C.RUN_DIR / "superparent_sankey.html"
             sk.write_html(str(sk_path), include_plotlyjs=True)
             print(f"saved: {sk_path}")
             break

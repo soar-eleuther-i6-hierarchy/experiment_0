@@ -77,6 +77,7 @@ def main():
     args = ap.parse_args()
 
     device = args.device or C.pick_device()
+    print(f"[01] layer = {C.LAYER}  ({C.SAE_ID})")
     print(f"[01] device = {device}")
     print(f"[01] block structure:\n{U.human_block_table()}\n")
 
@@ -86,8 +87,9 @@ def main():
     W_dec = sae.W_dec.detach()                    # [D_SAE, d_model]
 
     # MPS has no float64; a pass this size stays well within float32's exact-int
-    # range for counts, and recon sums are only read as ratios afterwards.
-    acc_dtype = torch.float32 if device == "mps" else torch.float64
+    # range for counts, and recon sums are only read as ratios afterwards. On
+    # CUDA / CPU we keep float64. (str check so "mps:0" / "cuda:5" both work.)
+    acc_dtype = torch.float32 if C.is_mps(device) else torch.float64
 
     print(f"[01] loading {C.DATASET} (first {args.docs} docs) ...")
     ds = load_dataset(C.DATASET, split=f"train[:{args.docs}]")
@@ -152,7 +154,10 @@ def main():
         feats = sae.encode(resid)                           # [n, D_SAE]
         x_hat = sae.decode(feats)                           # [n, d_model]
         resid_err = resid - x_hat                           # [n, d_model]
-        err = (resid_err * resid_err).sum(dim=1)            # [n] base recon error
+        # Cast to acc_dtype: on CUDA/CPU the accumulators are float64 while the
+        # model runs in float32, so `fc.T @ err` below would hit a Double-vs-Float
+        # mismatch. (On MPS both are float32, which is why this only bit on CUDA.)
+        err = (resid_err * resid_err).sum(dim=1).to(acc_dtype)  # [n] base recon error
 
         fired = (feats > C.FIRE_THRESHOLD).to(acc_dtype)    # [n, D_SAE]
         g = per_token_ablation_gain(feats, resid_err, W_dec).to(acc_dtype)  # [n, D_SAE]
@@ -211,7 +216,9 @@ def main():
         "fire_c_by_bucket": {b: v.cpu() for b, v in fire_c_by_bucket.items()},
         "within_cofire": {b: v.cpu() for b, v in within_cofire.items()},
         "config": {
+            "layer": C.LAYER,
             "sae_release": C.SAE_RELEASE,
+            "sae_source": C.SAE_SOURCE,
             "sae_id": C.SAE_ID,
             "matryoshka_steps": C.MATRYOSHKA_STEPS,
             "block_ranges": C.BLOCK_RANGES,

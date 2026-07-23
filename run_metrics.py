@@ -52,7 +52,13 @@ def _nanmean(t: torch.Tensor) -> float:
     return float(v.mean()) if v.numel() else float("nan")
 
 
-def analyse_pair(stats, p_blk, c_blk):
+def _clip(s: str, n: int = 40) -> str:
+    s = (s or "").strip()
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
+def analyse_pair(stats, p_blk, c_blk, labels=None):
+    labels = labels or {}
     key = f"{p_blk}->{c_blk}"
     fire = stats["fire_count"].double()
     total = int(stats["total_tokens"])
@@ -129,6 +135,8 @@ def analyse_pair(stats, p_blk, c_blk):
                     "recon_pass": bool(recon["passes"][pi, ci]),
                     "freq_survival": None if torch.isnan(s) else _f(s),
                     "parent_redundancy": (sib.get(pi, {}) or {}).get("redundancy"),
+                    "parent_label": C.feature_label(gp, labels),
+                    "child_label": C.feature_label(gc, labels),
                     "parent_url": C.npedia_url(gp),
                     "child_url": C.npedia_url(gc),
                 }
@@ -159,7 +167,12 @@ def analyse_pair(stats, p_blk, c_blk):
         "sibling_redundancy": sib_summary,
         "n_superparents": len(superparents),
         "superparents": [
-            {**sp, "parent_global": C.BLOCK_RANGES[p_blk][0] + sp["parent_local"], "url": C.npedia_url(C.BLOCK_RANGES[p_blk][0] + sp["parent_local"])}
+            {
+                **sp,
+                "parent_global": C.BLOCK_RANGES[p_blk][0] + sp["parent_local"],
+                "label": C.feature_label(C.BLOCK_RANGES[p_blk][0] + sp["parent_local"], labels),
+                "url": C.npedia_url(C.BLOCK_RANGES[p_blk][0] + sp["parent_local"]),
+            }
             for sp in superparents[:10]
         ],
         "top_edges": top_edges,
@@ -182,7 +195,8 @@ def to_markdown(report) -> str:
                  f"top-1 parent holds {100 * d['top1_edge_share']:.1f}% of edges, "
                  f"Gini {d['outdeg_gini']:.3f}, max out-degree {d['max_outdeg']}.")
         L.append(f"- **Superparents**: {pr['n_superparents']}"
-                 + (f" (e.g. feature {pr['superparents'][0]['parent_global']}: "
+                 + (f" (e.g. feature {pr['superparents'][0]['parent_global']} "
+                    f"_{_clip(pr['superparents'][0].get('label'), 60)}_: "
                     f"{pr['superparents'][0]['outdeg']} children, fires on "
                     f"{100 * pr['superparents'][0]['fire_frac']:.1f}% of tokens)" if pr["superparents"] else ""))
         rec = pr["reconstruction"]
@@ -205,14 +219,15 @@ def to_markdown(report) -> str:
                  + (f"{jc:.3f}" if not math.isnan(jc) else "n/a") + ".")
         if pr["top_edges"]:
             L.append("")
-            L.append("| parent -> child | R | F | recon P/C gain | recon? | surv | sib |")
-            L.append("|---|---|---|---|---|---|---|")
+            L.append("| parent -> child | R | F | recon P/C gain | recon? | surv | sib | parent label | child label |")
+            L.append("|---|---|---|---|---|---|---|---|---|")
             for e in pr["top_edges"][:8]:
                 surv = "-" if e["freq_survival"] is None else f"{e['freq_survival']:.2f}"
                 red = "-" if e["parent_redundancy"] is None else f"{e['parent_redundancy']:.2f}"
                 L.append(f"| {e['parent']} -> {e['child']} | {e['reverse_cov']:.2f} | "
                          f"{e['forward_cov']:.2f} | {e['recon_parent_gain']:.2f}/{e['recon_child_gain']:.2f} | "
-                         f"{'Y' if e['recon_pass'] else 'n'} | {surv} | {red} |")
+                         f"{'Y' if e['recon_pass'] else 'n'} | {surv} | {red} | "
+                         f"{_clip(e.get('parent_label'))} | {_clip(e.get('child_label'))} |")
         L.append("")
     return "\n".join(L)
 
@@ -224,7 +239,11 @@ def main():
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     pairs = stats["pairs"]
 
-    per_pair = [analyse_pair(stats, p, c) for (p, c) in pairs]
+    labels = C.load_feature_labels()
+    if not labels:
+        print("[02] note: outputs/feature_labels.json not found - run fetch_labels.py "
+              "to include feature descriptions")
+    per_pair = [analyse_pair(stats, p, c, labels) for (p, c) in pairs]
     report = {
         "config": stats["config"],
         "total_tokens": int(stats["total_tokens"]),
