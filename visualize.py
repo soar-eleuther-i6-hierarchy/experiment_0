@@ -12,7 +12,7 @@ distributions), then writes:
     outputs/toy_calibration.html      (--calibration) metric scorecard + the
                                       genuine-vs-pathological separation each
                                       metric achieves on the synthetic toy
-    outputs/qualitative_check.html    (--qualitative) surviving vs rejected real
+    outputs/qualitative_dashboard.html (--qualitative) surviving vs rejected real
                                       edges with Neuronpedia labels, colour-coded
 
 Run:
@@ -657,7 +657,10 @@ def run_qualitative():
         raise SystemExit(f"missing {path} - run qualitative_check.py first")
     report = json.loads(path.read_text())
     fig = build_qualitative_dashboard(report)
-    out = C.RUN_DIR / "qualitative_check.html"
+    # Named to mirror metrics_dashboard/metrics_report: writing this as
+    # qualitative_check.html would shadow Jekyll's render of qualitative_check.md,
+    # leaving the text report unreachable on the published site.
+    out = C.RUN_DIR / "qualitative_dashboard.html"
     fig.write_html(str(out), include_plotlyjs=True)
     print(f"saved: {out}")
 
