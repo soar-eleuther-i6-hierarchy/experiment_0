@@ -48,6 +48,47 @@ PURPLE, BLUE, TEAL = "#7C22CE", "#2196F3", "#0EA5A4"
 PAIR_COLORS = [PURPLE, BLUE, TEAL]
 GREEN, GREY, RED = "#22C55E", "#CBD5E1", "#EF4444"
 GREEN_DARK = "#15803D"          # readable green for heading text on white
+
+
+def page_subtitle(stats=None):
+    """Context line for any page that describes ONE layer.
+
+    Every per-layer HTML lands in outputs/layer_NN/ with no on-page clue which
+    layer it is, so state it up front together with the run knobs a reader
+    needs to interpret the numbers.
+    """
+    bits = [
+        f"<b>Layer {C.LAYER}</b>",
+        f"gemma-2-2b / {C.SAE_SOURCE}",
+        C.SAE_ID,
+    ]
+    if stats is not None and "total_tokens" in stats:
+        bits.append(f"{int(stats['total_tokens']):,} tokens over {C.N_DOCS} docs")
+    # Plotly does not decode HTML entities in titles/annotations: use literal glyphs.
+    bits.append(f"edge: reverse coverage ≥ {C.EDGE_TAU}, both endpoints fire ≥ {C.MIN_FIRE_COUNT}")
+    return "　·　".join(bits)
+
+
+def scope_subtitle(text):
+    """Context line for a page that is NOT tied to one layer.
+
+    Multi-layer and layer-independent pages need the same up-front statement of
+    what they cover, so a reader never has to guess the scope from the URL.
+    """
+    return f"<b>{text}</b>"
+
+
+def _titled(name, desc, stats=None, subtitle=None):
+    """Three-line page header, identical on every generated page.
+
+        1. name      what page this is, so a reader arriving from a link knows
+        2. desc      one line on what the figure shows
+        3. subtitle  the scope: which layer(s), and the knobs behind the numbers
+    """
+    sub = subtitle if subtitle is not None else page_subtitle(stats)
+    return (f"<span style='font-size:17px;color:{PURPLE}'><b>{name}</b></span>"
+            f"<br><span style='font-size:12.5px'>{desc}</span>"
+            f"<br><span style='font-size:11.5px;color:{INK}'>{sub}</span>")
 INK = "#5A6B7B"
 FONT = dict(family="DejaVu Sans Mono, Courier New, monospace", size=11, color=INK)
 
@@ -144,7 +185,7 @@ def _wrap(text, width=28):
     return "<br>".join(lines)
 
 
-def build_dashboard(pairs_data, labels=None):
+def build_dashboard(pairs_data, labels=None, stats=None):
     labels = labels or {}
     fig = make_subplots(
         rows=3,
@@ -222,13 +263,17 @@ def build_dashboard(pairs_data, labels=None):
     fig.update_layout(
         # Title and legend both live above the plot area: pin them to separate
         # paper-space rows (title on top, legend under it) or they overlap.
-        title=dict(text="Exp 0 - grading coverage edges with the five metrics "
-                        f"({pairs_data[0]['n_edges']:,} -> {pairs_data[-1]['n_edges']:,} candidate edges)",
+        title=dict(text=_titled(
+                       "Metrics dashboard",
+                       "Grading coverage edges with the five metrics "
+                       f"({pairs_data[0]['n_edges']:,} to {pairs_data[-1]['n_edges']:,} candidate edges "
+                       "across the block pairs)",
+                       stats),
                    x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
                    font=dict(size=14, color=INK)),
         barmode="group", bargap=0.15, font=FONT,
         paper_bgcolor="white", plot_bgcolor="#FbFcFd",
-        width=1200, height=1350, margin=dict(l=60, r=40, t=150, b=50),
+        width=1200, height=1400, margin=dict(l=60, r=40, t=200, b=50),
         legend=dict(orientation="h", y=1.012, yanchor="bottom", x=0.01, xanchor="left"),
     )
     return fig
@@ -339,12 +384,17 @@ def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_label
         ))
 
     fig.update_layout(
-        title=dict(text="Superparent fan-out, every block pair  "
-                        "(one feature adopting most of the next block)",
-                   x=0.005, xanchor="left", font=dict(size=14, color=INK)),
+        title=dict(text=_titled(
+                       "Superparent fan-out",
+                       "One high-firing feature adopting most of the next block, "
+                       "shown for every block pair (green = the edge survives reconstruction "
+                       "and frequency control)",
+                       stats),
+                   x=0.005, xanchor="left", yref="container", y=0.985, yanchor="top",
+                   font=dict(size=14, color=INK)),
         annotations=annotations,
         font=FONT, paper_bgcolor="white", plot_bgcolor="white",
-        width=1250, height=90 + panel_h * n, margin=dict(l=50, r=90, t=80, b=40),
+        width=1250, height=160 + panel_h * n, margin=dict(l=50, r=90, t=150, b=40),
     )
     return fig
 
@@ -494,13 +544,17 @@ def build_calibration_dashboard(data):
 
     n_pass = sum(r["pass"] for r in data["rows"])
     fig.update_layout(
-        title=dict(text=f"Exp 0 - metric calibration on synthetic ground truth "
-                        f"({n_pass}/{len(data['rows'])} metrics recover the tree & reject their pathology)  "
-                        f"<span style='color:{RED}'>- - dashed = config threshold</span>",
+        title=dict(text=_titled(
+                       "Metric calibration",
+                       f"{n_pass}/{len(data['rows'])} metrics recover the true tree and reject their "
+                       f"injected pathology　·　"
+                       f"<span style='color:{RED}'>- - dashed = config threshold</span>",
+                       subtitle=scope_subtitle("No layer: synthetic toy, layer-independent")
+                       + "　·　applies to every layer　·　production metrics and thresholds, unchanged"),
                    x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
                    font=dict(size=14, color=INK)),
         font=FONT, paper_bgcolor="white", plot_bgcolor="#FbFcFd",
-        width=1200, height=1250, margin=dict(l=60, r=40, t=140, b=50),
+        width=1200, height=1280, margin=dict(l=60, r=40, t=170, b=50),
         legend=dict(orientation="h", y=1.008, yanchor="bottom", x=0.01, xanchor="left"),
     )
     return fig
@@ -584,13 +638,15 @@ def build_qualitative_dashboard(report):
     n_surv = sum(1 for k in pairs for r in report[k] if r["category"] == "survivor")
     n_rej = sum(1 for k in pairs for r in report[k] if r["category"] != "survivor")
     fig.update_layout(
-        title=dict(text="Exp 0 - qualitative agreement on real gemma-2-2b  "
-                        f"(<span style='color:#166534'>{n_surv} survivors</span> vs "
-                        f"<span style='color:#991B1B'>{n_rej} rejected</span>; "
-                        "read the labels: survivors should be related, rejected should look like artifacts)",
-                   x=0.01, xanchor="left", font=dict(size=13, color=INK)),
+        title=dict(text=_titled(
+                       "Qualitative agreement",
+                       f"<span style='color:#166534'>{n_surv} survivors</span> vs "
+                       f"<span style='color:#991B1B'>{n_rej} rejected</span>, read against Neuronpedia "
+                       "labels: survivors should be semantically related, rejected should look like artifacts"),
+                   x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
+                   font=dict(size=13, color=INK)),
         font=FONT, paper_bgcolor="white",
-        width=1200, height=200 + 640 * len(pairs), margin=dict(l=30, r=30, t=70, b=30),
+        width=1200, height=270 + 640 * len(pairs), margin=dict(l=30, r=30, t=140, b=30),
     )
     return fig
 
@@ -631,7 +687,7 @@ def main():
         print("note: outputs/feature_labels.json not found - run fetch_labels.py "
               "to show descriptions instead of bare indices")
 
-    dash = build_dashboard(pairs_data, feat_labels)
+    dash = build_dashboard(pairs_data, feat_labels, stats=stats)
     dash_path = C.RUN_DIR / "metrics_dashboard.html"
     dash.write_html(str(dash_path), include_plotlyjs=True)
     print(f"saved: {dash_path}")

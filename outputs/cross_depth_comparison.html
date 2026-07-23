@@ -44,6 +44,11 @@
   .cd .eyebrow { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
   .cd h1 { font-size: clamp(24px, 3.4vw, 34px); line-height: 1.15; margin: 0 0 12px; text-wrap: balance; font-weight: 680; letter-spacing: -0.01em; }
   .cd .lede { font-size: 16px; color: var(--ink-2); margin: 0; max-width: 68ch; }
+  /* Scope strip: states up front which layers this page covers. */
+  .cd .scope { font-size: 12.5px; color: var(--ink-2); margin: 0 0 18px; line-height: 1.7;
+               padding: 8px 12px; border-left: 3px solid var(--s0);
+               background: rgba(127,127,127,.06); border-radius: 0 6px 6px 0; }
+  .cd .scope b { color: var(--ink); }
   .cd .lede b { color: var(--ink); font-weight: 620; }
   .cd h2 { font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 40px 0 16px; }
   .cd .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
@@ -99,8 +104,12 @@
 <div class="cd">
 <div class="wrap">
   <header>
-    <p class="eyebrow">SOAR I-6 · experiment_0 · gemma-2-2b matryoshka SAE · LOCAL</p>
+    <p class="eyebrow">SOAR I-6 · experiment_0 · gemma-2-2b matryoshka SAE </p>
     <h1>Is the SAE feature hierarchy stable across network depth?</h1>
+    <p class="scope"><b>Layers 3, 6, 12, 18, 24</b> &middot; gemma-2-2b / NN-res-matryoshka-dc
+    &middot; blocks.NN.hook_resid_post &middot; 48,971 tokens over 400 docs per layer
+    &middot; edge: reverse coverage &ge; 0.5, both endpoints fire &ge; 20
+    &middot; block pairs B0&rarr;B1, B1&rarr;B2, B2&rarr;B3 (B3&rarr;B4 excluded, memory)</p>
     <p class="lede">Five residual-stream layers (3, 6, 12, 18, 24) graded with the same five metrics.
     The verdict: the <b>metrics behave consistently</b> — reconstruction and frequency control kill almost every
     coverage edge at every depth — but the <b>raw hierarchy is not uniform</b>: edge density and superparent
