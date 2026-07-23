@@ -20,3 +20,4 @@ outputs/*.log
 # OS
 .DS_Store
 .env
+MEETING_NOTES
