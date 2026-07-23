@@ -607,13 +607,18 @@ def build_qualitative_dashboard(report):
     for ri, key in enumerate(pairs, start=1):
         rows = sorted(report[key], key=lambda r: (CAT_ORDER.index(r["category"]),
                                                    -r["reverse_cov"]))
-        edge, verdict, Rv, recon, surv, plab, clab = ([] for _ in range(7))
+        edge, verdict, Rv, Fv, gain, recon, surv, plab, clab = ([] for _ in range(9))
         vcolor, rowfill = [], []
         for r in rows:
             short, tint, tcol = CAT_STYLE[r["category"]]
+            # Plain text: plotly table cells render HTML as literal text, so a
+            # link here would print its own markup. The clickable Neuronpedia
+            # links live in the markdown report instead.
             edge.append(f"{r['parent']} → {r['child']}")
             verdict.append(short)
             Rv.append(f"{r['reverse_cov']:.2f}")
+            Fv.append(f"{r['forward_cov']:.2f}")
+            gain.append(f"{r['recon_parent_gain']:.2f}")
             recon.append("Y" if r["recon_pass"] else "n")
             surv.append("-" if r["freq_survival"] is None else f"{r['freq_survival']:.2f}")
             plab.append(_clip(r.get("parent_label")))
@@ -621,18 +626,19 @@ def build_qualitative_dashboard(report):
             vcolor.append(tcol)
             rowfill.append(tint)
 
-        ncol = 7
+        cols = [edge, verdict, Rv, Fv, gain, recon, surv, plab, clab]
+        ncol = len(cols)
         fig.add_trace(
             go.Table(
-                columnwidth=[74, 90, 34, 40, 40, 250, 250],
+                columnwidth=[80, 88, 32, 32, 44, 40, 40, 226, 226],
                 header=dict(
-                    values=["edge", "verdict", "R", "recon", "surv",
+                    values=["edge", "verdict", "R", "F", "gain", "recon", "surv",
                             "parent label (Neuronpedia)", "child label (Neuronpedia)"],
                     fill_color="#EEF2F6", align="left",
                     font=dict(color=INK, size=11), height=26,
                 ),
                 cells=dict(
-                    values=[edge, verdict, Rv, recon, surv, plab, clab],
+                    values=cols,
                     align="left", height=24,
                     font=dict(size=10,
                               color=[[INK] * len(edge) if j != 1 else vcolor for j in range(ncol)]),
@@ -650,7 +656,10 @@ def build_qualitative_dashboard(report):
                        "Qualitative agreement",
                        f"<span style='color:#166534'>{n_surv} survivors</span> vs "
                        f"<span style='color:#991B1B'>{n_rej} rejected</span>, read against Neuronpedia "
-                       "labels: survivors should be semantically related, rejected should look like artifacts"),
+                       "labels: survivors should be semantically related, rejected should look like artifacts"
+                       "<br><span style='font-size:11px'>R = reverse coverage　·　F = forward coverage　·　"
+                       "gain = parent's reconstruction gain　·　surv = frequency survival　·　"
+                       "the markdown report has the same rows with clickable Neuronpedia links</span>"),
                    x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
                    font=dict(size=13, color=INK)),
         font=FONT, paper_bgcolor="white",
