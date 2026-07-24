@@ -61,7 +61,8 @@ metrics: the calibration cleanly separates "the metric failed" from "the SAE fai
 ### Across all layers
 
 - [**Cross-depth comparison**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/cross_depth_comparison.html): the cross-depth story (4 metric panels, superparent table, qualitative-agreement collapse).
-- [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/toy_calibration.html): synthetic ground-truth calibration (5/5).
+- [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/toy_calibration.html): Tier 1, synthetic ground-truth calibration (5/5).
+- [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/trained_toy_calibration.html): Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
 - [**Kill rates**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/kill_rates.html): how many edges each metric removes.
 
 ### Per layer

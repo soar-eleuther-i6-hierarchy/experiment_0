@@ -1,0 +1,189 @@
+{
+  "n_features": 20,
+  "n_recovered_features": 17,
+  "recovered_features": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "true_edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      8,
+      9
+    ],
+    [
+      8,
+      10
+    ],
+    [
+      8,
+      11
+    ]
+  ],
+  "found_edges": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      4,
+      7
+    ],
+    [
+      8,
+      9
+    ],
+    [
+      8,
+      10
+    ]
+  ],
+  "true_positives": 6,
+  "false_positives": 0,
+  "false_negatives": 3,
+  "precision": 1.0,
+  "recall": 0.6666666666666666,
+  "cfg": {
+    "d_in": 20,
+    "d_sae": 20,
+    "lr": 0.03,
+    "l1_coefficient": 0.2,
+    "activation_function": "batch_topk",
+    "k": 2,
+    "threshold_beta": 0.999,
+    "threshold_start_step": 1000,
+    "device": "cuda:3",
+    "dtype": "float32",
+    "wandb_project": null,
+    "wandb_run_id": null,
+    "latent_sizes": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "architecture": "MatryoshkaSAE"
+  },
+  "edge_rows": [
+    {
+      "edge": "0 -> 1",
+      "parent": 0,
+      "child": 1,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "0 -> 2",
+      "parent": 0,
+      "child": 2,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "0 -> 3",
+      "parent": 0,
+      "child": 3,
+      "found": false,
+      "category": "missed: child not learned"
+    },
+    {
+      "edge": "4 -> 5",
+      "parent": 4,
+      "child": 5,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "4 -> 6",
+      "parent": 4,
+      "child": 6,
+      "found": false,
+      "category": "missed: child not learned"
+    },
+    {
+      "edge": "4 -> 7",
+      "parent": 4,
+      "child": 7,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "8 -> 9",
+      "parent": 8,
+      "child": 9,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "8 -> 10",
+      "parent": 8,
+      "child": 10,
+      "found": true,
+      "category": "recovered"
+    },
+    {
+      "edge": "8 -> 11",
+      "parent": 8,
+      "child": 11,
+      "found": false,
+      "category": "missed: child not learned"
+    }
+  ],
+  "missed_children": [
+    3,
+    6,
+    11
+  ]
+}

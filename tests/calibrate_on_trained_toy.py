@@ -230,6 +230,33 @@ def main():
     print(f"precision {prec:.2f}   recall {rec:.2f}")
     print(f"VERDICT: {'PASS' if prec >= 0.8 and rec >= 0.8 else 'NEEDS WORK'}")
 
+    # per-edge verdict rows for the dashboard, ordered parent then child
+    def edge_row(e):
+        p, c = e
+        cat = "recovered" if e in found else ("missed: child not learned"
+              if c not in recovered else "missed")
+        return {"edge": f"{p} -> {c}", "parent": p, "child": c,
+                "found": e in found, "category": cat}
+
+    result = {
+        "n_features": F,
+        "n_recovered_features": len(recovered),
+        "recovered_features": sorted(recovered),
+        "true_edges": sorted(truth),
+        "found_edges": sorted(found),
+        "true_positives": len(tp), "false_positives": len(fp_), "false_negatives": len(fn),
+        "precision": prec, "recall": rec,
+        "cfg": cfg,
+        "edge_rows": [edge_row(e) for e in sorted(truth)] +
+                     [{"edge": f"{p} -> {c}", "parent": p, "child": c, "found": True,
+                       "category": "spurious"} for (p, c) in sorted(fp_)],
+        "missed_children": sorted({c for _, c in fn if c not in recovered}),
+    }
+    out = ROOT / "outputs" / "trained_toy_calibration.json"
+    out.write_text(json.dumps(result, indent=2))
+    print(f"wrote {out}")
+    return result
+
 
 if __name__ == "__main__":
     main()

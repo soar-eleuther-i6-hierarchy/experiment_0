@@ -577,6 +577,101 @@ def run_calibration():
 
 
 # ---------------------------------------------------------------------------
+# Tier 2 dashboard: metrics on a Matryoshka SAE actually trained on the toy.
+# Mirrors the Tier-1 scorecard, but the question is edge recovery vs a known
+# tree, not pathology separation.
+# ---------------------------------------------------------------------------
+CAL2_STYLE = {                       # (label, fill, ink)
+    "recovered":                  ("recovered ✓",           "#DCFCE7", "#166534"),
+    "missed: child not learned":  ("missed (SAE gap)",       "#FEF3C7", "#92400E"),
+    "missed":                     ("missed",                 "#FEE2E2", "#991B1B"),
+    "spurious":                   ("spurious (false pos)",   "#FEE2E2", "#991B1B"),
+}
+CAL2_ORDER = ["recovered", "missed: child not learned", "missed", "spurious"]
+
+
+def build_trained_calibration_dashboard(d):
+    fig = make_subplots(
+        rows=2, cols=1, specs=[[{"type": "table"}], [{"type": "table"}]],
+        row_heights=[0.62, 0.38],
+        subplot_titles=("Edge recovery vs the known tree", "Per-feature recovery"),
+        vertical_spacing=0.10,
+    )
+
+    rows = sorted(d["edge_rows"], key=lambda r: (CAL2_ORDER.index(r["category"]), r["parent"], r["child"]))
+    edge, verdict, note = [], [], []
+    vcol, fill = [], []
+    for r in rows:
+        label, tint, ink = CAL2_STYLE[r["category"]]
+        edge.append(r["edge"])
+        verdict.append(label)
+        note.append("kept by all metrics, matches the tree" if r["category"] == "recovered"
+                     else "child feature never learned by the SAE" if "not learned" in r["category"]
+                     else "metric kept an edge not in the tree" if r["category"] == "spurious"
+                     else "in the tree but not kept")
+        vcol.append(ink)
+        fill.append(tint)
+    fig.add_trace(
+        go.Table(
+            columnwidth=[70, 150, 320],
+            header=dict(values=["edge (parent → child)", "verdict", "why"],
+                        fill_color="#EEF2F6", align="left",
+                        font=dict(color=INK, size=11), height=26),
+            cells=dict(values=[edge, verdict, note], align="left", height=26,
+                       font=dict(size=10, color=[[INK] * len(edge), vcol, [INK] * len(edge)]),
+                       fill_color=[fill, fill, fill], line=dict(color="white", width=1)),
+        ), row=1, col=1,
+    )
+
+    # per-feature recovery strip
+    F = d["n_features"]
+    rec = set(d["recovered_features"])
+    feats = list(range(F))
+    stat = ["recovered" if f in rec else "not recovered" for f in feats]
+    fig.add_trace(
+        go.Table(
+            columnwidth=[60, 120],
+            header=dict(values=["feature", "recovered by the SAE?"],
+                        fill_color="#EEF2F6", align="left",
+                        font=dict(color=INK, size=11), height=24),
+            cells=dict(values=[feats, stat], align="left", height=20,
+                       font=dict(size=9.5,
+                                 color=[[INK] * F, ["#166534" if f in rec else "#991B1B" for f in feats]]),
+                       fill_color=[["white"] * F,
+                                   ["#DCFCE7" if f in rec else "#FEE2E2" for f in feats]]),
+        ), row=2, col=1,
+    )
+
+    tp, fp2, fn = d["true_positives"], d["false_positives"], d["false_negatives"]
+    fig.update_layout(
+        title=dict(text=_titled(
+            "Trained-toy calibration (Tier 2)",
+            f"metrics run on a Matryoshka SAE trained on Bussmann's tree　·　"
+            f"<b><span style='color:#166534'>precision {d['precision']:.2f}</span></b>, "
+            f"<b>recall {d['recall']:.2f}</b> "
+            f"({tp}/{tp + fn} edges, {fp2} false positives)",
+            subtitle=scope_subtitle("No layer: Bussmann toy, a Matryoshka SAE trained on it")
+            + f"　·　SAE recovered {d['n_recovered_features']}/{F} true features　·　"
+              "the misses are edges whose child the SAE never learned, not metric failures"),
+            x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
+            font=dict(size=14, color=INK)),
+        font=FONT, paper_bgcolor="white", plot_bgcolor="white",
+        width=1000, height=340 + 22 * (len(rows) + F), margin=dict(l=40, r=40, t=140, b=30),
+    )
+    return fig
+
+
+def run_trained_calibration():
+    path = C.OUT_DIR / "trained_toy_calibration.json"
+    if not path.exists():
+        raise SystemExit(f"missing {path} - run tests/calibrate_on_trained_toy.py first")
+    fig = build_trained_calibration_dashboard(json.loads(path.read_text()))
+    out = C.OUT_DIR / "trained_toy_calibration.html"
+    write_page(fig, out, up=1)
+    print(f"saved: {out}")
+
+
+# ---------------------------------------------------------------------------
 # Qualitative dashboard (real gemma edges + Neuronpedia labels, colour-coded)
 # ---------------------------------------------------------------------------
 # One tint per verdict: survivors green, the three rejected categories in
@@ -688,12 +783,17 @@ def main():
                     help="visualise the synthetic-toy metric calibration (no cache needed)")
     ap.add_argument("--qualitative", action="store_true",
                     help="visualise real survivor-vs-rejected edges (needs qualitative_check.json)")
+    ap.add_argument("--trained-calibration", action="store_true",
+                    help="Tier-2: edge recovery on a trained toy SAE (needs trained_toy_calibration.json)")
     args = ap.parse_args()
     if args.calibration:
         run_calibration()
         return
     if args.qualitative:
         run_qualitative()
+        return
+    if args.trained_calibration:
+        run_trained_calibration()
         return
 
     if not C.EXP0_STATS_PATH.exists():
