@@ -87,15 +87,37 @@ BATCH_DOCS = 8
 FIRE_THRESHOLD = 1e-3     # feature "fires" above this (post-JumpReLU)
 EDGE_TAU = 0.5            # reverse-coverage edge criterion (same as warm-up)
 MIN_FIRE_COUNT = 20       # rare-feature guard (same as warm-up)
+# Joint-support guard (landscape Rev. 2): a child firing MIN_FIRE_COUNT times
+# inside a near-always-on parent hits R = 1.0 by chance; requiring a minimum
+# co-fire count kills those. Excluded edges are REPORTED, not silently dropped.
+# NOTE: any value <= EDGE_TAU * MIN_FIRE_COUNT (= 10) is vacuous — every kept
+# edge already satisfies it. 30 matches the warm-up task's guard.
+MIN_JOINT = 30
 
 # Which adjacent block pairs to compute. B3->B4 is the 6144 x 24576 monster;
-# the warm-up skipped it and we do too (its accumulators dominate memory).
-INCLUDE_B3_B4 = False
+# the warm-up skipped it on the 4 GB GPU. On the A40 it fits (~8-10 GB extra):
+# enable with EXP0_B3B4=1. Caveat: B4 is 24576 mostly-rare features, so many
+# B3->B4 edges are unsupported (dropped by MIN_FIRE_COUNT) — a thin, noisy pair.
+INCLUDE_B3_B4 = os.environ.get("EXP0_B3B4", "0") == "1"
 
-# --- Metric 2: reconstruction condition ------------------------------------
+# --- Metric 2a: reconstruction-ablation contribution filter -----------------
+# (Tree-SAE-INSPIRED baseline, not the paper's S_res — see metrics/reconstruction.py.)
 # An edge passes when ablating the parent hurts reconstruction on the child's
 # firing tokens by at least this relative amount (and same for the child).
 RECON_REL_GAIN_MIN = 0.01     # >=1% relative error increase = "contributes"
+
+# --- Metric 2b: probe-based S_res (Tree SAE Eq. 5, rank-scored) --------------
+# S_res(p,c) = min((d_c*)ᵀ d_c, (d_c*)ᵀ d_p) with d_c* a linear-probe direction
+# for the child concept. Scored by the RANK rule (both decoders in the top-k
+# probe correlations over all features), not a threshold: healthy pairs have
+# d_p ⟂ d_c which caps the min at 1/√2, so thresholds above that reject
+# everything. Probes need enough positives to train on.
+SRES_RANK_TOP_K = 5           # Tree SAE's operational rule: both in top-5
+MIN_PROBE_POS = 50            # min child-firing tokens to train a probe
+SRES_MAX_CHILDREN_PER_PAIR = 4000   # cost guard; log when hit
+SRES_NEG_RATIO = 4            # negatives sampled per positive
+SRES_MAX_PROBE_TOKENS = 20000 # cap on (pos + neg) tokens per probe
+SRES_MIN_NEG = 10             # fewer negatives than this -> child untestable (no probe)
 
 # --- Metric 3: sibling redundancy ------------------------------------------
 # Mean pairwise child-child co-activation (Jaccard) above this = feature
@@ -104,6 +126,15 @@ SIBLING_REDUNDANCY_FLAG = 0.5
 # Within-block co-firing matrices are needed for sibling stats. B4's 24576^2
 # does not fit in RAM comfortably; we compute B1, B2, B3 only.
 SIBLING_BLOCKS = [1, 2, 3]
+
+# --- In-block (same-level) edges (in_block_edges.py) ------------------------
+# Hierarchy need not respect block boundaries: two features in the SAME block
+# can stand in a parent/child (refinement) or duplicate relation. These blocks
+# get a within-block directed-edge analysis. cache_stats caches within-cofire for
+# SIBLING_BLOCKS ∪ IN_BLOCK_BLOCKS, so B0 is cached after a rerun; on older caches
+# in_block_edges falls back to rebuilding B0 from the token cache. B3/B4 skipped:
+# B4's 24576^2 matrix is ~4.8 GB, not worth it.
+IN_BLOCK_BLOCKS = [0, 1, 2]
 
 # --- Metric 4: out-degree / superparents ------------------------------------
 SUPERPARENT_OUTDEG_FRAC = 0.30
@@ -125,8 +156,10 @@ FREQ_SURVIVAL_MIN = 0.5
 # Paths + device
 # ---------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
-OUT_DIR = HERE / "outputs"
-OUT_DIR.mkdir(exist_ok=True)
+# EXP0_OUT redirects ALL outputs (e.g. to the gitignored outputs_local/) so runs
+# never touch the git-tracked outputs/ published on GitHub Pages. Default: unchanged.
+OUT_DIR = Path(os.environ.get("EXP0_OUT", HERE / "outputs"))
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Per-layer artifacts live in outputs/layer_NN/ so runs on different layers never
 # clobber each other. Layer-independent artifacts (e.g. the synthetic toy
@@ -134,7 +167,7 @@ OUT_DIR.mkdir(exist_ok=True)
 RUN_DIR = OUT_DIR / f"layer_{LAYER:02d}"
 RUN_DIR.mkdir(parents=True, exist_ok=True)
 
-def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　"):
+def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None):
     """Which layer, and the knobs a reader needs to interpret the numbers.
 
     Single source for the context line shown on every page and report, so the
@@ -144,7 +177,7 @@ def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　"):
     b0, b1 = bold
     bits = [f"{b0}Layer {LAYER}{b1}", f"gemma-2-2b / {SAE_SOURCE}", SAE_ID]
     if total_tokens:
-        bits.append(f"{int(total_tokens):,} tokens over {N_DOCS} docs")
+        bits.append(f"{int(total_tokens):,} tokens over {n_docs or N_DOCS} docs")
     bits.append(f"edge: reverse coverage ≥ {EDGE_TAU}, both endpoints fire ≥ {MIN_FIRE_COUNT}")
     return sep.join(bits)
 
@@ -164,6 +197,14 @@ BACK_LINK_HTML = (
 EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by cache_stats.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
 METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
+
+# Stage-03 token-level caches (written by cache_stats.py when CACHE_RESIDUALS):
+# fp16 residuals + sparse latents let run_second_pass.py train S_res probes and
+# compute parent-conditioned sibling stats WITHOUT re-running the model.
+CACHE_RESIDUALS = os.environ.get("EXP0_CACHE_RESIDUALS", "1") != "0"
+TOKEN_CACHE_DIR = RUN_DIR / "token_cache"
+SECOND_PASS_PATH = RUN_DIR / "second_pass.json"      # model-free token-cache pass (S_res + parent-conditioned siblings); written by run_second_pass.py
+IN_BLOCK_PATH = RUN_DIR / "in_block_edges.json"      # written by in_block_edges.py
 
 # Force a device with the EXP0_DEVICE env var or a script's --device flag:
 #   local Mac      -> auto-picks "mps"

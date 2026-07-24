@@ -16,11 +16,37 @@ sibling Jaccard:
 
 ~0   -> children are diverse (healthy refinement)
 ~1   -> children are duplicates (splitting)
+
+Landscape Rev. 2.1: the property under test is disjointness WITHIN the
+parent's firing set. The global Jaccard below scores co-firing anywhere —
+in unconstrained architectures (Matryoshka) siblings can co-fire or fire
+solo where the parent is silent, which is irrelevant to this parent's
+partition. `parent_conditioned_redundancy` is the corrected form, computed
+in the second pass (needs per-token masks, not just count matrices); the
+global form is kept alongside for auditability.
 """
 
 from __future__ import annotations
 
 import torch
+
+
+def parent_conditioned_redundancy(
+    fires_p: torch.Tensor,     # [n] bool: tokens where THIS parent fires
+    kids: torch.Tensor,        # [n, k] bool: firing masks of its kept children
+) -> float:
+    """Mean pairwise sibling Jaccard restricted to the parent's firing tokens
+    (same convention as the global form: high = redundant/splitting)."""
+    sub = kids[fires_p].double()                        # [m, k]
+    k = sub.shape[1]
+    if k < 2:
+        return 0.0
+    cf = sub.T @ sub                                    # [k, k] co-fire within support
+    fi = sub.sum(dim=0)                                 # [k]
+    union = fi.unsqueeze(0) + fi.unsqueeze(1) - cf
+    jac = cf / union.clamp(min=1.0)
+    offdiag = ~torch.eye(k, dtype=torch.bool)
+    return float(jac[offdiag].mean())
 
 
 def sibling_redundancy(
