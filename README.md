@@ -42,11 +42,16 @@ one guarantee and gains one dose of reality; a metric we trust has to hold acros
 | Tier                     | What it is                                                                                                                                              | Ground truth?                 | What it proves                                                                                        |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
 | **1. Synthetic**   | `tests/toy_world.py`: a known 5-parent tree plus three injected pathologies, reduced to the statistics the metrics read                               | yes, by construction          | the maths is right (5/5 metrics pass across seeds 0–5, each pathology caught by its intended metric) |
-| **2. Trained toy** | `tests/calibrate_on_trained_toy.py`: a Matryoshka SAE actually trained on Bussmann's tree (`sae-training`), metrics run on the *learned* features | yes, the tree is known        | the metrics survive a real training run, not just hand-built stats*(in progress)*                     |
+| **2. Trained toy** | `tests/calibrate_on_trained_toy.py`: a Matryoshka SAE actually trained on Bussmann's tree (`sae-training`), metrics run on the *learned* features | yes, the tree is known        | the metrics survive a real training run: **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) |
 | **3. Real SAE**    | `qualitative_check.py` on `gemma-2-2b / 6-res-matryoshka-dc` (layer 6), read against Neuronpedia labels                                             | no, human judgement stands in | the metrics mean something on a production SAE                                                        |
 
 Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge
 that has both a trained SAE and a known answer.
+
+On Tier 2, the metrics keep **every** edge whose two endpoints the SAE actually recovered, with
+**no false positives**. The three missed edges are exactly the three child features the SAE never
+learned (it recovered 17 of 20), so the 0.67 recall is a limit of the trained SAE, not of the
+metrics: the calibration cleanly separates "the metric failed" from "the SAE failed".
 
 > Killing 94% to 99.9% of coverage edges is the result, not a failure: the Matryoshka SAE's
 > hierarchy claim does not survive any measurement stricter than raw co-firing.

@@ -4,7 +4,7 @@
   "lr": 0.03,
   "l1_coefficient": 0.2,
   "activation_function": "batch_topk",
-  "k": 4,
+  "k": 2,
   "threshold_beta": 0.999,
   "threshold_start_step": 1000,
   "device": "cuda:3",
