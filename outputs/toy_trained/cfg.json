@@ -1,0 +1,27 @@
+{
+  "d_in": 20,
+  "d_sae": 20,
+  "lr": 0.03,
+  "l1_coefficient": 0.2,
+  "activation_function": "batch_topk",
+  "k": 4,
+  "threshold_beta": 0.999,
+  "threshold_start_step": 1000,
+  "device": "cuda:3",
+  "dtype": "float32",
+  "wandb_project": null,
+  "wandb_run_id": null,
+  "latent_sizes": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20
+  ],
+  "architecture": "MatryoshkaSAE"
+}

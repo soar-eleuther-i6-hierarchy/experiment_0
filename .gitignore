@@ -21,3 +21,6 @@ outputs/*.log
 .DS_Store
 .env
 MEETING_NOTES/
+
+# Team SAE-training repo, cloned locally for Tier-2 training (its own git repo)
+sae-training/
