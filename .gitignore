@@ -24,3 +24,8 @@ MEETING_NOTES/
 
 # Team SAE-training repo, cloned locally for Tier-2 training (its own git repo)
 sae-training/
+
+# Local-only work (chidaksh-metrics branch): tests + run artifacts, kept out of git
+tests_local/
+outputs_local/
+REPORT_layer6.md
