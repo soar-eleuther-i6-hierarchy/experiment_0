@@ -53,6 +53,34 @@ On Tier 2, the metrics keep **every** edge whose two endpoints the SAE actually 
 learned (it recovered 17 of 20), so the 0.67 recall is a limit of the trained SAE, not of the
 metrics: the calibration cleanly separates "the metric failed" from "the SAE failed".
 
+### How Tier 2 tests the metrics on the trained toy
+
+[`tests/calibrate_on_trained_toy.py`](tests/calibrate_on_trained_toy.py) runs the whole loop:
+
+1. **Rebuild the toy.** Read Bussmann's compositional tree from the team's
+   [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo
+   (`configs/tree.json`): 3 parents, each with 3 mutually-exclusive children, plus rare
+   features. A child only fires when its parent fires, which is the ground-truth hierarchy.
+2. **Train a Matryoshka SAE on it** (batch-topk, `k=2`) and load the checkpoint from
+   `outputs/toy_trained/`. The SAE sees only the activations, never the tree.
+3. **Match learned latents to true features.** For each SAE latent, take the true feature its
+   decoder points at most (cosine ≥ 0.4). This is how we know which latent *is* parent 0, etc.
+4. **Run the five metrics on the learned latents** (same functions, same thresholds as the
+   real pipeline) to get the edges they keep.
+5. **Score against the known tree.** Compare kept edges to the true parent→child edges:
+   precision = of the kept edges, how many are real; recall = of the true edges, how many were
+   kept. Because the tree is known, an edge the metrics keep on a semantically wrong pair would
+   show up immediately as a false positive.
+
+The point of steps 3–5: a missed edge is only a metric failure if the SAE actually learned both
+its endpoints. That is why we also report per-feature recovery: it attributes every miss to
+either the metric or the SAE.
+
+```bash
+PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py   # writes trained_toy_calibration.json
+python3 visualize.py --trained-calibration                # builds the dashboard
+```
+
 > Killing 94% to 99.9% of coverage edges is the result, not a failure: the Matryoshka SAE's
 > hierarchy claim does not survive any measurement stricter than raw co-firing.
 >
