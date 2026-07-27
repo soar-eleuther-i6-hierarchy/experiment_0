@@ -12,6 +12,10 @@ and at layer 24 the surviving edges collapse onto a single feature firing on 41.
 
 **Live site:** [https://soar-eleuther-i6-hierarchy.github.io/experiment_0/](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/)
 
+**Cached statistics:** 🤗 [soar-eleuther-i6-hierarchy/experiment_0-stats](https://huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats)
+— the per-layer `exp0_stats.pt` caches are too big for git, so they live on the Hub
+([how to download](#cached-statistics-on-hugging-face)).
+
 ## Key results
 
 **Coverage proposes far more edges than survive.** At layer 6, only 512 of 8,156 candidate
@@ -108,6 +112,33 @@ rendered text reports behind them.
 
 > Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown text.
 
+### Cached statistics on Hugging Face
+
+Stage 01 writes one **~700 MB** tensor cache per layer holding every co-firing count,
+per-frequency-bucket count and reconstruction-ablation sum the five metrics read. At 3.4 GB
+across five layers those files are too big to keep in git, so they are hosted separately:
+
+**🤗 [huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats](https://huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats)**
+
+Download straight into the paths the scripts already expect:
+
+```bash
+pip install huggingface_hub
+
+# one layer (~700 MB)
+hf download soar-eleuther-i6-hierarchy/experiment_0-stats \
+    --repo-type dataset --include "layer_06/*" --local-dir outputs/
+
+# all five layers (~3.4 GB)
+hf download soar-eleuther-i6-hierarchy/experiment_0-stats \
+    --repo-type dataset --local-dir outputs/
+```
+
+That lands `outputs/layer_06/exp0_stats.pt`, which is what `run_metrics.py`, `visualize.py`
+and `make_report_figures.py` read — so downloading it skips `cache_stats.py`, the only
+GPU-heavy step in the pipeline. Everything else in `outputs/` (reports, labels, dashboards)
+is small and stays in git.
+
 ## When is an edge a parent → child? The thresholds
 
 Every metric is a matrix over feature pairs with one threshold that turns a number into a
@@ -183,6 +214,9 @@ python3 visualize.py          # rebuild the dashboards
 ```
 
 `EXP0_LAYER` (default 6) selects the layer and writes to `outputs/layer_NN/`.
+
+To skip Stage 01, [download the cached `exp0_stats.pt`](#cached-statistics-on-hugging-face)
+from the Hub instead and start at `run_metrics.py`.
 
 ### More options
 

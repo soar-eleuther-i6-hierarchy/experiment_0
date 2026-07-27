@@ -910,7 +910,7 @@ def main():
         return
 
     if not C.EXP0_STATS_PATH.exists():
-        raise SystemExit(f"missing {C.EXP0_STATS_PATH} - run cache_stats.py first")
+        raise SystemExit(C.missing_stats_msg())
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     pairs = stats["pairs"]
     pairs_data = [compute_pair(stats, p, c) for (p, c) in pairs]

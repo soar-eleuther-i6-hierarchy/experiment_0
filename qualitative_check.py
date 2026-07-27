@@ -227,7 +227,7 @@ def main():
     args = ap.parse_args()
 
     if not C.EXP0_STATS_PATH.exists():
-        raise SystemExit(f"missing {C.EXP0_STATS_PATH} - run cache_stats.py first")
+        raise SystemExit(C.missing_stats_msg())
     print(f"[02b] loading {C.EXP0_STATS_PATH}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
 

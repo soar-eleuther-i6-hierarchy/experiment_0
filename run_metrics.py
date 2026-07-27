@@ -327,7 +327,7 @@ def to_markdown(report) -> str:
 
 def main():
     if not C.EXP0_STATS_PATH.exists():
-        raise SystemExit(f"[02] missing {C.EXP0_STATS_PATH} - run cache_stats.py first")
+        raise SystemExit(f"[02] {C.missing_stats_msg()}")
     print(f"[02] loading {C.EXP0_STATS_PATH}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     pairs = stats["pairs"]

@@ -237,6 +237,8 @@ def main():
 
     device = args.device or C.pick_device()
     print(f"[03] layer = {C.LAYER}  device = {device}")
+    if not C.EXP0_STATS_PATH.exists():
+        raise SystemExit(f"[03] {C.missing_stats_msg()}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     if not (C.TOKEN_CACHE_DIR / "meta.json").exists():
         raise SystemExit(f"[03] no token cache at {C.TOKEN_CACHE_DIR} - rerun cache_stats.py")
