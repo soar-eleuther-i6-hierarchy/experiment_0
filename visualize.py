@@ -444,13 +444,13 @@ def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_label
 
 
 # ---------------------------------------------------------------------------
-# Calibration dashboard (synthetic ground-truth toy from tests/)
+# Calibration dashboard (synthetic ground-truth toy from validation/)
 # ---------------------------------------------------------------------------
 def _calibration_data():
     """Run the five metrics on the toy and split each metric's per-edge score
     into the class it should KEEP (genuine) vs the class it should REJECT."""
-    from tests.test_metric_calibration import _render, _run_metrics, _score
-    from tests.toy_world import build_world
+    from validation.test_metric_calibration import _render, _run_metrics, _score
+    from validation.toy_world import build_world
 
     stats, labels = build_world()
     m = _run_metrics(stats)
@@ -700,7 +700,7 @@ def build_trained_calibration_dashboard(d):
 def run_trained_calibration():
     path = C.OUT_DIR / "trained_toy_calibration.json"
     if not path.exists():
-        raise SystemExit(f"missing {path} - run tests/calibrate_on_trained_toy.py first")
+        raise SystemExit(f"missing {path} - run validation/calibrate_on_trained_toy.py first")
     fig = build_trained_calibration_dashboard(json.loads(path.read_text()))
     out = C.OUT_DIR / "trained_toy_calibration.html"
     write_page(fig, out, up=1)

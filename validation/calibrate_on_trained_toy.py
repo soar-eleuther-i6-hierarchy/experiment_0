@@ -14,7 +14,7 @@ So this is calibration on ground truth AND on trained features. If the metrics
 recover the tree here, they are trustworthy on the real gemma-2-2b SAE.
 
 Run:
-    PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py
+    PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py
 """
 from __future__ import annotations
 

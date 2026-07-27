@@ -1,7 +1,7 @@
 """
 Stage 02b - qualitative agreement check on the real gemma-2-2b Matryoshka SAE.
 
-The synthetic calibration (tests/) proved the five metrics recover a known tree
+The synthetic calibration (validation/) proved the five metrics recover a known tree
 and reject injected pathologies. This is the OTHER half of Exp 0's "how we decide
 which metric works": for edges the metrics flag good vs bad on the *real* SAE,
 check the feature labels against human / Neuronpedia intuition. A clean metric

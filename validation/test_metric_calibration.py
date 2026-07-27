@@ -2,7 +2,7 @@
 Calibrate the five Exp 0 metrics on the synthetic ground-truth toy.
 
 For each metric we know, by construction, which edges it SHOULD keep and which
-pathology it SHOULD catch (see tests/toy_world.py). We run the production metric
+pathology it SHOULD catch (see validation/toy_world.py). We run the production metric
 functions with the production thresholds from config.py and check:
 
     Metric 1  coverage          recovers 100% of the genuine tree edges.
@@ -25,7 +25,7 @@ from pathlib import Path
 
 import torch
 
-# allow `python3 tests/test_metric_calibration.py` from the experiment_0 root
+# allow `python3 validation/test_metric_calibration.py` from the experiment_0 root
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config as C  # noqa: E402
@@ -38,7 +38,7 @@ from metrics import (  # noqa: E402
     keep_edges,
     sibling_redundancy,
 )
-from tests.toy_world import build_world  # noqa: E402
+from validation.toy_world import build_world  # noqa: E402
 
 
 def _run_metrics(stats):
