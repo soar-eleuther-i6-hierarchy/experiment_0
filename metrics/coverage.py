@@ -42,11 +42,21 @@ def keep_edges(
     fire_c: torch.Tensor,
     tau: float,
     min_fire: int,
+    cofire: torch.Tensor | None = None,
+    min_joint: int = 0,
 ) -> torch.Tensor:
-    """Boolean [P, C] edge mask: R >= tau, both endpoints fire often enough."""
+    """Boolean [P, C] edge mask: R >= tau, both endpoints fire often enough,
+    and (when cofire is given) at least min_joint co-firing tokens.
+
+    The joint-support guard (landscape Rev. 2) kills chance edges: a child
+    firing min_fire times inside a ~always-on parent reaches R = 1.0 with no
+    evidence beyond base rate. Callers report the excluded count.
+    """
     keep = R >= tau
     keep[fire_p < min_fire, :] = False
     keep[:, fire_c < min_fire] = False
+    if cofire is not None and min_joint > 0:
+        keep = keep & (cofire >= min_joint)
     return keep
 
 

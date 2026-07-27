@@ -27,13 +27,16 @@ def degree_stats(edge_mask: torch.Tensor) -> dict:
     indeg = edge_mask.sum(dim=0)           # [C] parents per child
     n_edges = int(edge_mask.sum())
 
+    n_parented = int((indeg > 0).sum())
     stats = {
         "n_edges": n_edges,
         "outdeg": outdeg,
         "indeg": indeg,
         "n_parents_with_children": int((outdeg > 0).sum()),
-        "n_children_with_parent": int((indeg > 0).sum()),
+        "n_children_with_parent": n_parented,
         "n_multi_parented": int((indeg >= 2).sum()),
+        # PolyFrac (landscape §C.4): share of PARENTED children with >=2 parents
+        "poly_frac": int((indeg >= 2).sum()) / n_parented if n_parented else 0.0,
         "top1_edge_share": float(outdeg.max()) / n_edges if n_edges else 0.0,
         "outdeg_gini": gini(outdeg.double()),
     }
@@ -58,12 +61,15 @@ def find_superparents(
     outdeg_frac: float = 0.30,
     fire_frac: float = 0.10,
 ) -> list[dict]:
-    """Parents covering >= outdeg_frac of the child block AND firing on
-    >= fire_frac of tokens. Returns local (within-block) indices + stats."""
+    """Parents covering >= outdeg_frac of the child block (landscape §C.4:
+    the flag is on out-degree ALONE). Firing rate is reported as an attribute,
+    and the old outdeg-AND-fire gate survives as `strict` — the AND gate let
+    L24's feature 14 (fires 41.9%, fan-out 21.9%... and conversely high-fanout
+    low-fire parents) slip through. Returns local indices + stats."""
     n_children = edge_mask.shape[1]
     outdeg = edge_mask.sum(dim=1)
     fire_rate = fire_p.double() / max(total_tokens, 1)
-    flag = (outdeg >= outdeg_frac * n_children) & (fire_rate >= fire_frac)
+    flag = outdeg >= outdeg_frac * n_children
     out = []
     for p in torch.nonzero(flag).flatten().tolist():
         out.append(
@@ -72,6 +78,7 @@ def find_superparents(
                 "outdeg": int(outdeg[p]),
                 "outdeg_frac": float(outdeg[p]) / n_children,
                 "fire_frac": float(fire_rate[p]),
+                "strict": bool(fire_rate[p] >= fire_frac),   # old AND-gate variant
             }
         )
     out.sort(key=lambda d: -d["outdeg"])

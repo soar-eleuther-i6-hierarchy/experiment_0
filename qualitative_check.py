@@ -105,7 +105,8 @@ def compute(stats, p_blk, c_blk):
 
     cofire = stats["cofire"][key].double()
     R, F = coverage_legs(cofire, fire_p, fire_c)
-    edge_mask = keep_edges(R, fire_p, fire_c, C.EDGE_TAU, C.MIN_FIRE_COUNT)
+    edge_mask = keep_edges(R, fire_p, fire_c, C.EDGE_TAU, C.MIN_FIRE_COUNT,
+                           cofire=cofire, min_joint=C.MIN_JOINT)
 
     recon = edge_reconstruction_condition(
         stats["err_sum_c"][c_blk].double(),

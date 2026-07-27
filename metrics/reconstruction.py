@@ -1,8 +1,17 @@
 """
-Metric 2 - Reconstruction condition, Tree-SAE style (project plan Exp 0, bullet 2).
+Metric 2a - Reconstruction-ablation CONTRIBUTION FILTER (Tree-SAE-INSPIRED
+baseline; project plan Exp 0, bullet 2).
 
-A real parent-child edge must actually IMPROVE reconstruction, not just
-co-activate. We test that on the child's firing tokens:
+Honest-name note (landscape §C.2, Rev. 2.1): this is NOT Tree SAE's S_res.
+It tests that both features carry reconstruction mass on the child's tokens —
+a contribution filter. It tests neither refinement (P2) nor semantic
+coherence (P3): two strong but unrelated co-firing features pass both sides,
+and its pass rate scales with block energy, mechanically suppressing deep
+blocks. The probe-based, rank-scored S_res proper lives in metrics/sres.py
+(second pass). Keep this one as a cheap baseline.
+
+The underlying idea: a parent-child edge should IMPROVE reconstruction, not
+just co-activate. We test that on the child's firing tokens:
 
     ablating the parent from the SAE reconstruction increases error, and
     ablating the child does too (the child adds something beyond the parent).

@@ -35,7 +35,6 @@ import argparse
 import time
 
 import torch
-from datasets import load_dataset
 
 import config as C
 import sae_utils as U
@@ -60,6 +59,118 @@ def right_pad(seqs, pad_id, device):
     for i, s in enumerate(seqs):
         batch[i, : len(s)] = s
     return batch.to(device)
+
+
+def keep_mask(tokens, pad_id):
+    """[b, seq] bool: which positions enter the statistics.
+
+    Excludes padding AND position 0: tokenize_docs prepends BOS to every row,
+    and gemma-2's residual at BOS is an extreme-norm attention-sink outlier —
+    every BOS-firing feature would co-fire there by construction, contaminating
+    fire/cofire/energy/recon counts (metrics_todo.md T1).
+    """
+    keep = tokens != pad_id
+    keep[:, 0] = False
+    return keep
+
+
+def count_tokens(seqs, vocab):
+    """Corpus token counts for the frequency buckets, skipping each row's
+    leading BOS — a guaranteed once-per-doc hit that would otherwise be
+    forced toward bucket 0 and skew the bucket boundaries."""
+    counts = torch.zeros(vocab, dtype=torch.float64)
+    for s in seqs:
+        body = s[1:].long()
+        if body.numel():
+            counts.scatter_add_(0, body, torch.ones(body.numel(), dtype=torch.float64))
+    return counts
+
+
+def accumulate_pair_extras(acc, feats_p, feats_c, thr):
+    """T2 accumulators for one (parent, child) block pair, one token chunk.
+
+    acc holds (all in acc["energy_total"].dtype):
+        energy_cofire [P, C] : sum over c-firing tokens of f_p^2
+                               -> Share_energy(c,p) = energy_cofire / energy_total
+        union_count   [P]    : parent-firing tokens where >=1 child fires
+                               -> exact R_supp(p) (replaces the min(1, sum F) bound)
+        union_energy  [P]    : sum of f_p^2 over tokens where >=1 child fires
+                               -> R_mass(p)
+        energy_total  [P]    : sum of f_p^2 over all tokens
+    """
+    dt = acc["energy_total"].dtype
+    fired_p = (feats_p > thr).to(dt)
+    fired_c = (feats_c > thr).to(dt)
+    energy_p = feats_p.to(dt) ** 2                     # [n, P]
+    any_c = fired_c.amax(dim=1)                        # [n] 1.0 where >=1 child fires
+    acc["energy_cofire"] += energy_p.T @ fired_c       # [P, C]
+    acc["union_count"] += fired_p.T @ any_c            # [P]
+    acc["union_energy"] += energy_p.T @ any_c          # [P]
+    acc["energy_total"] += energy_p.sum(dim=0)         # [P]
+
+
+class TokenCacheWriter:
+    """Streams fp16 residuals + sparse latents to disk shards so stage 03
+    (S_res probes, parent-conditioned sibling stats, kept-children unions)
+    can run without re-touching the model. Row indices are global positions
+    in the SAME kept-token stream the statistics are accumulated over."""
+
+    def __init__(self, cache_dir, flush_tokens=200_000):
+        import shutil
+
+        # write into a .tmp dir; finalize() swaps it in — a crash mid-run
+        # leaves the previous known-good cache untouched
+        self.final_dir = cache_dir
+        self.dir = cache_dir.with_name(cache_dir.name + ".tmp")
+        if self.dir.exists():
+            shutil.rmtree(self.dir)                    # never mix runs
+        self.dir.mkdir(parents=True)
+        self.flush_tokens = flush_tokens
+        self.base = 0
+        self.shard = 0
+        self._reset()
+
+    def _reset(self):
+        self.res, self.rows, self.feats, self.vals, self.buf = [], [], [], [], 0
+
+    def add(self, resid, feats, thr):
+        nz = (feats > thr).nonzero(as_tuple=False)     # [k, 2] (row, feat)
+        self.res.append(resid.detach().to("cpu", torch.float16))
+        self.rows.append((nz[:, 0] + self.base + self.buf).to("cpu", torch.int32))
+        self.feats.append(nz[:, 1].to("cpu", torch.int32))
+        self.vals.append(feats[nz[:, 0], nz[:, 1]].detach().to("cpu", torch.float16))
+        self.buf += resid.shape[0]
+        if self.buf >= self.flush_tokens:
+            self.flush()
+
+    def flush(self):
+        if not self.buf:
+            return
+        torch.save(
+            {
+                "resid": torch.cat(self.res),
+                "rows": torch.cat(self.rows),
+                "feats": torch.cat(self.feats),
+                "vals": torch.cat(self.vals),
+                "base": self.base,
+            },
+            self.dir / f"shard_{self.shard:04d}.pt",
+        )
+        self.base += self.buf
+        self.shard += 1
+        self._reset()
+
+    def finalize(self, extra_meta):
+        import json
+        import shutil
+
+        self.flush()
+        meta = {"total_tokens": self.base, "n_shards": self.shard, **extra_meta}
+        (self.dir / "meta.json").write_text(json.dumps(meta, indent=2))
+        if self.final_dir.exists():
+            shutil.rmtree(self.final_dir)
+        self.dir.rename(self.final_dir)
+        return meta
 
 
 def adjacent_pairs():
@@ -92,6 +203,8 @@ def main():
     acc_dtype = torch.float32 if C.is_mps(device) else torch.float64
 
     print(f"[01] loading {C.DATASET} (first {args.docs} docs) ...")
+    from datasets import load_dataset  # lazy: heavy dep, not needed by the helpers
+
     ds = load_dataset(C.DATASET, split=f"train[:{args.docs}]")
     texts = [t for t in ds["text"] if isinstance(t, str) and t.strip()]
 
@@ -99,9 +212,7 @@ def main():
     print("[01] tokenizing + counting token ids for frequency buckets ...")
     seqs = tokenize_docs(model, texts, C.CONTEXT_SIZE)
     vocab = model.cfg.d_vocab
-    token_counts = torch.zeros(vocab, dtype=torch.float64)
-    for s in seqs:
-        token_counts.scatter_add_(0, s.long(), torch.ones(s.numel(), dtype=torch.float64))
+    token_counts = count_tokens(seqs, vocab)          # BOS excluded (T1)
     buckets = frequency_buckets(token_counts, C.FREQ_HIGH_MASS, C.FREQ_MID_MASS)  # [vocab]
     buckets_dev = buckets.to(device)
     K = C.N_FREQ_BUCKETS
@@ -130,9 +241,26 @@ def main():
     g_child_sum = {b: torch.zeros(blk_len(b), dtype=acc_dtype, device=device) for b in child_blocks}
     fire_c_by_bucket = {b: torch.zeros(K, blk_len(b), dtype=acc_dtype, device=device) for b in child_blocks}
 
+    # within-block co-firing for sibling stats (SIBLING_BLOCKS) AND the in-block
+    # same-level edge analysis (IN_BLOCK_BLOCKS) — union so B0 gets cached too.
+    within_blocks = sorted(set(C.SIBLING_BLOCKS) | set(getattr(C, "IN_BLOCK_BLOCKS", [])))
     within_cofire = {
-        b: torch.zeros(blk_len(b), blk_len(b), dtype=acc_dtype, device=device) for b in C.SIBLING_BLOCKS
+        b: torch.zeros(blk_len(b), blk_len(b), dtype=acc_dtype, device=device) for b in within_blocks
     }
+
+    # T2: energy shares + exact joint-child unions, one accumulator set per pair
+    pair_extras = {
+        pr: {
+            "energy_cofire": torch.zeros(blk_len(pr[0]), blk_len(pr[1]), dtype=acc_dtype, device=device),
+            "union_count": torch.zeros(blk_len(pr[0]), dtype=acc_dtype, device=device),
+            "union_energy": torch.zeros(blk_len(pr[0]), dtype=acc_dtype, device=device),
+            "energy_total": torch.zeros(blk_len(pr[0]), dtype=acc_dtype, device=device),
+        }
+        for pr in pairs
+    }
+
+    # T7 groundwork: token-level caches for the model-free second pass
+    cache_writer = TokenCacheWriter(C.TOKEN_CACHE_DIR) if C.CACHE_RESIDUALS else None
 
     # ---- main pass -----------------------------------------------------------
     t0 = time.time()
@@ -146,7 +274,7 @@ def main():
         )
         resid = cache[C.HOOK_NAME]                          # [b, seq, d_model]
 
-        keep = tokens != pad_id                             # [b, seq]
+        keep = keep_mask(tokens, pad_id)                    # [b, seq] pad + BOS excluded
         resid = resid[keep]                                 # [n, d_model]
         tok_ids = tokens[keep]                              # [n]
         tok_bucket = buckets_dev[tok_ids]                   # [n] in {0..K-1}
@@ -179,6 +307,13 @@ def main():
                 fck = fc * bucket_sel[k].unsqueeze(1)       # [n, C] child-fire only on bucket-k tokens
                 cofire_by_bucket[(p, c)][k] += fp.T @ fck
 
+            accumulate_pair_extras(                          # T2: energy + exact unions
+                pair_extras[(p, c)],
+                feats[:, U.block_slice(p)],
+                feats[:, U.block_slice(c)],
+                C.FIRE_THRESHOLD,
+            )
+
         for b in child_blocks:
             fc = fired[:, U.block_slice(b)]                 # [n, C]
             gc = g[:, U.block_slice(b)]                     # [n, C]
@@ -187,9 +322,12 @@ def main():
             for k in range(K):
                 fire_c_by_bucket[b][k] += (fc * bucket_sel[k].unsqueeze(1)).sum(dim=0)
 
-        for b in C.SIBLING_BLOCKS:
+        for b in within_blocks:
             fb = fired[:, U.block_slice(b)]                 # [n, Cb]
             within_cofire[b] += fb.T @ fb                   # [Cb, Cb]
+
+        if cache_writer is not None:
+            cache_writer.add(resid, feats, C.FIRE_THRESHOLD)
 
         if bi % 5 == 0 or bi == n_batches - 1:
             dt = time.time() - t0
@@ -203,11 +341,16 @@ def main():
         return {f"{p}->{c}": v.cpu() for (p, c), v in d.items()}
 
     out = {
+        "schema_version": 2,                    # v2: BOS excluded + T2 extras
         "fire_count": fire_count.cpu(),
         "total_tokens": int(total_tokens),
         "token_counts": token_counts,
         "buckets": buckets,
         "pairs": pairs,
+        "energy_cofire": pk({pr: v["energy_cofire"] for pr, v in pair_extras.items()}),
+        "union_count": pk({pr: v["union_count"] for pr, v in pair_extras.items()}),
+        "union_energy": pk({pr: v["union_energy"] for pr, v in pair_extras.items()}),
+        "energy_total": pk({pr: v["energy_total"] for pr, v in pair_extras.items()}),
         "cofire": pk(cofire),
         "cofire_by_bucket": pk(cofire_by_bucket),
         "g_parent_sum": pk(g_parent_sum),
@@ -228,9 +371,16 @@ def main():
             "sibling_blocks": C.SIBLING_BLOCKS,
             "freq_high_mass": C.FREQ_HIGH_MASS,
             "freq_mid_mass": C.FREQ_MID_MASS,
+            "bos_excluded": True,
+            "min_joint": C.MIN_JOINT,
         },
     }
-    torch.save(out, C.EXP0_STATS_PATH)
+    tmp = C.EXP0_STATS_PATH.with_suffix(".pt.tmp")     # atomic: never clobber a
+    torch.save(out, tmp)                               # good stats file mid-write
+    tmp.replace(C.EXP0_STATS_PATH)
+    if cache_writer is not None:
+        meta = cache_writer.finalize({"d_model": int(model.cfg.d_model), "layer": C.LAYER})
+        print(f"[01] token cache: {meta['total_tokens']} tokens, {meta['n_shards']} shards -> {C.TOKEN_CACHE_DIR}")
     print(f"\n[01] saved -> {C.EXP0_STATS_PATH}")
     print(f"[01] total tokens: {total_tokens}")
     alive = int((fire_count > 0).sum())

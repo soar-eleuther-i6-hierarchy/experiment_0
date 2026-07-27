@@ -45,7 +45,8 @@ from metrics import (
 
 # House palette (same as the example sankey)
 PURPLE, BLUE, TEAL = "#7C22CE", "#2196F3", "#0EA5A4"
-PAIR_COLORS = [PURPLE, BLUE, TEAL]
+AMBER = "#F59E0B"               # 4th pair (B3->B4), enabled with EXP0_B3B4=1
+PAIR_COLORS = [PURPLE, BLUE, TEAL, AMBER]
 GREEN, GREY, RED = "#22C55E", "#CBD5E1", "#EF4444"
 GREEN_DARK = "#15803D"          # readable green for heading text on white
 
@@ -127,7 +128,8 @@ def compute_pair(stats, p_blk, c_blk):
 
     cofire = stats["cofire"][key].double()
     R, F = coverage_legs(cofire, fire_p, fire_c)
-    edge_mask = keep_edges(R, fire_p, fire_c, C.EDGE_TAU, C.MIN_FIRE_COUNT)
+    edge_mask = keep_edges(R, fire_p, fire_c, C.EDGE_TAU, C.MIN_FIRE_COUNT,
+                           cofire=cofire, min_joint=C.MIN_JOINT)
     n_edges = int(edge_mask.sum())
 
     # Filter funnel: how many edges survive each metric.
@@ -199,9 +201,9 @@ def build_dashboard(pairs_data, labels=None, stats=None):
         rows=3,
         cols=2,
         subplot_titles=(
-            "Filter funnel: edges surviving each metric (log scale)",
-            "Share of candidate edges surviving each metric (%)",
-            "Out-degree distribution (log-log)",
+            "Edges passing each metric (log scale) — baseline vs strict",
+            "Share of candidate edges passing each metric (%)",
+            "Out-degree CCDF: P(children per parent ≥ x)",
             "Frequency-survival distribution",
             "Sibling-redundancy distribution",
             "Superparents: child coverage x firing rate",
@@ -210,26 +212,41 @@ def build_dashboard(pairs_data, labels=None, stats=None):
         horizontal_spacing=0.10,
     )
 
-    stages = ["candidate", "improves recon", "survives freq"]
+    stages = ["candidate", "improves recon", "survives freq", "PMI > 0", "pass S_res"]
     for pd_ in pairs_data:
         col = PAIR_COLORS[pairs_data.index(pd_)]
         name = pd_["key"]
-        # (1,1) count funnel
+        n_pmi = pd_.get("n_pmi")
+        n_sres = pd_.get("n_sres")
+        # (1,1) count of edges passing each metric (independent counts, not strict
+        # nesting; recon/freq are the lenient baseline, PMI/S_res the strict tests)
         fig.add_bar(
-            x=stages, y=[pd_["n_edges"], pd_["n_recon"], pd_["n_survive"]],
+            x=stages,
+            y=[pd_["n_edges"], pd_["n_recon"], pd_["n_survive"], n_pmi, n_sres],
             name=name, marker_color=col, legendgroup=name, row=1, col=1,
         )
-        # (1,2) percentages
+        # (1,2) percentages — all metrics, so the strict S_res collapse is visible
         e = max(pd_["n_edges"], 1)
+        pmi_pct = 100 * n_pmi / e if n_pmi is not None else None
+        sres_pct = 100 * n_sres / e if n_sres is not None else None
         fig.add_bar(
-            x=["improves recon %", "survives freq %"],
-            y=[100 * pd_["n_recon"] / e, 100 * pd_["n_survive"] / e],
+            x=["improves recon %", "survives freq %", "PMI > 0 %", "pass S_res %"],
+            y=[100 * pd_["n_recon"] / e, 100 * pd_["n_survive"] / e, pmi_pct, sres_pct],
             name=name, marker_color=col, legendgroup=name, showlegend=False, row=1, col=2,
         )
-        # (2,1) out-degree (log-binned)
-        b = binned_bar(pd_["outdeg"], col, name, nbins=30, log_x=True)
-        if b:
-            fig.add_trace(b, row=2, col=1)
+        # (2,1) out-degree CCDF: P(outdeg >= x) — a heavy right tail = superparents
+        od = torch.tensor(pd_["outdeg"]).sort(descending=True).values
+        if od.numel():
+            n = od.numel()
+            ccdf = (torch.arange(1, n + 1).double() / n)
+            fig.add_trace(
+                go.Scatter(x=od.numpy(), y=ccdf.numpy(), mode="lines",
+                           line=dict(color=col, width=2, shape="hv"),
+                           name=name, legendgroup=name, showlegend=False),
+                row=2, col=1,
+            )
+            fig.update_xaxes(type="log", row=2, col=1)
+            fig.update_yaxes(type="log", row=2, col=1)
         # (2,2) frequency survival
         b = binned_bar(pd_["surv_vals"], col, name, rng=(0.0, 1.5), nbins=40)
         if b:
@@ -313,10 +330,12 @@ def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=No
     source, target, value, link_colors = [], [], [], []
     for i, ci in enumerate(kids.tolist(), start=1):
         gc = c0 + ci
-        passes = bool(pd_["recon_pass"][parent_local, ci])
-        s = pd_["survival"][parent_local, ci]
-        survives = (not torch.isnan(s)) and float(s) >= C.FREQ_SURVIVAL_MIN
-        real = passes and survives
+        if "sres_pass" in pd_:                        # stage-03 refinement verdict
+            real = bool(pd_["sres_pass"][parent_local, ci])
+        else:                                         # fallback: weak baseline + freq
+            passes = bool(pd_["recon_pass"][parent_local, ci])
+            s = pd_["survival"][parent_local, ci]
+            real = passes and (not torch.isnan(s)) and float(s) >= C.FREQ_SURVIVAL_MIN
         labels.append(f"B{c_blk}:{gc} {C.feature_label(gc, feat_labels)}")
         node_colors.append(GREEN if real else GREY)
         link_colors.append("rgba(34,197,94,0.55)" if real else "rgba(203,213,225,0.5)")
@@ -338,7 +357,7 @@ def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=No
     title = (f"<b>B{p_blk} → B{c_blk}</b>"
              f"<span style='color:{INK}'>　 superparent </span>"
              f"<b>B{p_blk}:{gp}</b>"
-             f"<span style='color:{INK}'> → top {len(kids)} children 　 survives recon &amp; frequency: </span>"
+             f"<span style='color:{INK}'> → top {len(kids)} children 　 pass S_res (genuine refinement): </span>"
              f"<b><span style='color:{count_color}'>{n_real}/{len(kids)}</span></b>")
     return trace, title
 
@@ -351,12 +370,27 @@ def build_superparent_sankey(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=Non
         return None
     trace, title = built
     fig = go.Figure(trace)
+    _add_sres_legend(fig)
     fig.update_layout(
         title=dict(text=title, x=0.01, xanchor="left", font=dict(size=13, color=INK)),
-        font=FONT, paper_bgcolor="white", plot_bgcolor="white",
-        width=1150, height=680, margin=dict(l=50, r=90, t=70, b=40),
+        font=FONT, paper_bgcolor="white", plot_bgcolor="white", showlegend=True,
+        legend=dict(orientation="h", y=1.02, x=0.01),
+        width=1150, height=680, margin=dict(l=50, r=90, t=90, b=40),
     )
     return fig
+
+
+def _add_sres_legend(fig):
+    """Two off-canvas markers so the green/grey link colouring gets a real legend
+    box (Sankey links themselves don't populate the legend)."""
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode="markers",
+                             marker=dict(size=12, color=GREEN),
+                             name="pass S_res (genuine refinement)"))
+    fig.add_trace(go.Scatter(x=[None], y=[None], mode="markers",
+                             marker=dict(size=12, color=GREY),
+                             name="fail S_res (co-fires only)"))
+    fig.update_xaxes(visible=False)
+    fig.update_yaxes(visible=False)
 
 
 def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_labels=None):
@@ -391,16 +425,18 @@ def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_label
             bgcolor="#F6F3FE", bordercolor="#E3DAFB", borderwidth=1, borderpad=8,
         ))
 
+    _add_sres_legend(fig)
     fig.update_layout(
         title=dict(text=_titled(
                        "Superparent fan-out",
                        "One high-firing feature adopting most of the next block, "
-                       "shown for every block pair (green = the edge survives reconstruction "
-                       "and frequency control)",
+                       "shown for every block pair (green = the edge passes S_res, "
+                       "the genuine-refinement test)",
                        stats),
                    x=0.005, xanchor="left", yref="container", y=0.985, yanchor="top",
                    font=dict(size=14, color=INK)),
-        annotations=annotations,
+        annotations=annotations, showlegend=True,
+        legend=dict(orientation="h", y=1.0, x=0.30, yref="container"),
         font=FONT, paper_bgcolor="white", plot_bgcolor="white",
         width=1250, height=160 + panel_h * n, margin=dict(l=50, r=90, t=150, b=40),
     )
@@ -777,8 +813,77 @@ def run_qualitative():
     print(f"saved: {out}")
 
 
+ORANGE = "#D98A3D"
+
+
+def build_in_block_dashboard(report):
+    """In-block (same-level) edges dashboard from in_block_edges.json. Two panels,
+    both with an explicit legend: (1) per-block edge/duplicate/gate counts,
+    (2) the in-block superparents' out-degree x firing rate."""
+    blocks = report["blocks"]
+    names = [f"B{b['block']} ({b['n_features']})" for b in blocks]
+    fig = make_subplots(
+        rows=2, cols=1, vertical_spacing=0.16,
+        subplot_titles=(
+            "Same-level relations per block: directed edges, duplicates, and how "
+            "many survive PMI then S_res (log)",
+            "In-block superparents: out-degree x firing rate (bubble = children)",
+        ),
+    )
+    series = [
+        ("directed edges", GREY, [b["n_edges"] for b in blocks]),
+        ("survive PMI > 0", PURPLE, [b["n_after_pmi"] for b in blocks]),
+        ("pass S_res (genuine)", GREEN, [(b["sres"]["n_pass"] if b.get("sres") else 0) for b in blocks]),
+        ("duplicate pairs (rename/split)", ORANGE, [b["n_duplicates"] for b in blocks]),
+    ]
+    for nm, col, y in series:
+        fig.add_bar(x=names, y=y, name=nm, marker_color=col, legendgroup=nm, row=1, col=1)
+    fig.update_yaxes(type="log", row=1, col=1)
+
+    # (2) superparents across all blocks, sized by out-degree
+    any_sp = False
+    for bi, b in enumerate(blocks):
+        sps = b["superparents"]
+        if not sps:
+            continue
+        any_sp = True
+        fig.add_trace(
+            go.Scatter(
+                x=[s["outdeg_frac"] for s in sps], y=[s["fire_frac"] for s in sps],
+                mode="markers",
+                marker=dict(color=PAIR_COLORS[bi % len(PAIR_COLORS)], size=[12 + s["outdeg"] / 12 for s in sps],
+                            line=dict(width=1, color="white")),
+                text=[f"B{b['block']}:{s['global']} {_wrap(s.get('label', ''))}<br>"
+                      f"{s['outdeg']} children, fires {100*s['fire_frac']:.0f}%" for s in sps],
+                hovertemplate="%{text}<extra></extra>",
+                name=f"B{b['block']} superparents", legendgroup=f"sp{b['block']}",
+            ), row=2, col=1)
+    if not any_sp:
+        fig.add_annotation(text="no in-block superparents", row=2, col=1,
+                           showarrow=False, font=dict(color=INK))
+    fig.update_xaxes(title_text="out-degree fraction of block", row=2, col=1)
+    fig.update_yaxes(title_text="firing rate", row=2, col=1)
+
+    fig.update_layout(
+        title=dict(text=_titled(
+            "In-block (same-level) edges",
+            "Directed parent→child WITHIN a block (asymmetric containment); "
+            "co-extensive pairs are duplicates, never edges.",
+            stats={"total_tokens": report["total_tokens"]},
+            subtitle=page_subtitle({"total_tokens": report["total_tokens"]})),
+            x=0.01, xanchor="left", font=dict(size=15, color=PURPLE)),
+        font=FONT, paper_bgcolor="white", plot_bgcolor="white",
+        barmode="group", showlegend=True,
+        legend=dict(orientation="h", y=-0.08, x=0.01),
+        width=1150, height=820, margin=dict(l=60, r=60, t=140, b=80),
+    )
+    return fig
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--in-block", action="store_true",
+                    help="visualise in-block same-level edges (needs in_block_edges.json)")
     ap.add_argument("--calibration", action="store_true",
                     help="visualise the synthetic-toy metric calibration (no cache needed)")
     ap.add_argument("--qualitative", action="store_true",
@@ -795,12 +900,37 @@ def main():
     if args.trained_calibration:
         run_trained_calibration()
         return
+    if args.in_block:
+        if not C.IN_BLOCK_PATH.exists():
+            raise SystemExit(f"missing {C.IN_BLOCK_PATH} - run in_block_edges.py first")
+        fig = build_in_block_dashboard(json.loads(C.IN_BLOCK_PATH.read_text()))
+        path = C.RUN_DIR / "in_block_dashboard.html"
+        write_page(fig, path, up=2)
+        print(f"saved: {path}")
+        return
 
     if not C.EXP0_STATS_PATH.exists():
         raise SystemExit(f"missing {C.EXP0_STATS_PATH} - run cache_stats.py first")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     pairs = stats["pairs"]
     pairs_data = [compute_pair(stats, p, c) for (p, c) in pairs]
+
+    # Attach per-edge S_res verdicts (stage 03) so the Sankey colours by genuine
+    # refinement, not the weak stage-02 contribution filter. Absent -> Sankey
+    # falls back to the recon+frequency colouring (older caches / no stage 03).
+    if C.SECOND_PASS_PATH.exists():
+        second = json.loads(C.SECOND_PASS_PATH.read_text())
+        for pd_ in pairs_data:
+            sp_entry = second.get(pd_["key"], {}).get("sres", {})
+            p0 = C.BLOCK_RANGES[int(pd_["key"].split("->")[0])][0]
+            c0 = C.BLOCK_RANGES[int(pd_["key"].split("->")[1])][0]
+            mat = torch.zeros_like(pd_["edge_mask"], dtype=torch.bool)
+            for e in sp_entry.get("edges", []):
+                if e["pass"]:
+                    mat[e["parent"] - p0, e["child"] - c0] = True
+            pd_["sres_pass"] = mat
+            pd_["n_pmi"] = sp_entry.get("n_edges_scored")   # PMI>0 shortlist size
+            pd_["n_sres"] = sp_entry.get("n_pass")          # pass probe-S_res
 
     feat_labels = C.load_feature_labels()
     if not feat_labels:
