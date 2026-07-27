@@ -17,6 +17,11 @@ venv/
 *.egg-info/
 outputs/*.log
 
+# Stage-01 tensor caches (~700 MB/layer). Hosted on the Hub instead, see README:
+# huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats
+outputs/**/*.pt
+outputs/*.pt
+
 # OS
 .DS_Store
 .env

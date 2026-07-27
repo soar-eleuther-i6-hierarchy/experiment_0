@@ -248,6 +248,8 @@ def main():
         return
     report = json.loads(C.METRICS_JSON_PATH.read_text())
     second = json.loads(C.SECOND_PASS_PATH.read_text())
+    if not C.EXP0_STATS_PATH.exists():
+        raise SystemExit(f"[fig] {C.missing_stats_msg()}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     cache = TokenCache(C.TOKEN_CACHE_DIR)
 

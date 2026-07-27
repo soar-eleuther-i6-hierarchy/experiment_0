@@ -198,6 +198,21 @@ EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by cache_stats.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
 METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
 
+# The ~700 MB/layer stats caches are too big for git, so they are gitignored and
+# hosted on the Hub instead. A fresh clone has no exp0_stats.pt, so every consumer
+# points at both ways to get one: download it, or recompute it.
+HF_STATS_DATASET = "soar-eleuther-i6-hierarchy/experiment_0-stats"
+
+
+def missing_stats_msg() -> str:
+    """Error text for the Stage-02 scripts when exp0_stats.pt isn't there yet."""
+    return (
+        f"missing {EXP0_STATS_PATH}\n"
+        f"  download it:  hf download {HF_STATS_DATASET} --repo-type dataset "
+        f'--include "{RUN_DIR.name}/*" --local-dir outputs/\n'
+        f"  or rebuild it: EXP0_LAYER={LAYER} python3 cache_stats.py"
+    )
+
 # Stage-03 token-level caches (written by cache_stats.py when CACHE_RESIDUALS):
 # fp16 residuals + sparse latents let run_second_pass.py train S_res probes and
 # compute parent-conditioned sibling stats WITHOUT re-running the model.
