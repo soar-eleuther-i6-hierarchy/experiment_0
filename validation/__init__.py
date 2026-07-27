@@ -2,8 +2,8 @@
 Exp 0 metric calibration harness.
 
 `metrics/__init__.py` promises the five metrics are pure functions over cached
-tensors so "the same code runs on the synthetic ground-truth toy in tests/ and
-the real gemma-2-2b caches". This package IS that toy:
+tensors so "the same code runs on the synthetic ground-truth toy in validation/
+and the real gemma-2-2b caches". This package IS that toy:
 
   - `toy_world.py`      builds a small SAE-like world with a KNOWN parent-child
                         tree plus three injected pathologies, and emits exactly
@@ -15,6 +15,6 @@ the real gemma-2-2b caches". This package IS that toy:
 
 Run:
     cd experiment_0
-    python3 tests/test_metric_calibration.py     # prints scorecard, writes report
-    pytest tests/                                # if pytest is installed
+    python3 validation/test_metric_calibration.py   # prints scorecard, writes report
+    pytest validation/                              # if pytest is installed
 """

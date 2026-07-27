@@ -10,7 +10,7 @@ Grades candidate parent→child edges between the nested blocks of a **Matryoshk
 | ----------- | ------------- |
 | [metrics/](metrics/) | every metric: formula, threshold, what it catches, what it is blind to |
 | [outputs/](outputs/) | all results — dashboards, reports, per-layer pages, validation tiers |
-| [tests/](tests/) | Tier 1 + Tier 2 calibration (synthetic toy, trained toy) |
+| [validation/](validation/) | Tier 1 + Tier 2 calibration (synthetic toy, trained toy) |
 
 ## Install and run
 
@@ -149,7 +149,7 @@ organize_outputs.py             tidy a run dir into dashboards/ + reports/
 config.py                       every threshold, path and layer-derived constant
 sae_utils.py                    the only model/SAE loaders
 metrics/                        one file per metric, pure functions over cached tensors
-tests/                          Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
+validation/                     Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
 ```
 
 The SAE has `D_SAE = 32768` features in 5 nested blocks with prefix lengths

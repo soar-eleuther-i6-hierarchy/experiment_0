@@ -2,7 +2,7 @@
 
 One file per metric. Every metric is a **pure function over cached statistics** (co-firing counts,
 per-edge reconstruction sums, token-bucket counts, decoder vectors) with no model and no IO, so the
-identical code runs on the real gemma-2-2b caches, on the synthetic toy in [`tests/`](../tests/), and
+identical code runs on the real gemma-2-2b caches, on the synthetic toy in [`validation/`](../validation/), and
 on the trained toy SAE.
 
 They are **competing measurements of the same edge**. The candidate edge *set* comes from Metric 1;
@@ -197,7 +197,7 @@ rank verdict on the surviving shortlist.
 2. **Write it as a pure function here**, over tensors only — no model, no IO — so the toy calibration
    can run it.
 3. **Export it** from [`__init__.py`](__init__.py).
-4. **Calibrate it** in [`tests/`](../tests/): it must recover the genuine edges of the synthetic tree
+4. **Calibrate it** in [`validation/`](../validation/): it must recover the genuine edges of the synthetic tree
    and reject the pathology it claims to catch.
 5. **Add its row to the properties matrix** in the [root README](../README.md). A metric earns its
    place by adding a column no existing metric covers; if its row duplicates another's, it is

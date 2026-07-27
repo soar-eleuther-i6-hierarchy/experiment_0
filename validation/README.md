@@ -1,9 +1,11 @@
-# `tests/` — metric calibration
+# `validation/` — metric calibration
 
-There is no unit-test suite here. What lives in this directory is **calibration**: the two tiers of
-validation that have a ground-truth answer, so a metric can be scored rather than eyeballed.
-Tier 3 (the real SAE, judged against Neuronpedia labels) is [`qualitative_check.py`](../qualitative_check.py)
-in the repo root.
+This is **calibration**, not a unit-test suite: the two tiers of validation that have a ground-truth
+answer, so a metric can be scored rather than eyeballed. (The directory was called `tests/`, which
+promised coverage of `metrics/` and delivered a toy-world generator; `tests/` is now free for real
+unit tests.) Tier 3 (the real SAE, judged against Neuronpedia labels) is
+[`qualitative_check.py`](../qualitative_check.py) in the repo root — it stays there because it is
+also pipeline Stage 02b, reading `exp0_stats.pt` and writing into `RUN_DIR`.
 
 ← [Back to the main README](../README.md) · full results and the three-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-three-tiers)
 
@@ -14,8 +16,8 @@ in the repo root.
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | runs the metrics on a Matryoshka SAE *actually trained* on Bussmann's tree, matches learned latents back to true features, and scores edge recovery — **precision 1.00, recall 0.67** |
 
 ```bash
-python3 tests/test_metric_calibration.py                    # Tier 1
-PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py    # Tier 2, needs outputs/toy_trained/
+python3 validation/test_metric_calibration.py                    # Tier 1
+PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2, needs outputs/toy_trained/
 ```
 
 Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`

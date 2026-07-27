@@ -68,14 +68,14 @@ to avoid confusion with the model's residual-stream layers.)
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic** | [`tests/toy_world.py`](../tests/toy_world.py): a known 5-parent tree plus three injected pathologies, reduced to the statistics the metrics read | yes, by construction | the maths is right — 5/5 metrics pass across seeds 0–5, each pathology caught by its intended metric |
-| **2. Trained toy** | [`tests/calibrate_on_trained_toy.py`](../tests/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) |
+| **1. Synthetic** | [`validation/toy_world.py`](../validation/toy_world.py): a known 5-parent tree plus three injected pathologies, reduced to the statistics the metrics read | yes, by construction | the maths is right — 5/5 metrics pass across seeds 0–5, each pathology caught by its intended metric |
+| **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) |
 | **3. Real SAE** | [`qualitative_check.py`](../qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a production SAE |
 
 Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge that
 has both a trained SAE and a known answer.
 
-**What the tiers do not cover.** [`tests/toy_world.py`](../tests/toy_world.py) injects three
+**What the tiers do not cover.** [`validation/toy_world.py`](../validation/toy_world.py) injects three
 pathologies — a superparent, a feature-split parent, a frequency-coincidence edge — so tiers 1 and 2
 score the original five metrics only. `S_res`, the independence null (PMI/Dev), joint-child coverage
 and the in-block edges have no known-tree calibration yet: extending the toy with an absorbed child
@@ -113,10 +113,10 @@ Steps 3–5 are what separates "the metric failed" from "the SAE failed": a miss
 metric if the SAE learned both endpoints, which is why per-feature recovery is reported too.
 
 ```bash
-python3 tests/test_metric_calibration.py                    # Tier 1
+python3 validation/test_metric_calibration.py                    # Tier 1
 python3 visualize.py --calibration                          # Tier 1 dashboard
 
-PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)
+PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)
 python3 visualize.py --trained-calibration                  # Tier 2 dashboard
 
 python3 qualitative_check.py                                # Tier 3
