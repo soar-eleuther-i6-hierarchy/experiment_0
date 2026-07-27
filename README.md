@@ -1,251 +1,157 @@
 # experiment_0: Implement Metrics (SOAR I-6)
 
 Grades candidate parent→child edges between the nested blocks of a **Matryoshka SAE** on
-`google/gemma-2-2b` (residual stream, layers 3 to 24). Five competing metrics (coverage,
-reconstruction, sibling redundancy, out-degree, and token-frequency control) decide which
-"edges" are real hierarchy and which are frequency / co-occurrence artifacts.
+`google/gemma-2-2b` (residual stream, layers 3–24). A family of competing metrics decides which
+"edges" are real hierarchy and which are frequency, splitting or co-occurrence artifacts.
 
-Each metric is validated twice: against a **synthetic toy with known ground truth** (5/5 pass,
-every injected pathology caught by its intended metric) and against **Neuronpedia labels on the
-real SAE**. Headline finding: that qualitative agreement is clean early but **degrades with depth**,
-and at layer 24 the surviving edges collapse onto a single feature firing on 41.9% of tokens.
+**Live site:** [soar-eleuther-i6-hierarchy.github.io/experiment_0](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/)
 
-**Live site:** [https://soar-eleuther-i6-hierarchy.github.io/experiment_0/](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/)
+| Where to go | What is there |
+| ----------- | ------------- |
+| [metrics/](metrics/) | every metric: formula, threshold, what it catches, what it is blind to |
+| [outputs/](outputs/) | all results — dashboards, reports, per-layer pages, validation tiers |
+| [tests/](tests/) | Tier 1 + Tier 2 calibration (synthetic toy, trained toy) |
 
-**Cached statistics:** 🤗 [soar-eleuther-i6-hierarchy/experiment_0-stats](https://huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats)
-— the per-layer `exp0_stats.pt` caches are too big for git, so they live on the Hub
-([how to download](#cached-statistics-on-hugging-face)).
+## Install and run
 
-## Key results
-
-**Coverage proposes far more edges than survive.** At layer 6, only 512 of 8,156 candidate
-B0→B1 edges (6.3%) improve reconstruction; the rest are co-firing with nothing behind it.
-
-**Deeper block pairs carry no hierarchy signal at all.** B2→B3 has 4.7M candidate edges, of
-which 113 improve reconstruction, and 99.9% are frequency-driven (mean survival 0.015, so the
-edges vanish on rare tokens).
-
-**The structure is not a tree.** Multi-parenting is near-total (383 of 383 children have
-multiple parents at layer 6), and the busiest parent covers the entire child block: feature 15
-("technical documentation language") fires on 99.0% of tokens and parents all 383 B1 features.
-
-**Semantic quality degrades with network depth.** Survivor edges read as genuine refinement
-early (L3/L6: "legal citations" → "legal citations"), but at layer 24 the 8 survivors collapse
-onto just 2 distinct parents, one firing on 41.9% of tokens with unrelated children.
-
-**Root cause of that collapse: the superparent gate is an AND of two conditions**
-(`fan-out >= 30%` AND `fires >= 10%`). Feature 14 clears firing by 4x (41.9%) but its fan-out is
-only 21.9%, so it slips through. Superparent thresholds likely need per-layer calibration.
-
-## How the metrics are validated: three tiers
-
-The same five metrics are checked at three tiers of increasing realism. Each tier gives up
-one guarantee and gains one dose of reality; a metric we trust has to hold across all three.
-("Tier", not "layer", to avoid any confusion with the model's residual-stream layers.)
-
-| Tier                     | What it is                                                                                                                                              | Ground truth?                 | What it proves                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **1. Synthetic**   | `tests/toy_world.py`: a known 5-parent tree plus three injected pathologies, reduced to the statistics the metrics read                               | yes, by construction          | the maths is right (5/5 metrics pass across seeds 0–5, each pathology caught by its intended metric) |
-| **2. Trained toy** | `tests/calibrate_on_trained_toy.py`: a Matryoshka SAE actually trained on Bussmann's tree (`sae-training`), metrics run on the *learned* features | yes, the tree is known        | the metrics survive a real training run: **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) |
-| **3. Real SAE**    | `qualitative_check.py` on `gemma-2-2b / 6-res-matryoshka-dc` (layer 6), read against Neuronpedia labels                                             | no, human judgement stands in | the metrics mean something on a production SAE                                                        |
-
-Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge
-that has both a trained SAE and a known answer.
-
-On Tier 2, the metrics keep **every** edge whose two endpoints the SAE actually recovered, with
-**no false positives**. The three missed edges are exactly the three child features the SAE never
-learned (it recovered 17 of 20), so the 0.67 recall is a limit of the trained SAE, not of the
-metrics: the calibration cleanly separates "the metric failed" from "the SAE failed".
-
-### How Tier 2 tests the metrics on the trained toy
-
-[`tests/calibrate_on_trained_toy.py`](tests/calibrate_on_trained_toy.py) runs the whole loop:
-
-1. **Rebuild the toy.** Read Bussmann's compositional tree from the team's
-   [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo
-   (`configs/tree.json`): 3 parents, each with 3 mutually-exclusive children, plus rare
-   features. A child only fires when its parent fires, which is the ground-truth hierarchy.
-2. **Train a Matryoshka SAE on it** (batch-topk, `k=2`) and load the checkpoint from
-   `outputs/toy_trained/`. The SAE sees only the activations, never the tree.
-3. **Match learned latents to true features.** For each SAE latent, take the true feature its
-   decoder points at most (cosine ≥ 0.4). This is how we know which latent *is* parent 0, etc.
-4. **Run the five metrics on the learned latents** (same functions, same thresholds as the
-   real pipeline) to get the edges they keep.
-5. **Score against the known tree.** Compare kept edges to the true parent→child edges:
-   precision = of the kept edges, how many are real; recall = of the true edges, how many were
-   kept. Because the tree is known, an edge the metrics keep on a semantically wrong pair would
-   show up immediately as a false positive.
-
-The point of steps 3–5: a missed edge is only a metric failure if the SAE actually learned both
-its endpoints. That is why we also report per-feature recovery: it attributes every miss to
-either the metric or the SAE.
+Run everything from the `experiment_0/` directory.
 
 ```bash
-PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py   # writes trained_toy_calibration.json
-python3 visualize.py --trained-calibration                # builds the dashboard
-```
-
-> Killing 94% to 99.9% of coverage edges is the result, not a failure: the Matryoshka SAE's
-> hierarchy claim does not survive any measurement stricter than raw co-firing.
->
-> Caveats: the metrics cover the SAE/MLP slice only, and B3→B4 is excluded for memory reasons.
-
-### Across all layers
-
-- [**Cross-depth comparison**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/cross_depth_comparison.html): the cross-depth story (4 metric panels, superparent table, qualitative-agreement collapse).
-- [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/toy_calibration.html): Tier 1, synthetic ground-truth calibration (5/5).
-- [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/trained_toy_calibration.html): Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
-- [**Kill rates**](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/kill_rates.html): how many edges each metric removes.
-
-### Per layer
-
-Every layer has the same five pages: three interactive dashboards, then the two
-rendered text reports behind them.
-
-| Layer         | Metrics dashboard                                                                                        | Superparent fan-out                                                                                       | Qualitative dashboard                                                                                        | metrics report                                                                                          | qualitative report                                                                                         |
-| ------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| **L3**  | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_03/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_03/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_03/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_03/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_03/qualitative_check.html) |
-| **L6**  | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_06/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_06/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_06/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_06/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_06/qualitative_check.html) |
-| **L12** | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_12/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_12/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_12/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_12/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_12/qualitative_check.html) |
-| **L18** | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_18/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_18/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_18/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_18/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_18/qualitative_check.html) |
-| **L24** | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_24/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_24/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_24/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_24/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/outputs/layer_24/qualitative_check.html) |
-
-> Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown text.
-
-### Cached statistics on Hugging Face
-
-Stage 01 writes one **~700 MB** tensor cache per layer holding every co-firing count,
-per-frequency-bucket count and reconstruction-ablation sum the five metrics read. At 3.4 GB
-across five layers those files are too big to keep in git, so they are hosted separately:
-
-**🤗 [huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats](https://huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats)**
-
-Download straight into the paths the scripts already expect:
-
-```bash
-pip install huggingface_hub
-
-# one layer (~700 MB)
-hf download soar-eleuther-i6-hierarchy/experiment_0-stats \
-    --repo-type dataset --include "layer_06/*" --local-dir outputs/
-
-# all five layers (~3.4 GB)
-hf download soar-eleuther-i6-hierarchy/experiment_0-stats \
-    --repo-type dataset --local-dir outputs/
-```
-
-That lands `outputs/layer_06/exp0_stats.pt`, which is what `run_metrics.py`, `visualize.py`
-and `make_report_figures.py` read — so downloading it skips `cache_stats.py`, the only
-GPU-heavy step in the pipeline. Everything else in `outputs/` (reports, labels, dashboards)
-is small and stays in git.
-
-## When is an edge a parent → child? The thresholds
-
-Every metric is a matrix over feature pairs with one threshold that turns a number into a
-decision. A feature "fires" on a token when its activation exceeds `FIRE_THRESHOLD = 1e-3`
-(post-JumpReLU); every matrix below is built on that. All thresholds live in
-[config.py](config.py).
-
-**1. Coverage: defines the candidate edge set.** From `cofire[p,c]` (tokens where both fire):
-
-```
-R[p,c] = cofire[p,c] / fire_count[c]     reverse: is the child contained in the parent?
-F[p,c] = cofire[p,c] / fire_count[p]     forward: how much of the parent the child explains
-```
-
-Keep the edge when `R[p,c] ≥ EDGE_TAU = 0.50` **and** both endpoints fire at least
-`MIN_FIRE_COUNT = 20` times. (`F` is computed but not part of the accept rule.)
-
-**2. Reconstruction: the real test of parenthood.** Per-token ablation gain
-`g_f = 2·a_f·⟨d_f, x−x̂⟩ + a_f²‖d_f‖²`, summed over the child's tokens and divided by the base
-error there:
-
-```
-parent_gain[p,c] = Σ g_p / Σ err        child_gain[c] = Σ g_c / Σ err
-```
-
-Pass when **both** `parent_gain ≥ RECON_REL_GAIN_MIN = 0.01` and `child_gain ≥ 0.01`, ablating
-the parent must make the child's reconstruction at least 1% worse.
-
-**3. Frequency control: does the edge survive on rare tokens?** Split tokens into buckets by
-cumulative mass (0 = top 50%, 1 = next 40%, 2 = rest):
-
-```
-survival[p,c] = R over buckets 1+2  ÷  R over all buckets
-```
-
-Pass when `survival ≥ FREQ_SURVIVAL_MIN = 0.50`. Near 0 means the edge lives only on frequent
-tokens, a frequency artifact.
-
-**4. Out-degree: flags a superparent (a rejection rule).** With
-`fire_rate[p] = fire_count[p] / total_tokens`, flag when **both**
-`outdeg[p] / n_children ≥ SUPERPARENT_OUTDEG_FRAC = 0.30` and `fire_rate[p] ≥ SUPERPARENT_FIRE_FRAC = 0.10`.
-*(This AND-gate is what R5 above shows can leak at deep layers.)*
-
-**5. Sibling redundancy: flags feature-splitting (a rejection rule).** Mean Jaccard overlap
-between a parent's children, `J(i,j) = cofire[i,j] / (fire[i]+fire[j]−cofire[i,j])`; flag when
-`redundancy ≥ SIBLING_REDUNDANCY_FLAG = 0.50`.
-
-**Verdict.** An edge is a real parent → child (a *survivor*) when it clears coverage,
-reconstruction and frequency control, and its parent is not a superparent:
-
-```
-R ≥ 0.5  and  fire_p ≥ 20  and  fire_c ≥ 20          (coverage)
-and  parent_gain ≥ 0.01  and  child_gain ≥ 0.01      (reconstruction)
-and  survival ≥ 0.5                                   (frequency control)
-and  parent not flagged as a superparent
-```
-
-The three rejection categories map exactly onto these: **superparent** / **freq-driven**
-(`survival < 0.5`) / **no-recon** (`parent_gain < 0.01`).
-
-## Run it yourself
-
-Run from the `experiment_0/` directory.
-
-```bash
-pip install torch sae_lens datasets plotly numpy
+pip install torch sae_lens datasets plotly numpy matplotlib
 
 python3 cache_stats.py        # Stage 01: cache every statistic the metrics need (slow, needs model+SAE)
 python3 fetch_labels.py       # feature labels for the current layer
 python3 run_metrics.py        # Stage 02: metrics_report.{json,md}
-python3 qualitative_check.py  # survivor-vs-rejected edges vs Neuronpedia
+python3 run_second_pass.py    # Stage 03: S_res probes + parent-conditioned siblings (model-free)
+python3 qualitative_check.py  # survivor-vs-rejected edges vs Neuronpedia labels
 python3 visualize.py          # rebuild the dashboards
 ```
 
-`EXP0_LAYER` (default 6) selects the layer and writes to `outputs/layer_NN/`.
-
-To skip Stage 01, [download the cached `exp0_stats.pt`](#cached-statistics-on-hugging-face)
-from the Hub instead and start at `run_metrics.py`.
-
-### More options
+`EXP0_LAYER` (default 6) selects the layer; everything writes to `outputs/layer_NN/`.
 
 ```bash
-# Quick smoke slice: 16 docs instead of 400, just to check the pipeline runs
-python3 cache_stats.py --docs 16
-
-# Target a different layer (0 to 24); everything derives from EXP0_LAYER
-EXP0_LAYER=12 python3 cache_stats.py
-
-# Pick the device (default: mps on Mac, cuda on the server)
-python3 cache_stats.py --device cpu
-EXP0_DEVICE=cuda:1 python3 cache_stats.py
-CUDA_VISIBLE_DEVICES=1 python3 cache_stats.py   # pin one GPU on the shared server
-
-# Extra dashboards
-python3 visualize.py --qualitative     # qualitative_dashboard
-python3 visualize.py --calibration     # toy_calibration scorecard
+python3 cache_stats.py --docs 16              # quick smoke slice (16 docs instead of 400)
+EXP0_LAYER=12 python3 cache_stats.py          # any layer 0–24
+EXP0_DEVICE=cuda:1 python3 cache_stats.py     # device (default: mps on Mac, cuda on server)
+CUDA_VISIBLE_DEVICES=1 python3 cache_stats.py # pin one GPU on the shared server
+EXP0_OUT=outputs_local python3 run_metrics.py # redirect all outputs away from the published outputs/
 ```
 
-**Validation tiers** (see "How the metrics are validated" above):
+The heavy cache (`exp0_stats.pt`, ~700 MB per layer) is not in git — pull it from the Hub instead of
+recomputing:
 
 ```bash
-# Tier 1: synthetic ground truth (no model, no network)
-python3 tests/test_metric_calibration.py
-
-# Tier 2: calibrate on a Matryoshka SAE trained on Bussmann's toy
-#   needs a checkpoint in outputs/toy_trained/ (train via sae-training/scripts/train_toy.py)
-PYTHONPATH=src python3 tests/calibrate_on_trained_toy.py
-
-# Tier 3 is qualitative_check.py above, on the real gemma-2-2b SAE
+hf download soar-eleuther-i6-hierarchy/experiment_0-stats --repo-type dataset --local-dir outputs/
 ```
+
+More entry points (extra dashboards, in-block edges, the validation tiers) are listed in
+[metrics/README.md](metrics/README.md) and [outputs/README.md](outputs/README.md).
+
+## What each metric catches
+
+The validation table: **metrics (rows) × properties (columns)**. A candidate pair can look like an edge for seven different reasons. Only one of them is real
+hierarchy; the rest are the pathologies the metrics have to separate out. Each metric is a partial
+detector, so the question for every metric is not "is it correct" but **which column does it add**.
+
+| Metric | Parent→child | Absorption | Splitting | Superparent | Siblings | Frequency coincidence | Concept co-occurrence |
+| ------ | :----------: | :--------: | :-------: | :---------: | :------: | :-------------------: | :-------------------: |
+| **1a** Coverage — reverse `R` | ◐ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| **1b** Coverage — forward `F` | ◐ | ✗ | ✗ | ◐ | ✗ | ✗ | ✗ |
+| **1c** Joint-child `R_supp` / `R_mass` / energy share | ◐ | ✗ | ✅ | ✅ | ✗ | ✗ | ✗ |
+| **2a** Reconstruction ablation (contribution filter) | ◐ | ✗ | ✗ | ✗ | ✗ | ◐ | ✗ |
+| **2b** `S_res` probe, rank-scored | ✅ | ◐ | ✗ | ◐ | ◐ | ✅ | ✗ |
+| **3** Sibling redundancy | ◐ | ✗ | ✅ | ✗ | ✅ | ✗ | ✗ |
+| **4** Out-degree / superparent | ✗ | ✗ | ✗ | ✅ | ✗ | ◐ | ✗ |
+| **5** Token-frequency control | ◐ | ✗ | ✗ | ◐ | ✗ | ✅ | ✗ |
+| **6** Independence null (PMI / Dev) | ◐ | ✗ | ✗ | ✅ | ✗ | ✅ | ✗ |
+| **7** In-block directed coverage | ✅ | ✗ | ✅ | ✗ | ✅ | ✗ | ✗ |
+
+✅ detects this property · ◐ partial — necessary but not sufficient, or only in some regimes · ✗ blind
+
+**The properties.** *Parent→child*: the child is a genuine refinement of the parent. *Absorption*:
+the child has absorbed a case from the parent, so the parent goes **silent** exactly where the child
+fires. *Splitting*: the "children" are near-copies of one another. *Superparent*: one parent fans out
+over most of the next block and fires on a huge share of tokens. *Siblings*: the two features are
+co-level (co-hyponyms or co-extensive duplicates), not parent and child. *Frequency coincidence*: the
+co-firing is base rate, carried by high-frequency tokens. *Concept co-occurrence*: both features are
+specific and genuinely unrelated (`enzyme`, `CT scan`) but share a latent topic (`biology`), so they
+co-fire in the same documents.
+
+**Two columns are still open.**
+
+- **Concept co-occurrence is caught by nothing.** `enzyme` → `CT scan` passes coverage (they co-fire),
+  passes reconstruction (both carry mass on biology tokens), passes token-frequency control (biology
+  tokens are not frequent), and passes PMI (they are *not* independent — the shared topic makes
+  PMI > 0). Closing it needs a **model-based null**: a topic model / LDA-style `M` that removes the
+  shared concept and asks whether the residuals `a = enzyme − biology`, `b = CT − biology` are still
+  dependent. Not implemented in this tranche.
+- **Absorption** is only reachable through decoder geometry (`S_res`), and even there the edge never
+  arrives: coverage gates the candidate set, and an absorbed child has low `R` by construction, so
+  the pair is dropped before any later metric sees it.
+
+Cells are read off each metric's construction (see the module docstrings) together with the
+calibrations below — they state what a metric is *able* to separate, not a measured accuracy on the
+real SAE.
+
+### Why trust the table: three tiers
+
+Each tier gives up one guarantee and gains one dose of reality; a metric we trust has to hold across
+all three. ("Tier", not "layer", to avoid confusion with the model's residual-stream layers.)
+
+| Tier | What it is | Ground truth? | What it proves |
+| ---- | ---------- | ------------- | -------------- |
+| **1. Synthetic** | a known 5-parent tree plus injected pathologies, reduced to cached stats | yes, by construction | the maths is right — 5/5, each pathology caught by its intended metric |
+| **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
+| **3. Real SAE** | the production `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | no, human judgement | the metrics mean something outside a toy |
+
+Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge with
+both a trained SAE and a known answer.
+
+**Scope.** Tiers 1–2 calibrate the original five metrics (1a, 2a, 3, 4, 5). The later additions —
+`S_res`, the independence null, joint-child and in-block — are theory-backed and their matrix rows
+follow from their construction, but no known-tree calibration exists for them yet. Full detail,
+per-metric scorecards and how to run each tier: **[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
+
+## Headline findings
+
+- **Coverage proposes far more edges than survive.** At layer 6 only 512 of 8,156 candidate B0→B1
+  edges (6.3%) improve reconstruction; B2→B3 keeps 113 of 4.7M, with 99.9% frequency-driven.
+- **The structure is not a tree.** Multi-parenting is near-total (383 of 383 children at layer 6),
+  and feature 15 ("technical documentation language") fires on 99.0% of tokens and parents the
+  entire B1 block.
+- **Semantic quality degrades with depth.** Survivors read as real refinement early
+  (L3/L6: "legal citations" → "legal citations"); at layer 24 the 8 survivors collapse onto 2
+  parents, one firing on 41.9% of tokens with unrelated children.
+- **The metrics themselves hold up.** 5/5 on the synthetic toy (each injected pathology caught by its
+  intended metric) and **precision 1.00 / recall 0.67** on a Matryoshka SAE actually trained on
+  Bussmann's tree — every miss traced to a feature the SAE never learned, not to a metric.
+
+> Killing 94% to 99.9% of coverage edges is the result, not a failure: the Matryoshka SAE's hierarchy
+> claim does not survive any measurement stricter than raw co-firing.
+>
+> Caveats: the metrics cover the SAE/MLP slice only, and B3→B4 is off by default (memory;
+> enable with `EXP0_B3B4=1`).
+
+Full numbers, dashboards and per-layer pages: **[outputs/](outputs/)**.
+
+## Repo layout
+
+```
+cache_stats.py        Stage 01  stream the corpus once, accumulate every statistic (GPU, slow)
+run_metrics.py        Stage 02  pure post-processing over exp0_stats.pt -> metrics_report.{json,md}
+run_second_pass.py    Stage 03  model-free token-cache pass: S_res probes, parent-conditioned siblings
+in_block_edges.py               same-level (within-block) directed edges and duplicates
+qualitative_check.py            survivor vs rejected edges read against Neuronpedia labels
+fetch_labels.py                 bulk autointerp labels for the current layer
+visualize.py                    all interactive HTML dashboards
+make_report_figures.py          the five static PNGs in figures/
+organize_outputs.py             tidy a run dir into dashboards/ + reports/
+config.py                       every threshold, path and layer-derived constant
+sae_utils.py                    the only model/SAE loaders
+metrics/                        one file per metric, pure functions over cached tensors
+tests/                          Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
+```
+
+The SAE has `D_SAE = 32768` features in 5 nested blocks with prefix lengths
+`[128, 512, 2048, 8192, 32768]` → `B0=[0,128) B1=[128,512) B2=[512,2048) B3=[2048,8192) B4=[8192,32768)`.
+Cross-block edges are computed between **adjacent** blocks only.
