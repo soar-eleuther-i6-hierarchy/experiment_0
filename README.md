@@ -34,7 +34,7 @@ python3 cache_stats.py --docs 16              # quick smoke slice (16 docs inste
 EXP0_LAYER=12 python3 cache_stats.py          # any layer 0–24
 EXP0_DEVICE=cuda:1 python3 cache_stats.py     # device (default: mps on Mac, cuda on server)
 CUDA_VISIBLE_DEVICES=1 python3 cache_stats.py # pin one GPU on the shared server
-EXP0_OUT=outputs_local python3 run_metrics.py # redirect all outputs away from the published outputs/
+EXP0_OUT=my_run python3 run_metrics.py        # redirect all outputs away from the published outputs/
 ```
 
 The heavy cache (`exp0_stats.pt`, ~700 MB per layer) is not in git — pull it from the Hub instead of

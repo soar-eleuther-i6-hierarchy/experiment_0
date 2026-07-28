@@ -1,6 +1,5 @@
 """
-Independence-null deviation: PMI + Dev (metrics_todo.md T3; landscape
-Appendix A-L / A-M).
+Independence-null deviation: PMI + Dev.
 
 Raw reverse coverage rewards frequent parents: a parent firing on ~all tokens
 has R ~ 1 against every child by base rate alone. Score the surprise over the
@@ -12,12 +11,12 @@ independent-firing null instead:
     Dev(p, c) = R(p, c) - rho_p        (rho_p = parent firing rate)
         sign-equivalent to PMI; kept because it reads in coverage units.
 
-Support guard (landscape Rev. 2): pairs with n_joint < min_joint are NaN (not
+Support guard: pairs with n_joint < min_joint are NaN (not
 -inf, which would poison means/sorts) and are COUNTED, not silently dropped.
 
 Scope note: this controls the C-freq confound only. Topical co-occurrence
-(mg -> medical text) passes both PMI and Dev; that needs the model-based
-null M' (out of scope for this tranche).
+(mg -> medical text) passes both PMI and Dev; that needs a model-based
+co-occurrence null (M'), which is not implemented here.
 """
 
 from __future__ import annotations

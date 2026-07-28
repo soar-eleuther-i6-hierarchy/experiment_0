@@ -93,7 +93,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
 
     # --- Metric 1: coverage + edge set --------------------------------------
     # R = P(parent | child) ("reverse"), F = P(child | parent) ("forward");
-    # landscape names: Cont(c,p) and Share_freq(c,p).
+    # direction-neutral names: Cont(c,p) and Share_freq(c,p).
     R, F = coverage_legs(cofire, fire_p, fire_c)
     min_joint = 0 if legacy_guards else C.MIN_JOINT
     edge_mask = keep_edges(
@@ -159,7 +159,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     n_testable = int(surv_vals.numel())
 
     # --- Metric 3: sibling redundancy ---------------------------------------
-    # GLOBAL Jaccard only — confounded for Matryoshka (landscape Rev. 2.1): it
+    # GLOBAL Jaccard only — confounded for Matryoshka: it
     # scores co-firing anywhere, not disjointness within the parent's support.
     # This is a cheap diagnostic, NOT the splitting verdict; the corrected
     # parent-conditioned Jaccard is in the stage-03 second pass. Reported so
@@ -209,7 +209,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     return {
         "pair": key,
         "n_candidate_edges": n_edges,
-        # support-guard accounting (never silently drop — landscape Rev. 2)
+        # support-guard accounting (never silently drop)
         "n_dropped_min_joint": n_dropped_min_joint,
         "n_pairs_below_min_joint": null["n_excluded"],
         "independence_null": {
@@ -239,7 +239,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
             "frac_freq_driven": _f(n_freq_driven / n_testable) if n_testable else 0.0,
         },
         "sibling_redundancy": sib_summary,
-        "n_superparents": len(superparents),                      # outdeg-only flag (§C.4)
+        "n_superparents": len(superparents),                      # outdeg-only flag
         "n_superparents_strict": sum(sp["strict"] for sp in superparents),  # old AND gate
         "superparents": [
             {
@@ -293,7 +293,7 @@ def to_markdown(report) -> str:
         sb = pr["sibling_redundancy"]
         if sb:
             L.append(f"- **Sibling redundancy** (global Jaccard — confounded proxy, not the "
-                     f"splitting verdict; the Rev. 2.1 parent-conditioned version is in the "
+                     f"splitting verdict; the parent-conditioned version is in the "
                      f"stage-03 second pass): mean {sb['mean_redundancy']:.3f} over "
                      f"{sb['n_parents_scored']} parents; {sb['n_over_global_threshold']} over the "
                      f"{C.SIBLING_REDUNDANCY_FLAG} global threshold.")

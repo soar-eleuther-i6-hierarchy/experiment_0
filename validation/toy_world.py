@@ -1,9 +1,8 @@
 """
 Synthetic ground-truth "toy" for calibrating the five Exp 0 metrics.
 
-The project plan (Exp 0, "How we decide which metric works") asks us to keep the
-metrics that BOTH recover a known parent-child tree AND reject pathological edges
-we inject on purpose. Real gemma-2-2b caches have no ground truth, so we build a
+A metric earns its place only if it BOTH recovers a known parent-child tree AND
+rejects pathological edges we inject on purpose. Real gemma-2-2b caches have no ground truth, so we build a
 tiny world where we know the answer, and emit the *same cached statistics*
 `run_metrics.analyse_pair` reads from `exp0_stats.pt`. The five metrics then run
 unchanged (same functions, same config thresholds) and we score them.

@@ -1,5 +1,5 @@
 """
-Static proof-figures for the layer-6 team report (REPORT_layer6.md).
+Static proof-figures for the layer-6 team report.
 
 Five matplotlib PNGs into figures/ — chosen so each one backs a single claim,
 and so they are viewable without a browser (unlike the plotly dashboards):
@@ -18,7 +18,7 @@ regenerate on other data.
 Reads the layer's exp0_stats.pt (edge sets + energy), second_pass.json (S_res per
 edge), metrics_report.json (funnel counts), and the token cache (per-feature
 energy). Run on the server where the data lives:
-    EXP0_OUT=.../outputs_local python make_report_figures.py
+    EXP0_OUT=<your-run-dir> python make_report_figures.py
 Output: <RUN_DIR>/figures/*.png  (also copied to a repo-level figures/ by the
 caller for tracking).
 """

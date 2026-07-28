@@ -1,6 +1,5 @@
 """
-Energy shares + exact joint-child coverage (metrics_todo.md T2; landscape
-Appendix A-B and §C.1 Leg 2/3).
+Energy shares + exact joint-child coverage.
 
 Computed from the stage-01 accumulators (schema v2):
 

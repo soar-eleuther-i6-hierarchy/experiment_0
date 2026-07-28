@@ -1,9 +1,9 @@
 """
 Exp 0 - Implement Metrics: central configuration.
 
-Exp 0 treats the metrics as *competing measurements of the same edge*
-(project plan §3, Exp 0). The edges come from the warm-up task's crude
-activation-coverage graph; here we add the richer signals:
+Exp 0 treats the metrics as *competing measurements of the same edge*. The
+edges come from the warm-up task's crude activation-coverage graph; here we
+add the richer signals:
 
     1. Activation coverage, three legs (forward / reverse / joint-child)
     2. Reconstruction condition (Tree SAE)   - pair must improve reconstruction
@@ -87,7 +87,7 @@ BATCH_DOCS = 8
 FIRE_THRESHOLD = 1e-3     # feature "fires" above this (post-JumpReLU)
 EDGE_TAU = 0.5            # reverse-coverage edge criterion (same as warm-up)
 MIN_FIRE_COUNT = 20       # rare-feature guard (same as warm-up)
-# Joint-support guard (landscape Rev. 2): a child firing MIN_FIRE_COUNT times
+# Joint-support guard: a child firing MIN_FIRE_COUNT times
 # inside a near-always-on parent hits R = 1.0 by chance; requiring a minimum
 # co-fire count kills those. Excluded edges are REPORTED, not silently dropped.
 # NOTE: any value <= EDGE_TAU * MIN_FIRE_COUNT (= 10) is vacuous — every kept
@@ -156,8 +156,8 @@ FREQ_SURVIVAL_MIN = 0.5
 # Paths + device
 # ---------------------------------------------------------------------------
 HERE = Path(__file__).resolve().parent
-# EXP0_OUT redirects ALL outputs (e.g. to the gitignored outputs_local/) so runs
-# never touch the git-tracked outputs/ published on GitHub Pages. Default: unchanged.
+# EXP0_OUT redirects ALL outputs to a directory of your choice, so a scratch run
+# never touches the git-tracked outputs/ published on GitHub Pages. Default: unchanged.
 OUT_DIR = Path(os.environ.get("EXP0_OUT", HERE / "outputs"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

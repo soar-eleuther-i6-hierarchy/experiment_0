@@ -8,7 +8,7 @@ residuals + sparse latents) written by cache_stats.py:
        of edges that survive coverage + the independence null. Self-labeled
        probes — see the circularity caveat in metrics/sres.py.
     2. Parent-conditioned sibling redundancy for flagged superparents
-       (landscape Rev. 2.1: Jaccard restricted to the parent's firing set).
+       (Jaccard restricted to the parent's firing set).
     3. Exact joint-child union over the KEPT children only (stage 01 streams
        the all-children union; the kept-children one depends on the edge set,
        which exists only after stage 02).

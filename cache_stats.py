@@ -67,7 +67,7 @@ def keep_mask(tokens, pad_id):
     Excludes padding AND position 0: tokenize_docs prepends BOS to every row,
     and gemma-2's residual at BOS is an extreme-norm attention-sink outlier —
     every BOS-firing feature would co-fire there by construction, contaminating
-    fire/cofire/energy/recon counts (metrics_todo.md T1).
+    fire/cofire/energy/recon counts.
     """
     keep = tokens != pad_id
     keep[:, 0] = False
@@ -87,7 +87,8 @@ def count_tokens(seqs, vocab):
 
 
 def accumulate_pair_extras(acc, feats_p, feats_c, thr):
-    """T2 accumulators for one (parent, child) block pair, one token chunk.
+    """Energy / joint-child accumulators for one (parent, child) block pair,
+    one token chunk.
 
     acc holds (all in acc["energy_total"].dtype):
         energy_cofire [P, C] : sum over c-firing tokens of f_p^2
@@ -212,7 +213,7 @@ def main():
     print("[01] tokenizing + counting token ids for frequency buckets ...")
     seqs = tokenize_docs(model, texts, C.CONTEXT_SIZE)
     vocab = model.cfg.d_vocab
-    token_counts = count_tokens(seqs, vocab)          # BOS excluded (T1)
+    token_counts = count_tokens(seqs, vocab)          # BOS excluded
     buckets = frequency_buckets(token_counts, C.FREQ_HIGH_MASS, C.FREQ_MID_MASS)  # [vocab]
     buckets_dev = buckets.to(device)
     K = C.N_FREQ_BUCKETS
@@ -248,7 +249,7 @@ def main():
         b: torch.zeros(blk_len(b), blk_len(b), dtype=acc_dtype, device=device) for b in within_blocks
     }
 
-    # T2: energy shares + exact joint-child unions, one accumulator set per pair
+    # energy shares + exact joint-child unions, one accumulator set per pair
     pair_extras = {
         pr: {
             "energy_cofire": torch.zeros(blk_len(pr[0]), blk_len(pr[1]), dtype=acc_dtype, device=device),
@@ -307,7 +308,7 @@ def main():
                 fck = fc * bucket_sel[k].unsqueeze(1)       # [n, C] child-fire only on bucket-k tokens
                 cofire_by_bucket[(p, c)][k] += fp.T @ fck
 
-            accumulate_pair_extras(                          # T2: energy + exact unions
+            accumulate_pair_extras(                          # energy + exact unions
                 pair_extras[(p, c)],
                 feats[:, U.block_slice(p)],
                 feats[:, U.block_slice(c)],
@@ -341,7 +342,7 @@ def main():
         return {f"{p}->{c}": v.cpu() for (p, c), v in d.items()}
 
     out = {
-        "schema_version": 2,                    # v2: BOS excluded + T2 extras
+        "schema_version": 2,                    # v2: BOS excluded + energy/union extras
         "fire_count": fire_count.cpu(),
         "total_tokens": int(total_tokens),
         "token_counts": token_counts,

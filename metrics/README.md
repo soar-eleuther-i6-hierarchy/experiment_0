@@ -18,7 +18,6 @@ Metrics 2–7 grade those edges. A "real" edge has to survive all of them.
 | [`outdegree.py`](outdegree.py) | 4 — degree distribution, Gini, superparents | 02 | superparents and poly-parenting |
 | [`token_control.py`](token_control.py) | 5 — frequency-bucketed coverage | 02 | does the edge hold on rare tokens |
 | [`independence_null.py`](independence_null.py) | 6 — PMI / Dev vs the independence null | 02 | is the co-firing above chance |
-| [`in_block.py`](in_block.py) | 7 — same-level directed edges + duplicates | `in_block_edges.py` | hierarchy that ignores block boundaries |
 
 All thresholds live in [`config.py`](../config.py). A feature "fires" on a token when its activation
 exceeds `FIRE_THRESHOLD = 1e-3` (post-JumpReLU); every matrix below is built on that.
@@ -154,27 +153,6 @@ Dev(p,c) = R(p,c) − ρ_p          (ρ_p = parent firing rate; sign-equivalent,
 **Scope.** This controls the frequency confound only. **Topical co-occurrence passes it** — `enzyme`
 and `CT scan` are not independent, they share the latent `biology`, so `PMI > 0`. See the open gap in
 the [root README](../README.md#what-each-metric-catches).
-
-## 7. In-block directed coverage — same-level relations
-
-Hierarchy need not respect the Matryoshka block boundaries. Within a block there is no ordering to
-fix edge direction, so direction comes from **coverage asymmetry** on `R[i,j] = P(i fires | j fires)`:
-
-```
-parent_of[i,j]  iff  R[i,j] ≥ τ  and  R[j,i] <  τ        asymmetric containment
-duplicate[i,j]  iff  R[i,j] ≥ τ  and  R[j,i] ≥ τ        co-extensive: rename/split
-```
-
-`parent_of` is antisymmetric by construction, so the in-block graph is acyclic; co-extensive pairs
-are reported separately and **never drawn as an edge** (that is what would create 2-cycles). The
-edges are then graded with the same PMI and `S_res` gates as the cross-block pipeline. Blocks
-`IN_BLOCK_BLOCKS = [0, 1, 2]` (B4's 24576² matrix is ~4.8 GB).
-
-Finding so far: very few in-block pairs survive, and the survivors read as duplicates / near
-duplicates rather than refinement — and deeper blocks yield essentially none, since their features
-are already specific.
-
----
 
 ## The verdict: when is an edge a real parent → child?
 

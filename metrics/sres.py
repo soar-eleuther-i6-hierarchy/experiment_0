@@ -1,6 +1,6 @@
 """
 Metric 2b - Probe-based reconstruction condition S_res, rank-scored
-(Tree SAE Eq. 5; landscape §2-D / Appendix A-D; metrics_todo.md T7).
+(Tree SAE).
 
     S_res(p, c) = min( (d_c*)^T d_c , (d_c*)^T d_p )
 
@@ -14,7 +14,7 @@ top-k probe correlations over ALL dictionary features — never a threshold.
 Healthy pairs have d_p ⟂ d_c, which caps min(.,.) at 1/sqrt(2) ~ 0.707, so
 any tau above that rejects every healthy pair by construction.
 
-Circularity caveat (inherited from Tree SAE and flagged in the landscape):
+Circularity caveat (inherited from Tree SAE):
 the probe target 1[f_c > 0] is a SELF-LABEL — a corrupted (absorbed/split)
 latent yields a corrupted probe that then validates the corruption. Numbers
 from this module are a self-consistency check, not ground truth; report them
