@@ -1,7 +1,7 @@
 """
-Exp 0 - Implement Metrics: central configuration.
+Central configuration for the hierarchy-metric suite.
 
-Exp 0 treats the metrics as *competing measurements of the same edge*. The
+The suite treats the metrics as *competing measurements of the same edge*. The
 edges come from the warm-up task's crude activation-coverage graph; here we
 add the richer signals:
 
@@ -130,7 +130,7 @@ SIBLING_BLOCKS = [1, 2, 3]
 # --- In-block (same-level) edges (in_block_edges.py) ------------------------
 # Hierarchy need not respect block boundaries: two features in the SAME block
 # can stand in a parent/child (refinement) or duplicate relation. These blocks
-# get a within-block directed-edge analysis. cache_stats caches within-cofire for
+# get a within-block directed-edge analysis. collect_statistics caches within-cofire for
 # SIBLING_BLOCKS ∪ IN_BLOCK_BLOCKS, so B0 is cached after a rerun; on older caches
 # in_block_edges falls back to rebuilding B0 from the token cache. B3/B4 skipped:
 # B4's 24576^2 matrix is ~4.8 GB, not worth it.
@@ -194,7 +194,7 @@ BACK_LINK_HTML = (
     'padding:9px 13px;text-decoration:none">&#8592; Back to index</a>'
 )
 
-EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by cache_stats.py
+EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by collect_statistics.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
 METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
 
@@ -205,20 +205,20 @@ HF_STATS_DATASET = "soar-eleuther-i6-hierarchy/experiment_0-stats"
 
 
 def missing_stats_msg() -> str:
-    """Error text for the Stage-02 scripts when exp0_stats.pt isn't there yet."""
+    """Error text for the metric scripts when exp0_stats.pt isn't there yet."""
     return (
         f"missing {EXP0_STATS_PATH}\n"
         f"  download it:  hf download {HF_STATS_DATASET} --repo-type dataset "
         f'--include "{RUN_DIR.name}/*" --local-dir outputs/\n'
-        f"  or rebuild it: EXP0_LAYER={LAYER} python3 cache_stats.py"
+        f"  or rebuild it: EXP0_LAYER={LAYER} python3 collect_statistics.py"
     )
 
-# Stage-03 token-level caches (written by cache_stats.py when CACHE_RESIDUALS):
-# fp16 residuals + sparse latents let run_second_pass.py train S_res probes and
+# Token-level caches (written by collect_statistics.py when CACHE_RESIDUALS):
+# fp16 residuals + sparse latents let run_token_metrics.py train S_res probes and
 # compute parent-conditioned sibling stats WITHOUT re-running the model.
 CACHE_RESIDUALS = os.environ.get("EXP0_CACHE_RESIDUALS", "1") != "0"
 TOKEN_CACHE_DIR = RUN_DIR / "token_cache"
-SECOND_PASS_PATH = RUN_DIR / "second_pass.json"      # model-free token-cache pass (S_res + parent-conditioned siblings); written by run_second_pass.py
+SECOND_PASS_PATH = RUN_DIR / "second_pass.json"      # model-free token-cache pass (S_res + parent-conditioned siblings); written by run_token_metrics.py
 IN_BLOCK_PATH = RUN_DIR / "in_block_edges.json"      # written by in_block_edges.py
 
 # Force a device with the EXP0_DEVICE env var or a script's --device flag:

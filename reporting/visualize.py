@@ -1,5 +1,5 @@
 """
-Visualise Exp 0's five-metric results as self-contained interactive HTML
+Visualise the hierarchy-metric results as self-contained interactive HTML
 (plotly.js embedded, works offline - same style as the example sankey script).
 
 Reads the cached statistics in outputs/exp0_stats.pt, recomputes the full
@@ -17,10 +17,10 @@ distributions), then writes:
 
 Run:
     pip install plotly
-    python visualize.py                  # real gemma-2-2b dashboards (needs exp0_stats.pt)
-    python visualize.py --calibration    # synthetic-toy calibration (needs no cache)
-    python visualize.py --qualitative    # real survivor-vs-rejected label table
-                                         # (needs outputs/qualitative_check.json)
+    python3 -m reporting.visualize                # real gemma-2-2b dashboards (needs exp0_stats.pt)
+    python3 -m reporting.visualize --calibration  # synthetic-toy calibration (needs no cache)
+    python3 -m reporting.visualize --qualitative  # real survivor-vs-rejected label table
+                                                  # (needs outputs/qualitative_check.json)
 """
 
 from __future__ import annotations
@@ -330,7 +330,7 @@ def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=No
     source, target, value, link_colors = [], [], [], []
     for i, ci in enumerate(kids.tolist(), start=1):
         gc = c0 + ci
-        if "sres_pass" in pd_:                        # stage-03 refinement verdict
+        if "sres_pass" in pd_:                        # second-pass refinement verdict
             real = bool(pd_["sres_pass"][parent_local, ci])
         else:                                         # fallback: weak baseline + freq
             passes = bool(pd_["recon_pass"][parent_local, ci])
@@ -915,9 +915,9 @@ def main():
     pairs = stats["pairs"]
     pairs_data = [compute_pair(stats, p, c) for (p, c) in pairs]
 
-    # Attach per-edge S_res verdicts (stage 03) so the Sankey colours by genuine
-    # refinement, not the weak stage-02 contribution filter. Absent -> Sankey
-    # falls back to the recon+frequency colouring (older caches / no stage 03).
+    # Attach per-edge S_res verdicts (second pass) so the Sankey colours by genuine
+    # refinement, not the weak run_metrics contribution filter. Absent -> Sankey
+    # falls back to the recon+frequency colouring (older caches / no second pass).
     if C.SECOND_PASS_PATH.exists():
         second = json.loads(C.SECOND_PASS_PATH.read_text())
         for pd_ in pairs_data:

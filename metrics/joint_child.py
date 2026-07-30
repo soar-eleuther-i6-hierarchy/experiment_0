@@ -1,7 +1,7 @@
 """
 Energy shares + exact joint-child coverage.
 
-Computed from the stage-01 accumulators (schema v2):
+Computed from the collect_statistics accumulators (schema v2):
 
     Share_energy(c, p) = sum_x f_p(x)^2 * 1[f_c(x)>0] / sum_x f_p(x)^2
         fraction of the parent's activation ENERGY spent on tokens where this
@@ -21,7 +21,7 @@ Computed from the stage-01 accumulators (schema v2):
 
 Union here is over ALL next-block children (streamable in one pass); the
 kept-children-only union depends on the edge set and is computed in the
-second pass (run_second_pass.py).
+second pass (run_token_metrics.py).
 """
 
 from __future__ import annotations

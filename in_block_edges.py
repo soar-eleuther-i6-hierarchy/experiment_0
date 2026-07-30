@@ -6,14 +6,14 @@ parent→child edges (asymmetric containment) and co-extensive duplicates
 (renames/splits), then grades the edges with the same gates as the cross-block
 pipeline — PMI (chance-level) and probe-S_res (genuine refinement).
 
-Within-block co-firing comes from stage 01's `within_cofire` when available
-(B1, B2, B3); for B0 (not cached by default) it is rebuilt from the token cache.
+Within-block co-firing comes from collect_statistics's `within_cofire` when
+available (B1, B2, B3); for B0 (not cached by default) it is rebuilt from the
+token cache.
 
-Run (on the server, after cache_stats.py):
-    python3 in_block_edges.py                 # all IN_BLOCK_BLOCKS, with S_res
-    python3 in_block_edges.py --skip-sres     # coverage + PMI only (no probes)
-Output:
-    outputs/layer_NN/in_block_edges.json + .md
+Needs:  outputs/layer_NN/exp0_stats.pt (+ token_cache/ for B0 and S_res)
+Writes: outputs/layer_NN/in_block_edges.{json,md}
+Run:    python3 in_block_edges.py              # all IN_BLOCK_BLOCKS, with S_res
+        python3 in_block_edges.py --skip-sres  # coverage + PMI only (no probes)
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ import json
 import torch
 
 import config as C
-import sae_utils as U
+from utils import sae_utils as U
 from metrics import (
     degree_stats,
     find_superparents,
@@ -32,7 +32,7 @@ from metrics import (
     sres_rank_check,
     train_probe,
 )
-from run_second_pass import TokenCache
+from utils.io import TokenCache
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +121,7 @@ def analyse_block(b, stats, cache, labels, W_dec, device, do_sres):
 
     if "within_cofire" in stats and b in stats["within_cofire"]:
         wc = stats["within_cofire"][b].double()
-    else:                                             # B0 isn't cached by stage 01 -> rebuild it from the token cache
+    else:                                             # B0 isn't cached by collect_statistics -> rebuild from token cache
         wc = within_cofire_from_cache(cache, b)
 
     d = directed_coverage(wc, fire, C.EDGE_TAU, C.MIN_FIRE_COUNT, C.MIN_JOINT)
@@ -241,7 +241,7 @@ def main():
     labels = C.load_feature_labels()
     cache = TokenCache(C.TOKEN_CACHE_DIR) if (C.TOKEN_CACHE_DIR / "meta.json").exists() else None
     if cache is None and not args.skip_sres:
-        raise SystemExit("[ib] token cache missing - rerun cache_stats.py or pass --skip-sres")
+        raise SystemExit("[ib] token cache missing - rerun collect_statistics.py or pass --skip-sres")
     sae = U.load_sae("cpu")
     W_dec = sae.W_dec.detach().float()
 

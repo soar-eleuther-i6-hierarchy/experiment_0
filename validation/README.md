@@ -5,7 +5,7 @@ answer, so a metric can be scored rather than eyeballed. (The directory was call
 promised coverage of `metrics/` and delivered a toy-world generator; `tests/` is now free for real
 unit tests.) Tier 3 (the real SAE, judged against Neuronpedia labels) is
 [`qualitative_check.py`](../qualitative_check.py) in the repo root — it stays there because it is
-also pipeline Stage 02b, reading `exp0_stats.pt` and writing into `RUN_DIR`.
+also part of the main pipeline, reading `exp0_stats.pt` and writing into `RUN_DIR`.
 
 ← [Back to the main README](../README.md) · full results and the three-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-three-tiers)
 
@@ -24,8 +24,8 @@ Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/s
 from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo.
 
 Both tiers write into [`outputs/`](../outputs/) (`toy_calibration.json`,
-`trained_toy_calibration.json`) and have a dashboard: `visualize.py --calibration` and
-`visualize.py --trained-calibration`.
+`trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`
+and `python3 -m reporting.visualize --trained-calibration`.
 
 ## Why both
 

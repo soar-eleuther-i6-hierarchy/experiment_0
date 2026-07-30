@@ -1,9 +1,9 @@
 """
-Stage 02 - Run the five Exp 0 metrics on the cached statistics.
+Run the hierarchy metrics on the cached statistics.
 
-Loads outputs/exp0_stats.pt (from cache_stats.py) and, for every adjacent
-block pair, treats the metrics as competing measurements of the same candidate
-edge set:
+Loads outputs/layer_NN/exp0_stats.pt (from collect_statistics.py) and, for every
+adjacent block pair, treats the metrics as competing measurements of the same
+candidate edge set:
 
     1. Activation coverage (reverse R / forward F / joint-child J)  -> edge set
     2. Reconstruction condition (Tree-SAE)  -> does the edge improve recon?
@@ -12,14 +12,11 @@ edge set:
     5. Token-frequency-controlled coverage  -> does the edge survive on rare tokens?
 
 The edge SET comes from metric 1 (reverse coverage >= EDGE_TAU, both endpoints
-firing >= MIN_FIRE_COUNT) - the crude warm-up criterion. Metrics 2-5 then grade
-those edges. Writes a JSON blob (machine-readable) and a Markdown digest.
+firing >= MIN_FIRE_COUNT); metrics 2-5 then grade those edges.
 
-Run:
-    cd experiment_0 && python3 run_metrics.py
-Output:
-    outputs/metrics_report.json
-    outputs/metrics_report.md
+Needs:  outputs/layer_NN/exp0_stats.pt
+Writes: outputs/layer_NN/metrics_report.{json,md}
+Run:    python3 run_metrics.py
 """
 
 from __future__ import annotations
@@ -30,7 +27,7 @@ import math
 import torch
 
 import config as C
-import sae_utils as U
+from utils import sae_utils as U
 from metrics import (
     coverage_legs,
     degree_stats,
@@ -162,7 +159,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     # GLOBAL Jaccard only — confounded for Matryoshka: it
     # scores co-firing anywhere, not disjointness within the parent's support.
     # This is a cheap diagnostic, NOT the splitting verdict; the corrected
-    # parent-conditioned Jaccard is in the stage-03 second pass. Reported so
+    # parent-conditioned Jaccard is in the second pass. Reported so
     # both numbers are auditable, but must not be read as "flagged splitting".
     sib = {}
     sib_summary = None

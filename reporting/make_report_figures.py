@@ -18,9 +18,8 @@ regenerate on other data.
 Reads the layer's exp0_stats.pt (edge sets + energy), second_pass.json (S_res per
 edge), metrics_report.json (funnel counts), and the token cache (per-feature
 energy). Run on the server where the data lives:
-    EXP0_OUT=<your-run-dir> python make_report_figures.py
-Output: <RUN_DIR>/figures/*.png  (also copied to a repo-level figures/ by the
-caller for tracking).
+    EXP0_OUT=<your-run-dir> python3 -m reporting.make_report_figures
+Output: <RUN_DIR>/figures/*.png
 """
 
 from __future__ import annotations
@@ -35,7 +34,7 @@ import torch  # noqa: E402
 
 import config as C  # noqa: E402
 from metrics import coverage_legs, keep_edges  # noqa: E402
-from run_second_pass import TokenCache  # noqa: E402
+from utils.io import TokenCache  # noqa: E402
 
 GREEN, GREY, INK, ACCENT = "#2E9E5B", "#B8BCC4", "#2B2B33", "#7C4DD1"
 FIG_DIR = C.RUN_DIR / "figures"

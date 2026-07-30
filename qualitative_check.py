@@ -1,8 +1,8 @@
 """
-Stage 02b - qualitative agreement check on the real gemma-2-2b Matryoshka SAE.
+Qualitative agreement check on the real gemma-2-2b Matryoshka SAE.
 
 The synthetic calibration (validation/) proved the five metrics recover a known tree
-and reject injected pathologies. This is the OTHER half of Exp 0's "how we decide
+and reject injected pathologies. This is the OTHER half of "how we decide
 which metric works": for edges the metrics flag good vs bad on the *real* SAE,
 check the feature labels against human / Neuronpedia intuition. A clean metric
 number on a semantically unrelated pair means the metric is failing.
@@ -26,14 +26,11 @@ For the ~26 features missing from that export we fall back to Neuronpedia's
 public API (cached to outputs/npedia_labels_cache.json). Pass --no-fetch to skip
 the API fallback and emit URLs for anything the bulk file doesn't cover.
 
-Run:
-    cd experiment_0
-    python3 qualitative_check.py                 # pair 0->1, fetch labels
-    python3 qualitative_check.py --pairs 0->1 1->2
-    python3 qualitative_check.py --no-fetch      # offline: URLs only
-Output:
-    outputs/qualitative_check.md
-    outputs/qualitative_check.json
+Needs:  outputs/layer_NN/exp0_stats.pt + feature_labels.json (fetch_labels.py)
+Writes: outputs/layer_NN/qualitative_check.{json,md}
+Run:    python3 qualitative_check.py                 # pair 0->1, fetch labels
+        python3 qualitative_check.py --pairs 0->1 1->2
+        python3 qualitative_check.py --no-fetch      # offline: URLs only
 """
 
 from __future__ import annotations

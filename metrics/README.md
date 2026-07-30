@@ -108,7 +108,7 @@ redundancy(p) = mean over sibling pairs        flag when ≥ SIBLING_REDUNDANCY_
 
 The property under test is disjointness **within the parent's firing set**. The global Jaccard scores
 co-firing anywhere, which in an unconstrained architecture is partly irrelevant;
-`parent_conditioned_redundancy` (stage 03, needs per-token masks) is the corrected form, and the
+`parent_conditioned_redundancy` (the second pass, needs per-token masks) is the corrected form, and the
 global form is kept alongside it for auditability. Within-block co-firing is `C×C`, so B4's 24576²
 does not fit — `SIBLING_BLOCKS = [1, 2, 3]`, and sibling redundancy is unavailable for a B4 child.
 
@@ -164,14 +164,15 @@ and  parent not flagged as a superparent
 ```
 
 The three rejection categories in the reports map exactly onto these: **superparent** /
-**freq-driven** (`survival < 0.5`) / **no-recon** (`parent_gain < 0.01`). Stage 03 adds the `S_res`
+**freq-driven** (`survival < 0.5`) / **no-recon** (`parent_gain < 0.01`). The second pass adds the `S_res`
 rank verdict on the surviving shortlist.
 
 ## Adding a metric
 
-1. **Cache its raw sums in Stage 01.** `cache_stats.py` streams the corpus **once**; you cannot
-   compute a new signal in Stage 02 if Stage 01 did not accumulate what it needs. Per-token detail
-   (probes, parent-conditioned masks) goes through the token cache and Stage 03 instead.
+1. **Cache its raw sums in the collect step.** `collect_statistics.py` streams the corpus **once**;
+   you cannot compute a new signal in `run_metrics.py` if the collect step did not accumulate what it
+   needs. Per-token detail (probes, parent-conditioned masks) goes through the token cache and the
+   second pass (`run_token_metrics.py`) instead.
 2. **Write it as a pure function here**, over tensors only — no model, no IO — so the toy calibration
    can run it.
 3. **Export it** from [`__init__.py`](__init__.py).

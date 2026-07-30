@@ -67,7 +67,7 @@ def joint_child_coverage_upper(
     """Upper bound on J(p): sum of forward coverages of kept children, capped at 1.
 
     Children can co-fire, so the sum double-counts; the streaming union count
-    (see cache_stats.py) gives the exact value.
+    (see collect_statistics.py) gives the exact value.
     """
     return (F * edge_mask).sum(dim=1).clamp(max=1.0)
 

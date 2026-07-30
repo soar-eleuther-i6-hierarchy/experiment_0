@@ -1,32 +1,17 @@
 """
-Stage 01 - Cache the richer statistics Exp 0's five metrics need.
+Cache the richer statistics the hierarchy metrics need.
 
-The warm-up's stage 01 kept only co-firing counts (crude activation coverage).
-Exp 0 treats the metrics as competing measurements of the SAME edge, so this
-pass streams gemma-2-2b's layer-6 residual through the Matryoshka SAE once and
-accumulates, for every adjacent block pair p -> c we compute:
+The only stage that touches the model. It streams gemma-2-2b's residual stream
+through the Matryoshka SAE once and accumulates, per adjacent block pair, the
+co-firing / reconstruction / sibling statistics the metrics later read (the exact
+tensors and shapes are documented at the accumulator block in `main()`).
+Token-frequency buckets need corpus-wide counts, so every doc is tokenized up
+front (no model) to build the buckets before the single model pass.
 
-    fire_count[f]                : tokens feature f fired on            [D_SAE]
-    cofire[p->c][P, C]           : tokens both p and c fired on
-    cofire_by_bucket[p->c][K,P,C]: co-firing split by token-frequency bucket
-    fire_c_by_bucket[c][K, C]    : child firing counts per freq bucket
-
-    # reconstruction (Tree-SAE condition), summed over the CHILD's firing tokens
-    err_sum_c[c][C]              : base recon error  ||x - x_hat||^2
-    g_child_sum[c][C]            : child's own ablation gain g_c
-    g_parent_sum[p->c][P, C]     : parent's ablation gain g_p
-
-    # sibling redundancy: within-block child-child co-firing [C, C] (blocks 1-3)
-    within_cofire[b][C, C]
-
-Token-frequency buckets need corpus-wide counts, so we tokenize every doc up
-front (cheap - no model), build the buckets, then run the single model pass.
-
-Run:
-    cd experiment_0 && python3 cache_stats.py            # full (config N_DOCS)
-    python3 cache_stats.py --docs 16                     # quick smoke slice
-Output:
-    outputs/exp0_stats.pt
+Needs:  model + SAE, GPU
+Writes: outputs/layer_NN/exp0_stats.pt  (+ token_cache/ when CACHE_RESIDUALS)
+Run:    python3 collect_statistics.py            # full (config N_DOCS)
+        python3 collect_statistics.py --docs 16  # quick smoke slice
 """
 
 from __future__ import annotations
@@ -37,7 +22,8 @@ import time
 import torch
 
 import config as C
-import sae_utils as U
+from utils import sae_utils as U
+from utils.io import TokenCacheWriter
 from metrics.reconstruction import per_token_ablation_gain
 from metrics.token_control import frequency_buckets
 
@@ -108,70 +94,6 @@ def accumulate_pair_extras(acc, feats_p, feats_c, thr):
     acc["union_count"] += fired_p.T @ any_c            # [P]
     acc["union_energy"] += energy_p.T @ any_c          # [P]
     acc["energy_total"] += energy_p.sum(dim=0)         # [P]
-
-
-class TokenCacheWriter:
-    """Streams fp16 residuals + sparse latents to disk shards so stage 03
-    (S_res probes, parent-conditioned sibling stats, kept-children unions)
-    can run without re-touching the model. Row indices are global positions
-    in the SAME kept-token stream the statistics are accumulated over."""
-
-    def __init__(self, cache_dir, flush_tokens=200_000):
-        import shutil
-
-        # write into a .tmp dir; finalize() swaps it in — a crash mid-run
-        # leaves the previous known-good cache untouched
-        self.final_dir = cache_dir
-        self.dir = cache_dir.with_name(cache_dir.name + ".tmp")
-        if self.dir.exists():
-            shutil.rmtree(self.dir)                    # never mix runs
-        self.dir.mkdir(parents=True)
-        self.flush_tokens = flush_tokens
-        self.base = 0
-        self.shard = 0
-        self._reset()
-
-    def _reset(self):
-        self.res, self.rows, self.feats, self.vals, self.buf = [], [], [], [], 0
-
-    def add(self, resid, feats, thr):
-        nz = (feats > thr).nonzero(as_tuple=False)     # [k, 2] (row, feat)
-        self.res.append(resid.detach().to("cpu", torch.float16))
-        self.rows.append((nz[:, 0] + self.base + self.buf).to("cpu", torch.int32))
-        self.feats.append(nz[:, 1].to("cpu", torch.int32))
-        self.vals.append(feats[nz[:, 0], nz[:, 1]].detach().to("cpu", torch.float16))
-        self.buf += resid.shape[0]
-        if self.buf >= self.flush_tokens:
-            self.flush()
-
-    def flush(self):
-        if not self.buf:
-            return
-        torch.save(
-            {
-                "resid": torch.cat(self.res),
-                "rows": torch.cat(self.rows),
-                "feats": torch.cat(self.feats),
-                "vals": torch.cat(self.vals),
-                "base": self.base,
-            },
-            self.dir / f"shard_{self.shard:04d}.pt",
-        )
-        self.base += self.buf
-        self.shard += 1
-        self._reset()
-
-    def finalize(self, extra_meta):
-        import json
-        import shutil
-
-        self.flush()
-        meta = {"total_tokens": self.base, "n_shards": self.shard, **extra_meta}
-        (self.dir / "meta.json").write_text(json.dumps(meta, indent=2))
-        if self.final_dir.exists():
-            shutil.rmtree(self.final_dir)
-        self.dir.rename(self.final_dir)
-        return meta
 
 
 def adjacent_pairs():
