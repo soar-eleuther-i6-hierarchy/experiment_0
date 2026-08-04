@@ -1,6 +1,5 @@
 """
-Metric 4 - Out-degree distribution: the superparent / poly-parenting detector
-(project plan Exp 0, bullet 4).
+Metric 4 - Out-degree distribution: the superparent / poly-parenting detector.
 
 A healthy hierarchy has parents with a handful of children each and children
 with ~1 parent. The two pathologies show up directly in the degree
@@ -35,7 +34,7 @@ def degree_stats(edge_mask: torch.Tensor) -> dict:
         "n_parents_with_children": int((outdeg > 0).sum()),
         "n_children_with_parent": n_parented,
         "n_multi_parented": int((indeg >= 2).sum()),
-        # PolyFrac (landscape §C.4): share of PARENTED children with >=2 parents
+        # PolyFrac: share of PARENTED children with >=2 parents
         "poly_frac": int((indeg >= 2).sum()) / n_parented if n_parented else 0.0,
         "top1_edge_share": float(outdeg.max()) / n_edges if n_edges else 0.0,
         "outdeg_gini": gini(outdeg.double()),
@@ -61,8 +60,8 @@ def find_superparents(
     outdeg_frac: float = 0.30,
     fire_frac: float = 0.10,
 ) -> list[dict]:
-    """Parents covering >= outdeg_frac of the child block (landscape §C.4:
-    the flag is on out-degree ALONE). Firing rate is reported as an attribute,
+    """Parents covering >= outdeg_frac of the child block (the flag is on
+    out-degree ALONE). Firing rate is reported as an attribute,
     and the old outdeg-AND-fire gate survives as `strict` — the AND gate let
     L24's feature 14 (fires 41.9%, fan-out 21.9%... and conversely high-fanout
     low-fire parents) slip through. Returns local indices + stats."""

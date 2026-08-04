@@ -30,18 +30,18 @@ reports behind them.
 
 | Artifact | Written by | What it holds |
 | -------- | ---------- | ------------- |
-| `exp0_stats.pt` | `cache_stats.py` | ~700 MB of cached statistics: co-firing counts, per-bucket co-firing, per-edge reconstruction sums, within-block sibling co-firing, energy. **Not in git** — see below. |
-| `token_cache/` | `cache_stats.py` | fp16 residuals + sparse latents, so Stage 03 can train probes without re-running the model. Not in git. |
+| `exp0_stats.pt` | `collect_statistics.py` | ~700 MB of cached statistics: co-firing counts, per-bucket co-firing, per-edge reconstruction sums, within-block sibling co-firing, energy. **Not in git** — see below. |
+| `token_cache/` | `collect_statistics.py` | fp16 residuals + sparse latents, so the second pass can train probes without re-running the model. Not in git. |
 | `feature_labels.json` | `fetch_labels.py` | all 32768 autointerp descriptions from Neuronpedia's S3 export (~99.9% coverage; ~26 features fall back to `feature <idx>`). |
 | `metrics_report.{json,md}` | `run_metrics.py` | per-block-pair summaries and the top edges, annotated with labels. |
-| `second_pass.json` | `run_second_pass.py` | `S_res` verdicts per edge, parent-conditioned sibling redundancy, exact kept-children union. |
+| `second_pass.json` | `run_token_metrics.py` | `S_res` verdicts per edge, parent-conditioned sibling redundancy, exact kept-children union. |
 | `in_block_edges.{json,md}` | `in_block_edges.py` | same-level directed edges and co-extensive duplicates per block. |
 | `qualitative_check.{json,md}` | `qualitative_check.py` | survivor vs rejected edges with both endpoint labels, for human reading. |
-| `metrics_dashboard.html`, `superparent_sankey.html`, `qualitative_dashboard.html`, `in_block_dashboard.html` | `visualize.py` (`--qualitative`, `--in-block`) | the interactive pages linked above. |
-| `figures/*.png` | `make_report_figures.py` | the five static proof-figures; copied to the repo-level `figures/` to be tracked. |
+| `metrics_dashboard.html`, `superparent_sankey.html`, `qualitative_dashboard.html`, `in_block_dashboard.html` | `reporting/visualize.py` (`--qualitative`, `--in-block`) | the interactive pages linked above. |
+| `figures/*.png` | `reporting/make_report_figures.py` | the five static proof-figures, written into each run dir; not tracked in git. |
 | `npedia_labels_cache.json` | `qualitative_check.py` | per-feature Neuronpedia API fallback for the handful missing from the bulk export. |
 
-`python3 organize_outputs.py` sorts a run directory into `dashboards/` and `reports/` for browsing;
+`python3 -m utils.organize_outputs` sorts a run directory into `dashboards/` and `reports/` for browsing;
 it leaves the data files the scripts read exactly where they expect them, and is idempotent.
 
 ## The big caches are not in git
@@ -114,13 +114,13 @@ metric if the SAE learned both endpoints, which is why per-feature recovery is r
 
 ```bash
 python3 validation/test_metric_calibration.py                    # Tier 1
-python3 visualize.py --calibration                          # Tier 1 dashboard
+python3 -m reporting.visualize --calibration                # Tier 1 dashboard
 
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)
-python3 visualize.py --trained-calibration                  # Tier 2 dashboard
+python3 -m reporting.visualize --trained-calibration        # Tier 2 dashboard
 
 python3 qualitative_check.py                                # Tier 3
-python3 visualize.py --qualitative                          # Tier 3 dashboard
+python3 -m reporting.visualize --qualitative                # Tier 3 dashboard
 ```
 
 ## The finding these outputs support
@@ -130,5 +130,5 @@ Reconstruction and frequency control kill the vast majority of coverage edges �
 superparents generate most of the co-occurrence edges. That is the point of the experiment, not a
 data error. Semantic agreement with Neuronpedia labels is clean at L3/L6 and collapses by L24.
 
-Static PNG versions of the main claims live in the repo-level `figures/`, rebuilt with
-`python3 make_report_figures.py`.
+Static PNG versions of the main claims live in each run dir's `figures/`, rebuilt with
+`python3 -m reporting.make_report_figures`.

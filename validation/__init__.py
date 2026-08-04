@@ -1,5 +1,5 @@
 """
-Exp 0 metric calibration harness.
+Hierarchy-metric calibration harness.
 
 `metrics/__init__.py` promises the five metrics are pure functions over cached
 tensors so "the same code runs on the synthetic ground-truth toy in validation/

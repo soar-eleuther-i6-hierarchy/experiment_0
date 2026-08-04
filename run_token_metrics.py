@@ -1,24 +1,23 @@
 """
-Stage 03 - the "second pass": a model-free sweep over the token caches for the
-metrics that need per-token detail the stage-01 count matrices cannot provide.
-Nothing here touches the model again — it all runs off the token cache (fp16
-residuals + sparse latents) written by cache_stats.py:
+The second pass: a model-free sweep over the token cache for the metrics that
+need per-token detail the count matrices cannot provide. Nothing here touches
+the model again — it all runs off the token cache (fp16 residuals + sparse
+latents) written by collect_statistics.py:
 
     1. S_res, probe-based and RANK-scored (metrics/sres.py) on the shortlist
        of edges that survive coverage + the independence null. Self-labeled
        probes — see the circularity caveat in metrics/sres.py.
     2. Parent-conditioned sibling redundancy for flagged superparents
-       (landscape Rev. 2.1: Jaccard restricted to the parent's firing set).
-    3. Exact joint-child union over the KEPT children only (stage 01 streams
-       the all-children union; the kept-children one depends on the edge set,
-       which exists only after stage 02).
+       (Jaccard restricted to the parent's firing set).
+    3. Exact joint-child union over the KEPT children only (collect_statistics
+       streams the all-children union; the kept-children one depends on the edge
+       set, which exists only after run_metrics).
 
-Run (after cache_stats.py and run_metrics.py, on the server):
-    python3 run_second_pass.py                # all pairs
-    python3 run_second_pass.py --pairs 0->1   # subset
-Output:
-    outputs/layer_NN/second_pass.json  (+ "second_pass" key merged into
-    metrics_report.json when present)
+Needs:  outputs/layer_NN/token_cache/ (collect_statistics) + run_metrics's edge set
+Writes: outputs/layer_NN/second_pass.json  (+ "second_pass" key merged into
+        metrics_report.json when present)
+Run:    python3 run_token_metrics.py                # all pairs
+        python3 run_token_metrics.py --pairs 0->1   # subset
 """
 
 from __future__ import annotations
@@ -29,7 +28,8 @@ import json
 import torch
 
 import config as C
-import sae_utils as U
+from utils import sae_utils as U
+from utils.io import TokenCache
 from metrics import (
     coverage_legs,
     find_superparents,
@@ -39,70 +39,6 @@ from metrics import (
     sres_rank_check,
     train_probe,
 )
-
-CHUNK = 65_536          # tokens per dense chunk when scanning the sparse cache
-
-
-# ---------------------------------------------------------------------------
-# Token cache access
-# ---------------------------------------------------------------------------
-class TokenCache:
-    """Loads the stage-01 shards once; serves per-feature firing masks and
-    row-chunked dense slices of any feature range."""
-
-    def __init__(self, cache_dir):
-        meta = json.loads((cache_dir / "meta.json").read_text())
-        self.n_tokens = int(meta["total_tokens"])
-        self.d_model = int(meta["d_model"])
-        res, rows, feats, vals = [], [], [], []
-        for i in range(int(meta["n_shards"])):
-            sh = torch.load(cache_dir / f"shard_{i:04d}.pt", weights_only=True)
-            res.append(sh["resid"])
-            rows.append(sh["rows"].long())
-            feats.append(sh["feats"].long())
-            vals.append(sh["vals"])
-        self.resid = torch.cat(res)                       # [N, d] fp16
-        rows, feats, vals = torch.cat(rows), torch.cat(feats), torch.cat(vals)
-        # feat-sorted view -> O(log) per-feature masks
-        order = torch.argsort(feats, stable=True)
-        self.f_rows, self.f_feats, self.f_vals = rows[order], feats[order], vals[order]
-        self.f_bounds = torch.searchsorted(
-            self.f_feats, torch.arange(C.D_SAE + 1, dtype=torch.long)
-        )
-        # row-sorted view -> chunked dense slices
-        order = torch.argsort(rows, stable=True)
-        self.r_rows, self.r_feats, self.r_vals = rows[order], feats[order], vals[order]
-        self.r_bounds = torch.searchsorted(
-            self.r_rows, torch.arange(0, self.n_tokens + CHUNK, CHUNK, dtype=torch.long)
-        )
-
-    def feature_rows(self, f: int) -> torch.Tensor:
-        lo, hi = int(self.f_bounds[f]), int(self.f_bounds[f + 1])
-        return self.f_rows[lo:hi]
-
-    def feature_mask(self, f: int) -> torch.Tensor:
-        m = torch.zeros(self.n_tokens, dtype=torch.bool)
-        m[self.feature_rows(f)] = True
-        return m
-
-    def chunks_dense(self, g0: int, g1: int, values: bool = False):
-        """Yield (row_lo, dense [chunk, g1-g0]) for global feature range [g0, g1)."""
-        n_chunks = len(self.r_bounds) - 1
-        for ci in range(n_chunks):
-            lo, hi = int(self.r_bounds[ci]), int(self.r_bounds[ci + 1])
-            row_lo = ci * CHUNK
-            n = min(CHUNK, self.n_tokens - row_lo)
-            if n <= 0:
-                break
-            r = self.r_rows[lo:hi] - row_lo
-            f = self.r_feats[lo:hi]
-            sel = (f >= g0) & (f < g1)
-            dense = torch.zeros(n, g1 - g0, dtype=torch.float32)
-            if values:
-                dense[r[sel], f[sel] - g0] = self.r_vals[lo:hi][sel].float()
-            else:
-                dense[r[sel], f[sel] - g0] = 1.0
-            yield row_lo, dense
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +147,8 @@ def kept_union_for_pair(cache, stats, p_blk, c_blk):
         e = (ep.double() ** 2)                            # [n, P]
         union_count += ((e > 0).double() * any_kept).sum(dim=0)
         union_energy += (e * any_kept).sum(dim=0)
-    # denominator from stage 01 (over ALL tokens) so r_mass_kept is directly
-    # comparable with the all-children r_mass in the stage-02 report
+    # denominator from collect_statistics (over ALL tokens) so r_mass_kept is
+    # directly comparable with the all-children r_mass in the run_metrics report
     energy_total = stats["energy_total"][key].double()
     has = edge_mask.any(dim=1)
     r_supp_kept = union_count / fire_p.clamp(min=1.0)
@@ -241,7 +177,7 @@ def main():
         raise SystemExit(f"[03] {C.missing_stats_msg()}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     if not (C.TOKEN_CACHE_DIR / "meta.json").exists():
-        raise SystemExit(f"[03] no token cache at {C.TOKEN_CACHE_DIR} - rerun cache_stats.py")
+        raise SystemExit(f"[03] no token cache at {C.TOKEN_CACHE_DIR} - rerun collect_statistics.py")
     cache = TokenCache(C.TOKEN_CACHE_DIR)
     print(f"[03] token cache: {cache.n_tokens} tokens")
 

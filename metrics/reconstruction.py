@@ -1,8 +1,8 @@
 """
 Metric 2a - Reconstruction-ablation CONTRIBUTION FILTER (Tree-SAE-INSPIRED
-baseline; project plan Exp 0, bullet 2).
+baseline).
 
-Honest-name note (landscape §C.2, Rev. 2.1): this is NOT Tree SAE's S_res.
+Honest-name note: this is NOT Tree SAE's S_res.
 It tests that both features carry reconstruction mass on the child's tokens —
 a contribution filter. It tests neither refinement (P2) nor semantic
 coherence (P3): two strong but unrelated co-firing features pass both sides,

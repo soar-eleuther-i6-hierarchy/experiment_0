@@ -1,16 +1,17 @@
 """
 Tidy the run directory for browsing: sort generated artifacts into subfolders.
 
-The analysis pipeline (cache_stats / run_metrics / run_second_pass / in_block_edges
-/ visualize / make_report_figures) writes everything *flat* into RUN_DIR. This helper
-moves the browsable artifacts into `dashboards/` and `reports/` while leaving the data
-files the scripts read (exp0_stats.pt, feature_labels.json, token_cache/) exactly where
-they expect them — so it never breaks a rerun.
+The analysis pipeline (collect_statistics / run_metrics / run_token_metrics /
+in_block_edges / reporting.visualize / reporting.make_report_figures) writes
+everything *flat* into RUN_DIR. This helper moves the browsable artifacts into
+`dashboards/` and `reports/` while leaving the data files the scripts read
+(exp0_stats.pt, feature_labels.json, token_cache/) exactly where they expect
+them — so it never breaks a rerun.
 
 Idempotent: safe to run repeatedly, and again after regenerating any artifact.
 
-    python3 organize_outputs.py            # tidy RUN_DIR
-    python3 organize_outputs.py --dry-run  # show what would move
+    python3 -m utils.organize_outputs            # tidy RUN_DIR
+    python3 -m utils.organize_outputs --dry-run  # show what would move
 """
 
 from __future__ import annotations
@@ -75,9 +76,9 @@ Read order (top = start here):
 4. `reports/qualitative_check.md` — surviving vs rejected edges, with labels.
 
 Folders:
-- `dashboards/` — interactive HTML (a separate render step, `visualize.py`),
-  one per report above.
-- `figures/`    — static PNGs for the write-up (`make_report_figures.py`).
+- `dashboards/` — interactive HTML (a separate render step,
+  `reporting/visualize.py`), one per report above.
+- `figures/`    — static PNGs for the write-up (`reporting/make_report_figures.py`).
 - `reports/`    — the `.md` / `.json` metric outputs.
 - root files (`exp0_stats.pt`, `feature_labels.json`, `token_cache/`) are the
   inputs the scripts read; they stay put so reruns keep working.

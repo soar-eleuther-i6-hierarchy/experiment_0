@@ -1,6 +1,5 @@
 """
-Metric 3 - Child diversity / sibling redundancy, Tree-SAE style
-(project plan Exp 0, bullet 3).
+Metric 3 - Child diversity / sibling redundancy, Tree-SAE style.
 
 If a parent's children are a REAL refinement, they should partition the
 parent's firing set: each child claims a different slice, so siblings rarely
@@ -17,7 +16,7 @@ sibling Jaccard:
 ~0   -> children are diverse (healthy refinement)
 ~1   -> children are duplicates (splitting)
 
-Landscape Rev. 2.1: the property under test is disjointness WITHIN the
+The property under test is disjointness WITHIN the
 parent's firing set. The global Jaccard below scores co-firing anywhere —
 in unconstrained architectures (Matryoshka) siblings can co-fire or fire
 solo where the parent is silent, which is irrelevant to this parent's

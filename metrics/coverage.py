@@ -1,5 +1,5 @@
 """
-Metric 1 - Activation coverage, three legs (project plan Exp 0, bullet 1).
+Metric 1 - Activation coverage, three legs.
 
 For a candidate edge parent p -> child c, from co-firing counts:
 
@@ -48,7 +48,7 @@ def keep_edges(
     """Boolean [P, C] edge mask: R >= tau, both endpoints fire often enough,
     and (when cofire is given) at least min_joint co-firing tokens.
 
-    The joint-support guard (landscape Rev. 2) kills chance edges: a child
+    The joint-support guard kills chance edges: a child
     firing min_fire times inside a ~always-on parent reaches R = 1.0 with no
     evidence beyond base rate. Callers report the excluded count.
     """
@@ -67,7 +67,7 @@ def joint_child_coverage_upper(
     """Upper bound on J(p): sum of forward coverages of kept children, capped at 1.
 
     Children can co-fire, so the sum double-counts; the streaming union count
-    (see cache_stats.py) gives the exact value.
+    (see collect_statistics.py) gives the exact value.
     """
     return (F * edge_mask).sum(dim=1).clamp(max=1.0)
 

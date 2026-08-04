@@ -1,9 +1,8 @@
 """
-Synthetic ground-truth "toy" for calibrating the five Exp 0 metrics.
+Synthetic ground-truth "toy" for calibrating the five hierarchy metrics.
 
-The project plan (Exp 0, "How we decide which metric works") asks us to keep the
-metrics that BOTH recover a known parent-child tree AND reject pathological edges
-we inject on purpose. Real gemma-2-2b caches have no ground truth, so we build a
+A metric earns its place only if it BOTH recovers a known parent-child tree AND
+rejects pathological edges we inject on purpose. Real gemma-2-2b caches have no ground truth, so we build a
 tiny world where we know the answer, and emit the *same cached statistics*
 `run_metrics.analyse_pair` reads from `exp0_stats.pt`. The five metrics then run
 unchanged (same functions, same config thresholds) and we score them.
@@ -127,7 +126,9 @@ def build_world(
 
     Returns (stats, labels). `stats` mirrors the single-pair slice of
     `exp0_stats.pt`: fire_count, cofire, g_parent_sum, err_sum_c, g_child_sum,
-    cofire_by_bucket, fire_c_by_bucket, within_cofire, buckets, total_tokens.
+    cofire_by_bucket, fire_c_by_bucket, within_cofire, buckets, total_tokens,
+    and the schema-v2 energy/union accumulators energy_cofire, energy_total,
+    union_count, union_energy.
     """
     gen = _Gen(seed)
     labels = ToyLabels(
@@ -217,6 +218,19 @@ def _reduce(gen: _Gen) -> dict:
     g_child_sum = (fc * gc).sum(dim=0)                            # [C]
     within_cofire = fc.T @ fc                                     # [C, C]
 
+    # energy / joint-child-union accumulators (schema v2). Computed by the SAME
+    # production function so the toy's numbers match exp0_stats.pt exactly; feed
+    # the RAW activation slices (accumulate_pair_extras squares + thresholds them).
+    from collect_statistics import accumulate_pair_extras
+
+    extras = {
+        "energy_cofire": torch.zeros(P, C, dtype=torch.float64),
+        "union_count": torch.zeros(P, dtype=torch.float64),
+        "union_energy": torch.zeros(P, dtype=torch.float64),
+        "energy_total": torch.zeros(P, dtype=torch.float64),
+    }
+    accumulate_pair_extras(extras, feats[:, :P], feats[:, P:], C_cfg.FIRE_THRESHOLD)
+
     # frequency buckets from corpus token counts, then per-bucket accumulators.
     vocab = int(tok_ids.max()) + 1
     token_counts = torch.zeros(vocab, dtype=torch.float64)
@@ -244,6 +258,10 @@ def _reduce(gen: _Gen) -> dict:
         "err_sum_c": err_sum_c,
         "g_child_sum": g_child_sum,
         "within_cofire": within_cofire,
+        "energy_cofire": extras["energy_cofire"],
+        "energy_total": extras["energy_total"],
+        "union_count": extras["union_count"],
+        "union_energy": extras["union_energy"],
         "cofire_by_bucket": cofire_by_bucket,
         "fire_c_by_bucket": fire_c_by_bucket,
         "buckets": buckets,

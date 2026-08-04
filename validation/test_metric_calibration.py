@@ -1,5 +1,5 @@
 """
-Calibrate the five Exp 0 metrics on the synthetic ground-truth toy.
+Calibrate the five hierarchy metrics on the synthetic ground-truth toy.
 
 For each metric we know, by construction, which edges it SHOULD keep and which
 pathology it SHOULD catch (see validation/toy_world.py). We run the production metric
@@ -35,10 +35,20 @@ from metrics import (  # noqa: E402
     edge_reconstruction_condition,
     find_superparents,
     frequency_controlled_coverage,
+    independence_scores,
+    joint_child_coverage_upper,
     keep_edges,
+    r_mass,
+    r_supp,
+    share_energy,
     sibling_redundancy,
 )
+from metrics.coverage import joint_child_coverage_exact  # noqa: E402  (not in metrics.__all__)
 from validation.toy_world import build_world  # noqa: E402
+
+# One child holding >= this fraction of the parent's energy flags a feature split
+# (matches run_metrics.py's n_share_energy_ge_09 gate).
+SPLIT_SHARE_MIN = 0.9
 
 
 def _run_metrics(stats):
@@ -62,10 +72,21 @@ def _run_metrics(stats):
         C.SUPERPARENT_OUTDEG_FRAC, C.SUPERPARENT_FIRE_FRAC,
     )
     sib = sibling_redundancy(edge_mask, stats["within_cofire"], fire_c)
+
+    # --- metrics reading the schema-v2 energy / joint-child-union accumulators
+    null = independence_scores(cofire, fire_p, fire_c, stats["total_tokens"], C.MIN_JOINT)
+    joint_upper = joint_child_coverage_upper(F, edge_mask)
+    rs = r_supp(stats["union_count"], fire_p)
+    jce = joint_child_coverage_exact(stats["union_count"], fire_p)
+    rm = r_mass(stats["union_energy"], stats["energy_total"])
+    share = share_energy(stats["energy_cofire"], stats["energy_total"])
     return {
         "R": R, "F": F, "edge_mask": edge_mask,
         "recon": recon, "fcov": fcov, "deg": deg,
         "superparents": superparents, "sib": sib,
+        "pmi": null["pmi"], "pmi_valid": null["valid"],
+        "joint_upper": joint_upper, "r_supp": rs, "joint_exact": jce,
+        "r_mass": rm, "share": share,
     }
 
 
@@ -155,6 +176,70 @@ def _score(stats, labels, m) -> list[dict]:
                   f"thr={C.FREQ_SURVIVAL_MIN})",
         "margin": (min(gen_surv, default=0.0) / max(max(freq_surv, default=1e-9), 1e-9)),
     })
+
+    sp_parent = next(iter(labels.superparent_parents))
+    gen_parents = sorted({p for (p, _) in genuine})
+
+    # --- Metric 6: independence null (PMI) ranks genuine above base rate -----
+    pmi, pmi_valid = m["pmi"], m["pmi_valid"]
+    gen_pmi = [float(pmi[p, c]) for (p, c) in genuine if bool(pmi_valid[p, c])]
+    sp_pmi = [float(pmi[sp_parent, c]) for c in range(stats["C"])
+              if bool(pmi_valid[sp_parent, c])]
+    gen_min_pmi = min(gen_pmi, default=float("nan"))
+    sp_max_pmi = max(sp_pmi, default=0.0)
+    rows.append({
+        "metric": "6. independence null (PMI)",
+        "job": "rank genuine edges above base-rate/superparent co-firing",
+        "pass": bool(gen_pmi) and bool(sp_pmi) and gen_min_pmi > sp_max_pmi,
+        "detail": f"min genuine PMI={gen_min_pmi:.2f} > max superparent PMI={sp_max_pmi:.2f}; "
+                  f"base-rate confound only - topical co-occurrence is not in this toy "
+                  f"(needs a model-based null)",
+        "margin": gen_min_pmi / max(sp_max_pmi, 1e-9),
+    })
+
+    # --- Metric 7: joint-child coverage (support) - genuine covered, not SP --
+    rs, jce, ju = m["r_supp"], m["joint_exact"], m["joint_upper"]
+    gen_rs = [float(rs[p]) for p in gen_parents]
+    sp_rs = float(rs[sp_parent])
+    exact_eq = bool(torch.allclose(rs, jce))
+    upper_ok = bool((ju >= jce - 1e-9).all())
+    rows.append({
+        "metric": "7. joint-child coverage (support)",
+        "job": "children cover a genuine parent's firing, not a superparent's",
+        "pass": bool(gen_rs) and min(gen_rs) > sp_rs and exact_eq and upper_ok,
+        "detail": f"genuine R_supp>={min(gen_rs, default=float('nan')):.2f} vs "
+                  f"superparent={sp_rs:.2f}; r_supp==joint_child_coverage_exact: {exact_eq}; "
+                  f"upper>=exact for all parents: {upper_ok} "
+                  f"(covers r_supp, joint_child_coverage_exact, joint_child_coverage_upper)",
+        "margin": min(gen_rs, default=0.0) / max(sp_rs, 1e-9),
+    })
+
+    # --- Metric 8: joint-child coverage (energy-weighted) -------------------
+    rm = m["r_mass"]
+    gen_rm = [float(rm[p]) for p in gen_parents]
+    sp_rm = float(rm[sp_parent])
+    rows.append({
+        "metric": "8. joint-child coverage (energy)",
+        "job": "energy-weighted child coverage separates genuine from superparent",
+        "pass": bool(gen_rm) and min(gen_rm) > sp_rm,
+        "detail": f"genuine R_mass>={min(gen_rm, default=float('nan')):.2f} vs "
+                  f"superparent={sp_rm:.2f}",
+        "margin": min(gen_rm, default=0.0) / max(sp_rm, 1e-9),
+    })
+
+    # --- Metric 9: energy concentration flags the feature-split parent ------
+    split_parent = next(iter(labels.split_parents))
+    max_share = m["share"].max(dim=1).values          # [P]
+    split_share = float(max_share[split_parent])
+    gen_share_max = max((float(max_share[p]) for p in gen_parents), default=0.0)
+    rows.append({
+        "metric": "9. energy concentration (share_energy)",
+        "job": "flag feature-split parent (a child holds >=90% of its energy)",
+        "pass": split_share >= SPLIT_SHARE_MIN and gen_share_max < split_share,
+        "detail": f"split parent max child share={split_share:.2f} (thr={SPLIT_SHARE_MIN}); "
+                  f"genuine parents max={gen_share_max:.2f}",
+        "margin": split_share / max(gen_share_max, 1e-9),
+    })
     return rows
 
 
@@ -181,9 +266,15 @@ def _render(rows) -> str:
     L.append("")
     n_pass = sum(r["pass"] for r in rows)
     L.append(f"**{n_pass}/{len(rows)} metrics calibrated.** "
-             + ("All five recover the genuine tree and reject their injected "
-                "pathology on this toy." if n_pass == len(rows)
+             + ("Every scorecard row recovers the genuine tree and rejects its "
+                "injected pathology on this toy." if n_pass == len(rows)
                 else "Some metrics did not separate cleanly - see FAIL rows."))
+    L.append("")
+    L.append("These rows cover **13/13 statistics-only metric functions**. The 4 "
+             "per-token functions (`train_probe`, `sres_rank_check`, "
+             "`negative_parent_composition`, `parent_conditioned_redundancy`) need "
+             "per-token residuals/masks from the token cache and are calibrated in "
+             "Tier 2, not on these reduced statistics.")
     return "\n".join(L)
 
 

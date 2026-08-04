@@ -1,9 +1,9 @@
 """
-Shared loaders + tiny helpers for Exp 0's stage scripts.
+Shared model/SAE loaders and block helpers for the hierarchy-metric suite.
 
-Mirrors the warm-up task's sae_utils so both stages describe the SAME model /
-SAE / block structure. Keeps "how do I get the model / SAE / block masks" in one
-spot so cache_stats.py and run_metrics.py stay readable.
+Mirrors the warm-up task's sae_utils so both describe the SAME model / SAE /
+block structure. Keeps "how do I get the model / SAE / block masks" in one spot
+so collect_statistics.py and run_metrics.py stay readable.
 """
 
 from __future__ import annotations

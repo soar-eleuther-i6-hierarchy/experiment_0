@@ -19,22 +19,22 @@ Run everything from the `experiment_0/` directory.
 ```bash
 pip install torch sae_lens datasets plotly numpy matplotlib
 
-python3 cache_stats.py        # Stage 01: cache every statistic the metrics need (slow, needs model+SAE)
-python3 fetch_labels.py       # feature labels for the current layer
-python3 run_metrics.py        # Stage 02: metrics_report.{json,md}
-python3 run_second_pass.py    # Stage 03: S_res probes + parent-conditioned siblings (model-free)
-python3 qualitative_check.py  # survivor-vs-rejected edges vs Neuronpedia labels
-python3 visualize.py          # rebuild the dashboards
+python3 collect_statistics.py   # cache every statistic the metrics need (slow, needs model+SAE)
+python3 fetch_labels.py         # feature labels for the current layer
+python3 run_metrics.py          # metrics_report.{json,md}
+python3 run_token_metrics.py    # S_res probes + parent-conditioned siblings (model-free)
+python3 qualitative_check.py    # survivor-vs-rejected edges vs Neuronpedia labels
+python3 -m reporting.visualize  # rebuild the dashboards
 ```
 
 `EXP0_LAYER` (default 6) selects the layer; everything writes to `outputs/layer_NN/`.
 
 ```bash
-python3 cache_stats.py --docs 16              # quick smoke slice (16 docs instead of 400)
-EXP0_LAYER=12 python3 cache_stats.py          # any layer 0–24
-EXP0_DEVICE=cuda:1 python3 cache_stats.py     # device (default: mps on Mac, cuda on server)
-CUDA_VISIBLE_DEVICES=1 python3 cache_stats.py # pin one GPU on the shared server
-EXP0_OUT=outputs_local python3 run_metrics.py # redirect all outputs away from the published outputs/
+python3 collect_statistics.py --docs 16              # quick smoke slice (16 docs instead of 400)
+EXP0_LAYER=12 python3 collect_statistics.py          # any layer 0–24
+EXP0_DEVICE=cuda:1 python3 collect_statistics.py     # device (default: mps on Mac, cuda on server)
+CUDA_VISIBLE_DEVICES=1 python3 collect_statistics.py # pin one GPU on the shared server
+EXP0_OUT=my_run python3 run_metrics.py               # redirect all outputs away from the published outputs/
 ```
 
 The heavy cache (`exp0_stats.pt`, ~700 MB per layer) is not in git — pull it from the Hub instead of
@@ -136,20 +136,22 @@ Full numbers, dashboards and per-layer pages: **[outputs/](outputs/)**.
 
 ## Repo layout
 
+Run the pipeline scripts top-to-bottom; each reads the previous one's output
+(see each script's `Needs:` / `Writes:` header).
+
 ```
-cache_stats.py        Stage 01  stream the corpus once, accumulate every statistic (GPU, slow)
-run_metrics.py        Stage 02  pure post-processing over exp0_stats.pt -> metrics_report.{json,md}
-run_second_pass.py    Stage 03  model-free token-cache pass: S_res probes, parent-conditioned siblings
-in_block_edges.py               same-level (within-block) directed edges and duplicates
-qualitative_check.py            survivor vs rejected edges read against Neuronpedia labels
-fetch_labels.py                 bulk autointerp labels for the current layer
-visualize.py                    all interactive HTML dashboards
-make_report_figures.py          the five static PNGs in figures/
-organize_outputs.py             tidy a run dir into dashboards/ + reports/
-config.py                       every threshold, path and layer-derived constant
-sae_utils.py                    the only model/SAE loaders
-metrics/                        one file per metric, pure functions over cached tensors
-validation/                     Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
+collect_statistics.py   stream the corpus once, accumulate every statistic (GPU, slow)
+run_metrics.py          post-process exp0_stats.pt -> metrics_report.{json,md}
+run_token_metrics.py    model-free token-cache pass: S_res probes, parent-conditioned siblings
+in_block_edges.py       same-level (within-block) directed edges and duplicates
+qualitative_check.py    survivor vs rejected edges read against Neuronpedia labels
+fetch_labels.py         bulk autointerp labels for the current layer
+config.py               every threshold, path and layer-derived constant
+
+metrics/                one file per metric, pure functions over cached tensors
+utils/                  model/SAE loaders (sae_utils), token cache (io), run-dir tidy (organize_outputs)
+reporting/              interactive dashboards (visualize) + static proof-figures (make_report_figures)
+validation/             Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
 ```
 
 The SAE has `D_SAE = 32768` features in 5 nested blocks with prefix lengths

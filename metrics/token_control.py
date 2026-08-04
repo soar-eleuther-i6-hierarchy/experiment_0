@@ -1,6 +1,5 @@
 """
-Metric 5 - Token-frequency-controlled coverage (project plan Exp 0, bullet 5;
-idea from Tokenized SAEs).
+Metric 5 - Token-frequency-controlled coverage (idea from Tokenized SAEs).
 
 Hypothesis under test: poly-parenting / superparents are driven by
 high-frequency tokens (spaces, punctuation, "the"). If an edge's coverage is

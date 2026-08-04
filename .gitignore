@@ -22,6 +22,10 @@ outputs/*.log
 outputs/**/*.pt
 outputs/*.pt
 
+# Generated proof-figures (rebuilt by reporting/make_report_figures.py into each
+# run dir's figures/; never tracked)
+figures/
+
 # OS
 .DS_Store
 .env
@@ -30,7 +34,12 @@ MEETING_NOTES/
 # Team SAE-training repo, cloned locally for Tier-2 training (its own git repo)
 sae-training/
 
-# Local-only work (chidaksh-metrics branch): tests + run artifacts, kept out of git
+# Local-only work: tests + run artifacts, kept out of git
 tests_local/
 outputs_local/
 REPORT_layer6.md
+scoring/
+toygen/
+METRICS_MATRIX.md
+PROPERTIES.md
+score_trained.py
