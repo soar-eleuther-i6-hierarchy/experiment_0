@@ -198,7 +198,7 @@ metrics/                              the repository
 │
 ├── validation/                       the three calibration tiers
 │   ├── toy_world.py                  the synthetic ground-truth world
-│   ├── test_metric_calibration.py    Tier 1 — synthetic toy
+│   ├── calibrate_on_toy.py    Tier 1 — synthetic toy
 │   ├── calibrate_on_trained_toy.py   Tier 2 — trained toy
 │   ├── qualitative_check.py          Tier 3 — real SAE (also pipeline stage 02b)
 │   └── README.md

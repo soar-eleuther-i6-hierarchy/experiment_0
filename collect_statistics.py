@@ -17,7 +17,7 @@ Two halves, split so the second can be reused:
               structure, so an adapter can pass its own instead of gemma's and
               get a stats file run_metrics.py reads unmodified.
 
-validation/test_collect_generic.py exercises collect() on a 28-feature stub, which
+tests/test_collect_generic.py exercises collect() on a 28-feature stub, which
 is what keeps that reuse honest.
 
 Needs:  model + SAE, GPU

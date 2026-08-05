@@ -5,14 +5,18 @@ SAE and pile-10k, then accumulated statistics from them. collect() is the second
 half of that, split out so an adapter can feed it a PCFG transformer or a trained
 toy SAE instead.
 
-This test is what makes "source-agnostic" a checked property rather than a claim.
+This is a unit test, not a calibration: it measures nothing about hierarchy and
+scores no metric. It guards a claim the code makes about itself, which one
+leftover `config` global in the accumulation loop silently breaks -- gemma's block
+boundaries would come back with no symptom, and every downstream number would be
+computed from the wrong slices.
+
 It builds a tiny stub model, a tiny stub SAE and a config with its own block
 structure -- 28 features in 3 blocks, not gemma's 32768 in 5 -- and asserts the
-output is a well-formed stats file.
+output is a well-formed stats file. No network, no GPU, no model download; about
+a second.
 
-It needs no network, no GPU and no model download; it runs in about a second.
-
-    python3 -m validation.test_collect_generic
+    python3 -m tests.test_collect_generic
 """
 
 from __future__ import annotations
