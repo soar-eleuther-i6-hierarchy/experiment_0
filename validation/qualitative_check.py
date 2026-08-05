@@ -26,24 +26,32 @@ For the ~26 features missing from that export we fall back to Neuronpedia's
 public API (cached to outputs/npedia_labels_cache.json). Pass --no-fetch to skip
 the API fallback and emit URLs for anything the bulk file doesn't cover.
 
+This is Tier 3 of the validation ladder (Tiers 1-2 are the toys next door). It is
+also pipeline stage 02b: unlike the toys it needs the real cache and writes a
+published artifact into RUN_DIR, so it is the one tier that is not self-contained.
+
 Needs:  outputs/layer_NN/exp0_stats.pt + feature_labels.json (fetch_labels.py)
 Writes: outputs/layer_NN/qualitative_check.{json,md}
-Run:    python3 qualitative_check.py                 # pair 0->1, fetch labels
-        python3 qualitative_check.py --pairs 0->1 1->2
-        python3 qualitative_check.py --no-fetch      # offline: URLs only
+Run:    python3 -m validation.qualitative_check                 # pair 0->1, fetch labels
+        python3 -m validation.qualitative_check --pairs 0->1 1->2
+        python3 -m validation.qualitative_check --no-fetch      # offline: URLs only
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 import time
 import urllib.request
+from pathlib import Path
 
 import torch
 
-import config as C
-from metrics import (
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # run as a file, too
+
+import config as C  # noqa: E402
+from metrics import (  # noqa: E402
     coverage_legs,
     edge_reconstruction_condition,
     find_superparents,
@@ -182,8 +190,9 @@ def select(d, n_survivor=8, n_each_reject=4):
 # ---------------------------------------------------------------------------
 def to_markdown(all_rows, fetched) -> str:
     # Raw HTML passes through Jekyll's markdown rendering, giving this report the
-    # same back-to-index button as the generated dashboards.
-    L = [C.BACK_LINK_HTML, "", "# Exp 0 - qualitative agreement check (real gemma-2-2b SAE)", "",
+    # same nav bar as the generated dashboards.
+    nav = C.nav_html(depth=2, layer=C.LAYER, page="qualitative_check.html")
+    L = [nav, "", "# Exp 0 - qualitative agreement check (real gemma-2-2b SAE)", "",
          C.scope_line(), ""]
     L.append("For each block pair we compare edges the metrics KEEP (survivors) "
              "against edges they REJECT despite passing the crude coverage test. "

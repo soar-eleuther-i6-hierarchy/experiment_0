@@ -33,5 +33,33 @@
     "pass": true,
     "detail": "1/1 freq edges rejected (survival=[0.0]); 20/20 genuine survive (min genuine survival=1.00, thr=0.5)",
     "margin": 999999999.9999999
+  },
+  {
+    "metric": "6. independence null (PMI)",
+    "job": "rank genuine edges above base-rate/superparent co-firing",
+    "pass": true,
+    "detail": "min genuine PMI=2.59 > max superparent PMI=0.07; base-rate confound only - topical co-occurrence is not in this toy (needs a model-based null)",
+    "margin": 36.08906151616907
+  },
+  {
+    "metric": "7. joint-child coverage (support)",
+    "job": "children cover a genuine parent's firing, not a superparent's",
+    "pass": true,
+    "detail": "genuine R_supp>=1.00 vs superparent=0.43; r_supp==joint_child_coverage_exact: True; upper>=exact for all parents: True (covers r_supp, joint_child_coverage_exact, joint_child_coverage_upper)",
+    "margin": 2.301190476190476
+  },
+  {
+    "metric": "8. joint-child coverage (energy)",
+    "job": "energy-weighted child coverage separates genuine from superparent",
+    "pass": true,
+    "detail": "genuine R_mass>=1.00 vs superparent=0.43",
+    "margin": 2.314992222088543
+  },
+  {
+    "metric": "9. energy concentration (share_energy)",
+    "job": "flag feature-split parent (a child holds >=90% of its energy)",
+    "pass": true,
+    "detail": "split parent max child share=1.00 (thr=0.9); genuine parents max=0.27",
+    "margin": 3.6985993054459856
   }
 ]

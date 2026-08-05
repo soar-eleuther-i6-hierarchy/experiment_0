@@ -4,13 +4,13 @@ Grades candidate parent→child edges between the nested blocks of a **Matryoshk
 `google/gemma-2-2b` (residual stream, layers 3–24). A family of competing metrics decides which
 "edges" are real hierarchy and which are frequency, splitting or co-occurrence artifacts.
 
-**Live site:** [soar-eleuther-i6-hierarchy.github.io/experiment_0](https://soar-eleuther-i6-hierarchy.github.io/experiment_0/)
+**Live site:** [soar-eleuther-i6-hierarchy.github.io/metrics](https://soar-eleuther-i6-hierarchy.github.io/metrics/)
 
 | Where to go | What is there |
 | ----------- | ------------- |
 | [metrics/](metrics/) | every metric: formula, threshold, what it catches, what it is blind to |
 | [outputs/](outputs/) | all results — dashboards, reports, per-layer pages, validation tiers |
-| [validation/](validation/) | Tier 1 + Tier 2 calibration (synthetic toy, trained toy) |
+| [validation/](validation/) | all three calibration tiers: synthetic toy, trained toy, real SAE |
 
 ## Install and run
 
@@ -23,7 +23,7 @@ python3 collect_statistics.py   # cache every statistic the metrics need (slow, 
 python3 fetch_labels.py         # feature labels for the current layer
 python3 run_metrics.py          # metrics_report.{json,md}
 python3 run_token_metrics.py    # S_res probes + parent-conditioned siblings (model-free)
-python3 qualitative_check.py    # survivor-vs-rejected edges vs Neuronpedia labels
+python3 -m validation.qualitative_check   # Tier 3: survivor-vs-rejected edges vs Neuronpedia labels
 python3 -m reporting.visualize  # rebuild the dashboards
 ```
 
@@ -100,17 +100,18 @@ all three. ("Tier", not "layer", to avoid confusion with the model's residual-st
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic** | a known 5-parent tree plus injected pathologies, reduced to cached stats | yes, by construction | the maths is right — 5/5, each pathology caught by its intended metric |
+| **1. Synthetic** | a known 5-parent tree plus injected pathologies, reduced to cached stats | yes, by construction | the maths is right — 9/9, each pathology caught by its intended metric |
 | **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
 | **3. Real SAE** | the production `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | no, human judgement | the metrics mean something outside a toy |
 
 Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge with
 both a trained SAE and a known answer.
 
-**Scope.** Tiers 1–2 calibrate the original five metrics (1a, 2a, 3, 4, 5). The later additions —
-`S_res`, the independence null, joint-child and in-block — are theory-backed and their matrix rows
-follow from their construction, but no known-tree calibration exists for them yet. Full detail,
-per-metric scorecards and how to run each tier: **[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
+**Scope.** Tier 1 scores 9/9 rows across seeds 0–5, covering every statistics-only metric —
+coverage, joint-child, reconstruction, sibling redundancy, out-degree, token-frequency control and
+the independence null. Still uncalibrated: `S_res` (needs per-token residuals, so it is graded in
+Tier 2) and in-block directed coverage, whose matrix rows follow from their construction alone. Full
+detail, per-metric scorecards and how to run each tier: **[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
 
 ## Headline findings
 
@@ -122,7 +123,7 @@ per-metric scorecards and how to run each tier: **[outputs/README.md](outputs/RE
 - **Semantic quality degrades with depth.** Survivors read as real refinement early
   (L3/L6: "legal citations" → "legal citations"); at layer 24 the 8 survivors collapse onto 2
   parents, one firing on 41.9% of tokens with unrelated children.
-- **The metrics themselves hold up.** 5/5 on the synthetic toy (each injected pathology caught by its
+- **The metrics themselves hold up.** 9/9 on the synthetic toy (each injected pathology caught by its
   intended metric) and **precision 1.00 / recall 0.67** on a Matryoshka SAE actually trained on
   Bussmann's tree — every miss traced to a feature the SAE never learned, not to a metric.
 
@@ -144,14 +145,14 @@ collect_statistics.py   stream the corpus once, accumulate every statistic (GPU,
 run_metrics.py          post-process exp0_stats.pt -> metrics_report.{json,md}
 run_token_metrics.py    model-free token-cache pass: S_res probes, parent-conditioned siblings
 in_block_edges.py       same-level (within-block) directed edges and duplicates
-qualitative_check.py    survivor vs rejected edges read against Neuronpedia labels
 fetch_labels.py         bulk autointerp labels for the current layer
 config.py               every threshold, path and layer-derived constant
 
 metrics/                one file per metric, pure functions over cached tensors
 utils/                  model/SAE loaders (sae_utils), token cache (io), run-dir tidy (organize_outputs)
 reporting/              interactive dashboards (visualize) + static proof-figures (make_report_figures)
-validation/             Tier 1 (synthetic toy) and Tier 2 (trained toy) calibration
+validation/             all three calibration tiers: synthetic toy, trained toy,
+                        and qualitative_check.py (Tier 3, also pipeline stage 02b)
 ```
 
 The SAE has `D_SAE = 32768` features in 5 nested blocks with prefix lengths

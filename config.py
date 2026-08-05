@@ -182,17 +182,101 @@ def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None
     return sep.join(bits)
 
 
-# Back-to-index button, shared by every generated page so navigation is uniform.
-# Pages are only reachable by deep link, so each needs its own way back. Emitted
-# into the markdown reports too: Jekyll passes raw HTML through when it renders
-# them. The href is relative (two levels up from outputs/layer_NN/) so it works
-# on GitHub Pages and when the file is opened locally.
-BACK_LINK_HTML = (
-    '<a href="../../" title="Back to the experiment_0 index" style="position:fixed;'
-    'top:14px;right:18px;z-index:999;font:600 13px/1 system-ui,-apple-system,sans-serif;'
-    'color:#7C22CE;background:#F6F3FE;border:1px solid #E3DAFB;border-radius:8px;'
-    'padding:9px 13px;text-decoration:none">&#8592; Back to index</a>'
-)
+# --- site navigation --------------------------------------------------------
+# Every page is reachable only by a deep link, so each carries its own nav bar.
+# Emitted into the markdown reports too: Jekyll passes raw HTML through when it
+# renders them (and serves them as .html, which is why the report links below
+# end in .html, not .md). All hrefs are relative to the site root, so the bar
+# works on GitHub Pages and when a file is opened straight off disk.
+#
+# It is `sticky`, not `fixed`: sticky occupies layout space, so the bar can
+# never cover the top of a plot the way the old floating back-button did.
+NAV_LAYERS = [3, 6, 12, 18, 24]
+
+# (file, label) for the five pages every layer_NN/ has. `file` doubles as the
+# identity of "which page am I on", so switching layer lands on the same kind.
+NAV_PAGES = [
+    ("metrics_dashboard.html", "Dashboard"),
+    ("superparent_sankey.html", "Superparents"),
+    ("qualitative_dashboard.html", "Qualitative"),
+    ("metrics_report.html", "Metrics report"),
+    ("qualitative_check.html", "Qualitative report"),
+]
+
+# Global links: (path from site root, label). "" is the repo README = the index.
+NAV_GLOBAL = [
+    ("", "Overview"),
+    ("outputs/", "Results"),
+    ("outputs/cross_depth_comparison.html", "Cross-depth"),
+    ("outputs/kill_rates.html", "Kill rates"),
+    ("outputs/toy_calibration.html", "Toy calibration"),
+    ("outputs/trained_toy_calibration.html", "Trained toy"),
+]
+
+NAV_CSS = """<style>
+.x0nav{position:sticky;top:0;z-index:999;background:#fff;border-bottom:1px solid #E3DAFB;
+font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px;}
+.x0nav .row{display:flex;flex-wrap:wrap;align-items:center;gap:13px;padding:9px 18px;}
+.x0nav .row+.row{border-top:1px solid #F1ECFD;}
+.x0nav a{text-decoration:none;color:#5A6B7B;}
+.x0nav a:hover{color:#7C22CE;}
+.x0nav .brand{font-weight:700;color:#7C22CE;letter-spacing:.2px;}
+.x0nav .on{color:#7C22CE;font-weight:700;}
+.x0nav .lbl{color:#9AA7B3;font-size:11px;text-transform:uppercase;letter-spacing:.7px;}
+.x0nav .pill{border:1px solid #E3DAFB;border-radius:7px;padding:5px 10px;background:#F6F3FE;}
+.x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
+.x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
+@media (prefers-color-scheme:dark){
+.x0nav{background:#141414;border-bottom-color:#2E2E2E;}
+.x0nav .row+.row{border-top-color:#242424;}
+.x0nav a{color:#A9B4BF;}
+.x0nav .brand,.x0nav a:hover,.x0nav .on{color:#C79BF2;}
+.x0nav .pill{background:#1E1830;border-color:#3A2B57;}
+.x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
+.x0nav .sep{background:#2E2E2E;}}
+</style>"""
+
+
+def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
+             current: str | None = None) -> str:
+    """The site nav bar for one page.
+
+    depth    levels from this page's directory up to the site root
+             (1 for outputs/x.html, 2 for outputs/layer_NN/x.html)
+    layer    the layer this page describes, or None for a site-wide page
+    page     which of NAV_PAGES this is, so the row can mark it current
+    current  this page's own path from the site root, used to highlight its
+             entry in the global row (site-wide pages only)
+
+    The second row only appears on a layer page: it is what makes navigation
+    two-dimensional — change the layer and stay on the same page, or change the
+    page and stay on the same layer.
+    """
+    root = "../" * depth
+
+    top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
+    for href, label in NAV_GLOBAL:
+        on = "on" if current is not None and href == current else ""
+        top.append(f'<a class="{on}" href="{root}{href}">{label}</a>')
+    rows = ['<div class="row">' + "".join(top) + "</div>"]
+
+    if layer is not None:
+        cur = page or NAV_PAGES[0][0]
+        second = ['<span class="lbl">Layer</span>']
+        for L in NAV_LAYERS:
+            on = " on" if L == layer else ""
+            second.append(
+                f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{cur}">{L}</a>'
+            )
+        second.append('<span class="sep"></span><span class="lbl">Page</span>')
+        for f, label in NAV_PAGES:
+            on = " on" if f == cur else ""
+            second.append(
+                f'<a class="{on.strip()}" href="{root}outputs/layer_{layer:02d}/{f}">{label}</a>'
+            )
+        rows.append('<div class="row">' + "".join(second) + "</div>")
+
+    return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
 
 EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by collect_statistics.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py

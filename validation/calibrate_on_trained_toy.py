@@ -19,6 +19,7 @@ Run:
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -30,7 +31,27 @@ ROOT = HERE.parent
 sys.path.insert(0, str(ROOT))
 
 CKPT = ROOT / "outputs" / "toy_trained"
-TREE = ROOT / "sae-training" / "configs" / "tree.json"
+
+
+def _find_tree() -> Path:
+    """Locate the team repo's tree.json.
+
+    `sae-training` is a separate repo, so where it sits is the user's choice.
+    Default is beside experiment_0 (the layout in the README); an older layout
+    nested it inside. EXP0_SAE_TRAINING overrides both.
+    """
+    env = os.environ.get("EXP0_SAE_TRAINING")
+    roots = [Path(env)] if env else [ROOT.parent / "sae-training", ROOT / "sae-training"]
+    for r in roots:
+        if (r / "configs" / "tree.json").is_file():
+            return r / "configs" / "tree.json"
+    raise SystemExit(
+        "cannot find sae-training/configs/tree.json (looked in: "
+        + ", ".join(str(r) for r in roots)
+        + ").\nClone https://github.com/soar-eleuther-i6-hierarchy/sae-training "
+        "beside experiment_0, or set EXP0_SAE_TRAINING to its path."
+    )
+
 
 from metrics import (                                             # noqa: E402
     coverage_legs, keep_edges, edge_reconstruction_condition,
@@ -55,7 +76,7 @@ class Node:
 
 
 def build_tree():
-    return Node(json.loads(TREE.read_text()), [0])
+    return Node(json.loads(_find_tree().read_text()), [0])
 
 
 def true_edges(tree) -> set[tuple[int, int]]:
