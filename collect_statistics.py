@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import time
+from datetime import datetime
 
 import torch
 
@@ -113,6 +114,13 @@ def main():
     device = args.device or C.pick_device()
     print(f"[01] layer = {C.LAYER}  ({C.SAE_ID})")
     print(f"[01] device = {device}")
+
+    # Stage 01 is what starts a run, so this is where the previous one is put
+    # aside. Later stages write into the same directory on purpose.
+    stamp = datetime.now().strftime("%Y-%m-%dT%H-%M")
+    kept = C.archive_run_dir(stamp)
+    if kept is not None:
+        print(f"[01] previous run archived -> {kept}")
     print(f"[01] block structure:\n{U.human_block_table()}\n")
 
     model = U.load_model(device)

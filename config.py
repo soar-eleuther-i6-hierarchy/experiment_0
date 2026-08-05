@@ -286,6 +286,38 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
 
     return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
 
+# --- keeping previous runs -------------------------------------------------
+# A run writes into a FIXED path (outputs/layer_NN/) because the published site
+# links to it by name -- timestamping that directory would 404 every page. So a
+# rerun would otherwise replace the previous run's numbers with no trace. This
+# takes a dated copy first, into outputs_local/ (gitignored: these are history,
+# not results). Copy, not move, so the site stays whole even if the run dies.
+ARCHIVE_DIR = HERE / "outputs_local" / "archive"
+
+# Never archived: the ~700 MB cache is on the Hub and the token cache is
+# rebuildable, so copying either per run would fill the disk for nothing.
+ARCHIVE_SKIP = ("*.pt", "token_cache", "figures")
+
+
+def archive_run_dir(stamp: str) -> "Path | None":
+    """Copy this layer's current artifacts to ARCHIVE_DIR/layer_NN__<stamp>/.
+
+    `stamp` is passed in rather than read from the clock here, so the caller
+    decides the run's identity and every stage of one run can share it.
+    Returns the archive path, or None when there is nothing to keep yet.
+    """
+    import shutil
+
+    if not RUN_DIR.exists() or not any(RUN_DIR.iterdir()):
+        return None
+    dest = ARCHIVE_DIR / f"{RUN_DIR.name}__{stamp}"
+    if dest.exists():
+        return dest
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(RUN_DIR, dest, ignore=shutil.ignore_patterns(*ARCHIVE_SKIP))
+    return dest
+
+
 EXP0_STATS_PATH = RUN_DIR / "exp0_stats.pt"          # written by collect_statistics.py
 METRICS_JSON_PATH = RUN_DIR / "metrics_report.json"  # written by run_metrics.py
 METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
