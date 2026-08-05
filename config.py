@@ -252,7 +252,8 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     two-dimensional — change the layer and stay on the same page, or change the
     page and stay on the same layer.
     """
-    root = "../" * depth
+    # depth 0 is the site root itself (the repo README): "" is not a usable href.
+    root = "../" * depth or "./"
 
     top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
     for href, label in NAV_GLOBAL:
