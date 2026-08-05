@@ -1,12 +1,24 @@
 """
 Cache the richer statistics the hierarchy metrics need.
 
-The only stage that touches the model. It streams gemma-2-2b's residual stream
-through the Matryoshka SAE once and accumulates, per adjacent block pair, the
-co-firing / reconstruction / sibling statistics the metrics later read (the exact
-tensors and shapes are documented at the accumulator block in `main()`).
-Token-frequency buckets need corpus-wide counts, so every doc is tokenized up
-front (no model) to build the buckets before the single model pass.
+The only stage that touches the model. It streams a residual stream through a
+Matryoshka SAE once and accumulates, per adjacent block pair, the co-firing /
+reconstruction / sibling statistics the metrics later read (the exact tensors and
+shapes are documented at the accumulator block in `collect()`). Token-frequency
+buckets need corpus-wide counts, so every doc is tokenized up front (no model) to
+build the buckets before the single model pass.
+
+Two halves, split so the second can be reused:
+
+  main()      loads gemma-2-2b, the released Matryoshka SAE and pile-10k.
+              Everything source-specific lives here.
+  collect()   the accumulation, which knows nothing about where the model, the
+              SAE or the tokens came from. Its `cfg` argument carries the block
+              structure, so an adapter can pass its own instead of gemma's and
+              get a stats file run_metrics.py reads unmodified.
+
+validation/test_collect_generic.py exercises collect() on a 28-feature stub, which
+is what keeps that reuse honest.
 
 Needs:  model + SAE, GPU
 Writes: outputs/layer_NN/exp0_stats.pt  (+ token_cache/ when CACHE_RESIDUALS)
@@ -97,35 +109,41 @@ def accumulate_pair_extras(acc, feats_p, feats_c, thr):
     acc["energy_total"] += energy_p.sum(dim=0)         # [P]
 
 
-def adjacent_pairs():
-    pairs = [(k, k + 1) for k in range(C.N_BLOCKS - 1)]
-    if not C.INCLUDE_B3_B4:
+def adjacent_pairs(cfg=C):
+    pairs = [(k, k + 1) for k in range(cfg.N_BLOCKS - 1)]
+    if not cfg.INCLUDE_B3_B4:
         pairs = [(p, c) for (p, c) in pairs if not (p == 3 and c == 4)]
     return pairs
 
 
 @torch.no_grad()
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--docs", type=int, default=C.N_DOCS, help="docs to sample")
-    ap.add_argument("--device", default=None, help="cpu / mps / cuda (default auto)")
-    args = ap.parse_args()
+def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None, pad_id=None):
+    """Accumulate every statistic the metrics need, and save them.
 
-    device = args.device or C.pick_device()
-    print(f"[01] layer = {C.LAYER}  ({C.SAE_ID})")
-    print(f"[01] device = {device}")
+    This is the source-agnostic half of stage 01: it takes a model, an SAE and a
+    list of token sequences, and knows nothing about where any of them came from.
+    `main()` below feeds it gemma-2-2b + the released Matryoshka SAE + pile-10k;
+    an adapter feeds it a PCFG transformer + a locally trained SAE + corpus.bin,
+    and gets a stats file the metrics read without modification.
 
-    # Stage 01 is what starts a run, so this is where the previous one is put
-    # aside. Later stages write into the same directory on purpose.
-    stamp = datetime.now().strftime("%Y-%m-%dT%H-%M")
-    kept = C.archive_run_dir(stamp)
-    if kept is not None:
-        print(f"[01] previous run archived -> {kept}")
-    print(f"[01] block structure:\n{U.human_block_table()}\n")
+    `cfg` supplies the block structure and thresholds. It defaults to the gemma
+    config module, and anything with the same attribute names works — which is
+    what lets an adapter pass its own MATRYOSHKA_STEPS / BLOCK_RANGES / D_SAE
+    instead of gemma's.
 
-    model = U.load_model(device)
-    sae = U.load_sae(device)
-    pad_id = model.tokenizer.pad_token_id
+    Args:
+        model:        HookedTransformer; activations are read at cfg.HOOK_NAME.
+        sae:          anything with .encode / .decode / .W_dec.
+        seqs:         list of 1-D LongTensors, one per document, BOS already
+                      prepended if the source wants one (position 0 is dropped).
+        out_path:     where to write; defaults to cfg.EXP0_STATS_PATH.
+        extra_config: merged into the saved `config` dict — provenance the caller
+                      knows and this function cannot (n_docs, grammar hash, ...).
+        pad_id:       padding id; defaults to the model tokenizer's. Sources with
+                      no tokenizer (a PCFG corpus is raw ids) must pass one.
+    """
+    if pad_id is None:
+        pad_id = model.tokenizer.pad_token_id
     W_dec = sae.W_dec.detach()                    # [D_SAE, d_model]
 
     # MPS has no float64; a pass this size stays well within float32's exact-int
@@ -133,31 +151,29 @@ def main():
     # CUDA / CPU we keep float64. (str check so "mps:0" / "cuda:5" both work.)
     acc_dtype = torch.float32 if C.is_mps(device) else torch.float64
 
-    print(f"[01] loading {C.DATASET} (first {args.docs} docs) ...")
-    from datasets import load_dataset  # lazy: heavy dep, not needed by the helpers
-
-    ds = load_dataset(C.DATASET, split=f"train[:{args.docs}]")
-    texts = [t for t in ds["text"] if isinstance(t, str) and t.strip()]
-
-    # ---- pre-pass: tokenize once, count token ids, build frequency buckets ----
-    print("[01] tokenizing + counting token ids for frequency buckets ...")
-    seqs = tokenize_docs(model, texts, C.CONTEXT_SIZE)
+    # ---- pre-pass: count token ids, build frequency buckets ------------------
     vocab = model.cfg.d_vocab
     token_counts = count_tokens(seqs, vocab)          # BOS excluded
-    buckets = frequency_buckets(token_counts, C.FREQ_HIGH_MASS, C.FREQ_MID_MASS)  # [vocab]
+    buckets = frequency_buckets(token_counts, cfg.FREQ_HIGH_MASS, cfg.FREQ_MID_MASS)  # [vocab]
     buckets_dev = buckets.to(device)
-    K = C.N_FREQ_BUCKETS
+    K = cfg.N_FREQ_BUCKETS
     for k in range(K):
         print(f"[01]   bucket {k}: {int((buckets == k).sum())} token ids")
 
-    pairs = adjacent_pairs()
+    pairs = adjacent_pairs(cfg)
     print(f"[01] block pairs: {pairs}")
 
     def blk_len(b):
-        return C.BLOCK_RANGES[b][1] - C.BLOCK_RANGES[b][0]
+        return cfg.BLOCK_RANGES[b][1] - cfg.BLOCK_RANGES[b][0]
+
+    def blk_slice(b):
+        # NOT utils.sae_utils.block_slice: that one reads the gemma config module
+        # globally, so it would slice an adapter's dictionary with gemma's ranges.
+        start, end = cfg.BLOCK_RANGES[b]
+        return slice(start, end)
 
     # ---- accumulators --------------------------------------------------------
-    fire_count = torch.zeros(C.D_SAE, dtype=acc_dtype, device=device)
+    fire_count = torch.zeros(cfg.D_SAE, dtype=acc_dtype, device=device)
     total_tokens = 0
 
     cofire = {pr: torch.zeros(blk_len(pr[0]), blk_len(pr[1]), dtype=acc_dtype, device=device) for pr in pairs}
@@ -174,7 +190,7 @@ def main():
 
     # within-block co-firing for sibling stats (SIBLING_BLOCKS) AND the in-block
     # same-level edge analysis (IN_BLOCK_BLOCKS) — union so B0 gets cached too.
-    within_blocks = sorted(set(C.SIBLING_BLOCKS) | set(getattr(C, "IN_BLOCK_BLOCKS", [])))
+    within_blocks = sorted(set(cfg.SIBLING_BLOCKS) | set(getattr(cfg, "IN_BLOCK_BLOCKS", [])))
     within_cofire = {
         b: torch.zeros(blk_len(b), blk_len(b), dtype=acc_dtype, device=device) for b in within_blocks
     }
@@ -191,19 +207,19 @@ def main():
     }
 
     # T7 groundwork: token-level caches for the model-free second pass
-    cache_writer = TokenCacheWriter(C.TOKEN_CACHE_DIR) if C.CACHE_RESIDUALS else None
+    cache_writer = TokenCacheWriter(cfg.TOKEN_CACHE_DIR) if cfg.CACHE_RESIDUALS else None
 
     # ---- main pass -----------------------------------------------------------
     t0 = time.time()
-    n_batches = (len(seqs) + C.BATCH_DOCS - 1) // C.BATCH_DOCS
+    n_batches = (len(seqs) + cfg.BATCH_DOCS - 1) // cfg.BATCH_DOCS
     for bi in range(n_batches):
-        chunk = seqs[bi * C.BATCH_DOCS : (bi + 1) * C.BATCH_DOCS]
+        chunk = seqs[bi * cfg.BATCH_DOCS : (bi + 1) * cfg.BATCH_DOCS]
         tokens = right_pad(chunk, pad_id, device)          # [b, seq]
 
         _, cache = model.run_with_cache(
-            tokens, stop_at_layer=C.LAYER + 1, names_filter=C.HOOK_NAME
+            tokens, stop_at_layer=cfg.LAYER + 1, names_filter=cfg.HOOK_NAME
         )
-        resid = cache[C.HOOK_NAME]                          # [b, seq, d_model]
+        resid = cache[cfg.HOOK_NAME]                        # [b, seq, d_model]
 
         keep = keep_mask(tokens, pad_id)                    # [b, seq] pad + BOS excluded
         resid = resid[keep]                                 # [n, d_model]
@@ -218,7 +234,7 @@ def main():
         # mismatch. (On MPS both are float32, which is why this only bit on CUDA.)
         err = (resid_err * resid_err).sum(dim=1).to(acc_dtype)  # [n] base recon error
 
-        fired = (feats > C.FIRE_THRESHOLD).to(acc_dtype)    # [n, D_SAE]
+        fired = (feats > cfg.FIRE_THRESHOLD).to(acc_dtype)  # [n, D_SAE]
         g = per_token_ablation_gain(feats, resid_err, W_dec).to(acc_dtype)  # [n, D_SAE]
 
         fire_count += fired.sum(dim=0)
@@ -228,9 +244,9 @@ def main():
         bucket_sel = [(tok_bucket == k).to(acc_dtype) for k in range(K)]
 
         for (p, c) in pairs:
-            fp = fired[:, U.block_slice(p)]                 # [n, P]
-            fc = fired[:, U.block_slice(c)]                 # [n, C]
-            gp = g[:, U.block_slice(p)]                     # [n, P]
+            fp = fired[:, blk_slice(p)]                     # [n, P]
+            fc = fired[:, blk_slice(c)]                     # [n, C]
+            gp = g[:, blk_slice(p)]                         # [n, P]
 
             cofire[(p, c)] += fp.T @ fc                     # [P, C]
             g_parent_sum[(p, c)] += gp.T @ fc               # [P, C] sum over c-firing tokens of g_p
@@ -240,25 +256,25 @@ def main():
 
             accumulate_pair_extras(                          # energy + exact unions
                 pair_extras[(p, c)],
-                feats[:, U.block_slice(p)],
-                feats[:, U.block_slice(c)],
-                C.FIRE_THRESHOLD,
+                feats[:, blk_slice(p)],
+                feats[:, blk_slice(c)],
+                cfg.FIRE_THRESHOLD,
             )
 
         for b in child_blocks:
-            fc = fired[:, U.block_slice(b)]                 # [n, C]
-            gc = g[:, U.block_slice(b)]                     # [n, C]
+            fc = fired[:, blk_slice(b)]                     # [n, C]
+            gc = g[:, blk_slice(b)]                         # [n, C]
             err_sum_c[b] += fc.T @ err                      # [C] sum of base err over c-firing tokens
             g_child_sum[b] += (fc * gc).sum(dim=0)          # [C]
             for k in range(K):
                 fire_c_by_bucket[b][k] += (fc * bucket_sel[k].unsqueeze(1)).sum(dim=0)
 
         for b in within_blocks:
-            fb = fired[:, U.block_slice(b)]                 # [n, Cb]
+            fb = fired[:, blk_slice(b)]                     # [n, Cb]
             within_cofire[b] += fb.T @ fb                   # [Cb, Cb]
 
         if cache_writer is not None:
-            cache_writer.add(resid, feats, C.FIRE_THRESHOLD)
+            cache_writer.add(resid, feats, cfg.FIRE_THRESHOLD)
 
         if bi % 5 == 0 or bi == n_batches - 1:
             dt = time.time() - t0
@@ -290,32 +306,71 @@ def main():
         "fire_c_by_bucket": {b: v.cpu() for b, v in fire_c_by_bucket.items()},
         "within_cofire": {b: v.cpu() for b, v in within_cofire.items()},
         "config": {
-            "layer": C.LAYER,
-            "sae_release": C.SAE_RELEASE,
-            "sae_source": C.SAE_SOURCE,
-            "sae_id": C.SAE_ID,
-            "matryoshka_steps": C.MATRYOSHKA_STEPS,
-            "block_ranges": C.BLOCK_RANGES,
-            "fire_threshold": C.FIRE_THRESHOLD,
-            "n_docs": args.docs,
-            "context_size": C.CONTEXT_SIZE,
-            "sibling_blocks": C.SIBLING_BLOCKS,
-            "freq_high_mass": C.FREQ_HIGH_MASS,
-            "freq_mid_mass": C.FREQ_MID_MASS,
+            "layer": cfg.LAYER,
+            "sae_release": cfg.SAE_RELEASE,
+            "sae_source": cfg.SAE_SOURCE,
+            "sae_id": cfg.SAE_ID,
+            "matryoshka_steps": cfg.MATRYOSHKA_STEPS,
+            "block_ranges": cfg.BLOCK_RANGES,
+            "fire_threshold": cfg.FIRE_THRESHOLD,
+            "context_size": cfg.CONTEXT_SIZE,
+            "sibling_blocks": cfg.SIBLING_BLOCKS,
+            "freq_high_mass": cfg.FREQ_HIGH_MASS,
+            "freq_mid_mass": cfg.FREQ_MID_MASS,
             "bos_excluded": True,
-            "min_joint": C.MIN_JOINT,
+            "min_joint": cfg.MIN_JOINT,
+            **(extra_config or {}),
         },
     }
-    tmp = C.EXP0_STATS_PATH.with_suffix(".pt.tmp")     # atomic: never clobber a
+    out_path = out_path or cfg.EXP0_STATS_PATH
+    tmp = out_path.with_suffix(".pt.tmp")               # atomic: never clobber a
     torch.save(out, tmp)                               # good stats file mid-write
-    tmp.replace(C.EXP0_STATS_PATH)
+    tmp.replace(out_path)
     if cache_writer is not None:
-        meta = cache_writer.finalize({"d_model": int(model.cfg.d_model), "layer": C.LAYER})
-        print(f"[01] token cache: {meta['total_tokens']} tokens, {meta['n_shards']} shards -> {C.TOKEN_CACHE_DIR}")
-    print(f"\n[01] saved -> {C.EXP0_STATS_PATH}")
+        meta = cache_writer.finalize({"d_model": int(model.cfg.d_model), "layer": cfg.LAYER})
+        print(f"[01] token cache: {meta['total_tokens']} tokens, {meta['n_shards']} shards -> {cfg.TOKEN_CACHE_DIR}")
+    print(f"\n[01] saved -> {out_path}")
     print(f"[01] total tokens: {total_tokens}")
     alive = int((fire_count > 0).sum())
-    print(f"[01] alive features: {alive}/{C.D_SAE} ({100 * alive / C.D_SAE:.1f}%)")
+    print(f"[01] alive features: {alive}/{cfg.D_SAE} ({100 * alive / cfg.D_SAE:.1f}%)")
+    return out
+
+
+def main():
+    """Stage 01 for gemma-2-2b: load the model, the released SAE and pile-10k.
+
+    Everything source-specific lives here; the accumulation is in collect().
+    """
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--docs", type=int, default=C.N_DOCS, help="docs to sample")
+    ap.add_argument("--device", default=None, help="cpu / mps / cuda (default auto)")
+    args = ap.parse_args()
+
+    device = args.device or C.pick_device()
+    print(f"[01] layer = {C.LAYER}  ({C.SAE_ID})")
+    print(f"[01] device = {device}")
+
+    # Stage 01 is what starts a run, so this is where the previous one is put
+    # aside. Later stages write into the same directory on purpose.
+    stamp = datetime.now().strftime("%Y-%m-%dT%H-%M")
+    kept = C.archive_run_dir(stamp)
+    if kept is not None:
+        print(f"[01] previous run archived -> {kept}")
+    print(f"[01] block structure:\n{U.human_block_table()}\n")
+
+    model = U.load_model(device)
+    sae = U.load_sae(device)
+
+    print(f"[01] loading {C.DATASET} (first {args.docs} docs) ...")
+    from datasets import load_dataset  # lazy: heavy dep, not needed by the helpers
+
+    ds = load_dataset(C.DATASET, split=f"train[:{args.docs}]")
+    texts = [t for t in ds["text"] if isinstance(t, str) and t.strip()]
+
+    print("[01] tokenizing + counting token ids for frequency buckets ...")
+    seqs = tokenize_docs(model, texts, C.CONTEXT_SIZE)
+
+    collect(model, sae, seqs, device=device, cfg=C, extra_config={"n_docs": args.docs})
 
 
 if __name__ == "__main__":
