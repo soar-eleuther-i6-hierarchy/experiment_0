@@ -27,10 +27,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+from pathlib import Path
 
 import numpy as np
 import torch
 import plotly.graph_objects as go
+from plotly.offline import get_plotlyjs
 from plotly.subplots import make_subplots
 
 import config as C
@@ -63,19 +66,66 @@ def page_subtitle(stats=None):
     return C.scope_line(tokens, bold=("<b>", "</b>"))
 
 
-def write_page(fig, path, up=2):
-    """Write a plotly figure and pin a 'back to index' link to its top-right.
+def plotly_asset(page_dir):
+    """Ensure OUT_DIR/assets/plotly.min.js exists; return its page-relative src.
 
-    Every page is reachable only by a deep link from the README, so without this
-    there is no way back to the index. The href is relative (`up` levels to the
-    site root), so it works both on GitHub Pages and when opening the file
-    locally. Injected after write_html because plotly gives no layout slot for a
-    fixed-position element.
+    Embedding the 4.6 MB plotly bundle in every page (`include_plotlyjs=True`)
+    made each dashboard ~4.8 MB, so every regeneration added ~70 MB of new blobs
+    to git. One shared copy keeps the pages ~150 KB and still works offline and
+    on GitHub Pages, which cannot serve an LFS pointer (see .gitattributes).
+    The src is computed per page rather than from a level count, so it stays
+    right under EXP0_OUT, where the run dir is not named `outputs`.
     """
-    fig.write_html(str(path), include_plotlyjs=True)
-    link = C.BACK_LINK_HTML.replace('href="../../"', f'href="{"../" * up}"')
-    html = path.read_text().replace("<body>", "<body>\n" + link, 1)
+    dest = C.OUT_DIR / "assets" / "plotly.min.js"
+    if not dest.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(get_plotlyjs(), encoding="utf-8")
+    return Path(os.path.relpath(dest, page_dir)).as_posix()
+
+
+def write_page(fig, path, up=2):
+    """Write a plotly figure with the site nav bar on top.
+
+    Every page is reachable only by a deep link, so each carries its own nav
+    (`config.nav_html`); `up` is its distance to the site root. Which layer and
+    which page this is are read off the output path, so callers never have to
+    repeat what the filename already says.
+
+    Injected after write_html because plotly gives no layout slot for it — the
+    same slot also carries the <script> tag for the shared plotly bundle that
+    `include_plotlyjs=False` leaves out.
+    """
+    path = Path(path)
+    fig.write_html(str(path), include_plotlyjs=False)
+    layer, page = _page_identity(path)
+    head = (
+        f"{C.nav_html(depth=up, layer=layer, page=page, current=_site_path(path))}\n"
+        "<script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>\n"
+        f'<script charset="utf-8" src="{plotly_asset(path.parent)}"></script>'
+    )
+    html = path.read_text().replace("<body>", "<body>\n" + head, 1)
     path.write_text(html)
+
+
+def _page_identity(path):
+    """(layer, page-file) for a written page, read off its own path.
+
+    A page under layer_NN/ describes that layer; anything else is site-wide and
+    gets only the global nav row.
+    """
+    parent = Path(path).parent.name
+    if parent.startswith("layer_"):
+        try:
+            return int(parent.split("_")[1]), Path(path).name
+        except ValueError:
+            pass
+    return None, None
+
+
+def _site_path(path):
+    """This page's path from the site root, for highlighting the global row."""
+    parent = Path(path).parent.name
+    return None if parent.startswith("layer_") else f"outputs/{Path(path).name}"
 
 
 def scope_subtitle(text):
@@ -802,7 +852,7 @@ def build_qualitative_dashboard(report):
 def run_qualitative():
     path = C.RUN_DIR / "qualitative_check.json"
     if not path.exists():
-        raise SystemExit(f"missing {path} - run qualitative_check.py first")
+        raise SystemExit(f"missing {path} - run python3 -m validation.qualitative_check first")
     report = json.loads(path.read_text())
     fig = build_qualitative_dashboard(report)
     # Named to mirror metrics_dashboard/metrics_report: writing this as

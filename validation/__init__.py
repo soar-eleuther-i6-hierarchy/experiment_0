@@ -13,8 +13,14 @@ and the real gemma-2-2b caches". This package IS that toy:
                         config.py) on the toy, checks each catches the pathology
                         it is meant to, and ranks them.
 
+Two more tiers of the same argument live here: `calibrate_on_trained_toy.py`
+(Tier 2, the toy passed through a real training run) and `qualitative_check.py`
+(Tier 3, the real gemma-2-2b SAE read against Neuronpedia labels — the one tier
+with no ground truth, and the only one that needs the cache and the network).
+
 Run:
     cd experiment_0
     python3 validation/test_metric_calibration.py   # prints scorecard, writes report
     pytest validation/                              # if pytest is installed
+    python3 -m validation.qualitative_check         # Tier 3
 """

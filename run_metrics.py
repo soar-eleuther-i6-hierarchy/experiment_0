@@ -253,9 +253,10 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
 
 def to_markdown(report) -> str:
     # Jekyll renders this file to .html on GitHub Pages; the raw HTML passes
-    # through and gives the report the same back-to-index button as the
-    # generated dashboards, so navigation is consistent across the site.
-    L = [C.BACK_LINK_HTML, "", "# Exp 0 - metrics report", ""]
+    # through and gives the report the same nav bar as the generated dashboards,
+    # so navigation is consistent across the site.
+    nav = C.nav_html(depth=2, layer=C.LAYER, page="metrics_report.html")
+    L = [nav, "", "# Exp 0 - metrics report", ""]
     L.append(C.scope_line(report["total_tokens"], n_docs=report["config"].get("n_docs")))
     L.append("")
     for pr in report["pairs"]:
