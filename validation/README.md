@@ -47,6 +47,39 @@ PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2, needs
 python3 -m validation.qualitative_check                          # Tier 3, needs exp0_stats.pt + labels
 ```
 
+## Two checks that are not tiers
+
+The ladder scores the *metrics*. These two ask different questions, and neither belongs on it.
+
+| File | Asks | Result |
+| ---- | ---- | ------ |
+| [`block_tree_alignment.py`](block_tree_alignment.py) | does the **Matryoshka nesting itself** put a parent in an earlier block than its children? | **6/6 testable edges respected**; mean block 1.7 for parents, 4.5 for children |
+| [`test_collect_generic.py`](test_collect_generic.py) | does `collect_statistics.collect()` run on a source that is not gemma? | passes on a 28-feature stub in 3 blocks; no network, no GPU, ~1s |
+
+```bash
+python3 -m validation.block_tree_alignment       # needs outputs/toy_trained/
+python3 -m validation.test_collect_generic       # needs nothing
+```
+
+**Why the alignment check is worth having.** Tier 2 indexes by ground truth rather than by block on
+purpose — mixing the two would confound "is the metric right?" with "did Matryoshka order the
+features right?", and that separation is what lets it report recall 0.67 as the SAE's ceiling rather
+than the metrics'. But nobody then asked the second question, and here it is answerable: the toy has
+ten Matryoshka blocks and a known tree. On gemma it is not, because the correct ordering is unknown
+and a violation cannot be told apart from a concept we misread.
+
+The answer matters for how the gemma results are read. The nesting is **not** structurally incapable
+of producing a hierarchy — on clean ground truth it produces the right one — so the production
+failure is about what the distribution does to it, which is what Exp 2 sweeps. The 3 untestable
+edges are the same 3 children the SAE never learned. Feature splitting does show up: 3 true features
+are recovered by two latents each.
+
+**Why the generic check is worth having.** `collect()` was split out of `main()` so an adapter can
+feed it a PCFG transformer or a trained toy instead of gemma. That claim is cheap to make and easy to
+break — one `config.py` global left in the accumulation loop silently reintroduces gemma's block
+boundaries. The stub run is what keeps it honest. It also runs the umbrella's
+`contracts/validate_stats.py` against its own output when that repo is checked out beside this one.
+
 Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`
 from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo. It
 also reads that repo's `configs/tree.json` for the ground-truth tree, and expects the clone **beside**
