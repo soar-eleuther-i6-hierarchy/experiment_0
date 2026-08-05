@@ -207,11 +207,15 @@ NAV_PAGES = [
 NAV_GLOBAL = [
     ("", "Overview"),
     ("outputs/", "Results"),
+    ("outputs/#per-layer", "Per layer"),   # the layer table in the results index
     ("outputs/cross_depth_comparison.html", "Cross-depth"),
     ("outputs/kill_rates.html", "Kill rates"),
     ("outputs/toy_calibration.html", "Toy calibration"),
     ("outputs/trained_toy_calibration.html", "Trained toy"),
 ]
+
+# Where a layer pill points from a page that is not itself about one layer.
+NAV_DEFAULT_PAGE = NAV_PAGES[0][0]
 
 NAV_CSS = """<style>
 .x0nav{position:sticky;top:0;z-index:999;background:#fff;border-bottom:1px solid #E3DAFB;
@@ -261,21 +265,26 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
         top.append(f'<a class="{on}" href="{root}{href}">{label}</a>')
     rows = ['<div class="row">' + "".join(top) + "</div>"]
 
+    # The layer row is on EVERY page, not just layer pages: without it there is
+    # no way into a given layer from the index or a site-wide page. On a layer
+    # page a pill keeps the current page kind; elsewhere it opens that layer's
+    # dashboard. The "Page" group needs a layer to stay within, so it is the one
+    # part that only appears on a layer page.
+    cur = page or NAV_DEFAULT_PAGE
+    second = ['<span class="lbl">Layer</span>']
+    for L in NAV_LAYERS:
+        on = " on" if L == layer else ""
+        second.append(
+            f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{cur}">{L}</a>'
+        )
     if layer is not None:
-        cur = page or NAV_PAGES[0][0]
-        second = ['<span class="lbl">Layer</span>']
-        for L in NAV_LAYERS:
-            on = " on" if L == layer else ""
-            second.append(
-                f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{cur}">{L}</a>'
-            )
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in NAV_PAGES:
             on = " on" if f == cur else ""
             second.append(
                 f'<a class="{on.strip()}" href="{root}outputs/layer_{layer:02d}/{f}">{label}</a>'
             )
-        rows.append('<div class="row">' + "".join(second) + "</div>")
+    rows.append('<div class="row">' + "".join(second) + "</div>")
 
     return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
 
