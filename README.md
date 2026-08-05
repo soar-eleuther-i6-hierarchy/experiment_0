@@ -164,20 +164,59 @@ Run the pipeline scripts top-to-bottom; each reads the previous one's output
 (see each script's `Needs:` / `Writes:` header).
 
 ```
-collect_statistics.py   stream the corpus once, accumulate every statistic (GPU, slow)
-run_metrics.py          post-process exp0_stats.pt -> metrics_report.{json,md}
-run_token_metrics.py    model-free token-cache pass: S_res probes, parent-conditioned siblings
-in_block_edges.py       same-level (within-block) directed edges and duplicates
-fetch_labels.py         bulk autointerp labels for the current layer
-config.py               every threshold, path and layer-derived constant
-
-metrics/                one file per metric, pure functions over cached tensors
-utils/                  model/SAE loaders (sae_utils), token cache (io), run-dir tidy (organize_outputs)
-reporting/              interactive dashboards (visualize), static proof-figures
-                        (make_report_figures), per-layer landing pages (layer_index)
-validation/             all three calibration tiers: synthetic toy, trained toy,
-                        and qualitative_check.py (Tier 3, also pipeline stage 02b)
+metrics/                          the repo (git root; was experiment_0)
+├── config.py                     every threshold, path and layer-derived constant
+│
+│   ── pipeline, in order ──      each script's Needs:/Writes: header states its inputs
+├── collect_statistics.py         stream the corpus once, accumulate every statistic
+│                                 (GPU, slow — the only stage that touches the model)
+├── fetch_labels.py               bulk autointerp labels for the current layer
+├── run_metrics.py                post-process exp0_stats.pt -> metrics_report.{json,md}
+├── run_token_metrics.py          model-free token-cache pass: S_res probes,
+│                                 parent-conditioned siblings
+├── in_block_edges.py             same-level (within-block) directed edges and duplicates
+│
+├── metrics/                      one file per metric: pure functions over cached
+│   │                             tensors, no model and no IO
+│   ├── coverage.py               joint_child.py        reconstruction.py
+│   ├── sres.py                   sibling_redundancy.py
+│   └── outdegree.py              token_control.py      independence_null.py
+│
+├── utils/                        infrastructure
+│   └── sae_utils.py              model/SAE loaders · io.py token cache
+│                                 · organize_outputs.py run-dir tidy
+│
+├── reporting/                    everything that produces something to read
+│   ├── visualize.py              the interactive dashboards
+│   ├── make_report_figures.py    static proof-figures
+│   └── layer_index.py            each layer's landing page
+│
+├── validation/                   all three calibration tiers
+│   ├── toy_world.py              the synthetic ground-truth world
+│   ├── test_metric_calibration.py    Tier 1 — synthetic toy
+│   ├── calibrate_on_trained_toy.py   Tier 2 — trained toy
+│   └── qualitative_check.py          Tier 3 — real SAE (also pipeline stage 02b)
+│
+├── outputs/                      everything the pipeline produces (~15 MB)
+│   ├── assets/plotly.min.js      the one bundle every dashboard links to
+│   ├── cross_depth_comparison.html   kill_rates.html
+│   ├── toy_calibration.{html,json,md}    trained_toy_calibration.{html,json}
+│   ├── toy_trained/              the Tier-2 checkpoint
+│   └── layer_{03,06,12,18,24}/
+│       ├── README.md             the layer's landing page
+│       ├── metrics_dashboard.html    superparent_sankey.html
+│       ├── qualitative_dashboard.html
+│       ├── metrics_report.{json,md}  qualitative_check.{json,md}
+│       ├── feature_labels.json       npedia_labels_cache.json
+│       ├── exp0_stats.pt         NOT in git — on the Hub, see below
+│       └── token_cache/          NOT in git — rebuildable
+│
+└── outputs_local/                gitignored: scratch runs, e.g. EXP0_OUT=outputs_local
 ```
+
+The team's other repos are **siblings** of this one, not nested inside it:
+`../sae-training/` (Tier-2 training, and `configs/tree.json`), `../PCFG/`,
+`../MEETING_NOTES/`.
 
 The SAE has `D_SAE = 32768` features in 5 nested blocks with prefix lengths
 `[128, 512, 2048, 8192, 32768]` → `B0=[0,128) B1=[128,512) B2=[512,2048) B3=[2048,8192) B4=[8192,32768)`.
