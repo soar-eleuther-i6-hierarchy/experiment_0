@@ -87,6 +87,13 @@ does not resolve LFS objects and would serve the pointer stub instead of the pag
 To keep an experimental run away from the published directory, redirect it:
 `EXP0_OUT=outputs_local python3 run_metrics.py`.
 
+A run always writes to the same path — `outputs/layer_NN/` — because the site links to it by
+name, and timestamping that directory would 404 every page. So that a rerun does not simply
+erase the previous numbers, `collect_statistics.py` copies the current artifacts to
+`outputs_local/archive/layer_NN__<date>T<time>/` before it starts. The copy skips `*.pt`,
+`token_cache/` and `figures/`: the caches are on the Hub and rebuildable, and copying them per
+run would fill the disk. Archives are gitignored — they are history, not results.
+
 ## How the metrics are validated: three tiers
 
 The same metrics are checked at three tiers of increasing realism. Each tier gives up one guarantee
