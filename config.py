@@ -204,10 +204,12 @@ NAV_PAGES = [
 ]
 
 # Global links: (path from site root, label). "" is the repo README = the index.
+# No "Overview" entry: the brand on the left already links to the site root, and
+# two adjacent links to the same place is noise. No "Per layer" either: it went
+# to the layer *table*, while the pills in the second row open each layer
+# directly, which is strictly better.
 NAV_GLOBAL = [
-    ("", "Overview"),
     ("outputs/", "Results"),
-    ("outputs/#per-layer", "Per layer"),   # the layer table in the results index
     ("outputs/cross_depth_comparison.html", "Cross-depth"),
     ("outputs/kill_rates.html", "Kill rates"),
     ("outputs/toy_calibration.html", "Toy calibration"),
