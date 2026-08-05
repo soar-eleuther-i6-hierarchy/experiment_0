@@ -499,7 +499,7 @@ def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_label
 def _calibration_data():
     """Run the five metrics on the toy and split each metric's per-edge score
     into the class it should KEEP (genuine) vs the class it should REJECT."""
-    from validation.calibrate_on_toy import _render, _run_metrics, _score
+    from validation.calibrate_on_synthetic_toy import _render, _run_metrics, _score
     from validation.toy_world import build_world
 
     stats, labels = build_world()

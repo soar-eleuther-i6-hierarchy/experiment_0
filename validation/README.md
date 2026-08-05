@@ -37,15 +37,19 @@ Full results and the three-tier table: [outputs/README.md](../outputs/README.md#
 | File | Tier | What it does |
 | ---- | ---- | ------------ |
 | [`toy_world.py`](toy_world.py) | 1 | builds a synthetic world: a known 5-parent tree plus three injected pathologies (superparent, feature-split parent, frequency-coincidence edge), reduced to exactly the statistics the metrics read |
-| [`calibrate_on_toy.py`](calibrate_on_toy.py) | 1 | runs every metric on that world and scores it on the job it claims — **9/9 pass across seeds 0–5**, covering 13/13 statistics-only metric functions |
+| [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | runs every metric on that world and scores it on the job it claims — **9/9 pass across seeds 0–5**, covering 13/13 statistics-only metric functions |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | runs the metrics on a Matryoshka SAE *actually trained* on Bussmann's tree, matches learned latents back to true features, and scores edge recovery — **precision 1.00, recall 0.67** |
 | [`qualitative_check.py`](qualitative_check.py) | 3 | on the real `gemma-2-2b` SAE: contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
 
 ```bash
-python3 validation/calibrate_on_toy.py                    # Tier 1
-PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2, needs outputs/toy_trained/
-python3 -m validation.qualitative_check                          # Tier 3, needs exp0_stats.pt + labels
+python3 validation/calibrate_on_synthetic_toy.py               # Tier 1
+PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py  # Tier 2, needs outputs/toy_trained/
+python3 -m validation.qualitative_check                        # Tier 3, needs exp0_stats.pt + labels
 ```
+
+**Both tiers use the same toy** — Bussmann's tree, from `sae-training/configs/tree.json`. What
+differs is where the statistics come from: Tier 1 builds them by hand so the tree is exactly right,
+Tier 2 reads them off a Matryoshka SAE that had to learn that tree first. The filenames say which.
 
 Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`
 from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo. It
@@ -104,9 +108,10 @@ runs on a source that is not gemma, a property one leftover `config` global in t
 would silently break.
 
 The naming follows that split: everything here is `calibrate_*` or a named control, and a `test_`
-prefix means a unit test in `../tests/`. `test_metric_calibration.py` was Tier 1 under a unit-test
-name; it is now `calibrate_on_toy.py`, parallel to `calibrate_on_trained_toy.py`, so the ladder is
-legible from the filenames alone.
+prefix means a unit test in `../tests/`. Tier 1 used to be `test_metric_calibration.py` — a
+calibration wearing a unit-test name, which also invited pytest to collect a file that is not a
+pytest test. It is now `calibrate_on_synthetic_toy.py`, parallel to `calibrate_on_trained_toy.py`:
+same toy, `synthetic` vs `trained` statistics, ladder legible from the filenames alone.
 
 ## Adding a calibration for a new metric
 
