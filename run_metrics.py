@@ -21,8 +21,10 @@ Run:    python3 run_metrics.py
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
+from pathlib import Path
 
 import torch
 
@@ -71,6 +73,26 @@ def _clip(s: str, n: int = 40) -> str:
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
+def source_structure(stats):
+    """Block structure from the stats file itself, falling back to this config.
+
+    The metric *thresholds* (EDGE_TAU, MIN_JOINT, ...) stay global on purpose:
+    holding them fixed across sources is the claim the paper makes. But the block
+    boundaries belong to whichever SAE produced the file. Reading them from
+    config.py meant a PCFG dictionary (1792 latents in 8 blocks) got sliced with
+    gemma's ranges (32768 in 5) and still returned numbers -- wrong ones, with
+    nothing to signal it.
+
+    Files written before `config` carried these keys fall back to the module,
+    which is correct for them: they are all gemma.
+    """
+    cfg = stats.get("config") or {}
+    ranges = cfg.get("block_ranges") or C.BLOCK_RANGES
+    ranges = [tuple(r) for r in ranges]
+    siblings = cfg.get("sibling_blocks")
+    return ranges, (C.SIBLING_BLOCKS if siblings is None else list(siblings))
+
+
 def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     """One block pair through every metric.
 
@@ -81,8 +103,9 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     key = f"{p_blk}->{c_blk}"
     fire = stats["fire_count"].double()
     total = int(stats["total_tokens"])
-    p0, p1 = C.BLOCK_RANGES[p_blk]
-    c0, c1 = C.BLOCK_RANGES[c_blk]
+    block_ranges, sibling_blocks = source_structure(stats)
+    p0, p1 = block_ranges[p_blk]
+    c0, c1 = block_ranges[c_blk]
     fire_p = fire[p0:p1]
     fire_c = fire[c0:c1]
 
@@ -163,7 +186,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     # both numbers are auditable, but must not be read as "flagged splitting".
     sib = {}
     sib_summary = None
-    if c_blk in C.SIBLING_BLOCKS:
+    if c_blk in sibling_blocks:
         sib = sibling_redundancy(edge_mask, stats["within_cofire"][c_blk].double(), fire_c)
         if sib:
             reds = [v["redundancy"] for v in sib.values()]
@@ -238,12 +261,15 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
         "sibling_redundancy": sib_summary,
         "n_superparents": len(superparents),                      # outdeg-only flag
         "n_superparents_strict": sum(sp["strict"] for sp in superparents),  # old AND gate
+        # A Neuronpedia link only means anything for the released gemma SAE; labels
+        # come from that same export, so their absence is the honest signal that
+        # this dictionary is not on Neuronpedia.
         "superparents": [
             {
                 **sp,
-                "parent_global": C.BLOCK_RANGES[p_blk][0] + sp["parent_local"],
-                "label": C.feature_label(C.BLOCK_RANGES[p_blk][0] + sp["parent_local"], labels),
-                "url": C.npedia_url(C.BLOCK_RANGES[p_blk][0] + sp["parent_local"]),
+                "parent_global": p0 + sp["parent_local"],
+                "label": C.feature_label(p0 + sp["parent_local"], labels),
+                **({"url": C.npedia_url(p0 + sp["parent_local"])} if labels else {}),
             }
             for sp in superparents[:10]
         ],
@@ -255,7 +281,7 @@ def to_markdown(report) -> str:
     # Jekyll renders this file to .html on GitHub Pages; the raw HTML passes
     # through and gives the report the same nav bar as the generated dashboards,
     # so navigation is consistent across the site.
-    nav = C.nav_html(depth=2, layer=C.LAYER, page="metrics_report.html")
+    nav = C.nav_html(depth=2, layer=report["config"].get("layer", C.LAYER), page="metrics_report.html")
     L = [nav, "", "# Exp 0 - metrics report", ""]
     L.append(C.scope_line(report["total_tokens"], n_docs=report["config"].get("n_docs")))
     L.append("")
@@ -324,10 +350,19 @@ def to_markdown(report) -> str:
 
 
 def main():
-    if not C.EXP0_STATS_PATH.exists():
-        raise SystemExit(f"[02] {C.missing_stats_msg()}")
-    print(f"[02] loading {C.EXP0_STATS_PATH}")
-    stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
+    ap = argparse.ArgumentParser(description="Grade one cached-statistics file.")
+    ap.add_argument("--stats", type=Path, default=None,
+                    help="stats file to grade (default: this layer's outputs/exp0_stats.pt)")
+    ap.add_argument("--out-dir", type=Path, default=None,
+                    help="where to write the report (default: beside the stats file's run dir)")
+    args = ap.parse_args()
+
+    stats_path = args.stats or C.EXP0_STATS_PATH
+    if not stats_path.exists():
+        raise SystemExit(f"[02] {C.missing_stats_msg()}" if args.stats is None
+                         else f"[02] no stats file at {stats_path}")
+    print(f"[02] loading {stats_path}")
+    stats = torch.load(stats_path, weights_only=False)
     pairs = stats["pairs"]
 
     labels = C.load_feature_labels()
@@ -335,17 +370,24 @@ def main():
         print("[02] note: outputs/feature_labels.json not found - run fetch_labels.py "
               "to include feature descriptions")
     per_pair = [analyse_pair(stats, p, c, labels) for (p, c) in pairs]
+    block_ranges, _ = source_structure(stats)
     report = {
         "config": stats["config"],
         "total_tokens": int(stats["total_tokens"]),
         "pairs": per_pair,
-        "block_ranges": C.BLOCK_RANGES,
+        "block_ranges": block_ranges,
     }
 
-    C.METRICS_MD_PATH.write_text(to_markdown(report))          # md handles NaN itself
-    C.METRICS_JSON_PATH.write_text(json.dumps(json_safe(report), indent=2))
-    print(f"[02] wrote {C.METRICS_JSON_PATH}")
-    print(f"[02] wrote {C.METRICS_MD_PATH}")
+    if args.out_dir is not None:
+        args.out_dir.mkdir(parents=True, exist_ok=True)
+        md_path, json_path = args.out_dir / "metrics_report.md", args.out_dir / "metrics_report.json"
+    else:
+        md_path, json_path = C.METRICS_MD_PATH, C.METRICS_JSON_PATH
+
+    md_path.write_text(to_markdown(report))                    # md handles NaN itself
+    json_path.write_text(json.dumps(json_safe(report), indent=2))
+    print(f"[02] wrote {json_path}")
+    print(f"[02] wrote {md_path}")
     for pr in per_pair:
         print(f"[02]   {pr['pair']}: {pr['n_candidate_edges']} edges, "
               f"{pr['reconstruction']['n_pass']} recon-pass, "
