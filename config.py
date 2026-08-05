@@ -214,9 +214,6 @@ NAV_GLOBAL = [
     ("outputs/trained_toy_calibration.html", "Trained toy"),
 ]
 
-# Where a layer pill points from a page that is not itself about one layer.
-NAV_DEFAULT_PAGE = NAV_PAGES[0][0]
-
 NAV_CSS = """<style>
 .x0nav{position:sticky;top:0;z-index:999;background:#fff;border-bottom:1px solid #E3DAFB;
 font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px;}
@@ -270,17 +267,18 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     # page a pill keeps the current page kind; elsewhere it opens that layer's
     # dashboard. The "Page" group needs a layer to stay within, so it is the one
     # part that only appears on a layer page.
-    cur = page or NAV_DEFAULT_PAGE
+    # A pill keeps the current page kind when there is one; from anywhere else
+    # it opens that layer's index, which is why every layer_NN/ has a README.
     second = ['<span class="lbl">Layer</span>']
     for L in NAV_LAYERS:
         on = " on" if L == layer else ""
         second.append(
-            f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{cur}">{L}</a>'
+            f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{page or ""}">{L}</a>'
         )
     if layer is not None:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in NAV_PAGES:
-            on = " on" if f == cur else ""
+            on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
             second.append(
                 f'<a class="{on.strip()}" href="{root}outputs/layer_{layer:02d}/{f}">{label}</a>'
             )
