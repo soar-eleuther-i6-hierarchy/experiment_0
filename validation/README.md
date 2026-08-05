@@ -34,12 +34,18 @@ because the three tiers are one argument, not because it shares their dependenci
 
 Full results and the three-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-three-tiers)
 
-| File | Tier | What it does |
-| ---- | ---- | ------------ |
-| [`toy_world.py`](toy_world.py) | 1 | builds a synthetic world: a known 5-parent tree plus three injected pathologies (superparent, feature-split parent, frequency-coincidence edge), reduced to exactly the statistics the metrics read |
-| [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | runs every metric on that world and scores it on the job it claims — **9/9 pass across seeds 0–5**, covering 13/13 statistics-only metric functions |
-| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | runs the metrics on a Matryoshka SAE *actually trained* on Bussmann's tree, matches learned latents back to true features, and scores edge recovery — **precision 1.00, recall 0.67** |
-| [`qualitative_check.py`](qualitative_check.py) | 3 | on the real `gemma-2-2b` SAE: contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+| File | Tier | Runs on | Scored against | What it does |
+| ---- | ---- | ------- | -------------- | ------------ |
+| [`toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus three injected pathologies (superparent, feature-split parent, frequency-coincidence edge), reduced to exactly the statistics the metrics read |
+| [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics | **known tree** | runs every metric on that world and scores it on the job it claims — **9/9 pass across seeds 0–5**, covering 13/13 statistics-only metric functions |
+| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features and scores edge recovery — **precision 1.00, recall 0.67** |
+| [`qualitative_check.py`](qualitative_check.py) | 3 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+
+**Why Tier 3 is not named `calibrate_*`.** The first two score metrics against an answer we know.
+Tier 3 has no such answer: it is judged by reading labels that are themselves model-generated
+(Neuronpedia's autointerp). Calling it a calibration would claim a ground truth that does not exist,
+so the verb differs on purpose. Its name says *how* it is judged rather than *what it runs on*,
+which is the honest emphasis for the one tier where the method of judgement is the caveat.
 
 ```bash
 python3 validation/calibrate_on_synthetic_toy.py               # Tier 1
