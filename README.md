@@ -164,55 +164,69 @@ Run the pipeline scripts top-to-bottom; each reads the previous one's output
 (see each script's `Needs:` / `Writes:` header).
 
 ```
-metrics/                          the repo (git root; was experiment_0)
-├── config.py                     every threshold, path and layer-derived constant
+metrics/                              the repository
+├── config.py                         every threshold, path and layer-derived constant
 │
-│   ── pipeline, in order ──      each script's Needs:/Writes: header states its inputs
-├── collect_statistics.py         stream the corpus once, accumulate every statistic
-│                                 (GPU, slow — the only stage that touches the model)
-├── fetch_labels.py               bulk autointerp labels for the current layer
-├── run_metrics.py                post-process exp0_stats.pt -> metrics_report.{json,md}
-├── run_token_metrics.py          model-free token-cache pass: S_res probes,
-│                                 parent-conditioned siblings
-├── in_block_edges.py             same-level (within-block) directed edges and duplicates
+├── collect_statistics.py             ① stream the corpus once, accumulate every statistic
+│                                        (GPU, slow — the only stage that touches the model)
+├── fetch_labels.py                   ② bulk autointerp labels for the current layer
+├── run_metrics.py                    ③ post-process exp0_stats.pt -> metrics_report.{json,md}
+├── run_token_metrics.py              ④ model-free token-cache pass: S_res, sibling redundancy
+├── in_block_edges.py                 ⑤ same-level (within-block) edges and duplicates
 │
-├── metrics/                      one file per metric: pure functions over cached
-│   │                             tensors, no model and no IO
-│   ├── coverage.py               joint_child.py        reconstruction.py
-│   ├── sres.py                   sibling_redundancy.py
-│   └── outdegree.py              token_control.py      independence_null.py
+├── metrics/                          one file per metric: pure functions over cached
+│   │                                 tensors, no model and no IO
+│   ├── coverage.py
+│   ├── joint_child.py
+│   ├── reconstruction.py
+│   ├── sres.py
+│   ├── sibling_redundancy.py
+│   ├── outdegree.py
+│   ├── token_control.py
+│   ├── independence_null.py
+│   └── README.md
 │
-├── utils/                        infrastructure
-│   └── sae_utils.py              model/SAE loaders · io.py token cache
-│                                 · organize_outputs.py run-dir tidy
+├── utils/                            infrastructure
+│   ├── sae_utils.py                  model and SAE loaders
+│   ├── io.py                         the token cache
+│   └── organize_outputs.py           tidies a run directory
 │
-├── reporting/                    everything that produces something to read
-│   ├── visualize.py              the interactive dashboards
-│   ├── make_report_figures.py    static proof-figures
-│   └── layer_index.py            each layer's landing page
+├── reporting/                        everything that produces something to read
+│   ├── visualize.py                  the interactive dashboards
+│   ├── make_report_figures.py        static proof-figures
+│   └── layer_index.py                each layer's landing page
 │
-├── validation/                   all three calibration tiers
-│   ├── toy_world.py              the synthetic ground-truth world
+├── validation/                       the three calibration tiers
+│   ├── toy_world.py                  the synthetic ground-truth world
 │   ├── test_metric_calibration.py    Tier 1 — synthetic toy
 │   ├── calibrate_on_trained_toy.py   Tier 2 — trained toy
-│   └── qualitative_check.py          Tier 3 — real SAE (also pipeline stage 02b)
+│   ├── qualitative_check.py          Tier 3 — real SAE (also pipeline stage 02b)
+│   └── README.md
 │
-├── outputs/                      everything the pipeline produces (~15 MB)
-│   ├── assets/plotly.min.js      the one bundle every dashboard links to
-│   ├── cross_depth_comparison.html   kill_rates.html
-│   ├── toy_calibration.{html,json,md}    trained_toy_calibration.{html,json}
-│   ├── toy_trained/              the Tier-2 checkpoint
-│   └── layer_{03,06,12,18,24}/
-│       ├── README.md             the layer's landing page
-│       ├── metrics_dashboard.html    superparent_sankey.html
-│       ├── qualitative_dashboard.html
-│       ├── metrics_report.{json,md}  qualitative_check.{json,md}
-│       ├── feature_labels.json       npedia_labels_cache.json
-│       ├── exp0_stats.pt         NOT in git — on the Hub, see below
-│       └── token_cache/          NOT in git — rebuildable
-│
-└── outputs_local/                gitignored: scratch runs, e.g. EXP0_OUT=outputs_local
+└── outputs/                          the published results (~15 MB)
+    ├── assets/
+    │   └── plotly.min.js             the one bundle every dashboard links to
+    ├── cross_depth_comparison.html
+    ├── kill_rates.html
+    ├── toy_calibration.html          Tier-1 scorecard (+ .json, .md)
+    ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
+    ├── toy_trained/                  the Tier-2 checkpoint
+    ├── README.md
+    └── layer_06/                     identical in layer_03, layer_12, layer_18, layer_24
+        ├── README.md                 the layer's landing page
+        ├── metrics_dashboard.html
+        ├── superparent_sankey.html
+        ├── qualitative_dashboard.html
+        ├── metrics_report.json       (+ .md)
+        ├── qualitative_check.json    (+ .md)
+        ├── feature_labels.json
+        └── npedia_labels_cache.json
 ```
+
+Two directories exist only when you run the pipeline and are deliberately kept out of git:
+`outputs/layer_NN/exp0_stats.pt` (~700 MB per layer, on the Hub instead) and
+`outputs/layer_NN/token_cache/` (rebuildable). `outputs_local/` is where a scratch run goes,
+via `EXP0_OUT`.
 
 The team's other repos are **siblings** of this one, not nested inside it:
 `../sae-training/` (Tier-2 training, and `configs/tree.json`), `../PCFG/`,
