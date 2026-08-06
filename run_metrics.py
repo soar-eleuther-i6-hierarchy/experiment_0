@@ -93,6 +93,22 @@ def source_structure(stats):
     return ranges, (C.SIBLING_BLOCKS if siblings is None else list(siblings))
 
 
+def block_selector(stats):
+    """How to cut block b out of a [D_SAE] vector, for this file.
+
+    Blocks are sets of feature indices; Matryoshka's are contiguous prefixes and
+    every other reader can stay a slice. A source whose groups are not contiguous
+    declares `config.block_indices`, and it wins over `block_ranges` when present.
+    """
+    cfg = stats.get("config") or {}
+    idx = cfg.get("block_indices")
+    if idx is not None:
+        sel = [torch.as_tensor(ix, dtype=torch.long) for ix in idx]
+        return lambda b: sel[b]
+    ranges, _ = source_structure(stats)
+    return lambda b: slice(*ranges[b])
+
+
 def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     """One block pair through every metric.
 
@@ -104,10 +120,25 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     fire = stats["fire_count"].double()
     total = int(stats["total_tokens"])
     block_ranges, sibling_blocks = source_structure(stats)
-    p0, p1 = block_ranges[p_blk]
-    c0, c1 = block_ranges[c_blk]
-    fire_p = fire[p0:p1]
-    fire_c = fire[c0:c1]
+    sel = block_selector(stats)
+    fire_p = fire[sel(p_blk)]
+    fire_c = fire[sel(c_blk)]
+    # Global feature ids for the report. With explicit indices the block's own list
+    # gives them; with ranges it is the offset. `p0` is used for both the superparent
+    # rows and the top-edge ids below.
+    cfg_idx = (stats.get("config") or {}).get("block_indices")
+    if cfg_idx is not None:
+        p_ids, c_ids = list(cfg_idx[p_blk]), list(cfg_idx[c_blk])
+    else:
+        p_lo, c_lo = block_ranges[p_blk][0], block_ranges[c_blk][0]
+        p_ids, c_ids = None, None
+
+    def gid_p(i):
+        """Local column -> the feature's id in the full dictionary."""
+        return p_ids[i] if p_ids is not None else p_lo + i
+
+    def gid_c(i):
+        return c_ids[i] if c_ids is not None else c_lo + i
 
     cofire = stats["cofire"][key].double()
 
@@ -178,6 +209,29 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     n_freq_driven = int((survival < C.FREQ_SURVIVAL_MIN).sum())
     n_testable = int(surv_vals.numel())
 
+    # --- Metric 5b: the same control, bucketed within each window --------------
+    # Only present when stage 01 accumulated it. The two differ in nothing but what
+    # counts as "frequent": a token id everywhere, versus a position in its own
+    # context. On a corpus whose global marginal is flat but whose within-document
+    # distribution is not, they can disagree completely — which is the point.
+    freq_local = None
+    if "cofire_by_local_bucket" in stats:
+        lcov = frequency_controlled_coverage(
+            stats["cofire_by_local_bucket"][key].double(),
+            stats["fire_c_by_local_bucket"][c_blk].double(),
+            edge_mask,
+        )
+        lsurv = lcov["survival"]
+        lvals = lsurv[~torch.isnan(lsurv)]
+        n_local_testable = int(lvals.numel())
+        freq_local = {
+            "n_testable": n_local_testable,
+            "mean_survival": _nanmean(lvals) if n_local_testable else float("nan"),
+            "n_freq_driven": int((lsurv < C.FREQ_SURVIVAL_MIN).sum()),
+            "frac_freq_driven": _f(int((lsurv < C.FREQ_SURVIVAL_MIN).sum()) / n_local_testable)
+            if n_local_testable else 0.0,
+        }
+
     # --- Metric 3: sibling redundancy ---------------------------------------
     # GLOBAL Jaccard only — confounded for Matryoshka: it
     # scores co-firing anywhere, not disjointness within the parent's support.
@@ -204,7 +258,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
         order = torch.argsort(R[pidx, cidx], descending=True)[:15]
         for j in order.tolist():
             pi, ci = int(pidx[j]), int(cidx[j])
-            gp, gc = p0 + pi, c0 + ci
+            gp, gc = gid_p(pi), gid_c(ci)
             s = survival[pi, ci]
             pm = pmi[pi, ci]
             top_edges.append(
@@ -258,6 +312,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
             "n_freq_driven": n_freq_driven,
             "frac_freq_driven": _f(n_freq_driven / n_testable) if n_testable else 0.0,
         },
+        "freq_control_local": freq_local,
         "sibling_redundancy": sib_summary,
         "n_superparents": len(superparents),                      # outdeg-only flag
         "n_superparents_strict": sum(sp["strict"] for sp in superparents),  # old AND gate
@@ -267,9 +322,9 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
         "superparents": [
             {
                 **sp,
-                "parent_global": p0 + sp["parent_local"],
-                "label": C.feature_label(p0 + sp["parent_local"], labels),
-                **({"url": C.npedia_url(p0 + sp["parent_local"])} if labels else {}),
+                "parent_global": gid_p(sp["parent_local"]),
+                "label": C.feature_label(gid_p(sp["parent_local"]), labels),
+                **({"url": C.npedia_url(gid_p(sp["parent_local"]))} if labels else {}),
             }
             for sp in superparents[:10]
         ],

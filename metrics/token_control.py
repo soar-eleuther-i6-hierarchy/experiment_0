@@ -40,6 +40,39 @@ def frequency_buckets(
     return buckets
 
 
+def local_frequency_buckets(
+    tokens: torch.Tensor,         # [b, seq] token ids
+    keep: torch.Tensor,           # [b, seq] bool — positions entering the statistics
+    vocab: int,
+    high_mass: float = 0.50,
+    mid_mass: float = 0.40,
+) -> torch.Tensor:
+    """Bucket each kept POSITION by its token's frequency *within its own window*.
+
+    `frequency_buckets` above is a function of the token id: a bucket is a property
+    the id carries everywhere in the corpus. This is a function of (id, window): the
+    same id can be bucket 0 in one context and bucket 2 in another.
+
+    The distinction is the whole question on a PCFG corpus. `zipf_exponent` weights
+    terminal *ranks* and the generator re-permutes which id holds which rank per
+    document, so concentration is real inside a document and averages to flat across
+    the corpus — top 10 ids hold 59.2% within a document and 1.3% corpus-wide at
+    zipf=1.5. A global bucketing sees nothing there; a local one sees the structure
+    the knob actually creates.
+
+    Returns [b, seq] with bucket 2 (tail) at dropped positions, which never enter the
+    statistics anyway.
+    """
+    out = torch.full_like(tokens, 2)
+    for i in range(tokens.shape[0]):
+        row = tokens[i][keep[i]]
+        if row.numel() == 0:
+            continue
+        counts = torch.bincount(row, minlength=vocab).double()
+        out[i][keep[i]] = frequency_buckets(counts, high_mass, mid_mass).to(out.dtype)[row]
+    return out
+
+
 def frequency_controlled_coverage(
     cofire_by_bucket: torch.Tensor,   # [K, P, C] co-firing counts per bucket
     fire_c_by_bucket: torch.Tensor,   # [K, C]    child firing counts per bucket

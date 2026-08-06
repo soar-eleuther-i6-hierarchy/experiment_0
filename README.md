@@ -42,6 +42,39 @@ Run everything from the `experiment_0/` directory.
 ```bash
 pip install torch sae_lens datasets plotly numpy matplotlib
 
+python3 run_pipeline.py         # every stage in order, refusing any whose inputs are missing
+python3 run_pipeline.py --list  # show the order and what is already satisfied
+python3 run_pipeline.py --from 02   # resume after the slow one
+```
+
+### The stages
+
+The order is a dependency chain, not a preference. `run_pipeline.py` encodes it and
+refuses to run a stage whose inputs are absent — a stage fed a missing input either
+crashes obscurely later or, worse, silently reads a stale file from a previous run.
+
+| | Script | Reads | Writes | Note |
+| --- | --- | --- | --- | --- |
+| **01** | `collect_statistics.py` | model + SAE + corpus | `exp0_stats.pt`, `token_cache/` | the only stage that touches the model; slow |
+| 01b | `fetch_labels.py` | Neuronpedia | `feature_labels.json` | display only, optional |
+| **02** | `run_metrics.py` | `exp0_stats.pt` | `metrics_report.{json,md}` | the ten-metric battery |
+| 02b | `validation/qualitative_check.py` | 01 + 02 | `qualitative_check.json` | Tier 3 |
+| **03** | `run_token_metrics.py` | 02 + `token_cache/` | `second_pass.json` | `S_res`, parent-conditioned siblings, kept-children union — model-free |
+| 04 | `reporting/visualize.py` | 02 | dashboards | |
+
+Stage 03 needs `token_cache/`, which stage 01 writes only when `CACHE_RESIDUALS=1`.
+
+**Not a stage:** [`in_block_edges.py`](in_block_edges.py) builds its own candidate set from
+a *within-block* co-firing matrix instead of filtering stage 02's, so it answers the same
+question on a different domain and sits nowhere in this chain. It needs 01, not 02.
+
+**Why the filenames are not numbered.** A module whose name starts with a digit cannot be
+imported, and `collect_statistics.collect` is imported by the adapters that grade non-gemma
+SAEs. The name says what a stage does; `run_pipeline.py` says when it runs.
+
+Individual stages still run directly:
+
+```bash
 python3 collect_statistics.py   # cache every statistic the metrics need (slow, needs model+SAE)
 python3 fetch_labels.py         # feature labels for the current layer
 python3 run_metrics.py          # metrics_report.{json,md}
