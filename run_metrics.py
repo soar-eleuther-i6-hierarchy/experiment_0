@@ -178,6 +178,29 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
     n_freq_driven = int((survival < C.FREQ_SURVIVAL_MIN).sum())
     n_testable = int(surv_vals.numel())
 
+    # --- Metric 5b: the same control, bucketed within each window --------------
+    # Only present when stage 01 accumulated it. The two differ in nothing but what
+    # counts as "frequent": a token id everywhere, versus a position in its own
+    # context. On a corpus whose global marginal is flat but whose within-document
+    # distribution is not, they can disagree completely — which is the point.
+    freq_local = None
+    if "cofire_by_local_bucket" in stats:
+        lcov = frequency_controlled_coverage(
+            stats["cofire_by_local_bucket"][key].double(),
+            stats["fire_c_by_local_bucket"][c_blk].double(),
+            edge_mask,
+        )
+        lsurv = lcov["survival"]
+        lvals = lsurv[~torch.isnan(lsurv)]
+        n_local_testable = int(lvals.numel())
+        freq_local = {
+            "n_testable": n_local_testable,
+            "mean_survival": _nanmean(lvals) if n_local_testable else float("nan"),
+            "n_freq_driven": int((lsurv < C.FREQ_SURVIVAL_MIN).sum()),
+            "frac_freq_driven": _f(int((lsurv < C.FREQ_SURVIVAL_MIN).sum()) / n_local_testable)
+            if n_local_testable else 0.0,
+        }
+
     # --- Metric 3: sibling redundancy ---------------------------------------
     # GLOBAL Jaccard only — confounded for Matryoshka: it
     # scores co-firing anywhere, not disjointness within the parent's support.
@@ -258,6 +281,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
             "n_freq_driven": n_freq_driven,
             "frac_freq_driven": _f(n_freq_driven / n_testable) if n_testable else 0.0,
         },
+        "freq_control_local": freq_local,
         "sibling_redundancy": sib_summary,
         "n_superparents": len(superparents),                      # outdeg-only flag
         "n_superparents_strict": sum(sp["strict"] for sp in superparents),  # old AND gate

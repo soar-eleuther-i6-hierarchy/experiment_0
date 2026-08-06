@@ -38,7 +38,7 @@ import config as C
 from utils import sae_utils as U
 from utils.io import TokenCacheWriter
 from metrics.reconstruction import per_token_ablation_gain
-from metrics.token_control import frequency_buckets
+from metrics.token_control import frequency_buckets, local_frequency_buckets
 
 
 def tokenize_docs(model, texts, ctx):
@@ -188,6 +188,21 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
     g_child_sum = {b: torch.zeros(blk_len(b), dtype=acc_dtype, device=device) for b in child_blocks}
     fire_c_by_bucket = {b: torch.zeros(K, blk_len(b), dtype=acc_dtype, device=device) for b in child_blocks}
 
+    # A second, parallel set bucketed by frequency WITHIN each window rather than
+    # across the corpus. Both are accumulated in the same pass so the two readings
+    # are over identical edges and identical tokens — the only difference is what
+    # counts as "frequent". Off by default; the extra keys are optional in the
+    # stats contract, so a file without them still grades.
+    local_freq = getattr(cfg, "LOCAL_FREQ_BUCKETS", False)
+    cofire_by_local = (
+        {pr: torch.zeros(K, blk_len(pr[0]), blk_len(pr[1]), dtype=acc_dtype, device=device) for pr in pairs}
+        if local_freq else None
+    )
+    fire_c_by_local = (
+        {b: torch.zeros(K, blk_len(b), dtype=acc_dtype, device=device) for b in child_blocks}
+        if local_freq else None
+    )
+
     # within-block co-firing for sibling stats (SIBLING_BLOCKS) AND the in-block
     # same-level edge analysis (IN_BLOCK_BLOCKS) — union so B0 gets cached too.
     within_blocks = sorted(set(cfg.SIBLING_BLOCKS) | set(getattr(cfg, "IN_BLOCK_BLOCKS", [])))
@@ -243,6 +258,16 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
         # per-bucket row masks (float [n] selector reused across pairs)
         bucket_sel = [(tok_bucket == k).to(acc_dtype) for k in range(K)]
 
+        # Same positions, bucketed by frequency inside their own window instead of
+        # across the corpus. Accumulated in the same pass so the two readings differ
+        # in nothing but the definition of "frequent".
+        local_sel = None
+        if local_freq:
+            tok_bucket_local = local_frequency_buckets(
+                tokens, keep, vocab, cfg.FREQ_HIGH_MASS, cfg.FREQ_MID_MASS
+            )[keep]                                         # [n]
+            local_sel = [(tok_bucket_local == k).to(acc_dtype) for k in range(K)]
+
         for (p, c) in pairs:
             fp = fired[:, blk_slice(p)]                     # [n, P]
             fc = fired[:, blk_slice(c)]                     # [n, C]
@@ -253,6 +278,8 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
             for k in range(K):
                 fck = fc * bucket_sel[k].unsqueeze(1)       # [n, C] child-fire only on bucket-k tokens
                 cofire_by_bucket[(p, c)][k] += fp.T @ fck
+                if local_sel is not None:
+                    cofire_by_local[(p, c)][k] += fp.T @ (fc * local_sel[k].unsqueeze(1))
 
             accumulate_pair_extras(                          # energy + exact unions
                 pair_extras[(p, c)],
@@ -268,6 +295,8 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
             g_child_sum[b] += (fc * gc).sum(dim=0)          # [C]
             for k in range(K):
                 fire_c_by_bucket[b][k] += (fc * bucket_sel[k].unsqueeze(1)).sum(dim=0)
+                if local_sel is not None:
+                    fire_c_by_local[b][k] += (fc * local_sel[k].unsqueeze(1)).sum(dim=0)
 
         for b in within_blocks:
             fb = fired[:, blk_slice(b)]                     # [n, Cb]
@@ -305,6 +334,15 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
         "g_child_sum": {b: v.cpu() for b, v in g_child_sum.items()},
         "fire_c_by_bucket": {b: v.cpu() for b, v in fire_c_by_bucket.items()},
         "within_cofire": {b: v.cpu() for b, v in within_cofire.items()},
+        # Optional: present only when cfg.LOCAL_FREQ_BUCKETS is on. Same shapes as
+        # their global counterparts, bucketed within each window instead.
+        **(
+            {
+                "cofire_by_local_bucket": pk(cofire_by_local),
+                "fire_c_by_local_bucket": {b: v.cpu() for b, v in fire_c_by_local.items()},
+            }
+            if local_freq else {}
+        ),
         "config": {
             "layer": cfg.LAYER,
             "sae_release": cfg.SAE_RELEASE,
@@ -319,6 +357,7 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
             "freq_mid_mass": cfg.FREQ_MID_MASS,
             "bos_excluded": True,
             "min_joint": cfg.MIN_JOINT,
+            "local_freq_buckets": bool(local_freq),
             **(extra_config or {}),
         },
     }
