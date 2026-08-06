@@ -1,0 +1,166 @@
+{
+  "d_sae": 20,
+  "latent_sizes": [
+    2,
+    4,
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20
+  ],
+  "block_ranges": [
+    [
+      0,
+      2
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      8,
+      10
+    ],
+    [
+      10,
+      12
+    ],
+    [
+      12,
+      14
+    ],
+    [
+      14,
+      16
+    ],
+    [
+      16,
+      18
+    ],
+    [
+      18,
+      20
+    ]
+  ],
+  "first_block_of_feature": {
+    "0": 4,
+    "1": 8,
+    "2": 5,
+    "4": 0,
+    "5": 3,
+    "7": 2,
+    "8": 1,
+    "9": 5,
+    "10": 4,
+    "12": 2,
+    "13": 1,
+    "14": 8,
+    "15": 9,
+    "16": 6,
+    "17": 0,
+    "18": 7,
+    "19": 3
+  },
+  "edge_rows": [
+    {
+      "edge": "0 -> 1",
+      "parent_block": 4,
+      "child_block": 8,
+      "verdict": "respected"
+    },
+    {
+      "edge": "0 -> 2",
+      "parent_block": 4,
+      "child_block": 5,
+      "verdict": "respected"
+    },
+    {
+      "edge": "0 -> 3",
+      "parent_block": 4,
+      "child_block": null,
+      "verdict": "untestable: feature not recovered"
+    },
+    {
+      "edge": "4 -> 5",
+      "parent_block": 0,
+      "child_block": 3,
+      "verdict": "respected"
+    },
+    {
+      "edge": "4 -> 6",
+      "parent_block": 0,
+      "child_block": null,
+      "verdict": "untestable: feature not recovered"
+    },
+    {
+      "edge": "4 -> 7",
+      "parent_block": 0,
+      "child_block": 2,
+      "verdict": "respected"
+    },
+    {
+      "edge": "8 -> 9",
+      "parent_block": 1,
+      "child_block": 5,
+      "verdict": "respected"
+    },
+    {
+      "edge": "8 -> 10",
+      "parent_block": 1,
+      "child_block": 4,
+      "verdict": "respected"
+    },
+    {
+      "edge": "8 -> 11",
+      "parent_block": 1,
+      "child_block": null,
+      "verdict": "untestable: feature not recovered"
+    }
+  ],
+  "n_testable": 6,
+  "n_respected": 6,
+  "violations": [],
+  "untestable": [
+    [
+      0,
+      3
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      8,
+      11
+    ]
+  ],
+  "split_features": {
+    "19": [
+      3,
+      6
+    ],
+    "9": [
+      5,
+      7
+    ],
+    "16": [
+      6,
+      9
+    ]
+  },
+  "unmatched_latents": 0,
+  "mean_parent_block": 1.6666666666666667,
+  "mean_child_block": 4.5
+}

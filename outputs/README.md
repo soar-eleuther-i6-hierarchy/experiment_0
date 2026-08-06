@@ -154,7 +154,7 @@ Steps 3–5 are what separates "the metric failed" from "the SAE failed": a miss
 metric if the SAE learned both endpoints, which is why per-feature recovery is reported too.
 
 ```bash
-python3 validation/test_metric_calibration.py                    # Tier 1
+python3 validation/calibrate_on_synthetic_toy.py                    # Tier 1
 python3 -m reporting.visualize --calibration                # Tier 1 dashboard
 
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)

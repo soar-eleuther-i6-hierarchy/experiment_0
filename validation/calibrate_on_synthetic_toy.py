@@ -25,7 +25,7 @@ from pathlib import Path
 
 import torch
 
-# allow `python3 validation/test_metric_calibration.py` from the experiment_0 root
+# allow `python3 validation/calibrate_on_synthetic_toy.py` from the experiment_0 root
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import config as C  # noqa: E402
