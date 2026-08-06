@@ -12,6 +12,10 @@ distributions), then writes:
     outputs/toy_calibration.html      (--calibration) metric scorecard + the
                                       genuine-vs-pathological separation each
                                       metric achieves on the synthetic toy
+    outputs/trained_toy_calibration.html (--trained-calibration) Tier-2 scorecard:
+                                      edge recovery against the known tree, plus
+                                      the Matryoshka nesting check when
+                                      outputs/block_tree_alignment.json exists
     outputs/qualitative_dashboard.html (--qualitative) surviving vs rejected real
                                       edges with Neuronpedia labels, colour-coded
 
@@ -676,73 +680,264 @@ CAL2_STYLE = {                       # (label, fill, ink)
 CAL2_ORDER = ["recovered", "missed: child not learned", "missed", "spurious"]
 
 
-def build_trained_calibration_dashboard(d):
+# A scorecard where every row says PASS is the same survivorship problem the error
+# log has: it reads as reassurance. Some rows here are not tests at all -- feature
+# recovery is a fact about the SAE, and feature splitting is a caveat on how
+# generously the nesting check was read. Grading them would claim a verdict nobody
+# measured, so they get a third state and are visibly not scored.
+def _verdict_text(r):
+    return "noted" if not r.get("graded", True) else ("PASS" if r["pass"] else "FAIL")
+
+
+def _verdict_ink(r):
+    return "#9AA7B3" if not r.get("graded", True) else ("#166534" if r["pass"] else "#991B1B")
+
+
+def _verdict_fill(r):
+    return "#F1F5F9" if not r.get("graded", True) else ("#DCFCE7" if r["pass"] else "#FEE2E2")
+
+
+def trained_scorecard(d, align):
+    """Tier 2's checks as scored rows, in the shape Tier 1 uses.
+
+    A verdict alone is not calibration: a check that passed by a hair is not
+    evidence, it is luck that has not run out. So every row carries the same
+    `margin` idea as the Tier-1 scorecard — how far this check was from failing —
+    and the margins here are small integers because the toy is small. That is the
+    honest reading, not a defect of the display.
+
+    The nesting rows come from block_tree_alignment.json when it exists.
+    `calibrate_on_trained_toy` indexes by ground truth and never by block, on
+    purpose: mixing them would confound "is the metric right?" with "did Matryoshka
+    order the features right?". Those are two questions and they get two rows.
+    """
+    tp, fp2, fn = d["true_positives"], d["false_positives"], d["false_negatives"]
+    F = d["n_features"]
+    n_gap = sum(1 for r in d["edge_rows"] if "not learned" in r["category"])
+    testable = (tp + fn) - n_gap
+
+    rows = [
+        {"check": "1. precision — no invented edges",
+         "job": "keep nothing the tree does not contain",
+         "pass": fp2 == 0,
+         "value": f"{d['precision']:.2f}",
+         "margin": f"{fp2} false positives",
+         "detail": f"{tp} edges kept, {fp2} of them absent from the true tree"},
+        {"check": "2. recall against the SAE's ceiling",
+         "job": "recover every edge whose endpoints the SAE actually learned",
+         "pass": tp == testable,
+         "value": f"{tp}/{testable}",
+         "margin": f"{testable - tp} testable misses",
+         "detail": f"raw recall {d['recall']:.2f} ({tp}/{tp + fn}); {n_gap} of the "
+                   f"{fn} misses are edges whose child the SAE never learned, so no "
+                   f"metric could have found them"},
+        {"check": "3. feature recovery (the ceiling itself)",
+         "job": "state what the SAE gave the metrics to work with",
+         "graded": False,
+         "value": f"{d['n_recovered_features']}/{F}",
+         "margin": "—",
+         "detail": f"{F - d['n_recovered_features']} true features were never learned. "
+                   f"This bounds recall from above: it is a fact about the SAE, so it is "
+                   f"reported and not graded"},
+    ]
+
+    if align:
+        gaps = [r["child_block"] - r["parent_block"]
+                for r in align["edge_rows"] if r["child_block"] is not None]
+        n_t, n_ok = align["n_testable"], align["n_respected"]
+        splits = align.get("split_features") or {}
+        rows += [
+            {"check": "4. Matryoshka nesting respects the tree",
+             "job": "parent lands in an earlier block than its children",
+             "pass": n_ok == n_t and n_t > 0,
+             "value": f"{n_ok}/{n_t}",
+             "margin": f"min gap {min(gaps)} block" + ("" if min(gaps) == 1 else "s"),
+             "detail": f"block gaps {sorted(gaps)}; mean parent block "
+                       f"{align['mean_parent_block']:.1f} vs child "
+                       f"{align['mean_child_block']:.1f}. The narrowest edge clears by "
+                       f"{min(gaps)} — the claim holds, but not by much at its tightest"},
+            {"check": "5. feature splitting (caveat on 4)",
+             "job": "say how generously check 4 was read",
+             "graded": False,
+             "value": f"{len(splits)} split",
+             "margin": "—",
+             "detail": ("no true feature was recovered by more than one latent, so check 4 "
+                        "had no choice to make" if not splits
+                        else "recovered by >1 latent: "
+                             + ", ".join(f"feature {k} in blocks {v}" for k, v in splits.items())
+                             + ". Check 4 takes the EARLIEST block for each feature, which is "
+                               "the reading most favourable to the architecture — a later "
+                               "choice could turn a respected edge into a violation. Not a "
+                               "metric failure, but it is why 6/6 is weaker than it looks")},
+        ]
+    return rows
+
+
+def build_trained_calibration_dashboard(d, align=None):
+    """Tier 2 in Tier 1's shape: a scored card, then the evidence behind it.
+
+    Not the layer dashboard's shape. That one plots distributions over millions of
+    candidate edges, where a CCDF means something. Here there are nine true edges and
+    twenty features — a distribution over nine points is decoration. The question is
+    also different in kind: the layer pages ask what happened to a population, both
+    calibration tiers ask whether each check did its job where the answer is known.
+    """
+    sc = trained_scorecard(d, align)
+    rows = sorted(d["edge_rows"], key=lambda r: (CAL2_ORDER.index(r["category"]),
+                                                 r["parent"], r["child"]))
+    have_align = bool(align)
+
     fig = make_subplots(
-        rows=2, cols=1, specs=[[{"type": "table"}], [{"type": "table"}]],
-        row_heights=[0.62, 0.38],
-        subplot_titles=("Edge recovery vs the known tree", "Per-feature recovery"),
-        vertical_spacing=0.10,
+        rows=3, cols=2,
+        specs=[[{"type": "table", "colspan": 2}, None],
+               [{"type": "table"}, {}],
+               [{"type": "table"}, {}]],
+        subplot_titles=("", "Edge recovery vs the known tree",
+                        "Matryoshka nesting: parent block vs child block",
+                        "Nesting, edge by edge", "Where the tree landed in the blocks"),
+        vertical_spacing=0.075, horizontal_spacing=0.08,
+        row_heights=[0.34, 0.33, 0.33],
     )
 
-    rows = sorted(d["edge_rows"], key=lambda r: (CAL2_ORDER.index(r["category"]), r["parent"], r["child"]))
-    edge, verdict, note = [], [], []
-    vcol, fill = [], []
+    # (1) the scorecard — same six columns as Tier 1, same verdict colouring
+    fig.add_trace(
+        go.Table(
+            columnwidth=[36, 190, 210, 50, 92, 420],
+            header=dict(values=["#", "check", "job", "verdict", "margin", "detail"],
+                        fill_color="#EEF2F6", align="left",
+                        font=dict(color=INK, size=11), height=26),
+            cells=dict(
+                values=[
+                    list(range(1, len(sc) + 1)),
+                    [r["check"] for r in sc],
+                    [r["job"] for r in sc],
+                    [_verdict_text(r) for r in sc],
+                    [r["margin"] for r in sc],
+                    [r["detail"] for r in sc],
+                ],
+                align="left", height=54,
+                font=dict(size=10,
+                          color=[[_verdict_ink(r) for r in sc] if j == 3 else INK
+                                 for j in range(6)]),
+                fill_color=[["white"] * len(sc) if j != 3 else
+                            [_verdict_fill(r) for r in sc] for j in range(6)],
+            ),
+        ), row=1, col=1,
+    )
+
+    # (2,1) edge recovery, unchanged in content — the evidence for rows 1-3
+    edge, verdict, note, vcol, fill = [], [], [], [], []
     for r in rows:
         label, tint, ink = CAL2_STYLE[r["category"]]
         edge.append(r["edge"])
         verdict.append(label)
         note.append("kept by all metrics, matches the tree" if r["category"] == "recovered"
-                     else "child feature never learned by the SAE" if "not learned" in r["category"]
-                     else "metric kept an edge not in the tree" if r["category"] == "spurious"
-                     else "in the tree but not kept")
+                    else "child feature never learned by the SAE" if "not learned" in r["category"]
+                    else "metric kept an edge not in the tree" if r["category"] == "spurious"
+                    else "in the tree but not kept")
         vcol.append(ink)
         fill.append(tint)
     fig.add_trace(
         go.Table(
-            columnwidth=[70, 150, 320],
+            columnwidth=[70, 150, 300],
             header=dict(values=["edge (parent → child)", "verdict", "why"],
                         fill_color="#EEF2F6", align="left",
                         font=dict(color=INK, size=11), height=26),
             cells=dict(values=[edge, verdict, note], align="left", height=26,
                        font=dict(size=10, color=[[INK] * len(edge), vcol, [INK] * len(edge)]),
                        fill_color=[fill, fill, fill], line=dict(color="white", width=1)),
-        ), row=1, col=1,
-    )
-
-    # per-feature recovery strip
-    F = d["n_features"]
-    rec = set(d["recovered_features"])
-    feats = list(range(F))
-    stat = ["recovered" if f in rec else "not recovered" for f in feats]
-    fig.add_trace(
-        go.Table(
-            columnwidth=[60, 120],
-            header=dict(values=["feature", "recovered by the SAE?"],
-                        fill_color="#EEF2F6", align="left",
-                        font=dict(color=INK, size=11), height=24),
-            cells=dict(values=[feats, stat], align="left", height=20,
-                       font=dict(size=9.5,
-                                 color=[[INK] * F, ["#166534" if f in rec else "#991B1B" for f in feats]]),
-                       fill_color=[["white"] * F,
-                                   ["#DCFCE7" if f in rec else "#FEE2E2" for f in feats]]),
         ), row=2, col=1,
     )
 
+    if have_align:
+        nb = len(align["block_ranges"])
+        tested = [r for r in align["edge_rows"] if r["child_block"] is not None]
+
+        # (2,2) the nesting claim as a picture. Every point must sit ABOVE the
+        # dotted diagonal; a violation would be a point below it, which is easier
+        # to disbelieve than the word "respected" in a cell.
+        fig.add_trace(go.Scatter(x=[0, nb - 1], y=[0, nb - 1], mode="lines",
+                                 line=dict(color="#CBD5E1", width=1, dash="dot"),
+                                 hoverinfo="skip", showlegend=False), row=2, col=2)
+        fig.add_trace(
+            go.Scatter(
+                x=[r["parent_block"] for r in tested],
+                y=[r["child_block"] for r in tested],
+                mode="markers+text",
+                text=[r["edge"].replace(" -> ", "→") for r in tested],
+                textposition="top center", textfont=dict(size=9, color="#9AA7B3"),
+                marker=dict(size=13, line=dict(width=1, color="white"),
+                            color=["#166534" if r["verdict"] == "respected" else "#991B1B"
+                                   for r in tested]),
+                hovertemplate="%{text}<br>parent B%{x} → child B%{y}<extra></extra>",
+                showlegend=False), row=2, col=2)
+        fig.update_xaxes(title_text="parent block", range=[-0.7, nb - 0.3], dtick=1,
+                         row=2, col=2)
+        fig.update_yaxes(title_text="child block", range=[-0.7, nb + 0.3], dtick=1,
+                         row=2, col=2)
+
+        # (3,1) the same six edges as a table, plus the three that cannot be tested
+        av, ap, ac, aw, afill, aink = [], [], [], [], [], []
+        for r in align["edge_rows"]:
+            ok = r["verdict"] == "respected"
+            untest = r["child_block"] is None
+            av.append(r["edge"].replace(" -> ", " → "))
+            ap.append("-" if r["parent_block"] is None else f"B{r['parent_block']}")
+            ac.append("-" if untest else f"B{r['child_block']}")
+            aw.append("untestable — child never learned" if untest
+                      else f"respected (gap {r['child_block'] - r['parent_block']})" if ok
+                      else "VIOLATED")
+            afill.append("#F1F5F9" if untest else "#DCFCE7" if ok else "#FEE2E2")
+            aink.append("#9AA7B3" if untest else "#166534" if ok else "#991B1B")
+        fig.add_trace(
+            go.Table(
+                columnwidth=[70, 50, 50, 220],
+                header=dict(values=["edge", "parent", "child", "verdict"],
+                            fill_color="#EEF2F6", align="left",
+                            font=dict(color=INK, size=11), height=26),
+                cells=dict(values=[av, ap, ac, aw], align="left", height=26,
+                           font=dict(size=10, color=[[INK] * len(av)] * 3 + [aink]),
+                           fill_color=[afill] * 4, line=dict(color="white", width=1)),
+            ), row=3, col=1,
+        )
+
+        # (3,2) parents early, children late — the nesting claim in aggregate
+        fb = {int(k): v for k, v in align["first_block_of_feature"].items()}
+        parents = sorted({p for p, _ in d["true_edges"]})
+        children = sorted({c for _, c in d["true_edges"]})
+        for name, feats, col in (("parents", parents, "#7C22CE"),
+                                 ("children", children, "#F59E0B")):
+            fig.add_bar(x=list(range(nb)),
+                        y=[sum(1 for f in feats if fb.get(f) == b) for b in range(nb)],
+                        name=name, marker_color=col, row=3, col=2)
+        fig.update_xaxes(title_text="earliest Matryoshka block holding the feature",
+                         dtick=1, row=3, col=2)
+        fig.update_yaxes(title_text="features", row=3, col=2)
+        fig.update_layout(barmode="group",
+                          legend=dict(orientation="h", x=0.62, y=0.055,
+                                      bgcolor="rgba(255,255,255,0.7)"))
+
     tp, fp2, fn = d["true_positives"], d["false_positives"], d["false_negatives"]
+    F = d["n_features"]
+    nest = ""
+    if have_align:
+        nest = (f"　·　<b><span style='color:#166534'>nesting {align['n_respected']}"
+                f"/{align['n_testable']}</span></b>")
     fig.update_layout(
         title=dict(text=_titled(
             "Trained-toy calibration (Tier 2)",
             f"metrics run on a Matryoshka SAE trained on Bussmann's tree　·　"
             f"<b><span style='color:#166534'>precision {d['precision']:.2f}</span></b>, "
             f"<b>recall {d['recall']:.2f}</b> "
-            f"({tp}/{tp + fn} edges, {fp2} false positives)",
+            f"({tp}/{tp + fn} edges, {fp2} false positives){nest}",
             subtitle=scope_subtitle("No layer: Bussmann toy, a Matryoshka SAE trained on it")
             + f"　·　SAE recovered {d['n_recovered_features']}/{F} true features　·　"
               "the misses are edges whose child the SAE never learned, not metric failures"),
-            x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
+            x=0.01, xanchor="left", yref="container", y=0.99, yanchor="top",
             font=dict(size=14, color=INK)),
         font=FONT, paper_bgcolor="white", plot_bgcolor="white",
-        width=1000, height=340 + 22 * (len(rows) + F), margin=dict(l=40, r=40, t=140, b=30),
+        width=1180, height=1180 if have_align else 780,
+        margin=dict(l=40, r=40, t=150, b=30),
     )
     return fig
 
@@ -751,7 +946,15 @@ def run_trained_calibration():
     path = C.OUT_DIR / "trained_toy_calibration.json"
     if not path.exists():
         raise SystemExit(f"missing {path} - run validation/calibrate_on_trained_toy.py first")
-    fig = build_trained_calibration_dashboard(json.loads(path.read_text()))
+    # Optional: the lateral control's output. Absent on a checkout that has not run
+    # validation.block_tree_alignment, and the page degrades to the recovery half
+    # rather than failing -- the two are separate questions and separate scripts.
+    ap = C.OUT_DIR / "block_tree_alignment.json"
+    align = json.loads(ap.read_text()) if ap.exists() else None
+    if align is None:
+        print("note: outputs/block_tree_alignment.json not found - "
+              "run `python3 -m validation.block_tree_alignment` for the nesting panels")
+    fig = build_trained_calibration_dashboard(json.loads(path.read_text()), align)
     out = C.OUT_DIR / "trained_toy_calibration.html"
     write_page(fig, out, up=1)
     print(f"saved: {out}")

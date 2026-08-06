@@ -86,7 +86,19 @@ before the gemma result means what we say it means.
 
 ```bash
 python3 -m validation.block_tree_alignment                       # needs outputs/toy_trained/
+python3 -m reporting.visualize --trained-calibration             # renders it onto the Tier-2 page
 ```
+
+It writes `outputs/block_tree_alignment.json`, which the Tier-2 dashboard picks up if it is there
+and skips if it is not — the two are separate questions and separate scripts, but they share a page
+because a reader comparing **6/6 respected** against **6/9 recovered** will otherwise assume the two
+sixes count different edges. They do not: the three edges the nesting cannot test are exactly the
+three whose child the SAE never learned.
+
+The page also states what the 6/6 costs. Three true features were recovered by more than one latent,
+and the check takes the **earliest** block for each — the reading most favourable to the
+architecture. A later choice could turn a respected edge into a violation. The narrowest respected
+edge clears by a single block.
 
 **The objection it closes.** The tiers establish that the metrics are sound; gemma then says the
 hierarchy fails. A reader is entitled to reply: *maybe Matryoshka simply cannot produce a coherent
