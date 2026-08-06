@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/cross_depth_comparison.html">Cross-depth</a><a class="" href="./outputs/kill_rates.html">Kill rates</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="./outputs/layer_03/">3</a><a class="pill" href="./outputs/layer_06/">6</a><a class="pill" href="./outputs/layer_12/">12</a><a class="pill" href="./outputs/layer_18/">18</a><a class="pill" href="./outputs/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="./outputs/layer_03/">3</a><a class="pill" href="./outputs/layer_06/">6</a><a class="pill" href="./outputs/layer_12/">12</a><a class="pill" href="./outputs/layer_18/">18</a><a class="pill" href="./outputs/layer_24/">24</a></div></nav>
 
 # experiment_0: Implement Metrics (SOAR I-6)
 
@@ -229,18 +229,22 @@ metrics/                              the repository
 │   ├── make_report_figures.py        static proof-figures
 │   └── layer_index.py                each layer's landing page
 │
-├── validation/                       the three calibration tiers
+├── validation/                       the three calibration tiers + a lateral control
 │   ├── toy_world.py                  the synthetic ground-truth world
 │   ├── calibrate_on_synthetic_toy.py    Tier 1 — synthetic toy
 │   ├── calibrate_on_trained_toy.py   Tier 2 — trained toy
 │   ├── qualitative_check.py          Tier 3 — real SAE (also pipeline stage 02b)
+│   ├── block_tree_alignment.py       lateral control — blocks vs the declared tree
 │   └── README.md
 │
-└── outputs/                          the published results (~15 MB)
+├── outputs_archive/                  superseded runs, tracked on purpose (~11 MB)
+│   ├── README.md                     what is in here and why v1 was withdrawn
+│   ├── layer_NN__v1__*/              the five layers before BOS was excluded
+│   └── *__v1__*.html                 two hand-built pages, withdrawn not updated
+│
+└── outputs/                          the published results (~16 MB)
     ├── assets/
     │   └── plotly.min.js             the one bundle every dashboard links to
-    ├── cross_depth_comparison.html
-    ├── kill_rates.html
     ├── toy_calibration.html          Tier-1 scorecard (+ .json, .md)
     ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
     ├── toy_trained/                  the Tier-2 checkpoint

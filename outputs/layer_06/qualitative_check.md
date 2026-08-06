@@ -19,84 +19,84 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/cross_depth_comparison.html">Cross-depth</a><a class="" href="../../outputs/kill_rates.html">Kill rates</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../../outputs/layer_03/qualitative_check.html">3</a><a class="pill on" href="../../outputs/layer_06/qualitative_check.html">6</a><a class="pill" href="../../outputs/layer_12/qualitative_check.html">12</a><a class="pill" href="../../outputs/layer_18/qualitative_check.html">18</a><a class="pill" href="../../outputs/layer_24/qualitative_check.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../outputs/layer_06/metrics_dashboard.html">Dashboard</a><a class="" href="../../outputs/layer_06/superparent_sankey.html">Superparents</a><a class="" href="../../outputs/layer_06/qualitative_dashboard.html">Qualitative</a><a class="" href="../../outputs/layer_06/metrics_report.html">Metrics report</a><a class="on" href="../../outputs/layer_06/qualitative_check.html">Qualitative report</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../../outputs/layer_03/qualitative_check.html">3</a><a class="pill on" href="../../outputs/layer_06/qualitative_check.html">6</a><a class="pill" href="../../outputs/layer_12/qualitative_check.html">12</a><a class="pill" href="../../outputs/layer_18/qualitative_check.html">18</a><a class="pill" href="../../outputs/layer_24/qualitative_check.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../outputs/layer_06/metrics_dashboard.html">Dashboard</a><a class="" href="../../outputs/layer_06/superparent_sankey.html">Superparents</a><a class="" href="../../outputs/layer_06/qualitative_dashboard.html">Qualitative</a><a class="" href="../../outputs/layer_06/metrics_report.html">Metrics report</a><a class="on" href="../../outputs/layer_06/qualitative_check.html">Qualitative report</a></div></nav>
 
 # Exp 0 - qualitative agreement check (real gemma-2-2b SAE)
 
 **Layer 6**　·　gemma-2-2b / 6-res-matryoshka-dc　·　blocks.6.hook_resid_post　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
-For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia.
+For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia (not fetched - URLs only).
 
 ## Block pair 0->1
 
 ### survivor  (8)
 
-- **29 -> 283**  `R=0.65 F=0.03 recon_gain=0.688 recon=Y surv=1.12 p_fires=2%`
+- **29 -> 283**  `R=0.65 F=0.04 recon_gain=0.688 recon=Y surv=1.12 p_fires=1%`
     - parent [29](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/29): _citations to legal cases_
     - child  [283](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/283): _legal citations_
-- **2 -> 197**  `R=0.57 F=0.16 recon_gain=0.189 recon=Y surv=1.13 p_fires=8%`
+- **2 -> 197**  `R=0.57 F=0.18 recon_gain=0.189 recon=Y surv=1.13 p_fires=8%`
     - parent [2](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2): _proper names and associated titles_
     - child  [197](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/197): _authors' last names_
-- **35 -> 141**  `R=0.60 F=0.14 recon_gain=0.163 recon=Y surv=0.84 p_fires=12%`
+- **2 -> 439**  `R=0.66 F=0.20 recon_gain=0.174 recon=Y surv=1.08 p_fires=8%`
+    - parent [2](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2): _proper names and associated titles_
+    - child  [439](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/439): _names_
+- **88 -> 504**  `R=0.64 F=0.13 recon_gain=0.172 recon=Y surv=0.61 p_fires=11%`
+    - parent [88](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/88): _the words "in", "to", "from", "as", "on", "with", "for", "by", "between", "than", "while", "above", "during", "containing", "like", "of", "when", "onto", "through", "_
+    - child  [504](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/504): _the word "at"_
+- **35 -> 141**  `R=0.60 F=0.15 recon_gain=0.163 recon=Y surv=0.84 p_fires=12%`
     - parent [35](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/35): _mentions of mathematical derivations and existing research_
     - child  [141](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/141): _the word "the," and pronouns_
-- **72 -> 159**  `R=0.79 F=0.06 recon_gain=0.146 recon=Y surv=1.07 p_fires=2%`
+- **91 -> 444**  `R=0.60 F=0.07 recon_gain=0.147 recon=Y surv=0.97 p_fires=14%`
+    - parent [91](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/91): _terms related to medical and biological processes, particularly those involving molecular biology, biochemistry, and cellular mechanisms._
+    - child  [444](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/444): _mentions of specific proteins and experimental shorthand in a scientific paper_
+- **72 -> 159**  `R=0.79 F=0.10 recon_gain=0.146 recon=Y surv=1.07 p_fires=2%`
     - parent [72](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/72): _various elements and separators within tables and structured data, especially statistical or scientific tables_
     - child  [159](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/159): _horizontal lines of dashes used within tables_
-- **43 -> 383**  `R=0.66 F=0.08 recon_gain=0.133 recon=Y surv=1.04 p_fires=12%`
+- **43 -> 343**  `R=0.66 F=0.06 recon_gain=0.143 recon=Y surv=1.15 p_fires=12%`
     - parent [43](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/43): _discourse markers indicating argumentation, comparison/contrast, or qualification._
-    - child  [383](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/383): _words or phrases used to transition to the next thought or idea_
-- **72 -> 462**  `R=0.59 F=0.05 recon_gain=0.132 recon=Y surv=1.32 p_fires=2%`
-    - parent [72](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/72): _various elements and separators within tables and structured data, especially statistical or scientific tables_
-    - child  [462](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/462): _section dividers in research papers_
-- **117 -> 476**  `R=0.59 F=0.09 recon_gain=0.126 recon=Y surv=1.14 p_fires=18%`
-    - parent [117](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/117): _words that indicate something is related to academia, number, or computer programming_
-    - child  [476](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/476): _phrases containing the word 'large' or words meaning 'large'_
-- **89 -> 455**  `R=0.69 F=0.08 recon_gain=0.111 recon=Y surv=1.06 p_fires=20%`
-    - parent [89](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/89): _abbreviations and identifiers like codes or chemical formulae including "cli", "acr", "task", "PTRH2", "KO", "MDR", "ATD", "DEA", "AdoHcyase", "ORM"_
-    - child  [455](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/455): _mentions of people and organizations involved in legal cases_
+    - child  [343](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/343): _the word "some" followed by a determiner or adjective._
 
 ### reject:superparent  (4)
 
-- **15 -> 395**  `R=1.00 F=0.02 recon_gain=0.038 recon=n surv=1.00 p_fires=99%`
-    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
-    - child  [395](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/395): _percentages_
-- **15 -> 258**  `R=1.00 F=0.02 recon_gain=0.038 recon=n surv=1.00 p_fires=99%`
-    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
-    - child  [258](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/258): _the word "while" or "While" when used to introduce a subordinate clause_
-- **15 -> 344**  `R=1.00 F=0.01 recon_gain=0.038 recon=n surv=1.00 p_fires=99%`
-    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
-    - child  [344](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/344): _LaTeX math mode formatting_
-- **15 -> 133**  `R=1.00 F=0.02 recon_gain=0.038 recon=n surv=1.00 p_fires=99%`
+- **15 -> 133**  `R=1.00 F=0.01 recon_gain=1.075 recon=Y surv=1.00 p_fires=99%`
     - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
     - child  [133](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/133): _the word "name" and its variants in programming contexts_
+- **15 -> 188**  `R=1.00 F=0.08 recon_gain=2.437 recon=n surv=1.00 p_fires=99%`
+    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
+    - child  [188](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/188): _statements of statistical significance within scientific research text_
+- **15 -> 283**  `R=1.00 F=0.00 recon_gain=0.724 recon=Y surv=1.00 p_fires=99%`
+    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
+    - child  [283](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/283): _legal citations_
+- **15 -> 456**  `R=1.00 F=0.01 recon_gain=1.482 recon=Y surv=1.00 p_fires=99%`
+    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
+    - child  [456](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/456): _mathematical fractions_
 
 ### reject:freq-driven  (4)
 
-- **123 -> 235**  `R=0.95 F=0.07 recon_gain=-0.000 recon=n surv=0.28 p_fires=11%`
-    - parent [123](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/123): _numerical data and special characters often used in code or data representation_
-    - child  [235](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235): _math-related symbols like multiplication signs and exponents._
-- **13 -> 235**  `R=0.95 F=0.15 recon_gain=-0.000 recon=n surv=0.14 p_fires=6%`
-    - parent [13](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/13): _scientific citations and related formatting_
-    - child  [235](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235): _math-related symbols like multiplication signs and exponents._
-- **14 -> 235**  `R=0.95 F=0.09 recon_gain=0.000 recon=n surv=0.07 p_fires=9%`
-    - parent [14](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/14): _html code snippets, specifically those including href tags pointing to java files_
-    - child  [235](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235): _math-related symbols like multiplication signs and exponents._
-- **40 -> 235**  `R=0.95 F=0.25 recon_gain=-0.000 recon=n surv=0.07 p_fires=3%`
-    - parent [40](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/40): _the slash character, which appears to indicate mathematical equations written in LaTeX_
-    - child  [235](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235): _math-related symbols like multiplication signs and exponents._
+- **8 -> 479**  `R=0.79 F=0.36 recon_gain=0.410 recon=Y surv=0.39 p_fires=5%`
+    - parent [8](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/8): _code blocks and math formulas_
+    - child  [479](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/479): _leading whitespace followed by numerical values_
+- **124 -> 333**  `R=0.73 F=0.10 recon_gain=0.325 recon=Y surv=0.39 p_fires=5%`
+    - parent [124](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/124): _floating point numbers_
+    - child  [333](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/333): _hexadecimal-like codes_
+- **88 -> 480**  `R=0.67 F=0.30 recon_gain=0.196 recon=Y surv=0.47 p_fires=11%`
+    - parent [88](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/88): _the words "in", "to", "from", "as", "on", "with", "for", "by", "between", "than", "while", "above", "during", "containing", "like", "of", "when", "onto", "through", "_
+    - child  [480](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/480): _prepositions_
+- **23 -> 365**  `R=0.66 F=0.21 recon_gain=0.228 recon=Y surv=0.20 p_fires=4%`
+    - parent [23](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/23): _occurrences of numbers, likely data points extracted from medical studies_
+    - child  [365](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/365): _decimal numbers greater than 10_
 
 ### reject:no-recon  (4)
 
-- **62 -> 238**  `R=0.90 F=0.08 recon_gain=-0.001 recon=n surv=0.85 p_fires=18%`
+- **62 -> 238**  `R=0.79 F=0.04 recon_gain=0.040 recon=n surv=0.97 p_fires=17%`
     - parent [62](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/62): _proper nouns relating to places, people, organizations, events, or works of art._
     - child  [238](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/238): _LaTeX math symbols_
-- **123 -> 410**  `R=0.83 F=0.16 recon_gain=-0.000 recon=n surv=0.73 p_fires=11%`
-    - parent [123](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/123): _numerical data and special characters often used in code or data representation_
-    - child  [410](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/410): _mathematical symbols, formulas, and units_
-- **13 -> 385**  `R=0.82 F=0.19 recon_gain=-0.000 recon=n surv=0.69 p_fires=6%`
-    - parent [13](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/13): _scientific citations and related formatting_
-    - child  [385](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/385): _section headers_
-- **77 -> 151**  `R=0.81 F=0.11 recon_gain=-0.002 recon=n surv=0.90 p_fires=14%`
-    - parent [77](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/77): _parts of a computer program, identifying elements like file paths, library names, and versions_
-    - child  [151](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/151): _URLs_
+- **89 -> 275**  `R=0.77 F=0.21 recon_gain=0.101 recon=n surv=1.03 p_fires=21%`
+    - parent [89](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/89): _abbreviations and identifiers like codes or chemical formulae including "cli", "acr", "task", "PTRH2", "KO", "MDR", "ATD", "DEA", "AdoHcyase", "ORM"_
+    - child  [275](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/275): _markup, code, or other structured text_
+- **103 -> 238**  `R=0.76 F=0.08 recon_gain=0.146 recon=n surv=0.79 p_fires=8%`
+    - parent [103](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/103): _code containing hexadecimal values preceded by "x"_
+    - child  [238](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/238): _LaTeX math symbols_
+- **116 -> 264**  `R=0.75 F=0.04 recon_gain=0.032 recon=n surv=1.00 p_fires=36%`
+    - parent [116](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/116): _C programming language code_
+    - child  [264](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/264): _code-related documents_

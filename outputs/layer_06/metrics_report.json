@@ -34,7 +34,6 @@
       ]
     ],
     "fire_threshold": 0.001,
-    "n_docs": 400,
     "context_size": 128,
     "sibling_blocks": [
       1,
@@ -42,321 +41,122 @@
       3
     ],
     "freq_high_mass": 0.5,
-    "freq_mid_mass": 0.4
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
   },
-  "total_tokens": 48971,
+  "total_tokens": 48571,
   "pairs": [
     {
       "pair": "0->1",
-      "n_candidate_edges": 8156,
-      "degree": {
-        "n_parents_with_children": 104,
-        "n_children_with_parent": 383,
-        "n_multi_parented": 383,
-        "top1_edge_share": 0.0469592937714566,
-        "outdeg_gini": 0.5092742306277587,
-        "max_outdeg": 383
+      "n_candidate_edges": 2428,
+      "n_dropped_min_joint": 14,
+      "n_pairs_below_min_joint": 19001,
+      "independence_null": {
+        "mean_edge_pmi": 0.21728095490640434,
+        "n_chance_level": 2087,
+        "frac_chance_level": 0.8595551894563427
       },
-      "joint_child_cov_mean": 0.9241660257115725,
+      "joint_child": {
+        "r_supp_mean": 0.9998505975139593,
+        "r_mass_mean": 0.999942447632191,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 58,
+        "n_children_with_parent": 382,
+        "n_multi_parented": 382,
+        "poly_frac": 1.0,
+        "top1_edge_share": 0.15733113673805602,
+        "outdeg_gini": 0.9189404859967052,
+        "max_outdeg": 382
+      },
+      "joint_child_cov_mean": 0.5592302146269063,
       "reconstruction": {
-        "n_pass": 512,
-        "frac_pass": 0.06277587052476705
+        "n_pass": 2086,
+        "frac_pass": 0.8591433278418451
       },
       "freq_control": {
-        "n_testable": 8156,
-        "mean_survival": 0.44090786399616533,
-        "n_freq_driven": 4962,
-        "frac_freq_driven": 0.6083864639529181
+        "n_testable": 2428,
+        "mean_survival": 1.0313703479301748,
+        "n_freq_driven": 25,
+        "frac_freq_driven": 0.01029654036243822
       },
+      "freq_control_local": null,
       "sibling_redundancy": {
-        "n_parents_scored": 98,
-        "mean_redundancy": 0.3510377327950647,
-        "n_flagged": 0
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 42,
+        "mean_redundancy": 0.05416288536778063,
+        "n_over_global_threshold": 0
       },
-      "n_superparents": 15,
+      "n_superparents": 5,
+      "n_superparents_strict": 5,
       "superparents": [
         {
           "parent_local": 15,
-          "outdeg": 383,
-          "outdeg_frac": 0.9973958333333334,
-          "fire_frac": 0.989585673153499,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.9894999073521237,
+          "strict": true,
           "parent_global": 15,
           "label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
           "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15"
         },
         {
-          "parent_local": 105,
-          "outdeg": 358,
-          "outdeg_frac": 0.9322916666666666,
-          "fire_frac": 0.5143860652222744,
-          "parent_global": 105,
-          "label": "content from research papers about biological or chemical processes and articles providing instructions.",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/105"
-        },
-        {
           "parent_local": 42,
-          "outdeg": 320,
-          "outdeg_frac": 0.8333333333333334,
-          "fire_frac": 0.942864144085275,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.9506289761380248,
+          "strict": true,
           "parent_global": 42,
           "label": "code and code-like snippets, with a preference for Java-related syntax",
           "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/42"
         },
         {
-          "parent_local": 126,
-          "outdeg": 296,
-          "outdeg_frac": 0.7708333333333334,
-          "fire_frac": 0.431153131445141,
-          "parent_global": 126,
-          "label": "mathematical formulas and equations, some cave conservancy related words and familial relationship terms",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/126"
-        },
-        {
-          "parent_local": 39,
-          "outdeg": 277,
-          "outdeg_frac": 0.7213541666666666,
-          "fire_frac": 0.42104510832941944,
-          "parent_global": 39,
-          "label": "words related to medical studies and procedures",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/39"
-        },
-        {
-          "parent_local": 24,
-          "outdeg": 245,
-          "outdeg_frac": 0.6380208333333334,
-          "fire_frac": 0.34097731310367363,
-          "parent_global": 24,
-          "label": "descriptions of technical studies with mentions of characteristics, identification, and other related terms.",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/24"
-        },
-        {
-          "parent_local": 104,
-          "outdeg": 237,
-          "outdeg_frac": 0.6171875,
-          "fire_frac": 0.3884952318719242,
-          "parent_global": 104,
-          "label": "occurrences of the acronym S.H.I.E.L.D., and words associated with groups or minorities of people.",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/104"
-        },
-        {
           "parent_local": 37,
-          "outdeg": 227,
-          "outdeg_frac": 0.5911458333333334,
-          "fire_frac": 0.7053562312388965,
+          "outdeg": 380,
+          "outdeg_frac": 0.9895833333333334,
+          "fire_frac": 0.7111650985155752,
+          "strict": true,
           "parent_global": 37,
           "label": "code or formatting appearing in court opinions or java documentation",
           "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/37"
         },
         {
-          "parent_local": 98,
-          "outdeg": 197,
-          "outdeg_frac": 0.5130208333333334,
-          "fire_frac": 0.3204753833901697,
-          "parent_global": 98,
-          "label": "words related to research, investigation, or problems",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/98"
-        },
-        {
           "parent_local": 1,
-          "outdeg": 177,
-          "outdeg_frac": 0.4609375,
-          "fire_frac": 0.6021522942149435,
+          "outdeg": 318,
+          "outdeg_frac": 0.828125,
+          "fire_frac": 0.6071112392168166,
+          "strict": true,
           "parent_global": 1,
           "label": "words related to science, research, medicine, awards, and commerce",
           "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1"
+        },
+        {
+          "parent_local": 105,
+          "outdeg": 280,
+          "outdeg_frac": 0.7291666666666666,
+          "fire_frac": 0.5103868563546149,
+          "strict": true,
+          "parent_global": 105,
+          "label": "content from research papers about biological or chemical processes and articles providing instructions.",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/105"
         }
       ],
       "top_edges": [
         {
           "parent": 15,
-          "child": 158,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.009822331359237324,
-          "recon_parent_gain": 0.038040238243927195,
-          "recon_child_gain": -5.294964657180144e-06,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "code-like structures and spacing",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/158"
-        },
-        {
-          "parent": 15,
-          "child": 456,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.013474752894079775,
-          "recon_parent_gain": 0.0380704536481875,
-          "recon_child_gain": 0.00030956221150381987,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "mathematical fractions",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/456"
-        },
-        {
-          "parent": 15,
-          "child": 227,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.014135077691339428,
-          "recon_parent_gain": 0.03810255365629104,
-          "recon_child_gain": -1.7090052592951842e-06,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "the word \"analysis\"",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/227"
-        },
-        {
-          "parent": 15,
-          "child": 235,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.009017560512577124,
-          "recon_parent_gain": 0.03803610520960271,
-          "recon_child_gain": 0.0010380996776442307,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "math-related symbols like multiplication signs and exponents.",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235"
-        },
-        {
-          "parent": 15,
-          "child": 258,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.018303377974040982,
-          "recon_parent_gain": 0.03813324911199944,
-          "recon_child_gain": -0.0009777014974720944,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "the word \"while\" or \"While\" when used to introduce a subordinate clause",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/258"
-        },
-        {
-          "parent": 15,
-          "child": 380,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.011782670601101917,
-          "recon_parent_gain": 0.03805915002718856,
-          "recon_child_gain": -0.0005075234356055988,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "mathematical expressions, like those found in algebra",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/380"
-        },
-        {
-          "parent": 15,
-          "child": 177,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.019355770619673553,
-          "recon_parent_gain": 0.03813998908055833,
-          "recon_child_gain": -4.411165484459261e-05,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "sentences containing the word \"must\" or similar words expressing necessity",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/177"
-        },
-        {
-          "parent": 15,
-          "child": 479,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.029900332225913623,
-          "recon_parent_gain": 0.03830436782704251,
-          "recon_child_gain": -0.00196072852966066,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "leading whitespace followed by numerical values",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/479"
-        },
-        {
-          "parent": 15,
-          "child": 188,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.08229297785848415,
-          "recon_parent_gain": 2.4373937218040123,
-          "recon_child_gain": 0.004379661703657843,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "statements of statistical significance within scientific research text",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/188"
-        },
-        {
-          "parent": 15,
-          "child": 425,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.00047460844803037496,
-          "recon_parent_gain": 0.6062054627328165,
-          "recon_child_gain": 0.6359141210248783,
-          "recon_pass": true,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "legal citations with the letter 'd' in them",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/425"
-        },
-        {
-          "parent": 15,
-          "child": 433,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.018014485875239884,
-          "recon_parent_gain": 0.03813120926632292,
-          "recon_child_gain": -0.0007125623812892445,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "occurrences of the word \"then\" and nearby words",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/433"
-        },
-        {
-          "parent": 15,
-          "child": 486,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.01685891748003549,
-          "recon_parent_gain": 0.038135180570970297,
-          "recon_child_gain": 0.00011862889565990672,
-          "recon_pass": false,
-          "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
-          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "mathematical equations or references to them",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/486"
-        },
-        {
-          "parent": 15,
           "child": 211,
           "reverse_cov": 1.0,
-          "forward_cov": 0.012773157796991395,
-          "recon_parent_gain": 0.03806359693778955,
-          "recon_child_gain": -0.0013179697569876486,
-          "recon_pass": false,
+          "forward_cov": 0.004556709182081105,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.1726757603524989,
+          "recon_child_gain": 0.38569714761548657,
+          "recon_pass": true,
           "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
+          "parent_redundancy": 0.01201730108926758,
           "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
           "child_label": "Wikipedia categories",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
@@ -364,14 +164,79 @@
         },
         {
           "parent": 15,
-          "child": 133,
+          "child": 158,
           "reverse_cov": 1.0,
-          "forward_cov": 0.015930335733889106,
-          "recon_parent_gain": 0.03809854883433732,
-          "recon_child_gain": 4.1751342691825547e-05,
+          "forward_cov": 0.0015813237344208403,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 0.9050124518267056,
+          "recon_child_gain": 0.14547202955823965,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "code-like structures and spacing",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/158"
+        },
+        {
+          "parent": 15,
+          "child": 348,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.00555543996171532,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.362108831334487,
+          "recon_child_gain": 0.0002140216888958594,
           "recon_pass": false,
           "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "references to scientific publications",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/348"
+        },
+        {
+          "parent": 42,
+          "child": 235,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0008013341130097676,
+          "pmi": 0.05063143332062757,
+          "recon_parent_gain": 0.06459416723924749,
+          "recon_child_gain": 0.4836941751251444,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "code and code-like snippets, with a preference for Java-related syntax",
+          "child_label": "math-related symbols like multiplication signs and exponents.",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/42",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/235"
+        },
+        {
+          "parent": 15,
+          "child": 486,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.008676473648072242,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.9396219629869922,
+          "recon_child_gain": -0.002924081277094037,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "mathematical equations or references to them",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/486"
+        },
+        {
+          "parent": 15,
+          "child": 133,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.007740163542165165,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.075215837586244,
+          "recon_child_gain": 0.09660114403347324,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
           "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
           "child_label": "the word \"name\" and its variants in programming contexts",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
@@ -379,660 +244,723 @@
         },
         {
           "parent": 15,
-          "child": 344,
+          "child": 433,
           "reverse_cov": 1.0,
-          "forward_cov": 0.014114442541425064,
-          "recon_parent_gain": 0.038085471127367716,
-          "recon_child_gain": 0.0004887916360835792,
+          "forward_cov": 0.009841659557645491,
+          "pmi": 0.01055560757052273,
+          "recon_parent_gain": 1.6904380841033964,
+          "recon_child_gain": 0.05395237169514072,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "occurrences of the word \"then\" and nearby words",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/433"
+        },
+        {
+          "parent": 15,
+          "child": 177,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.011194107488400159,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.5180550338469507,
+          "recon_child_gain": 0.0552018569746753,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "sentences containing the word \"must\" or similar words expressing necessity",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/177"
+        },
+        {
+          "parent": 15,
+          "child": 456,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.005264143484322008,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.4823743932658822,
+          "recon_child_gain": 0.05045695605885671,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "mathematical fractions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/456"
+        },
+        {
+          "parent": 15,
+          "child": 345,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.003994923118536859,
+          "pmi": 0.01055560757052273,
+          "recon_parent_gain": 1.0718081417352736,
+          "recon_child_gain": 0.009720162732136717,
           "recon_pass": false,
           "freq_survival": 1.0,
-          "parent_redundancy": 0.11596714124791636,
+          "parent_redundancy": 0.01201730108926758,
           "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-          "child_label": "LaTeX math mode formatting",
+          "child_label": "mathematical symbols and notation.",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/344"
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/345"
+        },
+        {
+          "parent": 15,
+          "child": 380,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0035579784024468903,
+          "pmi": 0.01055560757052273,
+          "recon_parent_gain": 1.4729036152743102,
+          "recon_child_gain": 0.04476571952834269,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "mathematical expressions, like those found in algebra",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/380"
+        },
+        {
+          "parent": 15,
+          "child": 188,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.08297788227460935,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 2.437393722701909,
+          "recon_child_gain": 0.004379661574275082,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "statements of statistical significance within scientific research text",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/188"
+        },
+        {
+          "parent": 15,
+          "child": 227,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.00592996400407815,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.98601190301373,
+          "recon_child_gain": 0.05159462313142327,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "the word \"analysis\"",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/227"
+        },
+        {
+          "parent": 15,
+          "child": 200,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.004681550529535382,
+          "pmi": 0.01055560757052273,
+          "recon_parent_gain": 1.229050970311057,
+          "recon_child_gain": -0.0006469467478093019,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "mathematical equations containing bolded symbols",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/200"
+        },
+        {
+          "parent": 15,
+          "child": 395,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.010902811011006845,
+          "pmi": 0.01055560757052295,
+          "recon_parent_gain": 1.6061635946443076,
+          "recon_child_gain": 0.0520045065018737,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01201730108926758,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "percentages",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/395"
         }
       ]
     },
     {
       "pair": "1->2",
-      "n_candidate_edges": 271644,
-      "degree": {
-        "n_parents_with_children": 300,
-        "n_children_with_parent": 1230,
-        "n_multi_parented": 1150,
-        "top1_edge_share": 0.004167218859978501,
-        "outdeg_gini": 0.2577917927508062,
-        "max_outdeg": 1132
+      "n_candidate_edges": 280,
+      "n_dropped_min_joint": 48,
+      "n_pairs_below_min_joint": 517703,
+      "independence_null": {
+        "mean_edge_pmi": 1.888490866086249,
+        "n_chance_level": 75,
+        "frac_chance_level": 0.26785714285714285
       },
-      "joint_child_cov_mean": 0.9688948624107225,
+      "joint_child": {
+        "r_supp_mean": 0.9999255655533302,
+        "r_mass_mean": 0.999956743749766,
+        "n_share_energy_ge_09": 1
+      },
+      "degree": {
+        "n_parents_with_children": 98,
+        "n_children_with_parent": 193,
+        "n_multi_parented": 36,
+        "poly_frac": 0.18652849740932642,
+        "top1_edge_share": 0.2785714285714286,
+        "outdeg_gini": 0.8945870535714284,
+        "max_outdeg": 78
+      },
+      "joint_child_cov_mean": 0.13744508604791789,
       "reconstruction": {
-        "n_pass": 20,
-        "frac_pass": 7.362577491128094e-05
+        "n_pass": 100,
+        "frac_pass": 0.35714285714285715
       },
       "freq_control": {
-        "n_testable": 266439,
-        "mean_survival": 0.051545031908501314,
-        "n_freq_driven": 264778,
-        "frac_freq_driven": 0.9937659276607403
+        "n_testable": 277,
+        "mean_survival": 0.7638251637153267,
+        "n_freq_driven": 77,
+        "frac_freq_driven": 0.2779783393501805
       },
+      "freq_control_local": null,
       "sibling_redundancy": {
-        "n_parents_scored": 293,
-        "mean_redundancy": 0.43140743415831084,
-        "n_flagged": 0
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 28,
+        "mean_redundancy": 0.03217281012159195,
+        "n_over_global_threshold": 0
       },
-      "n_superparents": 9,
-      "superparents": [
-        {
-          "parent_local": 234,
-          "outdeg": 1132,
-          "outdeg_frac": 0.7369791666666666,
-          "fire_frac": 0.28153396908374345,
-          "parent_global": 362,
-          "label": "marketing and promotional content related to products and services",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/362"
-        },
-        {
-          "parent_local": 79,
-          "outdeg": 1091,
-          "outdeg_frac": 0.7102864583333334,
-          "fire_frac": 0.1711829450082702,
-          "parent_global": 207,
-          "label": "words about evaluating or influencing creative or academic work",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/207"
-        },
-        {
-          "parent_local": 76,
-          "outdeg": 1085,
-          "outdeg_frac": 0.7063802083333334,
-          "fire_frac": 0.13955197974311326,
-          "parent_global": 204,
-          "label": "the legal term \"res ipsa loquitur\"",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/204"
-        },
-        {
-          "parent_local": 111,
-          "outdeg": 1074,
-          "outdeg_frac": 0.69921875,
-          "fire_frac": 0.1472912540074738,
-          "parent_global": 239,
-          "label": "words related to manufacturing, babies, teeth, and motorcycles",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/239"
-        },
-        {
-          "parent_local": 187,
-          "outdeg": 1064,
-          "outdeg_frac": 0.6927083333333334,
-          "fire_frac": 0.13934777725592698,
-          "parent_global": 315,
-          "label": "words related to religion, politics, and the military",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/315"
-        },
-        {
-          "parent_local": 198,
-          "outdeg": 1042,
-          "outdeg_frac": 0.6783854166666666,
-          "fire_frac": 0.15954340323865146,
-          "parent_global": 326,
-          "label": "terms related to people asking theoretical questions or making subjective statements",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/326"
-        },
-        {
-          "parent_local": 21,
-          "outdeg": 1039,
-          "outdeg_frac": 0.6764322916666666,
-          "fire_frac": 0.13371178860958527,
-          "parent_global": 149,
-          "label": "verbs that have technical or formal connotations, often related to legal, scientific, or professional contexts",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/149"
-        },
-        {
-          "parent_local": 117,
-          "outdeg": 1025,
-          "outdeg_frac": 0.6673177083333334,
-          "fire_frac": 0.10146821588286946,
-          "parent_global": 245,
-          "label": "words related to directions, roads, or physical location",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/245"
-        },
-        {
-          "parent_local": 310,
-          "outdeg": 1002,
-          "outdeg_frac": 0.65234375,
-          "fire_frac": 0.10134569439055768,
-          "parent_global": 438,
-          "label": "technical terms, especially those from legal, business, medical, or computing contexts",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/438"
-        }
-      ],
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
       "top_edges": [
         {
+          "parent": 216,
+          "child": 1501,
+          "reverse_cov": 0.8875838926174496,
+          "forward_cov": 0.2357397504456328,
+          "pmi": 2.9555144221190544,
+          "recon_parent_gain": 0.2693708578470047,
+          "recon_child_gain": 0.8895939055843419,
+          "recon_pass": true,
+          "freq_survival": 1.0697523438544232,
+          "parent_redundancy": 0.09969402578690811,
+          "parent_label": "sentences starting with \"the\" followed by a noun",
+          "child_label": "numbers starting with 1",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/216",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1501"
+        },
+        {
           "parent": 302,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.14829881656804733,
-          "recon_parent_gain": -0.0011681947440084844,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "child": 1694,
+          "reverse_cov": 0.8607594936708861,
+          "forward_cov": 0.029513888888888888,
+          "pmi": 2.898439754861995,
+          "recon_parent_gain": 0.06276065309844585,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.42292041500897254,
+          "freq_survival": 0.4224598930481283,
+          "parent_redundancy": 0.024738933100682575,
           "parent_label": "source code and/or documents with very particular formatting and special characters",
-          "child_label": "strings that are not ASCII characters",
+          "child_label": "references to US legal cases",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/302",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 278,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.2702156334231806,
-          "recon_parent_gain": 3.7418356376803313e-06,
-          "recon_child_gain": 2.1147091616569993e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.43435295935485635,
-          "parent_label": "the words \"real\" or \"actual\" and related concepts",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/278",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "parent": 216,
+          "child": 1554,
+          "reverse_cov": 0.849802371541502,
+          "forward_cov": 0.5748663101604278,
+          "pmi": 2.912015196726247,
+          "recon_parent_gain": 0.09900150347933157,
+          "recon_child_gain": 0.30755276761258227,
+          "recon_pass": true,
+          "freq_survival": 1.0713641096841375,
+          "parent_redundancy": 0.09969402578690811,
+          "parent_label": "sentences starting with \"the\" followed by a noun",
+          "child_label": "the numeral 1",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/216",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1554"
         },
         {
-          "parent": 431,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.12726118692478577,
-          "recon_parent_gain": 7.863906483627977e-05,
-          "recon_child_gain": 2.1147091616569993e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.428145225048815,
-          "parent_label": "words and phrases used in formal or abstract writing",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/431",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "parent": 139,
+          "child": 1939,
+          "reverse_cov": 0.8356164383561644,
+          "forward_cov": 0.055079006772009026,
+          "pmi": 2.9081886645143755,
+          "recon_parent_gain": 0.0954207950585532,
+          "recon_child_gain": 0.08515250941046071,
+          "recon_pass": true,
+          "freq_survival": 0.7853483606557377,
+          "parent_redundancy": 0.021556044309829523,
+          "parent_label": "code containing `import` statements, `@` symbols and code relating to `android`",
+          "child_label": "terms in Android Java import statements",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/139",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1939"
         },
         {
-          "parent": 261,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.4316469321851453,
-          "recon_parent_gain": 0.00022333419182129653,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "parent": 216,
+          "child": 1694,
+          "reverse_cov": 0.8227848101265823,
+          "forward_cov": 0.028966131907308377,
+          "pmi": 2.8797060747547203,
+          "recon_parent_gain": 0.029340676525824817,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4439766927309509,
-          "parent_label": "decimal numbers",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/261",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
-        },
-        {
-          "parent": 357,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.3210568454763811,
-          "recon_parent_gain": 0.00012923132356469833,
-          "recon_child_gain": 2.1147091616569993e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4431185777031536,
-          "parent_label": "the word \"but\" and the immediately surrounding words",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/357",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
-        },
-        {
-          "parent": 260,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.21734417344173443,
-          "recon_parent_gain": -0.0002613346298369419,
-          "recon_child_gain": 2.1147091616569993e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.43693767207746326,
-          "parent_label": "sentences that use first person pronouns",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/260",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
-        },
-        {
-          "parent": 479,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.27674258109040717,
-          "recon_parent_gain": -0.00197160831476247,
-          "recon_child_gain": 2.1147091616569993e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4342154051096828,
-          "parent_label": "leading whitespace followed by numerical values",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/479",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "freq_survival": 0.44195804195804195,
+          "parent_redundancy": 0.09969402578690811,
+          "parent_label": "sentences starting with \"the\" followed by a noun",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/216",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
           "parent": 311,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.21329787234042552,
-          "recon_parent_gain": 4.164435649952451e-05,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "child": 1694,
+          "reverse_cov": 0.810126582278481,
+          "forward_cov": 0.043243243243243246,
+          "pmi": 3.280419788103181,
+          "recon_parent_gain": -0.0007403203878424461,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.42966325231454483,
+          "freq_survival": 0.0,
+          "parent_redundancy": 0.049024060272860825,
           "parent_label": "something, but it's too difficult to determine from this data",
-          "child_label": "strings that are not ASCII characters",
+          "child_label": "references to US legal cases",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/311",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 227,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.5854014598540146,
-          "recon_parent_gain": -3.601693789865946e-06,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "parent": 139,
+          "child": 1694,
+          "reverse_cov": 0.810126582278481,
+          "forward_cov": 0.028893905191873587,
+          "pmi": 2.877209472382106,
+          "recon_parent_gain": 0.0010255668764026522,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4473403937403695,
-          "parent_label": "the word \"analysis\"",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/227",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "freq_survival": 0.1122159090909091,
+          "parent_redundancy": 0.021556044309829523,
+          "parent_label": "code containing `import` statements, `@` symbols and code relating to `android`",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/139",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 362,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.029085370276347285,
-          "recon_parent_gain": -0.000387398622238132,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "parent": 287,
+          "child": 1694,
+          "reverse_cov": 0.7974683544303798,
+          "forward_cov": 0.05701357466063348,
+          "pmi": 3.5568681839413494,
+          "recon_parent_gain": 0.012165046459299155,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.3361806333399445,
-          "parent_label": "marketing and promotional content related to products and services",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/362",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "freq_survival": 0.113997113997114,
+          "parent_redundancy": 0.09006260283917283,
+          "parent_label": "math problems involving the letter 'q' or questions beginning with the letter 'Q'",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/287",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 209,
-          "child": 977,
-          "reverse_cov": 0.9975124378109452,
-          "forward_cov": 0.4001996007984032,
-          "recon_parent_gain": -0.0006040710472529675,
-          "recon_child_gain": 2.1147091616569993e-06,
+          "parent": 247,
+          "child": 1694,
+          "reverse_cov": 0.7848101265822784,
+          "forward_cov": 0.0713463751438435,
+          "pmi": 3.7811253312813693,
+          "recon_parent_gain": -0.0006290605587023198,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4424982032046393,
-          "parent_label": "code block closures",
-          "child_label": "strings that are not ASCII characters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/209",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/977"
+          "freq_survival": 0.11583577712609971,
+          "parent_redundancy": null,
+          "parent_label": "words or phrases indicating a high degree or manner",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/247",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 204,
-          "child": 1404,
-          "reverse_cov": 0.9950738916256158,
-          "forward_cov": 0.059116183786947614,
-          "recon_parent_gain": -0.0025602642153143415,
-          "recon_child_gain": -8.093152828459905e-05,
+          "parent": 230,
+          "child": 1694,
+          "reverse_cov": 0.7848101265822784,
+          "forward_cov": 0.056210335448776065,
+          "pmi": 3.542679437293259,
+          "recon_parent_gain": -0.003668316928930147,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.3605504658369747,
-          "parent_label": "the legal term \"res ipsa loquitur\"",
-          "child_label": "the keyword \"struct\" followed by a name",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/204",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1404"
+          "freq_survival": 0.11583577712609971,
+          "parent_redundancy": 0.0,
+          "parent_label": "references to legal codes and court rules",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/230",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 386,
-          "child": 1721,
-          "reverse_cov": 0.9950617283950617,
-          "forward_cov": 0.12566261303398815,
-          "recon_parent_gain": -0.0001727399024150376,
-          "recon_child_gain": 4.438071130208055e-05,
+          "parent": 457,
+          "child": 1694,
+          "reverse_cov": 0.7848101265822784,
+          "forward_cov": 0.03431101272827892,
+          "pmi": 3.0490451659545332,
+          "recon_parent_gain": -0.002762798886566226,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.42097979764075805,
-          "parent_label": "words referencing time periods and processes",
-          "child_label": "unusual character sequences that could be base64 encoded data or other identifiers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/386",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+          "freq_survival": 0.0,
+          "parent_redundancy": 0.10414987519359739,
+          "parent_label": "code-related keywords and formatting",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/457",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 172,
-          "child": 1721,
-          "reverse_cov": 0.9950617283950617,
-          "forward_cov": 0.3931707317073171,
-          "recon_parent_gain": -0.0003215551488488048,
-          "recon_child_gain": 4.438071130208055e-05,
+          "parent": 354,
+          "child": 1694,
+          "reverse_cov": 0.7848101265822784,
+          "forward_cov": 0.14588235294117646,
+          "pmi": 4.496379287622345,
+          "recon_parent_gain": -0.0015884639609408517,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.44378111391974595,
-          "parent_label": "URLs from aws.amazon.com for documentation",
-          "child_label": "unusual character sequences that could be base64 encoded data or other identifiers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/172",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+          "freq_survival": 0.0,
+          "parent_redundancy": null,
+          "parent_label": "the word \"said\"",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/354",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
         },
         {
-          "parent": 300,
-          "child": 1721,
-          "reverse_cov": 0.9950617283950617,
-          "forward_cov": 0.2765957446808511,
-          "recon_parent_gain": 0.0002233061563789977,
-          "recon_child_gain": 4.438071130208055e-05,
+          "parent": 488,
+          "child": 1694,
+          "reverse_cov": 0.7848101265822784,
+          "forward_cov": 0.1082024432809773,
+          "pmi": 4.197582739832022,
+          "recon_parent_gain": -0.0011718599318307878,
+          "recon_child_gain": -0.007808487130188304,
           "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.44139571593935195,
-          "parent_label": "lists and enumerated items in academic writing",
-          "child_label": "unusual character sequences that could be base64 encoded data or other identifiers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/300",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1721"
+          "freq_survival": 0.11583577712609971,
+          "parent_redundancy": null,
+          "parent_label": "references to the United States",
+          "child_label": "references to US legal cases",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/488",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1694"
+        },
+        {
+          "parent": 223,
+          "child": 734,
+          "reverse_cov": 0.784577723378213,
+          "forward_cov": 0.2188460225332878,
+          "pmi": 1.4671436505335156,
+          "recon_parent_gain": 0.04752094998869584,
+          "recon_child_gain": 0.02996985823210084,
+          "recon_pass": true,
+          "freq_survival": 0.9319839845616946,
+          "parent_redundancy": 0.01786927078246443,
+          "parent_label": "words and phrases related to Javascript, CSS, and other web programming languages",
+          "child_label": "programming-related text including \"I am trying to\".",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/223",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/734"
+        },
+        {
+          "parent": 302,
+          "child": 1571,
+          "reverse_cov": 0.7785234899328859,
+          "forward_cov": 0.10069444444444445,
+          "pmi": 2.798023787313815,
+          "recon_parent_gain": 0.024517001851115904,
+          "recon_child_gain": 0.013365167069978551,
+          "recon_pass": true,
+          "freq_survival": 0.07136015325670497,
+          "parent_redundancy": 0.024738933100682575,
+          "parent_label": "source code and/or documents with very particular formatting and special characters",
+          "child_label": "answers to programming questions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/302",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1571"
         }
       ]
     },
     {
       "pair": "2->3",
-      "n_candidate_edges": 4704312,
-      "degree": {
-        "n_parents_with_children": 1326,
-        "n_children_with_parent": 4337,
-        "n_multi_parented": 4090,
-        "top1_edge_share": 0.0008783431030935023,
-        "outdeg_gini": 0.17251413381932013,
-        "max_outdeg": 4132
+      "n_candidate_edges": 762,
+      "n_dropped_min_joint": 572,
+      "n_pairs_below_min_joint": 9265319,
+      "independence_null": {
+        "mean_edge_pmi": 3.19272353614506,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
       },
-      "joint_child_cov_mean": 0.964274061112885,
+      "joint_child": {
+        "r_supp_mean": 1.0,
+        "r_mass_mean": 1.0,
+        "n_share_energy_ge_09": 2
+      },
+      "degree": {
+        "n_parents_with_children": 234,
+        "n_children_with_parent": 428,
+        "n_multi_parented": 59,
+        "poly_frac": 0.1378504672897196,
+        "top1_edge_share": 0.13123359580052493,
+        "outdeg_gini": 0.9247423173665792,
+        "max_outdeg": 100
+      },
+      "joint_child_cov_mean": 0.2725323711016488,
       "reconstruction": {
-        "n_pass": 113,
-        "frac_pass": 2.4020515646071093e-05
+        "n_pass": 239,
+        "frac_pass": 0.3136482939632546
       },
       "freq_control": {
-        "n_testable": 4222667,
-        "mean_survival": 0.015282589137332714,
-        "n_freq_driven": 4218195,
-        "frac_freq_driven": 0.9989409536674334
+        "n_testable": 668,
+        "mean_survival": 0.6420147767372885,
+        "n_freq_driven": 277,
+        "frac_freq_driven": 0.41467065868263475
       },
+      "freq_control_local": null,
       "sibling_redundancy": {
-        "n_parents_scored": 1294,
-        "mean_redundancy": 0.4005224594948478,
-        "n_flagged": 2
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 139,
+        "mean_redundancy": 0.25469225295632436,
+        "n_over_global_threshold": 48
       },
-      "n_superparents": 5,
-      "superparents": [
-        {
-          "parent_local": 679,
-          "outdeg": 4132,
-          "outdeg_frac": 0.6725260416666666,
-          "fire_frac": 0.2290539298768659,
-          "parent_global": 1191,
-          "label": "scientific and technical writing, particularly related to experiments and data.",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1191"
-        },
-        {
-          "parent_local": 1268,
-          "outdeg": 3908,
-          "outdeg_frac": 0.6360677083333334,
-          "fire_frac": 0.16352535173878419,
-          "parent_global": 1780,
-          "label": "words that have some kind of evaluative meaning, either positive or negative",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1780"
-        },
-        {
-          "parent_local": 868,
-          "outdeg": 3872,
-          "outdeg_frac": 0.6302083333333334,
-          "fire_frac": 0.13281329766596559,
-          "parent_global": 1380,
-          "label": "an assortment of common words and parts of words, seemingly without a clear pattern",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1380"
-        },
-        {
-          "parent_local": 351,
-          "outdeg": 3857,
-          "outdeg_frac": 0.6277669270833334,
-          "fire_frac": 0.1393069367584897,
-          "parent_global": 863,
-          "label": "mentions of dates in the text",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/863"
-        },
-        {
-          "parent_local": 797,
-          "outdeg": 3831,
-          "outdeg_frac": 0.62353515625,
-          "fire_frac": 0.12680974454268854,
-          "parent_global": 1309,
-          "label": "research article abstracts or scientific content",
-          "url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1309"
-        }
-      ],
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
       "top_edges": [
         {
+          "parent": 1841,
+          "child": 3374,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.1631578947368421,
+          "pmi": 5.543757851808206,
+          "recon_parent_gain": 0.2780820295879387,
+          "recon_child_gain": 0.3157485697753902,
+          "recon_pass": true,
+          "freq_survival": null,
+          "parent_redundancy": null,
+          "parent_label": "URLs and email addresses",
+          "child_label": "periods appearing in a URL",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1841",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3374"
+        },
+        {
+          "parent": 1554,
+          "child": 7399,
+          "reverse_cov": 0.990909090909091,
+          "forward_cov": 0.14361001317523056,
+          "pmi": 3.4565004824498438,
+          "recon_parent_gain": 1.030459059623417,
+          "recon_child_gain": 0.06372542231315567,
+          "recon_pass": true,
+          "freq_survival": 1.0045450719636393,
+          "parent_redundancy": 0.09587493351724992,
+          "parent_label": "the numeral 1",
+          "child_label": "scientific and technical terminology",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1554",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/7399"
+        },
+        {
+          "parent": 1778,
+          "child": 4624,
+          "reverse_cov": 0.9701492537313433,
+          "forward_cov": 0.045359385903698535,
+          "pmi": 3.492951146645191,
+          "recon_parent_gain": 0.011552959510380881,
+          "recon_child_gain": 0.008152393076596853,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5217476867306832,
+          "parent_label": "URLs, version numbers, paths and people",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1778",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
+        },
+        {
+          "parent": 1571,
+          "child": 4624,
+          "reverse_cov": 0.9701492537313433,
+          "forward_cov": 0.2181208053691275,
+          "pmi": 5.063383087967958,
+          "recon_parent_gain": 0.0018878509159948945,
+          "recon_child_gain": 0.008152393076596853,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.12870810891784715,
+          "parent_label": "answers to programming questions",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1571",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
+        },
+        {
           "parent": 1524,
-          "child": 6544,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.5847953216374269,
-          "recon_parent_gain": -0.0003683071456743978,
-          "recon_child_gain": -0.0002866835830589357,
+          "child": 4624,
+          "reverse_cov": 0.9701492537313433,
+          "forward_cov": 0.22887323943661972,
+          "pmi": 5.111502336312157,
+          "recon_parent_gain": 0.011293524125717885,
+          "recon_child_gain": 0.008152393076596853,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.4069166281430211,
+          "parent_redundancy": 0.5751142721439002,
           "parent_label": "code comments",
-          "child_label": "the Greek letter \"xi\" (\u03be) in mathematical equations and expressions",
+          "child_label": "mentions of asynchronous operations in code",
           "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1524",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/6544"
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
         },
         {
-          "parent": 701,
-          "child": 3987,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.7407407407407407,
-          "recon_parent_gain": -5.472987454861776e-05,
-          "recon_child_gain": -7.557492890905714e-05,
+          "parent": 767,
+          "child": 5432,
+          "reverse_cov": 0.96875,
+          "forward_cov": 0.056363636363636366,
+          "pmi": 4.449114947427595,
+          "recon_parent_gain": 0.01863637581181967,
+          "recon_child_gain": 0.00427354405084555,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.407885832725352,
-          "parent_label": "instances of measuring something",
-          "child_label": "citations to academic papers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/701",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+          "parent_redundancy": 0.1642065325987767,
+          "parent_label": "various kinds of reference markers",
+          "child_label": "math question/answer section separators",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/767",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5432"
         },
         {
-          "parent": 1476,
-          "child": 3987,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.26936026936026936,
-          "recon_parent_gain": -0.00023199281203221172,
-          "recon_child_gain": -7.557492890905714e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.3963740745071274,
-          "parent_label": "scientific publication citations and related formatting",
-          "child_label": "citations to academic papers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1476",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+          "parent": 1223,
+          "child": 7901,
+          "reverse_cov": 0.9583333333333334,
+          "forward_cov": 0.1503267973856209,
+          "pmi": 4.108346475723359,
+          "recon_parent_gain": 0.2201899885200497,
+          "recon_child_gain": 0.4854165700550027,
+          "recon_pass": true,
+          "freq_survival": 0.9782608695652174,
+          "parent_redundancy": 0.13596491228070176,
+          "parent_label": "age ranges using the word \"year\"",
+          "child_label": "dates, specifically the year 1924, 1938 and 1942",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1223",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/7901"
         },
         {
-          "parent": 1371,
-          "child": 2379,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.7299270072992701,
-          "recon_parent_gain": -0.00012994993369863886,
-          "recon_child_gain": 2.926472874066028e-06,
+          "parent": 1257,
+          "child": 4624,
+          "reverse_cov": 0.9552238805970149,
+          "forward_cov": 0.07511737089201878,
+          "pmi": 3.9973858611080817,
+          "recon_parent_gain": -0.00017090740363317922,
+          "recon_child_gain": 0.008152393076596853,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.408165776797505,
-          "parent_label": "the word \"establish\" sometimes followed by articles and prepositions",
-          "child_label": "code or date formats containing \"dd\".",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1371",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2379"
+          "parent_redundancy": 0.5217476867306832,
+          "parent_label": "Microsoft code snippets including Windows and Azure",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1257",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
         },
         {
-          "parent": 775,
-          "child": 3987,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.3058103975535168,
-          "recon_parent_gain": 8.374217110228849e-05,
-          "recon_child_gain": -7.557492890905714e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.3966955787980036,
-          "parent_label": "words, acronyms, or prefixes starting with \"syn\" or \"sy\"",
-          "child_label": "citations to academic papers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/775",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
+          "parent": 1501,
+          "child": 7399,
+          "reverse_cov": 0.9454545454545454,
+          "forward_cov": 0.348993288590604,
+          "pmi": 4.3444517902522986,
+          "recon_parent_gain": 0.8793683978242903,
+          "recon_child_gain": 0.06372542231315567,
+          "recon_pass": true,
+          "freq_survival": 1.0043225123500352,
+          "parent_redundancy": 0.1694966341928446,
+          "parent_label": "numbers starting with 1",
+          "child_label": "scientific and technical terminology",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1501",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/7399"
         },
         {
-          "parent": 1036,
-          "child": 3994,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.5347593582887701,
-          "recon_parent_gain": 0.00011378848796851443,
-          "recon_child_gain": -9.954028960616096e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.405606308527403,
-          "parent_label": "mentions of the word \"company\"",
-          "child_label": "an unusual whitespace character in references",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1036",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
+          "parent": 1297,
+          "child": 3938,
+          "reverse_cov": 0.9444444444444444,
+          "forward_cov": 0.059027777777777776,
+          "pmi": 3.1247528809374834,
+          "recon_parent_gain": 0.07656439371031945,
+          "recon_child_gain": 0.023692921869559673,
+          "recon_pass": true,
+          "freq_survival": 1.0147058823529413,
+          "parent_redundancy": 0.039921342273539814,
+          "parent_label": "Croatian terms, most likely in the context of legal policies",
+          "child_label": "complex German verb phrases and words indicating possibility and negation.",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1297",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3938"
         },
         {
-          "parent": 699,
-          "child": 5554,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.547945205479452,
-          "recon_parent_gain": -0.0007739479921479804,
-          "recon_child_gain": 3.3844354821052866e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.40637027905629436,
-          "parent_label": "sentences starting with the conjunction \"and\"",
-          "child_label": "math formulas and code, specifically parentheses containing numbers and letters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/699",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+          "parent": 1399,
+          "child": 4757,
+          "reverse_cov": 0.9428571428571428,
+          "forward_cov": 0.09141274238227147,
+          "pmi": 4.843063465612877,
+          "recon_parent_gain": 0.15014166963117295,
+          "recon_child_gain": 0.06845721148722514,
+          "recon_pass": true,
+          "freq_survival": 0.9722222222222222,
+          "parent_redundancy": 0.0,
+          "parent_label": "HTML tags, especially anchor tags, and related formatting elements.",
+          "child_label": "the closing angle bracket of XML tags",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1399",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4757"
         },
         {
-          "parent": 1231,
-          "child": 5554,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.7575757575757576,
-          "recon_parent_gain": -0.0001677779079447279,
-          "recon_child_gain": 3.3844354821052866e-05,
+          "parent": 623,
+          "child": 4624,
+          "reverse_cov": 0.9402985074626866,
+          "forward_cov": 0.15869017632241814,
+          "pmi": 4.745287750282068,
+          "recon_parent_gain": 0.003003490599216398,
+          "recon_child_gain": 0.008152393076596853,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.40844743666051764,
-          "parent_label": "numbers written in scientific notation",
-          "child_label": "math formulas and code, specifically parentheses containing numbers and letters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1231",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+          "parent_redundancy": 0.5751142721439002,
+          "parent_label": "the word \"first\", sometimes followed by a verb of description",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/623",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
         },
         {
-          "parent": 791,
-          "child": 5554,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.4722550177095632,
-          "recon_parent_gain": -9.062119164011278e-05,
-          "recon_child_gain": 3.3844354821052866e-05,
+          "parent": 778,
+          "child": 4624,
+          "reverse_cov": 0.9402985074626866,
+          "forward_cov": 0.08278580814717477,
+          "pmi": 4.0945906731075725,
+          "recon_parent_gain": -0.0014045939302904688,
+          "recon_child_gain": 0.008152393076596853,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.4029099966371413,
-          "parent_label": "scientific and academic publication references",
-          "child_label": "math formulas and code, specifically parentheses containing numbers and letters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/791",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+          "parent_redundancy": 0.2534720651450728,
+          "parent_label": "code snippets with \".NET\" references",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/778",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
         },
         {
-          "parent": 1199,
-          "child": 3994,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.37418147801683815,
-          "recon_parent_gain": 7.248400205807382e-05,
-          "recon_child_gain": -9.954028960616096e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.40312275433195655,
-          "parent_label": "conjunctions and articles often appearing together",
-          "child_label": "an unusual whitespace character in references",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1199",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
+          "parent": 1813,
+          "child": 4000,
+          "reverse_cov": 0.9333333333333333,
+          "forward_cov": 0.038435140700068635,
+          "pmi": 3.4376542462865354,
+          "recon_parent_gain": 0.15972997360482385,
+          "recon_child_gain": 0.17512785752173946,
+          "recon_pass": true,
+          "freq_survival": 0.9948979591836735,
+          "parent_redundancy": 0.019163150492264417,
+          "parent_label": "text from court documents including names, locations, and case information.",
+          "child_label": "text from legal documents that identifies the parties involved in the proceedings",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1813",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4000"
         },
         {
-          "parent": 1025,
-          "child": 3994,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.5194805194805194,
-          "recon_parent_gain": -0.00011074172807980971,
-          "recon_child_gain": -9.954028960616096e-05,
+          "parent": 1648,
+          "child": 4624,
+          "reverse_cov": 0.9253731343283582,
+          "forward_cov": 0.28054298642533937,
+          "pmi": 5.315060988105064,
+          "recon_parent_gain": -0.000253985112512817,
+          "recon_child_gain": 0.008152393076596853,
           "recon_pass": false,
           "freq_survival": null,
-          "parent_redundancy": 0.4062038265723815,
-          "parent_label": "phrases that express a percentage or commonality of people",
-          "child_label": "an unusual whitespace character in references",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1025",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3994"
-        },
-        {
-          "parent": 821,
-          "child": 3987,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.8097165991902834,
-          "recon_parent_gain": 0.00021641692005330748,
-          "recon_child_gain": -7.557492890905714e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.40787781233512743,
-          "parent_label": "the less-than symbol",
-          "child_label": "citations to academic papers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/821",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
-        },
-        {
-          "parent": 726,
-          "child": 2379,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.7619047619047619,
-          "recon_parent_gain": -0.0005594608933684472,
-          "recon_child_gain": 2.926472874066028e-06,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.4081787726346996,
-          "parent_label": "the word \"service\" in various contexts.",
-          "child_label": "code or date formats containing \"dd\".",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/726",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/2379"
-        },
-        {
-          "parent": 1199,
-          "child": 3987,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.37418147801683815,
-          "recon_parent_gain": 7.248400205807382e-05,
-          "recon_child_gain": -7.557492890905714e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.40312275433195655,
-          "parent_label": "conjunctions and articles often appearing together",
-          "child_label": "citations to academic papers",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1199",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/3987"
-        },
-        {
-          "parent": 1916,
-          "child": 5554,
-          "reverse_cov": 1.0,
-          "forward_cov": 0.7633587786259542,
-          "recon_parent_gain": 0.00015857549739811783,
-          "recon_child_gain": 3.3844354821052866e-05,
-          "recon_pass": false,
-          "freq_survival": null,
-          "parent_redundancy": 0.40762301007352075,
-          "parent_label": "references to legal codes",
-          "child_label": "math formulas and code, specifically parentheses containing numbers and letters",
-          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1916",
-          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/5554"
+          "parent_redundancy": 0.5751142721439002,
+          "parent_label": "words and phrases related to RNA, gene expression, and biological processes",
+          "child_label": "mentions of asynchronous operations in code",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1648",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/4624"
         }
       ]
     }
@@ -1058,5 +986,2059 @@
       8192,
       32768
     ]
-  ]
+  ],
+  "second_pass": {
+    "0->1": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.45848257111153967,
+        "r_mass_kept_mean": 0.6042859960455437,
+        "per_parent": [
+          {
+            "parent_global": 1,
+            "r_supp_kept": 0.99877916440586,
+            "r_mass_kept": 0.9997380309403295
+          },
+          {
+            "parent_global": 2,
+            "r_supp_kept": 0.45329744279946166,
+            "r_mass_kept": 0.8232795589630163
+          },
+          {
+            "parent_global": 6,
+            "r_supp_kept": 0.12667757774140753,
+            "r_mass_kept": 0.2549763352890017
+          },
+          {
+            "parent_global": 8,
+            "r_supp_kept": 0.7105831533477321,
+            "r_mass_kept": 0.8392630929040387
+          },
+          {
+            "parent_global": 9,
+            "r_supp_kept": 0.28308823529411764,
+            "r_mass_kept": 0.3515242712601599
+          },
+          {
+            "parent_global": 11,
+            "r_supp_kept": 0.053515215110178385,
+            "r_mass_kept": 0.04448869544623969
+          },
+          {
+            "parent_global": 13,
+            "r_supp_kept": 0.07953063885267275,
+            "r_mass_kept": 0.1777593902487158
+          },
+          {
+            "parent_global": 14,
+            "r_supp_kept": 0.08444338725023787,
+            "r_mass_kept": 0.25313442438021205
+          },
+          {
+            "parent_global": 15,
+            "r_supp_kept": 0.9998127379788185,
+            "r_mass_kept": 0.9998447855026107
+          },
+          {
+            "parent_global": 18,
+            "r_supp_kept": 0.05487282080594456,
+            "r_mass_kept": 0.0843065376561336
+          },
+          {
+            "parent_global": 20,
+            "r_supp_kept": 0.26572297168915066,
+            "r_mass_kept": 0.42280460682376997
+          },
+          {
+            "parent_global": 21,
+            "r_supp_kept": 0.07248858447488585,
+            "r_mass_kept": 0.32550413518438004
+          },
+          {
+            "parent_global": 23,
+            "r_supp_kept": 0.582654528030666,
+            "r_mass_kept": 0.7875870529985419
+          },
+          {
+            "parent_global": 24,
+            "r_supp_kept": 0.9723892502147503,
+            "r_mass_kept": 0.9982443942084033
+          },
+          {
+            "parent_global": 26,
+            "r_supp_kept": 0.49386176897051715,
+            "r_mass_kept": 0.6764402941460994
+          },
+          {
+            "parent_global": 29,
+            "r_supp_kept": 0.04225352112676056,
+            "r_mass_kept": 0.5959930979136183
+          },
+          {
+            "parent_global": 34,
+            "r_supp_kept": 0.1963898916967509,
+            "r_mass_kept": 0.14430707979988866
+          },
+          {
+            "parent_global": 35,
+            "r_supp_kept": 0.15032912293186265,
+            "r_mass_kept": 0.25370833844389995
+          },
+          {
+            "parent_global": 37,
+            "r_supp_kept": 0.9998262984193156,
+            "r_mass_kept": 0.9998829368344403
+          },
+          {
+            "parent_global": 38,
+            "r_supp_kept": 0.8531696613888394,
+            "r_mass_kept": 0.9297448037508704
+          },
+          {
+            "parent_global": 39,
+            "r_supp_kept": 0.9686433552599041,
+            "r_mass_kept": 0.993999758839025
+          },
+          {
+            "parent_global": 42,
+            "r_supp_kept": 0.99980508089143,
+            "r_mass_kept": 0.9998573317668008
+          },
+          {
+            "parent_global": 43,
+            "r_supp_kept": 0.4488896423122563,
+            "r_mass_kept": 0.7461844040593429
+          },
+          {
+            "parent_global": 45,
+            "r_supp_kept": 0.2845343447113359,
+            "r_mass_kept": 0.36543078718467736
+          },
+          {
+            "parent_global": 49,
+            "r_supp_kept": 0.09279038718291055,
+            "r_mass_kept": 0.30039383487556953
+          },
+          {
+            "parent_global": 52,
+            "r_supp_kept": 0.05952546135701402,
+            "r_mass_kept": 0.0902622209943669
+          },
+          {
+            "parent_global": 53,
+            "r_supp_kept": 0.23337893296853626,
+            "r_mass_kept": 0.48343162962677416
+          },
+          {
+            "parent_global": 61,
+            "r_supp_kept": 0.2406094968107725,
+            "r_mass_kept": 0.3000356028656004
+          },
+          {
+            "parent_global": 62,
+            "r_supp_kept": 0.4275405181592334,
+            "r_mass_kept": 0.49982182254499047
+          },
+          {
+            "parent_global": 63,
+            "r_supp_kept": 0.2770724421209858,
+            "r_mass_kept": 0.540340123103566
+          },
+          {
+            "parent_global": 65,
+            "r_supp_kept": 0.11798407457758787,
+            "r_mass_kept": 0.1803917594402398
+          },
+          {
+            "parent_global": 69,
+            "r_supp_kept": 0.06856796116504854,
+            "r_mass_kept": 0.21117221479535933
+          },
+          {
+            "parent_global": 72,
+            "r_supp_kept": 0.11024643320363164,
+            "r_mass_kept": 0.5871032828408917
+          },
+          {
+            "parent_global": 75,
+            "r_supp_kept": 0.6493427352659528,
+            "r_mass_kept": 0.8455018984966344
+          },
+          {
+            "parent_global": 76,
+            "r_supp_kept": 0.2591602032629045,
+            "r_mass_kept": 0.3895117025246436
+          },
+          {
+            "parent_global": 77,
+            "r_supp_kept": 0.24250427217647974,
+            "r_mass_kept": 0.46345480352167095
+          },
+          {
+            "parent_global": 80,
+            "r_supp_kept": 0.4472430224642614,
+            "r_mass_kept": 0.6682343905456577
+          },
+          {
+            "parent_global": 83,
+            "r_supp_kept": 0.28173828125,
+            "r_mass_kept": 0.6306184696162263
+          },
+          {
+            "parent_global": 85,
+            "r_supp_kept": 0.5895596913300045,
+            "r_mass_kept": 0.6693971792003258
+          },
+          {
+            "parent_global": 88,
+            "r_supp_kept": 0.63062558356676,
+            "r_mass_kept": 0.7428214405780328
+          },
+          {
+            "parent_global": 89,
+            "r_supp_kept": 0.8000597728631201,
+            "r_mass_kept": 0.9779957576273148
+          },
+          {
+            "parent_global": 91,
+            "r_supp_kept": 0.45718901453957994,
+            "r_mass_kept": 0.7419081015861638
+          },
+          {
+            "parent_global": 92,
+            "r_supp_kept": 0.7080922933705699,
+            "r_mass_kept": 0.7825492478936344
+          },
+          {
+            "parent_global": 95,
+            "r_supp_kept": 0.4958258795468098,
+            "r_mass_kept": 0.720905959473221
+          },
+          {
+            "parent_global": 97,
+            "r_supp_kept": 0.31819389110225765,
+            "r_mass_kept": 0.5641330010214181
+          },
+          {
+            "parent_global": 98,
+            "r_supp_kept": 0.8549104223878645,
+            "r_mass_kept": 0.9496056852965854
+          },
+          {
+            "parent_global": 103,
+            "r_supp_kept": 0.27001039501039503,
+            "r_mass_kept": 0.3128549327215607
+          },
+          {
+            "parent_global": 104,
+            "r_supp_kept": 0.553503355704698,
+            "r_mass_kept": 0.6973732582771448
+          },
+          {
+            "parent_global": 105,
+            "r_supp_kept": 0.9982250907624042,
+            "r_mass_kept": 0.998936302516135
+          },
+          {
+            "parent_global": 106,
+            "r_supp_kept": 0.20485282418456643,
+            "r_mass_kept": 0.30091962581303144
+          },
+          {
+            "parent_global": 116,
+            "r_supp_kept": 0.6492775059733759,
+            "r_mass_kept": 0.7665108359300254
+          },
+          {
+            "parent_global": 117,
+            "r_supp_kept": 0.4179876335019674,
+            "r_mass_kept": 0.6710688185326129
+          },
+          {
+            "parent_global": 119,
+            "r_supp_kept": 0.8626484018264841,
+            "r_mass_kept": 0.9618006836571287
+          },
+          {
+            "parent_global": 123,
+            "r_supp_kept": 0.18524970963995355,
+            "r_mass_kept": 0.3879927297211953
+          },
+          {
+            "parent_global": 124,
+            "r_supp_kept": 0.4892450442851118,
+            "r_mass_kept": 0.7580054724652276
+          },
+          {
+            "parent_global": 125,
+            "r_supp_kept": 0.7258197396605701,
+            "r_mass_kept": 0.9292747039817082
+          },
+          {
+            "parent_global": 126,
+            "r_supp_kept": 0.9688133629429372,
+            "r_mass_kept": 0.9901419465663075
+          },
+          {
+            "parent_global": 127,
+            "r_supp_kept": 0.7286368945996945,
+            "r_mass_kept": 0.8661141874463477
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [
+        {
+          "parent_local": 15,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.9894999073521237,
+          "strict": true,
+          "parent_global": 15,
+          "n_kids_scored": 382,
+          "conditioned_redundancy": 0.011961762328726006
+        },
+        {
+          "parent_local": 42,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.9506289761380248,
+          "strict": true,
+          "parent_global": 42,
+          "n_kids_scored": 382,
+          "conditioned_redundancy": 0.011918738947850602
+        },
+        {
+          "parent_local": 37,
+          "outdeg": 380,
+          "outdeg_frac": 0.9895833333333334,
+          "fire_frac": 0.7111650985155752,
+          "strict": true,
+          "parent_global": 37,
+          "n_kids_scored": 380,
+          "conditioned_redundancy": 0.012153818103245022
+        },
+        {
+          "parent_local": 1,
+          "outdeg": 318,
+          "outdeg_frac": 0.828125,
+          "fire_frac": 0.6071112392168166,
+          "strict": true,
+          "parent_global": 1,
+          "n_kids_scored": 318,
+          "conditioned_redundancy": 0.014517036614163292
+        },
+        {
+          "parent_local": 105,
+          "outdeg": 280,
+          "outdeg_frac": 0.7291666666666666,
+          "fire_frac": 0.5103868563546149,
+          "strict": true,
+          "parent_global": 105,
+          "n_kids_scored": 280,
+          "conditioned_redundancy": 0.012889873616533492
+        }
+      ],
+      "sres": {
+        "n_shortlist_edges": 1709,
+        "n_probed_children": 379,
+        "n_untestable_children": 0,
+        "n_edges_scored": 1700,
+        "n_pass": 10,
+        "frac_pass": 0.0058823529411764705
+      }
+    },
+    "1->2": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.11625681600989742,
+        "r_mass_kept_mean": 0.19058845366788524,
+        "per_parent": [
+          {
+            "parent_global": 131,
+            "r_supp_kept": 0.03569525839104955,
+            "r_mass_kept": 0.007062192665459972
+          },
+          {
+            "parent_global": 134,
+            "r_supp_kept": 0.12002167434299647,
+            "r_mass_kept": 0.31177413511892715
+          },
+          {
+            "parent_global": 137,
+            "r_supp_kept": 0.025803722504230117,
+            "r_mass_kept": 0.0036222486963843697
+          },
+          {
+            "parent_global": 138,
+            "r_supp_kept": 0.04060586529165324,
+            "r_mass_kept": 0.11280418774402134
+          },
+          {
+            "parent_global": 139,
+            "r_supp_kept": 0.26230248306997744,
+            "r_mass_kept": 0.5272513845211598
+          },
+          {
+            "parent_global": 143,
+            "r_supp_kept": 0.09963436928702012,
+            "r_mass_kept": 0.14230267086011372
+          },
+          {
+            "parent_global": 151,
+            "r_supp_kept": 0.20833333333333334,
+            "r_mass_kept": 0.2031526059292518
+          },
+          {
+            "parent_global": 152,
+            "r_supp_kept": 0.021219265746042437,
+            "r_mass_kept": 0.0076161481251692635
+          },
+          {
+            "parent_global": 161,
+            "r_supp_kept": 0.08288043478260869,
+            "r_mass_kept": 0.014020546974761568
+          },
+          {
+            "parent_global": 162,
+            "r_supp_kept": 0.07511497189575882,
+            "r_mass_kept": 0.16416606798547403
+          },
+          {
+            "parent_global": 163,
+            "r_supp_kept": 0.02510460251046025,
+            "r_mass_kept": 0.11799909563501505
+          },
+          {
+            "parent_global": 166,
+            "r_supp_kept": 0.05742296918767507,
+            "r_mass_kept": 0.25186945339434713
+          },
+          {
+            "parent_global": 167,
+            "r_supp_kept": 0.01889920424403183,
+            "r_mass_kept": 0.036026217551208946
+          },
+          {
+            "parent_global": 168,
+            "r_supp_kept": 0.01004079071226859,
+            "r_mass_kept": 0.014739086584738544
+          },
+          {
+            "parent_global": 170,
+            "r_supp_kept": 0.0432937181663837,
+            "r_mass_kept": 0.08218659769691292
+          },
+          {
+            "parent_global": 172,
+            "r_supp_kept": 0.1328,
+            "r_mass_kept": 0.22329126546571115
+          },
+          {
+            "parent_global": 175,
+            "r_supp_kept": 0.1525,
+            "r_mass_kept": 0.016492105075856047
+          },
+          {
+            "parent_global": 176,
+            "r_supp_kept": 0.15341701534170155,
+            "r_mass_kept": 0.6746637684525925
+          },
+          {
+            "parent_global": 180,
+            "r_supp_kept": 0.07686274509803921,
+            "r_mass_kept": 0.2688690255466235
+          },
+          {
+            "parent_global": 185,
+            "r_supp_kept": 0.14096916299559473,
+            "r_mass_kept": 0.014554567350212924
+          },
+          {
+            "parent_global": 187,
+            "r_supp_kept": 0.03147574819401445,
+            "r_mass_kept": 0.0018202385051699257
+          },
+          {
+            "parent_global": 190,
+            "r_supp_kept": 0.029888983774551667,
+            "r_mass_kept": 0.0017814531191861277
+          },
+          {
+            "parent_global": 196,
+            "r_supp_kept": 0.06123222748815166,
+            "r_mass_kept": 0.12049106367823482
+          },
+          {
+            "parent_global": 202,
+            "r_supp_kept": 0.08310626702997276,
+            "r_mass_kept": 0.02448106685484016
+          },
+          {
+            "parent_global": 204,
+            "r_supp_kept": 0.11936586882188374,
+            "r_mass_kept": 0.2675834777019313
+          },
+          {
+            "parent_global": 205,
+            "r_supp_kept": 0.04718543046357616,
+            "r_mass_kept": 0.15146304957480797
+          },
+          {
+            "parent_global": 207,
+            "r_supp_kept": 0.007766503820618815,
+            "r_mass_kept": 0.0035777742824862594
+          },
+          {
+            "parent_global": 216,
+            "r_supp_kept": 0.5802139037433155,
+            "r_mass_kept": 0.9687624084979084
+          },
+          {
+            "parent_global": 219,
+            "r_supp_kept": 0.13800904977375567,
+            "r_mass_kept": 0.019588137170534366
+          },
+          {
+            "parent_global": 221,
+            "r_supp_kept": 0.01655933762649494,
+            "r_mass_kept": 0.04458285654770648
+          },
+          {
+            "parent_global": 222,
+            "r_supp_kept": 0.058008213552361396,
+            "r_mass_kept": 0.15842377864032128
+          },
+          {
+            "parent_global": 223,
+            "r_supp_kept": 0.4721748036872653,
+            "r_mass_kept": 0.5862102350130128
+          },
+          {
+            "parent_global": 225,
+            "r_supp_kept": 0.13581244947453516,
+            "r_mass_kept": 0.27558012313069563
+          },
+          {
+            "parent_global": 230,
+            "r_supp_kept": 0.11332728921124206,
+            "r_mass_kept": 0.026355217229948057
+          },
+          {
+            "parent_global": 233,
+            "r_supp_kept": 0.14125799573560768,
+            "r_mass_kept": 0.3587682215593836
+          },
+          {
+            "parent_global": 238,
+            "r_supp_kept": 0.16010498687664043,
+            "r_mass_kept": 0.06649871715727684
+          },
+          {
+            "parent_global": 245,
+            "r_supp_kept": 0.00678485445392865,
+            "r_mass_kept": 0.013319762852000898
+          },
+          {
+            "parent_global": 247,
+            "r_supp_kept": 0.0713463751438435,
+            "r_mass_kept": 0.005030879883956532
+          },
+          {
+            "parent_global": 248,
+            "r_supp_kept": 0.023390203632361033,
+            "r_mass_kept": 0.06683896410206763
+          },
+          {
+            "parent_global": 250,
+            "r_supp_kept": 0.11475409836065574,
+            "r_mass_kept": 0.3655922804506114
+          },
+          {
+            "parent_global": 252,
+            "r_supp_kept": 0.13169984686064318,
+            "r_mass_kept": 0.341501449811601
+          },
+          {
+            "parent_global": 253,
+            "r_supp_kept": 0.08051884483602545,
+            "r_mass_kept": 0.2504466139279605
+          },
+          {
+            "parent_global": 263,
+            "r_supp_kept": 0.1571072319201995,
+            "r_mass_kept": 0.054546581467652996
+          },
+          {
+            "parent_global": 264,
+            "r_supp_kept": 0.08314855875831485,
+            "r_mass_kept": 0.03845344732311296
+          },
+          {
+            "parent_global": 265,
+            "r_supp_kept": 0.05977584059775841,
+            "r_mass_kept": 0.2556130717414548
+          },
+          {
+            "parent_global": 266,
+            "r_supp_kept": 0.2106280193236715,
+            "r_mass_kept": 0.21099358656056588
+          },
+          {
+            "parent_global": 268,
+            "r_supp_kept": 0.024196747322491077,
+            "r_mass_kept": 0.004285891974488206
+          },
+          {
+            "parent_global": 271,
+            "r_supp_kept": 0.16939890710382513,
+            "r_mass_kept": 0.08328448933986615
+          },
+          {
+            "parent_global": 274,
+            "r_supp_kept": 0.21602787456445993,
+            "r_mass_kept": 0.10072234292003374
+          },
+          {
+            "parent_global": 284,
+            "r_supp_kept": 0.09854604200323101,
+            "r_mass_kept": 0.008582550051905915
+          },
+          {
+            "parent_global": 286,
+            "r_supp_kept": 0.07196627521830774,
+            "r_mass_kept": 0.20602239130392166
+          },
+          {
+            "parent_global": 287,
+            "r_supp_kept": 0.17104072398190046,
+            "r_mass_kept": 0.538783006748938
+          },
+          {
+            "parent_global": 300,
+            "r_supp_kept": 0.07473982970671712,
+            "r_mass_kept": 0.15467815229399104
+          },
+          {
+            "parent_global": 302,
+            "r_supp_kept": 0.3871527777777778,
+            "r_mass_kept": 0.5831415443823487
+          },
+          {
+            "parent_global": 305,
+            "r_supp_kept": 0.03001667593107282,
+            "r_mass_kept": 0.21993864195793889
+          },
+          {
+            "parent_global": 311,
+            "r_supp_kept": 0.3216216216216216,
+            "r_mass_kept": 0.41123631502840235
+          },
+          {
+            "parent_global": 312,
+            "r_supp_kept": 0.08458498023715415,
+            "r_mass_kept": 0.09324312554243262
+          },
+          {
+            "parent_global": 315,
+            "r_supp_kept": 0.06631382316313823,
+            "r_mass_kept": 0.1816782185067488
+          },
+          {
+            "parent_global": 316,
+            "r_supp_kept": 0.044929396662387676,
+            "r_mass_kept": 0.10505290427998193
+          },
+          {
+            "parent_global": 320,
+            "r_supp_kept": 0.05570776255707763,
+            "r_mass_kept": 0.0018550559801327345
+          },
+          {
+            "parent_global": 323,
+            "r_supp_kept": 0.0728476821192053,
+            "r_mass_kept": 0.3268793400995176
+          },
+          {
+            "parent_global": 324,
+            "r_supp_kept": 0.10945273631840796,
+            "r_mass_kept": 0.10366079798754595
+          },
+          {
+            "parent_global": 327,
+            "r_supp_kept": 0.09860788863109049,
+            "r_mass_kept": 0.373958761454067
+          },
+          {
+            "parent_global": 332,
+            "r_supp_kept": 0.07840696950840075,
+            "r_mass_kept": 0.11763672447381086
+          },
+          {
+            "parent_global": 335,
+            "r_supp_kept": 0.01762669184765502,
+            "r_mass_kept": 0.09298302598141106
+          },
+          {
+            "parent_global": 337,
+            "r_supp_kept": 0.07367149758454106,
+            "r_mass_kept": 0.004265211234225698
+          },
+          {
+            "parent_global": 340,
+            "r_supp_kept": 0.04830917874396135,
+            "r_mass_kept": 0.15791735723658049
+          },
+          {
+            "parent_global": 342,
+            "r_supp_kept": 0.07943114810960805,
+            "r_mass_kept": 0.10201248512394785
+          },
+          {
+            "parent_global": 349,
+            "r_supp_kept": 0.19243986254295534,
+            "r_mass_kept": 0.7621806071017222
+          },
+          {
+            "parent_global": 352,
+            "r_supp_kept": 0.044444444444444446,
+            "r_mass_kept": 0.006804937343706071
+          },
+          {
+            "parent_global": 354,
+            "r_supp_kept": 0.14588235294117646,
+            "r_mass_kept": 0.0062598197471506216
+          },
+          {
+            "parent_global": 356,
+            "r_supp_kept": 0.06755753526354863,
+            "r_mass_kept": 0.07647894838075336
+          },
+          {
+            "parent_global": 362,
+            "r_supp_kept": 0.1420034361694181,
+            "r_mass_kept": 0.2449804846201762
+          },
+          {
+            "parent_global": 363,
+            "r_supp_kept": 0.27837514934289126,
+            "r_mass_kept": 0.4938063564779241
+          },
+          {
+            "parent_global": 372,
+            "r_supp_kept": 0.03905447070914697,
+            "r_mass_kept": 0.003020340258846761
+          },
+          {
+            "parent_global": 373,
+            "r_supp_kept": 0.19373656739330672,
+            "r_mass_kept": 0.2676638396667946
+          },
+          {
+            "parent_global": 378,
+            "r_supp_kept": 0.22184300341296928,
+            "r_mass_kept": 0.8030722008401122
+          },
+          {
+            "parent_global": 389,
+            "r_supp_kept": 0.04636459430979979,
+            "r_mass_kept": 0.2091677716133733
+          },
+          {
+            "parent_global": 401,
+            "r_supp_kept": 0.6344451250069603,
+            "r_mass_kept": 0.6715466602278499
+          },
+          {
+            "parent_global": 405,
+            "r_supp_kept": 0.06400839454354669,
+            "r_mass_kept": 0.0020841240865640677
+          },
+          {
+            "parent_global": 406,
+            "r_supp_kept": 0.0867320598864223,
+            "r_mass_kept": 0.1933766968435165
+          },
+          {
+            "parent_global": 409,
+            "r_supp_kept": 0.02568154879494271,
+            "r_mass_kept": 0.044429623941422206
+          },
+          {
+            "parent_global": 417,
+            "r_supp_kept": 0.04137039431157078,
+            "r_mass_kept": 0.0023537653269168437
+          },
+          {
+            "parent_global": 419,
+            "r_supp_kept": 0.057971014492753624,
+            "r_mass_kept": 0.15257168404028182
+          },
+          {
+            "parent_global": 427,
+            "r_supp_kept": 0.026790595954073265,
+            "r_mass_kept": 0.03136449587857288
+          },
+          {
+            "parent_global": 438,
+            "r_supp_kept": 0.03331141792680254,
+            "r_mass_kept": 0.0433538002679859
+          },
+          {
+            "parent_global": 446,
+            "r_supp_kept": 0.18471760797342193,
+            "r_mass_kept": 0.33064558133180066
+          },
+          {
+            "parent_global": 457,
+            "r_supp_kept": 0.28389596015495294,
+            "r_mass_kept": 0.5300180232629135
+          },
+          {
+            "parent_global": 464,
+            "r_supp_kept": 0.20350877192982456,
+            "r_mass_kept": 0.3339604020510835
+          },
+          {
+            "parent_global": 472,
+            "r_supp_kept": 0.07807807807807808,
+            "r_mass_kept": 0.2288212254423303
+          },
+          {
+            "parent_global": 475,
+            "r_supp_kept": 0.05528777998298837,
+            "r_mass_kept": 0.0860479356795811
+          },
+          {
+            "parent_global": 477,
+            "r_supp_kept": 0.038623595505617975,
+            "r_mass_kept": 0.19380852441643215
+          },
+          {
+            "parent_global": 479,
+            "r_supp_kept": 0.4604385128693994,
+            "r_mass_kept": 0.5690705057177136
+          },
+          {
+            "parent_global": 480,
+            "r_supp_kept": 0.12473662031184155,
+            "r_mass_kept": 0.22236638913841286
+          },
+          {
+            "parent_global": 485,
+            "r_supp_kept": 0.0605759682224429,
+            "r_mass_kept": 0.006173610127709589
+          },
+          {
+            "parent_global": 488,
+            "r_supp_kept": 0.1082024432809773,
+            "r_mass_kept": 0.008178357879164476
+          },
+          {
+            "parent_global": 497,
+            "r_supp_kept": 0.11225997045790251,
+            "r_mass_kept": 0.2194530097093872
+          },
+          {
+            "parent_global": 499,
+            "r_supp_kept": 0.028668941979522185,
+            "r_mass_kept": 0.09002257597194746
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 280,
+        "n_probed_children": 192,
+        "n_untestable_children": 0,
+        "n_edges_scored": 278,
+        "n_pass": 53,
+        "frac_pass": 0.1906474820143885
+      }
+    },
+    "2->3": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.162227983952192,
+        "r_mass_kept_mean": 0.27800619075550476,
+        "per_parent": [
+          {
+            "parent_global": 513,
+            "r_supp_kept": 0.07901554404145078,
+            "r_mass_kept": 0.29233079442792365
+          },
+          {
+            "parent_global": 519,
+            "r_supp_kept": 0.11231101511879049,
+            "r_mass_kept": 0.3340480368518006
+          },
+          {
+            "parent_global": 522,
+            "r_supp_kept": 0.12103746397694524,
+            "r_mass_kept": 0.4503508638339135
+          },
+          {
+            "parent_global": 523,
+            "r_supp_kept": 0.09937888198757763,
+            "r_mass_kept": 0.06774027025034024
+          },
+          {
+            "parent_global": 524,
+            "r_supp_kept": 0.2210144927536232,
+            "r_mass_kept": 0.016969915800744244
+          },
+          {
+            "parent_global": 528,
+            "r_supp_kept": 0.14485981308411214,
+            "r_mass_kept": 0.6151074137301407
+          },
+          {
+            "parent_global": 541,
+            "r_supp_kept": 0.03730445246690734,
+            "r_mass_kept": 0.27262345374566577
+          },
+          {
+            "parent_global": 545,
+            "r_supp_kept": 0.4568790812879982,
+            "r_mass_kept": 0.585757875991984
+          },
+          {
+            "parent_global": 550,
+            "r_supp_kept": 0.1987179487179487,
+            "r_mass_kept": 0.014657344132734758
+          },
+          {
+            "parent_global": 553,
+            "r_supp_kept": 0.06441717791411043,
+            "r_mass_kept": 0.11853065529531846
+          },
+          {
+            "parent_global": 561,
+            "r_supp_kept": 0.25630252100840334,
+            "r_mass_kept": 0.21368690965633305
+          },
+          {
+            "parent_global": 583,
+            "r_supp_kept": 0.023227383863080684,
+            "r_mass_kept": 0.10763619418600745
+          },
+          {
+            "parent_global": 594,
+            "r_supp_kept": 0.04062909567496723,
+            "r_mass_kept": 0.17723813779520187
+          },
+          {
+            "parent_global": 596,
+            "r_supp_kept": 0.07708779443254818,
+            "r_mass_kept": 0.03249166775828853
+          },
+          {
+            "parent_global": 615,
+            "r_supp_kept": 0.3237250554323725,
+            "r_mass_kept": 0.0642764914842103
+          },
+          {
+            "parent_global": 616,
+            "r_supp_kept": 0.04590570719602978,
+            "r_mass_kept": 0.0061874426979591085
+          },
+          {
+            "parent_global": 623,
+            "r_supp_kept": 0.1712846347607053,
+            "r_mass_kept": 0.03304557722180999
+          },
+          {
+            "parent_global": 634,
+            "r_supp_kept": 0.1096305269533616,
+            "r_mass_kept": 0.24467740277105474
+          },
+          {
+            "parent_global": 636,
+            "r_supp_kept": 0.1152,
+            "r_mass_kept": 0.5001380018969593
+          },
+          {
+            "parent_global": 637,
+            "r_supp_kept": 0.048556430446194225,
+            "r_mass_kept": 0.19690848183472012
+          },
+          {
+            "parent_global": 660,
+            "r_supp_kept": 0.12756714060031596,
+            "r_mass_kept": 0.2035959652412013
+          },
+          {
+            "parent_global": 670,
+            "r_supp_kept": 0.1355421686746988,
+            "r_mass_kept": 0.4282652636454597
+          },
+          {
+            "parent_global": 673,
+            "r_supp_kept": 0.34278668310727495,
+            "r_mass_kept": 0.7673025873708058
+          },
+          {
+            "parent_global": 676,
+            "r_supp_kept": 0.2221153846153846,
+            "r_mass_kept": 0.5701391726150907
+          },
+          {
+            "parent_global": 680,
+            "r_supp_kept": 0.012987012987012988,
+            "r_mass_kept": 0.01435344137584676
+          },
+          {
+            "parent_global": 687,
+            "r_supp_kept": 0.07389162561576355,
+            "r_mass_kept": 0.0752028719690664
+          },
+          {
+            "parent_global": 689,
+            "r_supp_kept": 0.08755129958960328,
+            "r_mass_kept": 0.02170510206183307
+          },
+          {
+            "parent_global": 699,
+            "r_supp_kept": 0.1303030303030303,
+            "r_mass_kept": 0.3659299592502524
+          },
+          {
+            "parent_global": 706,
+            "r_supp_kept": 0.09177215189873418,
+            "r_mass_kept": 0.2522897596550669
+          },
+          {
+            "parent_global": 710,
+            "r_supp_kept": 0.11879049676025918,
+            "r_mass_kept": 0.2703952453118409
+          },
+          {
+            "parent_global": 713,
+            "r_supp_kept": 0.12822624931356397,
+            "r_mass_kept": 0.30470855499513605
+          },
+          {
+            "parent_global": 720,
+            "r_supp_kept": 0.21468926553672316,
+            "r_mass_kept": 0.47536842987692995
+          },
+          {
+            "parent_global": 722,
+            "r_supp_kept": 0.11319534282018111,
+            "r_mass_kept": 0.32610577133686114
+          },
+          {
+            "parent_global": 727,
+            "r_supp_kept": 0.07235338918507235,
+            "r_mass_kept": 0.42035362864114273
+          },
+          {
+            "parent_global": 733,
+            "r_supp_kept": 0.42162162162162165,
+            "r_mass_kept": 0.8424497786279871
+          },
+          {
+            "parent_global": 734,
+            "r_supp_kept": 0.08935128518971848,
+            "r_mass_kept": 0.1962367312157858
+          },
+          {
+            "parent_global": 747,
+            "r_supp_kept": 0.0407911001236094,
+            "r_mass_kept": 0.19441771139797487
+          },
+          {
+            "parent_global": 754,
+            "r_supp_kept": 0.08291873963515754,
+            "r_mass_kept": 0.29102557628702275
+          },
+          {
+            "parent_global": 767,
+            "r_supp_kept": 0.32181818181818184,
+            "r_mass_kept": 0.3336803537486313
+          },
+          {
+            "parent_global": 776,
+            "r_supp_kept": 0.6151866151866152,
+            "r_mass_kept": 0.8163743059087595
+          },
+          {
+            "parent_global": 778,
+            "r_supp_kept": 0.18922470433639949,
+            "r_mass_kept": 0.14582213642875205
+          },
+          {
+            "parent_global": 783,
+            "r_supp_kept": 0.02384393063583815,
+            "r_mass_kept": 0.06514060626830935
+          },
+          {
+            "parent_global": 789,
+            "r_supp_kept": 0.027507405840033854,
+            "r_mass_kept": 0.04653213738499998
+          },
+          {
+            "parent_global": 790,
+            "r_supp_kept": 0.08637236084452975,
+            "r_mass_kept": 0.33661029538202175
+          },
+          {
+            "parent_global": 793,
+            "r_supp_kept": 0.35336194563662376,
+            "r_mass_kept": 0.7681330466269312
+          },
+          {
+            "parent_global": 794,
+            "r_supp_kept": 0.03877679697351828,
+            "r_mass_kept": 0.07149578618871753
+          },
+          {
+            "parent_global": 798,
+            "r_supp_kept": 0.01849217638691323,
+            "r_mass_kept": 0.02199022037593452
+          },
+          {
+            "parent_global": 820,
+            "r_supp_kept": 0.07859358841778696,
+            "r_mass_kept": 0.17995907183064377
+          },
+          {
+            "parent_global": 824,
+            "r_supp_kept": 0.16378162450066577,
+            "r_mass_kept": 0.5813595958977856
+          },
+          {
+            "parent_global": 844,
+            "r_supp_kept": 0.19195046439628483,
+            "r_mass_kept": 0.13268109228123853
+          },
+          {
+            "parent_global": 854,
+            "r_supp_kept": 0.05592105263157895,
+            "r_mass_kept": 0.23693866507823033
+          },
+          {
+            "parent_global": 863,
+            "r_supp_kept": 0.4844285269386484,
+            "r_mass_kept": 0.6555992401214032
+          },
+          {
+            "parent_global": 871,
+            "r_supp_kept": 0.021779713752333542,
+            "r_mass_kept": 0.04939123864283438
+          },
+          {
+            "parent_global": 873,
+            "r_supp_kept": 0.05743740795287187,
+            "r_mass_kept": 0.05174366837989545
+          },
+          {
+            "parent_global": 876,
+            "r_supp_kept": 0.04,
+            "r_mass_kept": 0.09605795718092604
+          },
+          {
+            "parent_global": 877,
+            "r_supp_kept": 0.24609375,
+            "r_mass_kept": 0.6420310579292556
+          },
+          {
+            "parent_global": 882,
+            "r_supp_kept": 0.121524201853759,
+            "r_mass_kept": 0.33524212322823005
+          },
+          {
+            "parent_global": 892,
+            "r_supp_kept": 0.06287069988137604,
+            "r_mass_kept": 0.07344958704074889
+          },
+          {
+            "parent_global": 904,
+            "r_supp_kept": 0.07731958762886598,
+            "r_mass_kept": 0.18983368674720522
+          },
+          {
+            "parent_global": 912,
+            "r_supp_kept": 0.1868421052631579,
+            "r_mass_kept": 0.6007654538991902
+          },
+          {
+            "parent_global": 918,
+            "r_supp_kept": 0.2155688622754491,
+            "r_mass_kept": 0.07990511123593681
+          },
+          {
+            "parent_global": 919,
+            "r_supp_kept": 0.09798270893371758,
+            "r_mass_kept": 0.387654311717512
+          },
+          {
+            "parent_global": 920,
+            "r_supp_kept": 0.08209959623149395,
+            "r_mass_kept": 0.037448677009100845
+          },
+          {
+            "parent_global": 924,
+            "r_supp_kept": 0.3519163763066202,
+            "r_mass_kept": 0.5975437878811501
+          },
+          {
+            "parent_global": 926,
+            "r_supp_kept": 0.05389221556886228,
+            "r_mass_kept": 0.5956378617647161
+          },
+          {
+            "parent_global": 933,
+            "r_supp_kept": 0.13580246913580246,
+            "r_mass_kept": 0.08656518405242025
+          },
+          {
+            "parent_global": 944,
+            "r_supp_kept": 0.09511844938980617,
+            "r_mass_kept": 0.09489421957714503
+          },
+          {
+            "parent_global": 962,
+            "r_supp_kept": 0.06622516556291391,
+            "r_mass_kept": 0.06050260054737495
+          },
+          {
+            "parent_global": 963,
+            "r_supp_kept": 0.29406392694063926,
+            "r_mass_kept": 0.5641342747322069
+          },
+          {
+            "parent_global": 965,
+            "r_supp_kept": 0.0825364871665828,
+            "r_mass_kept": 0.2827973105089706
+          },
+          {
+            "parent_global": 972,
+            "r_supp_kept": 0.3487603305785124,
+            "r_mass_kept": 0.5686130366546109
+          },
+          {
+            "parent_global": 975,
+            "r_supp_kept": 0.09037037037037036,
+            "r_mass_kept": 0.013861570276986555
+          },
+          {
+            "parent_global": 983,
+            "r_supp_kept": 0.35172413793103446,
+            "r_mass_kept": 0.6515298853489356
+          },
+          {
+            "parent_global": 994,
+            "r_supp_kept": 0.2735483870967742,
+            "r_mass_kept": 0.4806791238315764
+          },
+          {
+            "parent_global": 996,
+            "r_supp_kept": 0.3924050632911392,
+            "r_mass_kept": 0.059626643503086545
+          },
+          {
+            "parent_global": 998,
+            "r_supp_kept": 0.15340253748558247,
+            "r_mass_kept": 0.46559854186984756
+          },
+          {
+            "parent_global": 1020,
+            "r_supp_kept": 0.1942675159235669,
+            "r_mass_kept": 0.022129323665602996
+          },
+          {
+            "parent_global": 1052,
+            "r_supp_kept": 0.0599721059972106,
+            "r_mass_kept": 0.20372340321554366
+          },
+          {
+            "parent_global": 1056,
+            "r_supp_kept": 0.06181818181818182,
+            "r_mass_kept": 0.21681873701979762
+          },
+          {
+            "parent_global": 1082,
+            "r_supp_kept": 0.04008438818565401,
+            "r_mass_kept": 0.23486033524682792
+          },
+          {
+            "parent_global": 1099,
+            "r_supp_kept": 0.09663865546218488,
+            "r_mass_kept": 0.09083990565731352
+          },
+          {
+            "parent_global": 1104,
+            "r_supp_kept": 0.16724982505248426,
+            "r_mass_kept": 0.412201227313022
+          },
+          {
+            "parent_global": 1108,
+            "r_supp_kept": 0.1220472440944882,
+            "r_mass_kept": 0.3835883845795966
+          },
+          {
+            "parent_global": 1113,
+            "r_supp_kept": 0.14495798319327732,
+            "r_mass_kept": 0.5548922479249968
+          },
+          {
+            "parent_global": 1120,
+            "r_supp_kept": 0.11378737541528239,
+            "r_mass_kept": 0.1682904608634966
+          },
+          {
+            "parent_global": 1134,
+            "r_supp_kept": 0.14754716981132077,
+            "r_mass_kept": 0.21098192692552453
+          },
+          {
+            "parent_global": 1142,
+            "r_supp_kept": 0.06334371754932502,
+            "r_mass_kept": 0.004426628915825507
+          },
+          {
+            "parent_global": 1155,
+            "r_supp_kept": 0.0877914951989026,
+            "r_mass_kept": 0.44275429893596124
+          },
+          {
+            "parent_global": 1159,
+            "r_supp_kept": 0.17976031957390146,
+            "r_mass_kept": 0.3541569245068158
+          },
+          {
+            "parent_global": 1169,
+            "r_supp_kept": 0.18694362017804153,
+            "r_mass_kept": 0.4826528650669269
+          },
+          {
+            "parent_global": 1173,
+            "r_supp_kept": 0.2909930715935335,
+            "r_mass_kept": 0.5589157990571803
+          },
+          {
+            "parent_global": 1179,
+            "r_supp_kept": 0.1343612334801762,
+            "r_mass_kept": 0.014242880904182659
+          },
+          {
+            "parent_global": 1180,
+            "r_supp_kept": 0.0989456609894566,
+            "r_mass_kept": 0.2435326700861917
+          },
+          {
+            "parent_global": 1183,
+            "r_supp_kept": 0.1991304347826087,
+            "r_mass_kept": 0.49246270364019823
+          },
+          {
+            "parent_global": 1191,
+            "r_supp_kept": 0.7018581861884071,
+            "r_mass_kept": 0.9038679606907989
+          },
+          {
+            "parent_global": 1195,
+            "r_supp_kept": 0.08555399719495091,
+            "r_mass_kept": 0.015385492323751982
+          },
+          {
+            "parent_global": 1199,
+            "r_supp_kept": 0.06278026905829596,
+            "r_mass_kept": 0.357301936705457
+          },
+          {
+            "parent_global": 1204,
+            "r_supp_kept": 0.06654991243432574,
+            "r_mass_kept": 0.14981583608588084
+          },
+          {
+            "parent_global": 1215,
+            "r_supp_kept": 0.3850574712643678,
+            "r_mass_kept": 0.06633335322676864
+          },
+          {
+            "parent_global": 1220,
+            "r_supp_kept": 0.4405594405594406,
+            "r_mass_kept": 0.031213586415666107
+          },
+          {
+            "parent_global": 1223,
+            "r_supp_kept": 0.20915032679738563,
+            "r_mass_kept": 0.7163057142470602
+          },
+          {
+            "parent_global": 1241,
+            "r_supp_kept": 0.18764434180138567,
+            "r_mass_kept": 0.406767613711379
+          },
+          {
+            "parent_global": 1242,
+            "r_supp_kept": 0.11545988258317025,
+            "r_mass_kept": 0.4508874239496751
+          },
+          {
+            "parent_global": 1257,
+            "r_supp_kept": 0.09272300469483569,
+            "r_mass_kept": 0.06052561519596792
+          },
+          {
+            "parent_global": 1270,
+            "r_supp_kept": 0.021042713567839197,
+            "r_mass_kept": 0.025151641020208088
+          },
+          {
+            "parent_global": 1273,
+            "r_supp_kept": 0.02305605786618445,
+            "r_mass_kept": 0.025083535080341824
+          },
+          {
+            "parent_global": 1284,
+            "r_supp_kept": 0.10075566750629723,
+            "r_mass_kept": 0.34935435009161253
+          },
+          {
+            "parent_global": 1297,
+            "r_supp_kept": 0.6577380952380952,
+            "r_mass_kept": 0.9185811169222416
+          },
+          {
+            "parent_global": 1299,
+            "r_supp_kept": 0.019009216589861752,
+            "r_mass_kept": 0.05821222993533815
+          },
+          {
+            "parent_global": 1300,
+            "r_supp_kept": 0.15625,
+            "r_mass_kept": 0.11432413061917596
+          },
+          {
+            "parent_global": 1307,
+            "r_supp_kept": 0.079002079002079,
+            "r_mass_kept": 0.1832575113536656
+          },
+          {
+            "parent_global": 1309,
+            "r_supp_kept": 0.310671256454389,
+            "r_mass_kept": 0.41861076442813916
+          },
+          {
+            "parent_global": 1317,
+            "r_supp_kept": 0.43765281173594134,
+            "r_mass_kept": 0.6971148017673238
+          },
+          {
+            "parent_global": 1321,
+            "r_supp_kept": 0.12115384615384615,
+            "r_mass_kept": 0.007816219287341448
+          },
+          {
+            "parent_global": 1331,
+            "r_supp_kept": 0.07530120481927711,
+            "r_mass_kept": 0.1241841946550255
+          },
+          {
+            "parent_global": 1337,
+            "r_supp_kept": 0.03511705685618729,
+            "r_mass_kept": 0.1884334964014969
+          },
+          {
+            "parent_global": 1351,
+            "r_supp_kept": 0.14195183776932827,
+            "r_mass_kept": 0.11821399323710517
+          },
+          {
+            "parent_global": 1352,
+            "r_supp_kept": 0.02917414721723519,
+            "r_mass_kept": 0.004276352662582489
+          },
+          {
+            "parent_global": 1354,
+            "r_supp_kept": 0.09198606271777003,
+            "r_mass_kept": 0.2719179150408937
+          },
+          {
+            "parent_global": 1358,
+            "r_supp_kept": 0.11398354876615746,
+            "r_mass_kept": 0.25554045179328577
+          },
+          {
+            "parent_global": 1374,
+            "r_supp_kept": 0.11475409836065574,
+            "r_mass_kept": 0.24444761649935065
+          },
+          {
+            "parent_global": 1380,
+            "r_supp_kept": 0.010976408912188729,
+            "r_mass_kept": 0.0032711848904741505
+          },
+          {
+            "parent_global": 1381,
+            "r_supp_kept": 0.10625,
+            "r_mass_kept": 0.47263263868114547
+          },
+          {
+            "parent_global": 1383,
+            "r_supp_kept": 0.30984555984555984,
+            "r_mass_kept": 0.4756721098618374
+          },
+          {
+            "parent_global": 1387,
+            "r_supp_kept": 0.055272108843537414,
+            "r_mass_kept": 0.010501460207727834
+          },
+          {
+            "parent_global": 1391,
+            "r_supp_kept": 0.11806543385490754,
+            "r_mass_kept": 0.35734397682380825
+          },
+          {
+            "parent_global": 1394,
+            "r_supp_kept": 0.18006430868167203,
+            "r_mass_kept": 0.026490520886308884
+          },
+          {
+            "parent_global": 1396,
+            "r_supp_kept": 0.3810597519729425,
+            "r_mass_kept": 0.6874687138373754
+          },
+          {
+            "parent_global": 1398,
+            "r_supp_kept": 0.06837606837606838,
+            "r_mass_kept": 0.07607865472968371
+          },
+          {
+            "parent_global": 1399,
+            "r_supp_kept": 0.20498614958448755,
+            "r_mass_kept": 0.6173406548239926
+          },
+          {
+            "parent_global": 1408,
+            "r_supp_kept": 0.08333333333333333,
+            "r_mass_kept": 0.03492887214375538
+          },
+          {
+            "parent_global": 1418,
+            "r_supp_kept": 0.3,
+            "r_mass_kept": 0.07720356974554714
+          },
+          {
+            "parent_global": 1423,
+            "r_supp_kept": 0.1,
+            "r_mass_kept": 0.27460457140861544
+          },
+          {
+            "parent_global": 1424,
+            "r_supp_kept": 0.07179487179487179,
+            "r_mass_kept": 0.25848185248889255
+          },
+          {
+            "parent_global": 1429,
+            "r_supp_kept": 0.23668639053254437,
+            "r_mass_kept": 0.6867495584076295
+          },
+          {
+            "parent_global": 1444,
+            "r_supp_kept": 0.14836795252225518,
+            "r_mass_kept": 0.4671722253743725
+          },
+          {
+            "parent_global": 1452,
+            "r_supp_kept": 0.08167613636363637,
+            "r_mass_kept": 0.2966865118884681
+          },
+          {
+            "parent_global": 1455,
+            "r_supp_kept": 0.01979293544457978,
+            "r_mass_kept": 0.0037388675748418003
+          },
+          {
+            "parent_global": 1457,
+            "r_supp_kept": 0.05747126436781609,
+            "r_mass_kept": 0.19805937352310754
+          },
+          {
+            "parent_global": 1462,
+            "r_supp_kept": 0.1456953642384106,
+            "r_mass_kept": 0.22283462982411312
+          },
+          {
+            "parent_global": 1463,
+            "r_supp_kept": 0.12345679012345678,
+            "r_mass_kept": 0.49913839977432833
+          },
+          {
+            "parent_global": 1466,
+            "r_supp_kept": 0.09102564102564102,
+            "r_mass_kept": 0.2380694990715282
+          },
+          {
+            "parent_global": 1472,
+            "r_supp_kept": 0.1766304347826087,
+            "r_mass_kept": 0.05241843956930063
+          },
+          {
+            "parent_global": 1474,
+            "r_supp_kept": 0.19595083152566883,
+            "r_mass_kept": 0.3087569258084481
+          },
+          {
+            "parent_global": 1481,
+            "r_supp_kept": 0.14300736067297581,
+            "r_mass_kept": 0.32433790725037037
+          },
+          {
+            "parent_global": 1483,
+            "r_supp_kept": 0.05788982259570495,
+            "r_mass_kept": 0.016009038213262106
+          },
+          {
+            "parent_global": 1489,
+            "r_supp_kept": 0.14173228346456693,
+            "r_mass_kept": 0.19910098346599148
+          },
+          {
+            "parent_global": 1494,
+            "r_supp_kept": 0.33157894736842103,
+            "r_mass_kept": 0.39543074630479275
+          },
+          {
+            "parent_global": 1500,
+            "r_supp_kept": 0.1353975815316966,
+            "r_mass_kept": 0.2171205940642637
+          },
+          {
+            "parent_global": 1501,
+            "r_supp_kept": 0.5620805369127517,
+            "r_mass_kept": 0.4237460598734617
+          },
+          {
+            "parent_global": 1508,
+            "r_supp_kept": 0.16939890710382513,
+            "r_mass_kept": 0.020208929884587723
+          },
+          {
+            "parent_global": 1511,
+            "r_supp_kept": 0.19977426636568849,
+            "r_mass_kept": 0.4701946855172046
+          },
+          {
+            "parent_global": 1524,
+            "r_supp_kept": 0.3204225352112676,
+            "r_mass_kept": 0.24478187383263128
+          },
+          {
+            "parent_global": 1532,
+            "r_supp_kept": 0.047556142668428,
+            "r_mass_kept": 0.27962398953022133
+          },
+          {
+            "parent_global": 1554,
+            "r_supp_kept": 0.4137022397891963,
+            "r_mass_kept": 0.6455756325825976
+          },
+          {
+            "parent_global": 1556,
+            "r_supp_kept": 0.2,
+            "r_mass_kept": 0.034719071375980494
+          },
+          {
+            "parent_global": 1557,
+            "r_supp_kept": 0.2995169082125604,
+            "r_mass_kept": 0.009077786982820517
+          },
+          {
+            "parent_global": 1560,
+            "r_supp_kept": 0.017136539524599224,
+            "r_mass_kept": 0.005443403518350159
+          },
+          {
+            "parent_global": 1571,
+            "r_supp_kept": 0.8087248322147651,
+            "r_mass_kept": 0.9825004432329195
+          },
+          {
+            "parent_global": 1581,
+            "r_supp_kept": 0.16768759571209801,
+            "r_mass_kept": 0.5630144895133424
+          },
+          {
+            "parent_global": 1584,
+            "r_supp_kept": 0.10104529616724739,
+            "r_mass_kept": 0.01280881581076582
+          },
+          {
+            "parent_global": 1598,
+            "r_supp_kept": 0.023923444976076555,
+            "r_mass_kept": 0.1092592560570458
+          },
+          {
+            "parent_global": 1604,
+            "r_supp_kept": 0.10940919037199125,
+            "r_mass_kept": 0.49437607089918634
+          },
+          {
+            "parent_global": 1610,
+            "r_supp_kept": 0.08065843621399177,
+            "r_mass_kept": 0.3283679542497619
+          },
+          {
+            "parent_global": 1616,
+            "r_supp_kept": 0.06408952187182096,
+            "r_mass_kept": 0.00815441034632274
+          },
+          {
+            "parent_global": 1646,
+            "r_supp_kept": 0.3152,
+            "r_mass_kept": 0.4974877644090995
+          },
+          {
+            "parent_global": 1648,
+            "r_supp_kept": 0.29411764705882354,
+            "r_mass_kept": 0.05116887737281828
+          },
+          {
+            "parent_global": 1657,
+            "r_supp_kept": 0.0306558013193636,
+            "r_mass_kept": 0.10133971545240343
+          },
+          {
+            "parent_global": 1670,
+            "r_supp_kept": 0.580952380952381,
+            "r_mass_kept": 0.26348698846874147
+          },
+          {
+            "parent_global": 1672,
+            "r_supp_kept": 0.09090909090909091,
+            "r_mass_kept": 0.26851515346982613
+          },
+          {
+            "parent_global": 1676,
+            "r_supp_kept": 0.009809750297265161,
+            "r_mass_kept": 0.01984955391926074
+          },
+          {
+            "parent_global": 1680,
+            "r_supp_kept": 0.0546875,
+            "r_mass_kept": 0.5005757714987484
+          },
+          {
+            "parent_global": 1686,
+            "r_supp_kept": 0.26521739130434785,
+            "r_mass_kept": 0.1921206760702951
+          },
+          {
+            "parent_global": 1691,
+            "r_supp_kept": 0.03043691703485518,
+            "r_mass_kept": 0.016723083327823966
+          },
+          {
+            "parent_global": 1694,
+            "r_supp_kept": 0.7721518987341772,
+            "r_mass_kept": 0.84517477168603
+          },
+          {
+            "parent_global": 1701,
+            "r_supp_kept": 0.19875776397515527,
+            "r_mass_kept": 0.9503835353067088
+          },
+          {
+            "parent_global": 1709,
+            "r_supp_kept": 0.045454545454545456,
+            "r_mass_kept": 0.16501933625910775
+          },
+          {
+            "parent_global": 1717,
+            "r_supp_kept": 0.06771653543307087,
+            "r_mass_kept": 0.1802102274224126
+          },
+          {
+            "parent_global": 1727,
+            "r_supp_kept": 0.038510911424903725,
+            "r_mass_kept": 0.07743909724520355
+          },
+          {
+            "parent_global": 1728,
+            "r_supp_kept": 0.2716049382716049,
+            "r_mass_kept": 0.2949398849594458
+          },
+          {
+            "parent_global": 1741,
+            "r_supp_kept": 0.06829268292682927,
+            "r_mass_kept": 0.3730660395417082
+          },
+          {
+            "parent_global": 1743,
+            "r_supp_kept": 0.27510917030567683,
+            "r_mass_kept": 0.5245135637262812
+          },
+          {
+            "parent_global": 1757,
+            "r_supp_kept": 0.12345027697177526,
+            "r_mass_kept": 0.2981532773440661
+          },
+          {
+            "parent_global": 1761,
+            "r_supp_kept": 0.03755054881571346,
+            "r_mass_kept": 0.06438571893987192
+          },
+          {
+            "parent_global": 1762,
+            "r_supp_kept": 0.2012779552715655,
+            "r_mass_kept": 0.38066035635485773
+          },
+          {
+            "parent_global": 1764,
+            "r_supp_kept": 0.20577617328519857,
+            "r_mass_kept": 0.05825130656504861
+          },
+          {
+            "parent_global": 1767,
+            "r_supp_kept": 0.4010526315789474,
+            "r_mass_kept": 0.7669500425641353
+          },
+          {
+            "parent_global": 1777,
+            "r_supp_kept": 0.40501043841336115,
+            "r_mass_kept": 0.4472708662001501
+          },
+          {
+            "parent_global": 1778,
+            "r_supp_kept": 0.05512909979064899,
+            "r_mass_kept": 0.08961650674775724
+          },
+          {
+            "parent_global": 1782,
+            "r_supp_kept": 0.14171511627906977,
+            "r_mass_kept": 0.5050509635086984
+          },
+          {
+            "parent_global": 1786,
+            "r_supp_kept": 0.05238774055595153,
+            "r_mass_kept": 0.10378909519789141
+          },
+          {
+            "parent_global": 1791,
+            "r_supp_kept": 0.16623376623376623,
+            "r_mass_kept": 0.022951219469086615
+          },
+          {
+            "parent_global": 1805,
+            "r_supp_kept": 0.17316017316017315,
+            "r_mass_kept": 0.6274664884359671
+          },
+          {
+            "parent_global": 1813,
+            "r_supp_kept": 0.11050102951269733,
+            "r_mass_kept": 0.3976956384606663
+          },
+          {
+            "parent_global": 1815,
+            "r_supp_kept": 0.07816091954022988,
+            "r_mass_kept": 0.11151511599597379
+          },
+          {
+            "parent_global": 1822,
+            "r_supp_kept": 0.039540816326530615,
+            "r_mass_kept": 0.08346899059375633
+          },
+          {
+            "parent_global": 1823,
+            "r_supp_kept": 0.16055045871559634,
+            "r_mass_kept": 0.022751367287325994
+          },
+          {
+            "parent_global": 1825,
+            "r_supp_kept": 0.04830113257828115,
+            "r_mass_kept": 0.133927315248456
+          },
+          {
+            "parent_global": 1828,
+            "r_supp_kept": 0.10561497326203209,
+            "r_mass_kept": 0.01077812436543873
+          },
+          {
+            "parent_global": 1840,
+            "r_supp_kept": 0.15620718004932857,
+            "r_mass_kept": 0.2015675851253659
+          },
+          {
+            "parent_global": 1841,
+            "r_supp_kept": 0.1631578947368421,
+            "r_mass_kept": 0.435281028510106
+          },
+          {
+            "parent_global": 1858,
+            "r_supp_kept": 0.1558641975308642,
+            "r_mass_kept": 0.30271612695798716
+          },
+          {
+            "parent_global": 1862,
+            "r_supp_kept": 0.06623931623931624,
+            "r_mass_kept": 0.013465890956047985
+          },
+          {
+            "parent_global": 1873,
+            "r_supp_kept": 0.09907120743034056,
+            "r_mass_kept": 0.49353038912711766
+          },
+          {
+            "parent_global": 1881,
+            "r_supp_kept": 0.06296992481203008,
+            "r_mass_kept": 0.11969420949395003
+          },
+          {
+            "parent_global": 1892,
+            "r_supp_kept": 0.13267466478475654,
+            "r_mass_kept": 0.2504769868864717
+          },
+          {
+            "parent_global": 1896,
+            "r_supp_kept": 0.021948608137044967,
+            "r_mass_kept": 0.2855918317514639
+          },
+          {
+            "parent_global": 1902,
+            "r_supp_kept": 0.15311004784688995,
+            "r_mass_kept": 0.6009569801466822
+          },
+          {
+            "parent_global": 1908,
+            "r_supp_kept": 0.090014064697609,
+            "r_mass_kept": 0.40179052389160563
+          },
+          {
+            "parent_global": 1911,
+            "r_supp_kept": 0.15293420272673386,
+            "r_mass_kept": 0.23100719123119426
+          },
+          {
+            "parent_global": 1918,
+            "r_supp_kept": 0.08743169398907104,
+            "r_mass_kept": 0.22951512644024274
+          },
+          {
+            "parent_global": 1919,
+            "r_supp_kept": 0.10409556313993173,
+            "r_mass_kept": 0.010234220042327638
+          },
+          {
+            "parent_global": 1922,
+            "r_supp_kept": 0.041237113402061855,
+            "r_mass_kept": 0.1280452809316171
+          },
+          {
+            "parent_global": 1926,
+            "r_supp_kept": 0.1935483870967742,
+            "r_mass_kept": 0.46283067291698027
+          },
+          {
+            "parent_global": 1930,
+            "r_supp_kept": 0.248,
+            "r_mass_kept": 0.22718966609364116
+          },
+          {
+            "parent_global": 1936,
+            "r_supp_kept": 0.5080645161290323,
+            "r_mass_kept": 0.7197277689922547
+          },
+          {
+            "parent_global": 1938,
+            "r_supp_kept": 0.15254237288135594,
+            "r_mass_kept": 0.06153081942576387
+          },
+          {
+            "parent_global": 1941,
+            "r_supp_kept": 0.06971677559912855,
+            "r_mass_kept": 0.19573752891299528
+          },
+          {
+            "parent_global": 1948,
+            "r_supp_kept": 0.25102880658436216,
+            "r_mass_kept": 0.3365606958145157
+          },
+          {
+            "parent_global": 1957,
+            "r_supp_kept": 0.2620967741935484,
+            "r_mass_kept": 0.36510305804658094
+          },
+          {
+            "parent_global": 1963,
+            "r_supp_kept": 0.09257473481195758,
+            "r_mass_kept": 0.30398051263885
+          },
+          {
+            "parent_global": 1965,
+            "r_supp_kept": 0.19058823529411764,
+            "r_mass_kept": 0.4783193222823147
+          },
+          {
+            "parent_global": 1968,
+            "r_supp_kept": 0.05056179775280899,
+            "r_mass_kept": 0.1090954028425213
+          },
+          {
+            "parent_global": 1969,
+            "r_supp_kept": 0.07093425605536333,
+            "r_mass_kept": 0.3467856444192752
+          },
+          {
+            "parent_global": 1984,
+            "r_supp_kept": 0.01430066271363795,
+            "r_mass_kept": 0.019509210399498704
+          },
+          {
+            "parent_global": 1988,
+            "r_supp_kept": 0.2708333333333333,
+            "r_mass_kept": 0.6709464762629223
+          },
+          {
+            "parent_global": 1997,
+            "r_supp_kept": 0.10961123110151189,
+            "r_mass_kept": 0.21266604675659895
+          },
+          {
+            "parent_global": 1999,
+            "r_supp_kept": 0.41796875,
+            "r_mass_kept": 0.8373120818380766
+          },
+          {
+            "parent_global": 2003,
+            "r_supp_kept": 0.013856812933025405,
+            "r_mass_kept": 0.025937974655027354
+          },
+          {
+            "parent_global": 2012,
+            "r_supp_kept": 0.10451977401129943,
+            "r_mass_kept": 0.02950198176132688
+          },
+          {
+            "parent_global": 2017,
+            "r_supp_kept": 0.3836477987421384,
+            "r_mass_kept": 0.07548882668139698
+          },
+          {
+            "parent_global": 2030,
+            "r_supp_kept": 0.04628224582701062,
+            "r_mass_kept": 0.010795958757284145
+          },
+          {
+            "parent_global": 2037,
+            "r_supp_kept": 0.04498269896193772,
+            "r_mass_kept": 0.012046913821432172
+          },
+          {
+            "parent_global": 2041,
+            "r_supp_kept": 0.33516483516483514,
+            "r_mass_kept": 0.19584938851726552
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 762,
+        "n_probed_children": 406,
+        "n_untestable_children": 0,
+        "n_edges_scored": 739,
+        "n_pass": 216,
+        "frac_pass": 0.2922868741542625
+      }
+    }
+  }
 }

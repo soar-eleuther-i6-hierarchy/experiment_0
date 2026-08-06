@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/cross_depth_comparison.html">Cross-depth</a><a class="" href="../../outputs/kill_rates.html">Kill rates</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill on" href="../../outputs/layer_03/qualitative_check.html">3</a><a class="pill" href="../../outputs/layer_06/qualitative_check.html">6</a><a class="pill" href="../../outputs/layer_12/qualitative_check.html">12</a><a class="pill" href="../../outputs/layer_18/qualitative_check.html">18</a><a class="pill" href="../../outputs/layer_24/qualitative_check.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../outputs/layer_03/metrics_dashboard.html">Dashboard</a><a class="" href="../../outputs/layer_03/superparent_sankey.html">Superparents</a><a class="" href="../../outputs/layer_03/qualitative_dashboard.html">Qualitative</a><a class="" href="../../outputs/layer_03/metrics_report.html">Metrics report</a><a class="on" href="../../outputs/layer_03/qualitative_check.html">Qualitative report</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill on" href="../../outputs/layer_03/qualitative_check.html">3</a><a class="pill" href="../../outputs/layer_06/qualitative_check.html">6</a><a class="pill" href="../../outputs/layer_12/qualitative_check.html">12</a><a class="pill" href="../../outputs/layer_18/qualitative_check.html">18</a><a class="pill" href="../../outputs/layer_24/qualitative_check.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../outputs/layer_03/metrics_dashboard.html">Dashboard</a><a class="" href="../../outputs/layer_03/superparent_sankey.html">Superparents</a><a class="" href="../../outputs/layer_03/qualitative_dashboard.html">Qualitative</a><a class="" href="../../outputs/layer_03/metrics_report.html">Metrics report</a><a class="on" href="../../outputs/layer_03/qualitative_check.html">Qualitative report</a></div></nav>
 
 # Exp 0 - qualitative agreement check (real gemma-2-2b SAE)
 
@@ -31,72 +31,72 @@ For each block pair we compare edges the metrics KEEP (survivors) against edges 
 
 ### survivor  (8)
 
+- **112 -> 436**  `R=0.78 F=0.14 recon_gain=1.979 recon=Y surv=0.82 p_fires=5%`
+    - parent [112](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/112): _parenthetical statements_
+    - child  [436](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/436): _LaTeX mathematical notation._
 - **84 -> 273**  `R=0.64 F=0.13 recon_gain=1.488 recon=Y surv=0.60 p_fires=3%`
     - parent [84](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/84): _the word "this" used as a pronoun to make connections between topics_
     - child  [273](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/273): _the word "This"_
-- **84 -> 284**  `R=0.71 F=0.15 recon_gain=0.976 recon=Y surv=0.83 p_fires=3%`
+- **84 -> 284**  `R=0.71 F=0.15 recon_gain=0.976 recon=Y surv=0.84 p_fires=3%`
     - parent [84](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/84): _the word "this" used as a pronoun to make connections between topics_
     - child  [284](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/284): _the word "this", sometimes followed by "is", "can", or "that"_
-- **60 -> 384**  `R=0.53 F=0.02 recon_gain=0.593 recon=Y surv=1.31 p_fires=2%`
-    - parent [60](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/60): _LaTeX mathematical expressions, especially those involving symbols and equations._
-    - child  [384](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/384): _LaTeX math delimiters and special characters_
 - **26 -> 140**  `R=0.77 F=0.13 recon_gain=0.590 recon=Y surv=1.00 p_fires=6%`
     - parent [26](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/26): _first and third person pronouns along with references to other people._
     - child  [140](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/140): _mentions of a male person as "he" or with "him" possessive pronouns._
-- **106 -> 439**  `R=0.52 F=0.05 recon_gain=0.541 recon=Y surv=1.50 p_fires=1%`
-    - parent [106](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/106): _code and related keywords_
-    - child  [439](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/439): _statistical data from scientific publications_
 - **26 -> 306**  `R=0.73 F=0.15 recon_gain=0.505 recon=Y surv=0.88 p_fires=6%`
     - parent [26](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/26): _first and third person pronouns along with references to other people._
     - child  [306](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/306): _first and second person pronouns_
 - **26 -> 299**  `R=0.56 F=0.15 recon_gain=0.356 recon=Y surv=1.03 p_fires=6%`
     - parent [26](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/26): _first and third person pronouns along with references to other people._
     - child  [299](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/299): _"it" or other third person pronouns_
-- **48 -> 284**  `R=0.62 F=0.03 recon_gain=0.280 recon=Y surv=1.12 p_fires=13%`
+- **48 -> 284**  `R=0.62 F=0.03 recon_gain=0.280 recon=Y surv=1.13 p_fires=13%`
     - parent [48](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/48): _various discourse markers or conjunctions_
     - child  [284](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/284): _the word "this", sometimes followed by "is", "can", or "that"_
+- **31 -> 505**  `R=0.71 F=0.10 recon_gain=0.258 recon=Y surv=1.15 p_fires=2%`
+    - parent [31](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/31): _horizontal lines of dashes_
+    - child  [505](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/505): _legal and scientific research article formatting like spacing, section dividers, values, and symbols_
 
 ### reject:superparent  (4)
 
-- **70 -> 310**  `R=1.00 F=0.01 recon_gain=1.266 recon=Y surv=1.00 p_fires=99%`
+- **70 -> 394**  `R=1.00 F=0.00 recon_gain=1.146 recon=Y surv=1.00 p_fires=99%`
     - parent [70](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/70): _proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters_
-    - child  [310](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/310): _the keyword "public" in code_
-- **70 -> 238**  `R=1.00 F=0.01 recon_gain=1.007 recon=Y surv=1.00 p_fires=99%`
+    - child  [394](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/394): _various fraction representations_
+- **70 -> 148**  `R=1.00 F=0.01 recon_gain=0.876 recon=n surv=1.00 p_fires=99%`
     - parent [70](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/70): _proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters_
-    - child  [238](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/238): _code terms related to calculating maximum and minimum values_
-- **70 -> 476**  `R=1.00 F=0.01 recon_gain=1.039 recon=n surv=1.00 p_fires=99%`
+    - child  [148](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/148): _trademarked product names_
+- **70 -> 302**  `R=1.00 F=0.00 recon_gain=0.859 recon=Y surv=1.00 p_fires=99%`
     - parent [70](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/70): _proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters_
-    - child  [476](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/476): _the word "most" followed by "of"_
-- **70 -> 258**  `R=1.00 F=0.00 recon_gain=1.247 recon=Y surv=1.00 p_fires=99%`
+    - child  [302](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/302): _citations_
+- **70 -> 439**  `R=1.00 F=0.00 recon_gain=0.601 recon=Y surv=1.00 p_fires=99%`
     - parent [70](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/70): _proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters_
-    - child  [258](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/258): _lines that start with a plus (+) sign, which may represent code blocks or other structured data_
+    - child  [439](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/439): _statistical data from scientific publications_
 
 ### reject:freq-driven  (4)
 
-- **58 -> 461**  `R=0.94 F=0.02 recon_gain=-0.003 recon=n surv=0.30 p_fires=42%`
-    - parent [58](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/58): _words and abbreviations involved in scientific research and reporting of clinical trials._
-    - child  [461](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/461): _mathematical formulas with exponents, and superscripts_
-- **13 -> 461**  `R=0.93 F=0.15 recon_gain=-0.001 recon=n surv=0.00 p_fires=6%`
-    - parent [13](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/13): _the ends of sentences or phrases that include numbers or symbols_
-    - child  [461](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/461): _mathematical formulas with exponents, and superscripts_
-- **92 -> 461**  `R=0.93 F=0.12 recon_gain=-0.011 recon=n surv=0.36 p_fires=7%`
-    - parent [92](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/92): _scientific results including numbers, standard deviations, units, and sometimes variable names_
-    - child  [461](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/461): _mathematical formulas with exponents, and superscripts_
-- **103 -> 461**  `R=0.93 F=0.15 recon_gain=0.001 recon=n surv=0.24 p_fires=6%`
-    - parent [103](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/103): _a combination of asterisks, brackets, and quotes often used in mathematical typography_
-    - child  [461](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/461): _mathematical formulas with exponents, and superscripts_
+- **53 -> 276**  `R=0.87 F=0.21 recon_gain=0.400 recon=Y surv=0.18 p_fires=5%`
+    - parent [53](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/53): _numbers, especially large numbers or sequences of digits_
+    - child  [276](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/276): _strings of numbers_
+- **95 -> 276**  `R=0.76 F=0.26 recon_gain=0.437 recon=Y surv=0.45 p_fires=3%`
+    - parent [95](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/95): _references to outside literature_
+    - child  [276](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/276): _strings of numbers_
+- **95 -> 342**  `R=0.72 F=0.22 recon_gain=0.267 recon=Y surv=0.39 p_fires=3%`
+    - parent [95](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/95): _references to outside literature_
+    - child  [342](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/342): _legal citations_
+- **53 -> 342**  `R=0.67 F=0.14 recon_gain=0.238 recon=Y surv=0.38 p_fires=5%`
+    - parent [53](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/53): _numbers, especially large numbers or sequences of digits_
+    - child  [342](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/342): _legal citations_
 
 ### reject:no-recon  (4)
 
-- **58 -> 302**  `R=0.94 F=0.02 recon_gain=-0.003 recon=n surv=0.56 p_fires=42%`
-    - parent [58](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/58): _words and abbreviations involved in scientific research and reporting of clinical trials._
-    - child  [302](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/302): _citations_
-- **101 -> 461**  `R=0.93 F=0.04 recon_gain=-0.001 recon=n surv=0.60 p_fires=22%`
-    - parent [101](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/101): _legal jargon and names of people and institutions_
-    - child  [461](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/461): _mathematical formulas with exponents, and superscripts_
-- **1 -> 302**  `R=0.90 F=0.03 recon_gain=-0.014 recon=n surv=0.53 p_fires=30%`
-    - parent [1](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/1): _words related to groups of people, institutions, or legal concepts_
-    - child  [302](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/302): _citations_
-- **62 -> 177**  `R=0.87 F=0.09 recon_gain=-0.021 recon=n surv=0.68 p_fires=12%`
-    - parent [62](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/62): _scientifically technical words_
-    - child  [177](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/177): _legal citations_
+- **111 -> 188**  `R=0.78 F=0.03 recon_gain=0.044 recon=n surv=1.08 p_fires=30%`
+    - parent [111](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/111): _code, formatting and markup syntax, and specialized terminology_
+    - child  [188](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/188): _LaTeX code_
+- **111 -> 280**  `R=0.76 F=0.25 recon_gain=0.054 recon=n surv=1.06 p_fires=30%`
+    - parent [111](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/111): _code, formatting and markup syntax, and specialized terminology_
+    - child  [280](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/280): _citations to published research and words indicating a study or library_
+- **111 -> 494**  `R=0.76 F=0.10 recon_gain=0.060 recon=n surv=1.08 p_fires=30%`
+    - parent [111](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/111): _code, formatting and markup syntax, and specialized terminology_
+    - child  [494](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/494): _legal citations to the Federal Circuit court_
+- **99 -> 188**  `R=0.69 F=0.02 recon_gain=0.024 recon=n surv=1.05 p_fires=34%`
+    - parent [99](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/99): _words and phrases in scientific documents related to physics and quantum mechanics_
+    - child  [188](https://www.neuronpedia.org/gemma-2-2b/3-res-matryoshka-dc/188): _LaTeX code_

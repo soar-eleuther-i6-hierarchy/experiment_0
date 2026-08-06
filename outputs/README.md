@@ -19,12 +19,12 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/cross_depth_comparison.html">Cross-depth</a><a class="" href="../outputs/kill_rates.html">Kill rates</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/layer_03/">3</a><a class="pill" href="../outputs/layer_06/">6</a><a class="pill" href="../outputs/layer_12/">12</a><a class="pill" href="../outputs/layer_18/">18</a><a class="pill" href="../outputs/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/layer_03/">3</a><a class="pill" href="../outputs/layer_06/">6</a><a class="pill" href="../outputs/layer_12/">12</a><a class="pill" href="../outputs/layer_18/">18</a><a class="pill" href="../outputs/layer_24/">24</a></div></nav>
 
 # `outputs/` — results
 
 Everything the pipeline produces. Per-layer artifacts live in `layer_NN/`; layer-independent ones
-(the toy calibrations, the cross-depth pages) sit directly here.
+(the toy calibrations) sit directly here.
 
 `assets/plotly.min.js` is the one shared plotly bundle every dashboard links to. Inlining it in each
 page instead cost 4.6 MB per file and added ~70 MB of blobs to git on every regeneration; the pages
@@ -34,10 +34,42 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 
 ## Across all layers
 
-- [**Cross-depth comparison**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/cross_depth_comparison.html) — the cross-depth story: 4 metric panels, superparent table, the qualitative-agreement collapse.
-- [**Kill rates**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/kill_rates.html) — how many edges each metric removes.
 - [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/toy_calibration.html) — Tier 1, synthetic ground truth (9/9).
 - [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
+
+## Withdrawn pages
+
+`kill_rates.html` and `cross_depth_comparison.html` are no longer here. Both were hand-built with no
+generator, and both were written against caches that counted the BOS token. BOS is an attention sink,
+so every feature fires on it: with 400 documents every pair in the dictionary collected 400 joint
+firings and sailed past the `MIN_JOINT = 30` support guard. Excluding it inverted the very numbers
+those two pages existed to display — deep-pair reconstruction, the frequency-driven share, the death
+rate. They sit in [`../outputs_archive/`](../outputs_archive/) with a banner saying so.
+
+They are archived rather than fixed on purpose. Editing the numbers by hand would leave two pages
+that no rerun can reproduce and no rerun can invalidate — which is how they went stale in the first
+place. If the cross-depth view is wanted back, it should come back as a generator under `reporting/`.
+
+## The second pass has run on layer 6 only
+
+`layer_06/second_pass.json` is the sole stage-03 output in the repository. Stages 01, 01b, 02 and 02b
+have run on all five layers; stage 03 (`run_token_metrics.py` — S_res, parent-conditioned sibling
+redundancy, the kept-children union) has run on layer 6 alone. Do not read the other four layers'
+pages as though that pass is missing by accident.
+
+It is committed even though it is a generated artifact, because it cannot be regenerated from this
+clone: stage 03 reads `token_cache/` and `exp0_stats.pt`, both far too large for git and both absent
+here. It was produced on the compute node and pulled down with the rest of the v2 results.
+
+The file is not a duplicate of the `second_pass` key inside `metrics_report.json`. `run_token_metrics`
+deliberately strips the per-edge `edges` list when merging into the report, so the report carries the
+summary (`n_pass`, `n_edges_scored`) and this file carries the rows — parent, child, both probe ranks,
+both correlations, the verdict. `reporting/make_report_figures.py` and `reporting/visualize.py` both
+read those rows.
+
+That distinction matters beyond bookkeeping: `run_metrics.py` labels its own sibling-redundancy figure
+`global_jaccard_confounded` and defers the verdict to this pass. The number on the dashboards is not
+the answer; the answer is here.
 
 ## Per layer
 

@@ -208,10 +208,18 @@ NAV_PAGES = [
 # two adjacent links to the same place is noise. No "Per layer" either: it went
 # to the layer *table*, while the pills in the second row open each layer
 # directly, which is strictly better.
+# kill_rates.html and cross_depth_comparison.html are gone from this list. Both
+# were hand-built with no generator, so neither could be rebuilt by rerunning a
+# stage, and both were written against caches that counted BOS. BOS is an
+# attention sink -- every feature fires there -- so it manufactured 400 joint
+# firings for every pair in the dictionary and defeated the joint-support guard.
+# Excluding it inverted the numbers those two pages were built to display: the
+# deep-pair reconstruction share, the frequency-driven share, the death rate.
+# They now sit in outputs_archive/ carrying a banner. A page that states a
+# withdrawn result next to regenerated ones is worse than no page; put them back
+# only behind a generator, so a rerun can never leave them stale again.
 NAV_GLOBAL = [
     ("outputs/", "Results"),
-    ("outputs/cross_depth_comparison.html", "Cross-depth"),
-    ("outputs/kill_rates.html", "Kill rates"),
     ("outputs/toy_calibration.html", "Toy calibration"),
     ("outputs/trained_toy_calibration.html", "Trained toy"),
 ]
@@ -292,13 +300,28 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
 # A run writes into a FIXED path (outputs/layer_NN/) because the published site
 # links to it by name -- timestamping that directory would 404 every page. So a
 # rerun would otherwise replace the previous run's numbers with no trace. This
-# takes a dated copy first, into outputs_local/ (gitignored: these are history,
-# not results). Copy, not move, so the site stays whole even if the run dies.
-ARCHIVE_DIR = HERE / "outputs_local" / "archive"
+# takes a dated copy first. Copy, not move, so the site stays whole even if the
+# run dies.
+#
+# Tracked, not gitignored, on purpose. A superseded run is evidence: when a number
+# changes, the version it replaced has to stay citable rather than sit in one
+# person's working copy. outputs_local/ was the old home and is ignored, so an
+# archive there vanished on a fresh clone -- the one case you need it.
+ARCHIVE_DIR = HERE / "outputs_archive"
 
-# Never archived: the ~700 MB cache is on the Hub and the token cache is
-# rebuildable, so copying either per run would fill the disk for nothing.
-ARCHIVE_SKIP = ("*.pt", "token_cache", "figures")
+# Never archived. Two different reasons, both worth stating.
+#
+# exp0_stats.pt / token_cache / figures: too big to keep per run. The ~700 MB
+# cache is on the Hub and the token cache is rebuildable from it.
+#
+# feature_labels.json / npedia_labels_cache.json: not run output at all. They are
+# Neuronpedia's labels for this layer's SAE, a property of the dictionary, and
+# nothing we compute touches them -- so an archived copy is byte-identical to the
+# live one and archives nothing. Left in, they were 9.8 MB of the archive's 11 MB.
+# Safe to drop because the dashboards inline their labels at generation time; no
+# archived page reads these files when it is opened.
+ARCHIVE_SKIP = ("*.pt", "token_cache", "figures",
+                "feature_labels.json", "npedia_labels_cache.json")
 
 
 def archive_run_dir(stamp: str) -> "Path | None":
