@@ -163,12 +163,27 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
     pairs = adjacent_pairs(cfg)
     print(f"[01] block pairs: {pairs}")
 
+    # A block is a SET of feature indices. Matryoshka's happen to be contiguous
+    # prefixes, and nothing in the metrics requires that -- every one of them is a
+    # matrix product over selected columns. Sources whose groups are not contiguous
+    # (the trained toy indexes by which true feature each latent recovered, giving
+    # lists like [0, 3, 8]) declare cfg.BLOCK_INDICES instead of BLOCK_RANGES.
+    block_indices = getattr(cfg, "BLOCK_INDICES", None)
+    if block_indices is not None:
+        block_indices = [torch.as_tensor(ix, dtype=torch.long, device=device) for ix in block_indices]
+
     def blk_len(b):
+        if block_indices is not None:
+            return int(block_indices[b].numel())
         return cfg.BLOCK_RANGES[b][1] - cfg.BLOCK_RANGES[b][0]
 
     def blk_slice(b):
         # NOT utils.sae_utils.block_slice: that one reads the gemma config module
         # globally, so it would slice an adapter's dictionary with gemma's ranges.
+        # An index tensor selects the same way a slice does, at the cost of a gather
+        # instead of a view -- paid only by sources that need it.
+        if block_indices is not None:
+            return block_indices[b]
         start, end = cfg.BLOCK_RANGES[b]
         return slice(start, end)
 
@@ -358,6 +373,10 @@ def collect(model, sae, seqs, *, device, cfg=C, out_path=None, extra_config=None
             "bos_excluded": True,
             "min_joint": cfg.MIN_JOINT,
             "local_freq_buckets": bool(local_freq),
+            # Present only for sources whose blocks are not contiguous. Readers must
+            # prefer it over block_ranges when it is there.
+            **({"block_indices": [ix.cpu().tolist() for ix in block_indices]}
+               if block_indices is not None else {}),
             **(extra_config or {}),
         },
     }
