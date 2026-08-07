@@ -672,7 +672,7 @@ def build_calibration_dashboard(data):
     n_pass = sum(r["pass"] for r in data["rows"])
     fig.update_layout(
         title=dict(text=_titled(
-                       "Metric calibration",
+                       "Synthetic toy calibration",
                        f"{n_pass}/{len(data['rows'])} metrics recover the true tree and reject their "
                        f"injected pathology　·　"
                        f"<span style='color:{RED}'>- - dashed = config threshold</span>",
@@ -954,7 +954,7 @@ def build_trained_calibration_dashboard(d, align=None):
                 f"/{align['n_testable']}</span></b>")
     fig.update_layout(
         title=dict(text=_titled(
-            "Trained-toy calibration",
+            "Trained toy calibration",
             f"metrics run on a Matryoshka SAE trained on Bussmann's tree　·　"
             f"<b><span style='color:#166534'>precision {d['precision']:.2f}</span></b>, "
             f"<b>recall {d['recall']:.2f}</b> "

@@ -21,7 +21,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="../outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="../outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="../outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # `outputs/` — results
 
@@ -39,7 +39,7 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 
 ## Across all layers
 
-- [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/toy_calibration.html) — Tier 1, synthetic ground truth (9/9).
+- [**Synthetic toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/toy_calibration.html) — Tier 1, synthetic ground truth (14/14 across seeds 0–7).
 - [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
 
 ## Other sources
@@ -164,22 +164,32 @@ to avoid confusion with the model's residual-stream layers.)
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic** | [`validation/toy_world.py`](../validation/toy_world.py): a known 5-parent tree plus three injected pathologies, reduced to the statistics the metrics read | yes, by construction | the maths is right — 9/9 scorecard rows pass across seeds 0–5, each pathology caught by its intended metric |
+| **1. Synthetic toy** | [`validation/toy_world.py`](../validation/toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows across seeds 0–7**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
 | **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) |
 | **3. Real SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a production SAE |
 
 Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge that
 has both a trained SAE and a known answer.
 
-**What the tiers do not cover.** Tier 1 now scores **9/9 rows across seeds 0–5**, covering all
-13 statistics-only metric functions — including the independence null (PMI), joint-child coverage
-(support and energy) and energy concentration. Two gaps remain. `S_res` needs per-token
-residuals the reduced statistics do not carry, so it is calibrated in Tier 2, not here; **in-block
-directed coverage has no known-tree calibration at all**. And because
-[`validation/toy_world.py`](../validation/toy_world.py) injects only three pathologies (a
-superparent, a feature-split parent, a frequency-coincidence edge), absorption and concept
-co-occurrence are still unscored — extending the toy with an absorbed child and a topical confound
-is what would let those columns be measured rather than argued from construction.
+**What the tiers do and do not cover.** Tier 1 scores **14/14 rows across seeds 0–7**, covering
+**21/21 metric functions**. Until 7 August this paragraph said `S_res` was "calibrated in Tier 2,
+not here". It was not: Tier 2 imports `coverage_legs`, `keep_edges`,
+`edge_reconstruction_condition`, `frequency_controlled_coverage` and `frequency_buckets`, and
+nothing else — so the strict test, the one that decides which edges survive on gemma, was graded
+against no known answer at all, and neither was in-block directed coverage.
+[`validation/toy_world.py`](../validation/toy_world.py) now also returns the per-token view
+(`resid`, `fired`, `W_dec`) those functions read, and carries three further structures: an absorbed
+child, a shared-topic pair and a within-block containment plus duplicate pair.
+
+Absorption and topical co-occurrence are still **not caught** — that has not changed and cannot be
+fixed by another threshold. What changed is that they are now *scored*, as negative controls that
+pass when the battery does nothing: the absorbed edge has `R = 0.00` and never enters the candidate
+set, and the shared-topic non-edge clears coverage, reconstruction, the frequency control and PMI.
+A limitation that is measured regresses visibly; one that is only written down does not.
+
+One thing the toy cannot show: the rank rule passes an unrelated parent whenever chance puts it in
+the top *k* of *D*, so its null rate is `k/D` — 11.9% here, 0.28% on PCFG's 1792 latents, 0.015% on
+gemma's 32768. An `S_res` pass rate is only comparable between dictionaries of similar size.
 
 **Tier 1 detail** — each metric is scored on the job it claims:
 

@@ -21,7 +21,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="./outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="./outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="./outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="./outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # experiment_0: Implement Metrics (SOAR I-6)
 
@@ -195,38 +195,55 @@ all three. ("Tier", not "layer", to avoid confusion with the model's residual-st
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic** | a known 5-parent tree plus injected pathologies, reduced to cached stats | yes, by construction | the maths is right — 9/9, each pathology caught by its intended metric |
+| **1. Synthetic toy** | a known 5-parent tree plus six injected structures, reduced to cached stats *and* to the per-token view the probes need | yes, by construction | the maths is right — **14/14 across seeds 0–7**, covering all 21 metric functions, each pathology caught by its intended metric |
 | **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
 | **3. Real SAE** | the production `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | no, human judgement | the metrics mean something outside a toy |
 
 Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge with
 both a trained SAE and a known answer.
 
-**Scope.** Tier 1 scores 9/9 rows across seeds 0–5, covering every statistics-only metric —
-coverage, joint-child, reconstruction, sibling redundancy, out-degree, token-frequency control and
-the independence null. Still uncalibrated: `S_res` (needs per-token residuals, so it is graded in
-Tier 2) and in-block directed coverage, whose matrix rows follow from their construction alone. Full
-detail, per-metric scorecards and how to run each tier: **[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
+**Scope.** Tier 1 scores **14/14 rows across seeds 0–7**, covering **21/21 metric functions** —
+including `S_res` and in-block directed coverage, which until 7 August were graded by nothing. The
+page used to say the probe functions were "calibrated in Tier 2"; Tier 2 imports five functions and
+none of them is one of those. Two rows are negative controls that pass when the battery does *not*
+act, so absorption and shared-topic co-occurrence are demonstrated limitations rather than asserted
+ones. Full detail, per-metric scorecards and how to run each tier:
+**[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
 
 ## Headline findings
 
-- **Coverage proposes far more edges than survive.** At layer 6 only 512 of 8,156 candidate B0→B1
-  edges (6.3%) improve reconstruction; B2→B3 keeps 113 of 4.7M, with 99.9% frequency-driven.
-- **The structure is not a tree.** Multi-parenting is near-total (383 of 383 children at layer 6),
-  and feature 15 ("technical documentation language") fires on 99.0% of tokens and parents the
-  entire B1 block.
-- **Semantic quality degrades with depth.** Survivors read as real refinement early
-  (L3/L6: "legal citations" → "legal citations"); at layer 24 the 8 survivors collapse onto 2
-  parents, one firing on 41.9% of tokens with unrelated children.
-- **The metrics themselves hold up.** 9/9 on the synthetic toy (each injected pathology caught by its
-  intended metric) and **precision 1.00 / recall 0.67** on a Matryoshka SAE actually trained on
+Regenerated on 6 August after BOS exclusion. BOS is an attention sink, so with 400 documents every
+pair in the dictionary was handed 400 joint firings and cleared a guard set at 30 — the candidate
+sets were largely phantom. **Three of the four claims this section used to make did not survive**,
+two of them inverted; they are kept below struck through rather than deleted, because a withdrawn
+result that vanishes is indistinguishable from one that was never made. See
+[`research-log/ERROR_LOG.md`](https://github.com/soar-eleuther-i6-hierarchy/soar-eleuther-i6-hierarchy/blob/main/research-log/ERROR_LOG.md).
+
+- **Edges die at the strict test, not at coverage.** At layer 6, B0→B1 proposes 2,428 candidates and
+  85.9% of them *improve* reconstruction — but only **10 of 1,700 (0.6%) pass probe `S_res`**. The
+  cheap filters barely bite; the refinement test is what removes almost everything.
+  ~~only 512 of 8,156 candidates (6.3%) improve reconstruction~~
+- **The structure is not a tree.** Multi-parenting in B0→B1 is 99 / 100 / 100 / 89 / 100% across
+  L3–L24. This is the one claim BOS exclusion left standing, because it is a ratio over children
+  that already have a parent rather than a count of candidates.
+- **Same-level structure lives in the outermost block.** Within-block directed edges run 43.8 per
+  thousand pairs in B0 against 0.01 in B3 at layer 6, and the same concentration holds on a PCFG SAE
+  whose blocks are all the same size — so it is not an artefact of B0 being small.
+- ~~**Semantic quality degrades with depth.**~~ **Withdrawn.** The distinct-parent counts read
+  5 · 7 · 6 · 7 · 6 after regeneration — flat. The layer-24 collapse was one contaminated layer.
+- **The metrics themselves hold up.** **14/14** on the synthetic toy across seeds 0–7, covering every
+  metric function, and **precision 1.00 / recall 0.67** on a Matryoshka SAE actually trained on
   Bussmann's tree — every miss traced to a feature the SAE never learned, not to a metric.
 
-> Killing 94% to 99.9% of coverage edges is the result, not a failure: the Matryoshka SAE's hierarchy
-> claim does not survive any measurement stricter than raw co-firing.
+> ~~Killing 94% to 99.9% of coverage edges is the result~~ — **that framing was measuring the
+> phantom candidates.** What replaces it is narrower and better founded: co-firing plus a
+> reconstruction check accepts most of what it sees, and the probe-based refinement test rejects
+> 99.4% of what reaches it.
 >
-> Caveats: the metrics cover the SAE/MLP slice only, and B3→B4 is off by default (memory;
-> enable with `EXP0_B3B4=1`).
+> Caveats: the metrics cover the SAE/MLP slice only; B3→B4 is off by default (memory; enable with
+> `EXP0_B3B4=1`); stage 03 has run on layer 6 only, so the `S_res` column exists for one layer; and
+> the Tier-3 semantic reading has not been redone since regeneration, so no claim here rests on
+> reading survivor labels.
 
 Full numbers, dashboards and per-layer pages: **[outputs/](outputs/)**.
 

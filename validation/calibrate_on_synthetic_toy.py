@@ -450,7 +450,7 @@ def _render(rows) -> str:
     ranked = sorted(rows, key=lambda r: (-int(r["pass"]), -r["margin"]))
     # Site-wide page (no layer): one level down from the site root.
     L = [C.nav_html(depth=1, current="outputs/toy_calibration.html"), "",
-         "# Exp 0 - metric calibration on synthetic ground truth", ""]
+         "# Synthetic toy calibration — every metric against a known tree", ""]
     L.append("Each metric is graded on the pathology it is meant to catch, using "
              "the production thresholds in `config.py`. Margin = how decisively the "
              "metric separated the two classes (higher is better).")
