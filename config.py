@@ -284,6 +284,7 @@ NAV_PAGES = [
     ("in_block_dashboard.html", "In-block"),
     ("qualitative_dashboard.html", "Qualitative"),
     ("metrics_report.html", "Metrics report"),
+    ("in_block_edges.html", "In-block report"),
     ("qualitative_check.html", "Qualitative report"),
 ]
 

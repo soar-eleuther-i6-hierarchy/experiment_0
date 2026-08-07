@@ -36,6 +36,7 @@ BLURB = {
     "in_block_dashboard.html": "same-level edges and duplicates inside one block, where no block ordering fixes direction",
     "qualitative_dashboard.html": "surviving vs rejected edges, with Neuronpedia labels",
     "metrics_report.html": "the numbers behind the dashboard, as text",
+    "in_block_edges.html": "the same-level edges and duplicates per block, as text",
     "qualitative_check.html": "survivor vs rejected edges read against the labels",
 }
 

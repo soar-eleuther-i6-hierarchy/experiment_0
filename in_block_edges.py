@@ -201,13 +201,13 @@ def to_md(report):
     # because it was written while the script sat outside the pipeline, and a
     # markdown page with no bar is a dead end: `refresh_nav` REPLACES a nav block
     # and cannot add a missing one, so nothing downstream would ever notice.
-    # `page=None` because this report is not one of NAV_PAGES -- the reader still
-    # gets the layer pills and the source row, nothing is marked current.
+    # It IS one of NAV_PAGES now, so the pill is marked current and switching
+    # layer from here lands on the same report rather than on that layer's index.
     md_path = C.RUN_DIR / "in_block_edges.md"
     nav = C.nav_html(depth=C.page_depth(md_path),
                      layer=(report["config"] or {}).get("layer", C.LAYER)
                      if C.IS_LAYER_RUN else None,
-                     page=None,
+                     page="in_block_edges.html",
                      current=f"outputs/{C.RUN_NAME}/in_block_edges.html")
     L = [nav, "", "# In-block (same-level) directed edges", "",
          C.scope_line(report["total_tokens"], n_docs=report.get("n_docs"),
