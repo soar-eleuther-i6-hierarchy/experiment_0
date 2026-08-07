@@ -269,19 +269,45 @@ NAV_PAGES = [
 # They now sit in outputs_archive/ carrying a banner. A page that states a
 # withdrawn result next to regenerated ones is worse than no page; put them back
 # only behind a generator, so a rerun can never leave them stale again.
+# Each SOURCE is a directory of layers under outputs/, and one entry in the nav's
+# global row. Clicking it opens that source; its own layer pills then appear.
+# Nothing here is gemma-specific any more: the PCFG SAE has one layer trained so
+# far and gets a one-pill row, which is the honest picture of that sweep.
+#
+# `pages` differs per source because Neuronpedia labels exist for gemma's
+# dictionary and no other, so the two qualitative pages exist only there. Listing
+# a page a source does not have would put a 404 in its own nav bar.
+SOURCES = {
+    SOURCE_NAME: {
+        "label": "Gemma2_2b",
+        "layers": [3, 6, 12, 18, 24],
+        "pages": NAV_PAGES,
+    },
+    "pcfg": {
+        "label": "PCFG",
+        "layers": [1],
+        "pages": [p for p in NAV_PAGES if not p[0].startswith("qualitative")],
+    },
+}
+
+# Global links: (path from site root, label).
 NAV_GLOBAL = [
     ("outputs/", "Results"),
     ("outputs/toy_calibration.html", "Toy calibration"),
     ("outputs/trained_toy_calibration.html", "Trained toy"),
-    # A run, not a layer: the PCFG SAE has its own base model and its own
-    # dictionary, so it belongs in the global row rather than among the layer
-    # pills. Adding an entry here changes the bar on EVERY page, including ones
-    # whose generator needs a 700 MB cache -- see reporting/refresh_nav.py.
-    ("outputs/pcfg/", "PCFG"),
-    # gemma is a source like any other now, so it is a place you go rather than a
-    # row that follows you: its layer pills appear once you are inside it.
-    (f"outputs/{SOURCE_NAME}/", SOURCE_NAME.replace("gemma", "Gemma")),
-]
+] + [(f"outputs/{name}/", cfg["label"]) for name, cfg in SOURCES.items()]
+
+
+def source_of(current: str | None) -> str | None:
+    """Which source a page belongs to, from its path under the site root.
+
+    Derived rather than passed: the answer is already in the path, and a second
+    place to state it is a second place for it to be wrong.
+    """
+    for name in SOURCES:
+        if (current or "").startswith(f"outputs/{name}/"):
+            return name
+    return None
 
 # Inlined rather than linked: every page must render identically offline and on
 # Pages, and one <img> to an external host would be the only request any of
@@ -327,9 +353,13 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     current  this page's own path from the site root, used to highlight its
              entry in the global row (site-wide pages only)
 
-    The second row only appears on a layer page: it is what makes navigation
-    two-dimensional — change the layer and stay on the same page, or change the
-    page and stay on the same layer.
+    The second row belongs to a SOURCE and appears only inside one, carrying that
+    source's layers. Within a layer page it also carries that source's pages, and
+    those two groups are what make navigation two-dimensional — change the layer
+    and stay on the same page, or change the page and stay on the same layer.
+
+    Which source is read off `current`, so a page that passes no `current` gets
+    the single row. That is why every generator now passes one.
     """
     # depth 0 is the site root itself (the repo README): "" is not a usable href.
     root = "../" * depth or "./"
@@ -364,22 +394,23 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     # a layer page only. A pill keeps the current page kind when there is one;
     # from the source index it opens that layer's index, which is why every
     # layer_NN/ has a README.
-    in_source = layer is not None or (current or "").startswith(f"outputs/{SOURCE_NAME}/")
-    if not in_source:
+    source = source_of(current)
+    if source is None:
         return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
+    cfg = SOURCES[source]
 
     second = ['<span class="lbl">Layer</span>']
-    for L in NAV_LAYERS:
+    for L in cfg["layers"]:
         on = " on" if L == layer else ""
         second.append(
-            f'<a class="pill{on}" href="{root}outputs/{SOURCE_NAME}/layer_{L:02d}/{page or ""}">{L}</a>'
+            f'<a class="pill{on}" href="{root}outputs/{source}/layer_{L:02d}/{page or ""}">{L}</a>'
         )
     if layer is not None:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
-        for f, label in NAV_PAGES:
+        for f, label in cfg["pages"]:
             on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
             second.append(
-                f'<a class="{on.strip()}" href="{root}outputs/{SOURCE_NAME}/layer_{layer:02d}/{f}">{label}</a>'
+                f'<a class="{on.strip()}" href="{root}outputs/{source}/layer_{layer:02d}/{f}">{label}</a>'
             )
     rows.append('<div class="row">' + "".join(second) + "</div>")
 

@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import pathlib
+import re
 
 import config as C
 
@@ -83,7 +85,13 @@ def render_run(run: str) -> str:
     r = json.loads(report.read_text())
     cfg = r.get("config") or {}
 
-    L = [C.nav_html(depth=C.page_depth(run_dir / "README.md"), current=f"outputs/{run}/"), "",
+    # A run whose directory IS a layer (pcfg/layer_01) marks that pill, exactly as
+    # a gemma layer page does. The refresher derives the same thing from the path;
+    # they must not disagree.
+    m = re.fullmatch(r"layer_(\d+)", pathlib.Path(run).name)
+    L = [C.nav_html(depth=C.page_depth(run_dir / "README.md"),
+                    layer=int(m.group(1)) if m else None,
+                    page=None, current=f"outputs/{run}/"), "",
          f"# {run}", ""]
     L.append(C.scope_line(r.get("total_tokens"), n_docs=cfg.get("n_docs"), config=cfg))
     L += ["", "The same metric battery as the gemma layers, on an SAE from a different source. "
@@ -98,43 +106,60 @@ def render_run(run: str) -> str:
     return "\n".join(L)
 
 
-def render_source() -> str:
+def render_source(source: str | None = None) -> str:
     """The landing page for a source directory: outputs/<source>/README.md.
 
     Same reason every layer has one -- a directory with no index is a 404 on
     GitHub Pages, and this one is where the nav's brand and the results index
     now send a reader looking for "the gemma results".
     """
-    path = C.OUT_DIR / C.SOURCE_NAME / "README.md"
+    source = source or C.SOURCE_NAME
+    cfg = C.SOURCES[source]
+    src_dir = C.OUT_DIR / source
+    path = src_dir / "README.md"
     depth = C.page_depth(path)
     to_outputs = "../" * (depth - 1)
-    L = [C.nav_html(depth=depth, current=f"outputs/{C.SOURCE_NAME}/"), "",
-         f"# `{C.SOURCE_NAME}/` — {C.MODEL_NAME}", ""]
+
+    # What this source IS comes from a graded layer's own report, not from
+    # config: only gemma's model and dictionary are constants in this repo.
+    scope, model = "", C.MODEL_NAME
+    for layer in cfg["layers"]:
+        report = src_dir / f"layer_{layer:02d}" / "metrics_report.json"
+        if report.is_file():
+            r = json.loads(report.read_text())
+            scope = C.scope_line(r.get("total_tokens"),
+                                 n_docs=(r.get("config") or {}).get("n_docs"),
+                                 config=r.get("config"))
+            break
+
+    L = [C.nav_html(depth=depth, current=f"outputs/{source}/"), "",
+         f"# `{source}/` — {cfg['label']}", ""]
+    if scope:
+        L += [scope, ""]
     L.append(
-        f"The five residual-stream layers of `{C.MODEL_NAME}` graded against its released "
-        f"Matryoshka SAE ({C.D_SAE:,} latents in {C.N_BLOCKS} nested blocks "
-        f"{C.MATRYOSHKA_STEPS}). One directory per layer, five pages each; the bar above "
-        f"moves between them."
+        f"One directory per layer, graded by the same battery as every other source in "
+        f"[outputs/]({to_outputs}README.md). The bar above moves between the layers; nothing "
+        f"in `metrics/` differs between them."
     )
-    L += ["", "| Layer | SAE | Pages |", "| --- | --- | --- |"]
-    for layer in C.NAV_LAYERS:
-        d = C.OUT_DIR / C.SOURCE_NAME / f"layer_{layer:02d}"
+    L += ["", "| Layer | Pages |", "| --- | --- |"]
+    for layer in cfg["layers"]:
+        d = src_dir / f"layer_{layer:02d}"
         pages = ", ".join(f"[{label.lower()}](layer_{layer:02d}/{f})"
-                          for f, label in C.NAV_PAGES if (d / f).exists()
+                          for f, label in cfg["pages"] if (d / f).exists()
                           or (d / f.replace(".html", ".md")).exists())
-        L.append(f"| [**{layer}**](layer_{layer:02d}/) | `blocks.{layer}.hook_resid_post` | {pages} |")
-    L += [
-        "",
-        "These sat at `outputs/layer_NN/` until 7 August. They moved when a second source was "
-        "published beside them: with only gemma here, `layer_06` read as a global fact rather "
-        f"than a fact about one model. Other sources are listed in "
-        f"[outputs/README.md]({to_outputs}README.md).",
-        "",
-        f"Stage 03 (`run_token_metrics.py`) has run on layer 6 only — see "
-        f"[outputs/README.md]({to_outputs}README.md#the-second-pass-has-run-on-layer-6-only) "
-        "before reading the sibling-redundancy figure on the other four.",
-        "",
-    ]
+        L.append(f"| [**{layer}**](layer_{layer:02d}/) | {pages or '_not graded yet_'} |")
+    if source == C.SOURCE_NAME:
+        L += [
+            "",
+            "These sat at `outputs/layer_NN/` until 7 August. They moved when a second source was "
+            "published beside them: with only gemma here, `layer_06` read as a global fact rather "
+            f"than a fact about one model.",
+            "",
+            f"Stage 03 (`run_token_metrics.py`) has run on layer 6 only — see "
+            f"[outputs/README.md]({to_outputs}README.md#the-second-pass-has-run-on-layer-6-only) "
+            "before reading the sibling-redundancy figure on the other four.",
+        ]
+    L.append("")
     return "\n".join(L)
 
 
@@ -150,13 +175,17 @@ def main() -> None:
     ap.add_argument("--layer", type=int, help="one layer instead of all of NAV_LAYERS")
     ap.add_argument("--run", action="store_true",
                     help="write the index for EXP0_RUN's directory instead of a gemma layer")
-    ap.add_argument("--source", action="store_true",
-                    help="write outputs/<source>/README.md, the index over the layers")
+    ap.add_argument("--source", nargs="?", const=C.SOURCE_NAME, metavar="NAME",
+                    help="write outputs/<source>/README.md, the index over its layers "
+                         f"(default {C.SOURCE_NAME}; any key of config.SOURCES)")
     args = ap.parse_args()
     if args.source:
-        path = C.OUT_DIR / C.SOURCE_NAME / "README.md"
+        if args.source not in C.SOURCES:
+            raise SystemExit(f"[index] unknown source {args.source!r}; "
+                             f"known: {', '.join(C.SOURCES)}")
+        path = C.OUT_DIR / args.source / "README.md"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(render_source())
+        path.write_text(render_source(args.source))
         print(f"[index] wrote {path}")
         return
     if args.run:
