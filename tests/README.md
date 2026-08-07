@@ -9,12 +9,27 @@ itself — the kind that break silently, with every downstream number still look
 | [`test_collect_generic.py`](test_collect_generic.py) | `collect_statistics.collect()` runs on a source that is not gemma | no network, no GPU, ~1s |
 | [`test_dashboards_generic.py`](test_dashboards_generic.py) | stages 02 → 03 → 04 grade and *render* a source that is not gemma | no network, no GPU, ~13s |
 | [`test_calibration_covers_metrics.py`](test_calibration_covers_metrics.py) | every function in `metrics.__all__` is actually called by the Tier-1 calibration | AST only, ~0.1s |
+| [`test_metric_math.py`](test_metric_math.py) | every metric equals its own definition, recomputed independently | no network, no GPU, ~2s |
+| [`test_site_links.py`](test_site_links.py) | every `href` and `src` on the generated site resolves | ~1s |
 
 ```bash
 python3 -m tests.test_collect_generic
 python3 -m tests.test_dashboards_generic
 python3 -m tests.test_calibration_covers_metrics
+python3 -m tests.test_metric_math
+python3 -m tests.test_site_links
 ```
+
+**Why a math test, when `validation/` already scores every metric.** Tier 1 grades *behaviour*:
+it runs a metric and checks that it separates the class it should keep from the class it should
+reject. The production function is what produces the numbers Tier 1 scores, so a formula that is
+consistently wrong still separates the classes and still passes — divide coverage by the parent
+instead of the child everywhere, and genuine edges still out-score pathological ones.
+`test_metric_math.py` recomputes each metric from the definition in its own docstring, by explicit
+loops where possible, and asserts equality. Verified by injecting four real errors — dropping the
+factor of 2 in the ablation gain, swapping coverage's denominator, forgetting `N` in the
+independence null, and making the in-block graph cyclic — each of which it caught and none of which
+Tier 1 would have.
 
 ## Why this one exists
 
