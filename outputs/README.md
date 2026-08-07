@@ -28,7 +28,7 @@ the PCFG run in `pcfg/`. Layer-independent artifacts (the toy calibrations) sit 
 
 The layers moved out of `outputs/layer_NN/` on 7 August, when a second source was published beside
 them and the old layout implied "layer 6" was a global fact rather than a fact about one model.
-Old URLs still resolve — see *Moved pages* below.
+Old URLs 404 — see *Moved pages* below.
 
 `assets/plotly.min.js` is the one shared plotly bundle every dashboard links to. Inlining it in each
 page instead cost 4.6 MB per file and added ~70 MB of blobs to git on every regeneration; the pages
@@ -55,14 +55,14 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 
 ## Moved pages
 
-The five layer directories were at `outputs/layer_NN/` until 7 August. Every one of those URLs was
-published and cited, so each still resolves: `reporting/moved_pages.py` writes a redirect stub at
-the old path pointing at `gemma2_2b/layer_NN/`. Thirty of them — the five pages per layer plus each
-directory index.
+The five layer directories were at `outputs/layer_NN/` until 7 August, so **every URL of that shape
+is now a 404** — 25 pages plus 5 directory indexes. The replacement is the same path with the source
+in it: `outputs/layer_06/metrics_dashboard.html` → [`outputs/gemma2_2b/layer_06/metrics_dashboard.html`](gemma2_2b/layer_06/metrics_dashboard.html).
 
-They are stubs, not pages: generated, listed by `--list`, and removed by `--remove` when the old
-links have stopped being followed. Nothing reads them, nothing regenerates from them, and they hold
-no numbers.
+Redirect stubs at the old paths were written and then removed: they duplicated all five layer
+directories in the tree for 120 KB of files holding no results, which reads as five more sets of
+results to anyone browsing the repo. If old links turn out to be in circulation, the generator is
+in this commit's parent — `reporting/moved_pages.py`, `git show 0139852`.
 
 ## Withdrawn pages
 

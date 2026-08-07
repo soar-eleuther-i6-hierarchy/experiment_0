@@ -253,8 +253,7 @@ metrics/                              the repository
 │   ├── visualize.py                  the interactive dashboards
 │   ├── make_report_figures.py        static proof-figures
 │   ├── layer_index.py                landing pages: per layer, --source, --run
-│   ├── refresh_nav.py                re-render the nav bar in place, no cache needed
-│   └── moved_pages.py                redirect stubs at pre-move URLs (--remove to drop)
+│   └── refresh_nav.py                re-render the nav bar in place, no cache needed
 │
 ├── tests/                            guards on claims the code makes about itself
 │   ├── test_collect_generic.py       stage 01 runs on a source that is not gemma
