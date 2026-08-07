@@ -185,13 +185,20 @@ IS_LAYER_RUN = Path(RUN_NAME).name.startswith("layer_")
 def page_depth(path) -> int:
     """Levels from a generated page's directory up to the site root.
 
-    The site root is the repo root, and OUT_DIR is `outputs/` one level under it,
-    so a page is 1 + however deep it sits inside OUT_DIR. Derived rather than
-    passed, because the depth changed for 25 published pages the day results were
-    grouped by source, and every caller that had hardcoded 2 was then wrong.
+    The site root is the repo root, so the answer is simply how deep the file sits
+    inside it -- which also covers the pages that are NOT under outputs/ at all:
+    the package READMEs, and outputs_archive/. Derived rather than passed, because
+    the depth changed for 25 published pages the day results were grouped by
+    source, and every caller that had hardcoded 2 was then wrong.
+
+    A page written under EXP0_OUT is outside the repo; there OUT_DIR stands in for
+    `outputs/`, so a scratch run produces the same bar as the published page.
     """
-    rel = Path(path).resolve().relative_to(OUT_DIR.resolve())
-    return len(rel.parts)
+    p = Path(path).resolve()
+    try:
+        return len(p.relative_to(HERE.resolve()).parts) - 1
+    except ValueError:
+        return len(p.relative_to(OUT_DIR.resolve()).parts)
 
 def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None, config=None):
     """Which layer, and the knobs a reader needs to interpret the numbers.

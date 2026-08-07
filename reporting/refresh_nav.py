@@ -22,8 +22,10 @@ bar is fresh looks maintained. Rerun the stage.
     python3 -m reporting.refresh_nav            # every page under OUT_DIR
     python3 -m reporting.refresh_nav --check    # report what would change, write nothing
 
-Leaves outputs_archive/ alone: those pages are withdrawn, and a withdrawn page
-that keeps up with the site's navigation invites being read as current.
+Includes outputs_archive/. Those pages are withdrawn, and the banner on each says
+so -- but a withdrawn page whose every nav link 404s is not "clearly historical",
+it is broken. Their pills are never marked current, so the bar navigates without
+claiming the archived page is the live one.
 """
 
 from __future__ import annotations
@@ -42,32 +44,44 @@ def identity(path):
     """(depth, layer, page, current) for one file -- what its generator passed.
 
     Mirrors reporting.visualize's `_page_identity` / `_site_path` and
-    layer_index's calls: a directory named layer_NN describes that layer, and
-    anything else is site-wide. Derived from the path rather than stored, which
-    is why this can run over a page nobody can rebuild.
+    layer_index's calls. Derived from the path rather than stored, which is why
+    this can run over a page nobody can rebuild.
+
+    Every file under the repo is fair game, not only `outputs/`: the package
+    READMEs carry the same bar, and so does every archived page -- and those were
+    the ones left with 295 dead links when the layer directories moved.
     """
-    if path.resolve() == (C.HERE / "README.md").resolve():
-        # The site index itself: depth 0, and it is the brand link's target rather
-        # than any nav entry, so nothing is marked current.
+    depth = C.page_depth(path)
+    try:
+        rel = path.resolve().relative_to(C.OUT_DIR.resolve())
+        under_outputs = True
+    except ValueError:                      # a page outside outputs/, e.g. a package README
+        rel = path.resolve().relative_to(C.HERE.resolve())
+        under_outputs = False
+    if depth == 0:
+        # The site index itself: the brand link's target rather than any nav
+        # entry, so nothing is marked current.
         return 0, None, None, None
-    rel = path.resolve().relative_to(C.OUT_DIR.resolve())
-    depth = len(rel.parts)                       # outputs/x.html -> 1, outputs/a/b/x.html -> 3
-    # The IMMEDIATE parent decides, not the first component: results are grouped
-    # by source, so a layer page is outputs/gemma2_2b/layer_NN/x.html and
-    # rel.parts[0] is the source, which says nothing about which page this is.
-    parent = rel.parts[-2] if depth > 1 else ""
+
+    parent = rel.parts[-2] if len(rel.parts) > 1 else ""
     is_index = path.name == "README.md"
 
     # `page` is which of the five per-layer page kinds this is -- it drives where
     # the layer pills point, so it must name a file that exists in every layer.
     # The calibration pages are not one of the five: marking them would send
-    # every pill to outputs/layer_NN/toy_calibration.html, which is a 404.
-    # Reports are markdown that Jekyll serves as .html, hence the rename.
+    # every pill to a 404. Reports are markdown Jekyll serves as .html, hence the
+    # rename.
     page = path.name.replace(".md", ".html")
     page = None if is_index or page not in {f for f, _ in C.NAV_PAGES} else page
 
-    if parent.startswith("layer_"):
+    # Exactly `layer_NN`, so an ARCHIVED copy -- layer_24__v1__2026-08-06T17-45 --
+    # is not marked as the current layer 24. It is a withdrawn page; its banner
+    # says so, and lighting the pill would say the opposite.
+    if re.fullmatch(r"layer_\d+", parent):
         return depth, int(parent.split("_")[1]), page, None
+
+    if not under_outputs:
+        return depth, None, page, None
     # Site-wide: a run directory, or a page directly in outputs/. layer=None, so
     # the Page row is not drawn; the pills still carry `page` and stay on this
     # kind of page when you jump to a gemma layer.
@@ -75,7 +89,7 @@ def identity(path):
     # which is the name the nav entries carry, so toy_calibration.md must
     # highlight the same entry its rendered form does.
     served = rel.with_suffix(".html").as_posix() if rel.suffix == ".md" else rel.as_posix()
-    current = f"outputs/{rel.parent.as_posix()}/" if is_index and depth > 1 else \
+    current = f"outputs/{rel.parent.as_posix()}/" if is_index and len(rel.parts) > 1 else \
               "outputs/" if is_index else \
               f"outputs/{served}"
     return depth, None, page, current
@@ -102,11 +116,14 @@ def main() -> int:
     ap.add_argument("--check", action="store_true", help="report, write nothing")
     args = ap.parse_args()
 
-    # The repo README is the site's index page and carries the same bar, one level
-    # above OUT_DIR -- it was the one page a walk of outputs/ could never reach.
+    # Every page on the site, not only outputs/: the package READMEs carry the
+    # bar too, and so does outputs_archive/, whose links all pointed at the old
+    # layer paths.
     changed = []
-    for path in [C.HERE / "README.md", *sorted(C.OUT_DIR.rglob("*"))]:
+    for path in sorted(C.HERE.rglob("*")):
         if path.suffix not in (".html", ".md") or not path.is_file():
+            continue
+        if any(part in (".git", "node_modules", "__pycache__") for part in path.parts):
             continue
         if refresh(path, write=not args.check):
             changed.append(path.relative_to(C.HERE))
