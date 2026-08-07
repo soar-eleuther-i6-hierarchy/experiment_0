@@ -377,7 +377,148 @@
           "b_label": "feature 34"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 550,
+        "n_pass": 15,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 120,
+            "child": 7,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.2505229115486145,
+            "child_corr": 0.9661210775375366,
+            "s_res": 0.2505229115486145
+          },
+          {
+            "parent": 200,
+            "child": 7,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.5475364923477173,
+            "child_corr": 0.9661210775375366,
+            "s_res": 0.5475364923477173
+          },
+          {
+            "parent": 184,
+            "child": 14,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.37835413217544556,
+            "child_corr": 0.8904171586036682,
+            "s_res": 0.37835413217544556
+          },
+          {
+            "parent": 155,
+            "child": 25,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.29024791717529297,
+            "child_corr": 1.0546473264694214,
+            "s_res": 0.29024791717529297
+          },
+          {
+            "parent": 101,
+            "child": 63,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2152654528617859,
+            "child_corr": 0.9618023037910461,
+            "s_res": 0.2152654528617859
+          },
+          {
+            "parent": 184,
+            "child": 63,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.21700802445411682,
+            "child_corr": 0.9618023037910461,
+            "s_res": 0.21700802445411682
+          },
+          {
+            "parent": 192,
+            "child": 95,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.31001561880111694,
+            "child_corr": 0.9143968224525452,
+            "s_res": 0.31001561880111694
+          },
+          {
+            "parent": 200,
+            "child": 101,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.4409932494163513,
+            "child_corr": 0.9918727874755859,
+            "s_res": 0.4409932494163513
+          },
+          {
+            "parent": 152,
+            "child": 103,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.2292402982711792,
+            "child_corr": 1.0873308181762695,
+            "s_res": 0.2292402982711792
+          },
+          {
+            "parent": 14,
+            "child": 150,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.29527443647384644,
+            "child_corr": 0.5885202884674072,
+            "s_res": 0.29527443647384644
+          },
+          {
+            "parent": 101,
+            "child": 150,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.21133393049240112,
+            "child_corr": 0.5885202884674072,
+            "s_res": 0.21133393049240112
+          },
+          {
+            "parent": 46,
+            "child": 152,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.3219051957130432,
+            "child_corr": 0.936514139175415,
+            "s_res": 0.3219051957130432
+          },
+          {
+            "parent": 7,
+            "child": 184,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.3018934428691864,
+            "child_corr": 0.8276885747909546,
+            "s_res": 0.3018934428691864
+          },
+          {
+            "parent": 101,
+            "child": 184,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.5537857413291931,
+            "child_corr": 0.8276885747909546,
+            "s_res": 0.5537857413291931
+          },
+          {
+            "parent": 120,
+            "child": 192,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.23347823321819305,
+            "child_corr": 1.0367059707641602,
+            "s_res": 0.23347823321819305
+          }
+        ]
+      }
     },
     {
       "block": 1,
@@ -414,7 +555,12 @@
         }
       ],
       "duplicate_examples": [],
-      "sres": null
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
     },
     {
       "block": 3,
@@ -437,7 +583,12 @@
         }
       ],
       "duplicate_examples": [],
-      "sres": null
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
     },
     {
       "block": 4,
@@ -488,7 +639,22 @@
         }
       ],
       "duplicate_examples": [],
-      "sres": null
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 1,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 1407,
+            "child": 1551,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.2770755887031555,
+            "child_corr": 0.7186850309371948,
+            "s_res": 0.2770755887031555
+          }
+        ]
+      }
     },
     {
       "block": 7,
