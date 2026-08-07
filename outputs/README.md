@@ -37,6 +37,16 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 - [**Toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/toy_calibration.html) — Tier 1, synthetic ground truth (9/9).
 - [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
 
+## Other sources
+
+- [**`pcfg/`**](pcfg/) — Exp 2, the same battery on a Matryoshka SAE trained on a PCFG corpus
+  (`zipf_exponent` 1.5): 1792 latents in 8 blocks over a 4-layer toy transformer, not gemma's 32768
+  in 5. Produced by `adapters/from_pcfg.py` in the umbrella repo; the metric code is untouched,
+  which is the point of it being here rather than in a repo of its own.
+
+  It is a *run*, not a layer, so it sits directly under `outputs/` with its own name and carries no
+  layer pills. The layer bar above still works from it — it goes to gemma.
+
 ## Withdrawn pages
 
 `kill_rates.html` and `cross_depth_comparison.html` are no longer here. Both were hand-built with no

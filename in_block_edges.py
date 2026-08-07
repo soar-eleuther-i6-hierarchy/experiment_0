@@ -196,7 +196,8 @@ def analyse_block(b, stats, cache, labels, W_dec, device, do_sres):
 
 def to_md(report):
     L = ["# In-block (same-level) directed edges", "",
-         C.scope_line(report["total_tokens"], n_docs=report.get("n_docs")), "",
+         C.scope_line(report["total_tokens"], n_docs=report.get("n_docs"),
+                      config=report.get("config")), "",
          "Parent→child *within* a block (asymmetric containment); co-extensive "
          "pairs are reported as duplicates (renames/splits), never edges.", ""]
     for r in report["blocks"]:
@@ -248,7 +249,10 @@ def main():
     blocks = [analyse_block(b, stats, cache, labels, W_dec, device, not args.skip_sres)
               for b in C.IN_BLOCK_BLOCKS]
     report = {"total_tokens": int(stats["total_tokens"]),
-              "n_docs": stats["config"].get("n_docs"), "blocks": blocks}
+              "n_docs": stats["config"].get("n_docs"),
+              # Carried so the digest can name the source it graded; without it
+              # to_md() falls back to this module's gemma defaults.
+              "config": stats["config"], "blocks": blocks}
 
     from run_metrics import json_safe
     C.IN_BLOCK_PATH.write_text(json.dumps(json_safe(report), indent=2))

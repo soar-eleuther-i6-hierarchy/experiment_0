@@ -164,20 +164,48 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # Per-layer artifacts live in outputs/layer_NN/ so runs on different layers never
 # clobber each other. Layer-independent artifacts (e.g. the synthetic toy
 # calibration) stay directly in OUT_DIR.
-RUN_DIR = OUT_DIR / f"layer_{LAYER:02d}"
+#
+# EXP0_RUN names the directory instead, for a run that is not a gemma layer: the
+# PCFG SAE is 1792 latents in 8 blocks over its own base model, and `layer_01`
+# would both collide with a future gemma layer and misdescribe it. Keep such a
+# run a DIRECT child of OUT_DIR (EXP0_RUN=pcfg, not EXP0_RUN=pcfg/run-1): the
+# whole site is built for pages exactly one level under outputs/ -- the nav's
+# `up=2`, the shared plotly bundle at ../assets/, and reporting's
+# `_page_identity`, which gives any non-`layer_` directory the site-wide nav
+# instead of gemma's layer pills.
+RUN_NAME = os.environ.get("EXP0_RUN", f"layer_{LAYER:02d}")
+RUN_DIR = OUT_DIR / RUN_NAME
 RUN_DIR.mkdir(parents=True, exist_ok=True)
 
-def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None):
+def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None, config=None):
     """Which layer, and the knobs a reader needs to interpret the numbers.
 
     Single source for the context line shown on every page and report, so the
     dashboards and the markdown digests can never drift apart. `bold` selects the
     emphasis syntax: ("**", "**") for markdown, ("<b>", "</b>") for HTML.
+
+    `config` is the stats file's own config block. Pass it and the line describes
+    the run that produced the numbers rather than this module's gemma defaults --
+    a PCFG page reading "gemma-2-2b" states the wrong model, and a reader has no
+    way to tell from the page that it is wrong. Absent, nothing changes: every
+    caller that omits it is grading gemma.
     """
+    cfg = config or {}
     b0, b1 = bold
-    bits = [f"{b0}Layer {LAYER}{b1}", f"gemma-2-2b / {SAE_SOURCE}", SAE_ID]
+    base = cfg.get("base_model") or {}
+    model = MODEL_NAME.split("/")[-1]
+    if cfg.get("source") == "pcfg":
+        model = (f"PCFG toy {base.get('n_layers', '?')}L "
+                 f"d_model={base.get('d_model', '?')}")
+    bits = [f"{b0}Layer {cfg.get('layer', LAYER)}{b1}",
+            f"{model} / {cfg.get('sae_source', SAE_SOURCE)}",
+            cfg.get("sae_id", SAE_ID)]
+    steps = cfg.get("matryoshka_steps")
+    if steps and list(steps) != MATRYOSHKA_STEPS:
+        bits.append(f"{steps[-1]:,} latents in {len(steps)} blocks")
     if total_tokens:
-        bits.append(f"{int(total_tokens):,} tokens over {n_docs or N_DOCS} docs")
+        bits.append(f"{int(total_tokens):,} tokens over "
+                    f"{n_docs or cfg.get('n_docs') or N_DOCS} docs")
     bits.append(f"edge: reverse coverage ≥ {EDGE_TAU}, both endpoints fire ≥ {MIN_FIRE_COUNT}")
     return sep.join(bits)
 
@@ -268,7 +296,15 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
 
     top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
     for href, label in NAV_GLOBAL:
-        on = "on" if current is not None and href == current else ""
+        # A directory entry owns every page under it, so a run that publishes a
+        # whole directory (outputs/pcfg/) lights up its own nav entry from any of
+        # its pages, not only from the index. `outputs/` itself is excluded --
+        # it is the site index and prefixes every page there is, so it would be
+        # permanently lit next to the entry that is actually current.
+        owns = href.endswith("/") and href.count("/") > 1
+        here = current is not None and (href == current or
+                                        (owns and current.startswith(href)))
+        on = "on" if here else ""
         top.append(f'<a class="{on}" href="{root}{href}">{label}</a>')
     rows = ['<div class="row">' + "".join(top) + "</div>"]
 

@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
 import torch
 
 import config as C
+from run_metrics import source_structure
 from utils import sae_utils as U
 from utils.io import TokenCache
 from metrics import (
@@ -44,13 +46,24 @@ from metrics import (
 # ---------------------------------------------------------------------------
 # Per-pair work
 # ---------------------------------------------------------------------------
+def blocks(stats, *blks):
+    """(start, end) per requested block, read off the file being graded.
+
+    Same rule as run_metrics and the dashboards: config.BLOCK_RANGES is gemma's
+    32768 in 5 blocks, and a PCFG cache (1792 in 8) sliced there yields probes
+    trained on the wrong features -- with no error, because every index is in
+    range for the first four blocks and the numbers stay plausible.
+    """
+    ranges, _ = source_structure(stats)
+    return [ranges[b] for b in blks]
+
+
 def rebuild_edges(stats, p_blk, c_blk):
     """Same edge set + shortlist as run_metrics (single source: metrics/)."""
     key = f"{p_blk}->{c_blk}"
     fire = stats["fire_count"].double()
     total = int(stats["total_tokens"])
-    p0, p1 = C.BLOCK_RANGES[p_blk]
-    c0, c1 = C.BLOCK_RANGES[c_blk]
+    (p0, p1), (c0, c1) = blocks(stats, p_blk, c_blk)
     fire_p, fire_c = fire[p0:p1], fire[c0:c1]
     cofire = stats["cofire"][key].double()
     R, _ = coverage_legs(cofire, fire_p, fire_c)
@@ -64,8 +77,7 @@ def rebuild_edges(stats, p_blk, c_blk):
 def sres_for_pair(cache, W_dec, stats, p_blk, c_blk, device):
     """Probe-based S_res over the shortlist. One probe per unique child."""
     _, shortlist, _, fire_c, _ = rebuild_edges(stats, p_blk, c_blk)
-    p0, _ = C.BLOCK_RANGES[p_blk]
-    c0, _ = C.BLOCK_RANGES[c_blk]
+    (p0, _), (c0, _) = blocks(stats, p_blk, c_blk)
 
     child_locals = torch.nonzero(shortlist.any(dim=0)).flatten()
     child_locals = child_locals[fire_c[child_locals] >= C.MIN_PROBE_POS]
@@ -110,8 +122,7 @@ def sres_for_pair(cache, W_dec, stats, p_blk, c_blk, device):
 def conditioned_redundancy_for_pair(cache, stats, p_blk, c_blk):
     """Parent-conditioned sibling Jaccard for this pair's flagged superparents."""
     edge_mask, _, fire_p, fire_c, _ = rebuild_edges(stats, p_blk, c_blk)
-    p0, _ = C.BLOCK_RANGES[p_blk]
-    c0, _ = C.BLOCK_RANGES[c_blk]
+    (p0, _), (c0, _) = blocks(stats, p_blk, c_blk)
     total = int(stats["total_tokens"])
     sps = find_superparents(edge_mask, fire_p, total,
                             C.SUPERPARENT_OUTDEG_FRAC, C.SUPERPARENT_FIRE_FRAC)
@@ -135,8 +146,7 @@ def kept_union_for_pair(cache, stats, p_blk, c_blk):
     """Exact R_supp / R_mass over the KEPT children only (chunked scan)."""
     edge_mask, _, fire_p, _, _ = rebuild_edges(stats, p_blk, c_blk)
     key = f"{p_blk}->{c_blk}"
-    p0, p1 = C.BLOCK_RANGES[p_blk]
-    c0, c1 = C.BLOCK_RANGES[c_blk]
+    (p0, p1), (c0, c1) = blocks(stats, p_blk, c_blk)
     K = edge_mask.double()                                # [P, C]
     union_count = torch.zeros(p1 - p0, dtype=torch.float64)
     union_energy = torch.zeros(p1 - p0, dtype=torch.float64)
@@ -164,15 +174,42 @@ def kept_union_for_pair(cache, stats, p_blk, c_blk):
     }
 
 
+def load_w_dec(path=None):
+    """The decoder [D_SAE, d_model], which turns a probe direction into per-feature
+    correlations.
+
+    Defaults to the released gemma SAE, as before. A source with its own
+    dictionary leaves a `w_dec.pt` in the run dir (adapters/from_pcfg.py writes
+    one) and it is used automatically -- otherwise a PCFG run silently pulls
+    gemma's 32768x2304 decoder from the Hub and dies on a shape mismatch inside
+    sres_for_pair, several frames from the decision that caused it.
+    """
+    if path is None:
+        default = C.RUN_DIR / "w_dec.pt"
+        path = default if default.exists() else None
+    if path is None:
+        return U.load_sae("cpu").W_dec.detach().float()
+    W = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(W, dict):                               # a state dict, or the SAE's own save format
+        W = W["W_dec"]
+    print(f"[03] decoder: {path}")
+    return W.detach().float()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs", nargs="*", default=None, help='e.g. 0->1 1->2')
     ap.add_argument("--device", default=None)
     ap.add_argument("--skip-sres", action="store_true")
+    ap.add_argument("--w-dec", type=Path, default=None,
+                    help="decoder [D_SAE, d_model] for a non-gemma dictionary "
+                         "(default: RUN_DIR/w_dec.pt if present, else the released gemma SAE)")
     args = ap.parse_args()
 
     device = args.device or C.pick_device()
-    print(f"[03] layer = {C.LAYER}  device = {device}")
+    # The run name, not C.LAYER: under EXP0_RUN the layer constant describes
+    # nothing this pass is reading.
+    print(f"[03] run = {C.RUN_NAME}  device = {device}")
     if not C.EXP0_STATS_PATH.exists():
         raise SystemExit(f"[03] {C.missing_stats_msg()}")
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
@@ -181,8 +218,13 @@ def main():
     cache = TokenCache(C.TOKEN_CACHE_DIR)
     print(f"[03] token cache: {cache.n_tokens} tokens")
 
-    sae = U.load_sae("cpu")
-    W_dec = sae.W_dec.detach().float()                    # [D_SAE, d]
+    W_dec = load_w_dec(args.w_dec)                        # [D_SAE, d]
+    d_sae = int(stats["fire_count"].numel())
+    if W_dec.shape[0] != d_sae:
+        raise SystemExit(
+            f"[03] decoder has {W_dec.shape[0]} features but the statistics have {d_sae}. "
+            "Pass --w-dec pointing at this SAE's decoder; the default is gemma's."
+        )
 
     pairs = stats["pairs"]
     if args.pairs:

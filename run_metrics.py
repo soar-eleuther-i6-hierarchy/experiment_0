@@ -336,9 +336,17 @@ def to_markdown(report) -> str:
     # Jekyll renders this file to .html on GitHub Pages; the raw HTML passes
     # through and gives the report the same nav bar as the generated dashboards,
     # so navigation is consistent across the site.
-    nav = C.nav_html(depth=2, layer=report["config"].get("layer", C.LAYER), page="metrics_report.html")
+    # A run that is not a gemma layer takes the site-wide nav, same rule the
+    # dashboards use: marking a layer here would point the "Page" row at
+    # outputs/layer_NN/ files that describe a different SAE entirely.
+    is_layer = C.RUN_NAME.startswith("layer_")
+    nav = C.nav_html(depth=2,
+                     layer=report["config"].get("layer", C.LAYER) if is_layer else None,
+                     page="metrics_report.html",
+                     current=None if is_layer else f"outputs/{C.RUN_NAME}/metrics_report.html")
     L = [nav, "", "# Exp 0 - metrics report", ""]
-    L.append(C.scope_line(report["total_tokens"], n_docs=report["config"].get("n_docs")))
+    L.append(C.scope_line(report["total_tokens"], n_docs=report["config"].get("n_docs"),
+                          config=report["config"]))
     L.append("")
     for pr in report["pairs"]:
         d = pr["degree"]

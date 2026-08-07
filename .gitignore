@@ -23,6 +23,9 @@ outputs/*.log
 # huggingface.co/datasets/soar-eleuther-i6-hierarchy/experiment_0-stats
 outputs/**/*.pt
 outputs/*.pt
+# The token cache's shards are .pt and already covered; its meta.json is not, and
+# a manifest for shards nobody has is worse than nothing.
+outputs/**/token_cache/
 
 # Generated proof-figures (rebuilt by reporting/make_report_figures.py into each
 # run dir's figures/; never tracked)

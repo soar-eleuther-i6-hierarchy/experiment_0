@@ -41,6 +41,12 @@ from plotly.offline import get_plotlyjs
 from plotly.subplots import make_subplots
 
 import config as C
+# The block structure comes from the file being graded, never from this module:
+# config.BLOCK_RANGES is gemma's 32768 latents in 5 blocks, and slicing a PCFG
+# dictionary (1792 in 8) at those boundaries returns a full set of plausible
+# numbers computed from the wrong features. run_metrics owns the rule; importing
+# it keeps one definition rather than a second copy that can drift.
+from run_metrics import source_structure
 from metrics import (
     coverage_legs,
     edge_reconstruction_condition,
@@ -66,8 +72,9 @@ def page_subtitle(stats=None):
     needs to interpret the numbers.
     """
     tokens = stats.get("total_tokens") if stats is not None else None
+    cfg = stats.get("config") if stats is not None else None
     # Plotly does not decode HTML entities, so config.scope_line uses literal glyphs.
-    return C.scope_line(tokens, bold=("<b>", "</b>"))
+    return C.scope_line(tokens, bold=("<b>", "</b>"), config=cfg)
 
 
 def plotly_asset(page_dir):
@@ -127,9 +134,19 @@ def _page_identity(path):
 
 
 def _site_path(path):
-    """This page's path from the site root, for highlighting the global row."""
-    parent = Path(path).parent.name
-    return None if parent.startswith("layer_") else f"outputs/{Path(path).name}"
+    """This page's path from the site root, for highlighting the global row.
+
+    The page's position in the OUTPUT TREE, not on disk: a source with its own
+    run directory (outputs/pcfg/) is site-wide too -- it describes no gemma layer
+    -- and the old fixed `outputs/<file>` gave it a path matching no nav entry,
+    so its own link never lit up. Deriving it from OUT_DIR rather than the repo
+    root keeps a scratch run under EXP0_OUT identical to the published page:
+    where the file was written is not what the page IS.
+    """
+    path = Path(path)
+    if path.parent.name.startswith("layer_"):
+        return None
+    return "outputs/" + Path(os.path.relpath(path.resolve(), C.OUT_DIR)).as_posix()
 
 
 def scope_subtitle(text):
@@ -176,8 +193,9 @@ def compute_pair(stats, p_blk, c_blk):
     key = f"{p_blk}->{c_blk}"
     fire = stats["fire_count"].double()
     total = int(stats["total_tokens"])
-    p0, p1 = C.BLOCK_RANGES[p_blk]
-    c0, c1 = C.BLOCK_RANGES[c_blk]
+    ranges, sibling_blocks = source_structure(stats)
+    p0, p1 = ranges[p_blk]
+    c0, c1 = ranges[c_blk]
     fire_p, fire_c = fire[p0:p1], fire[c0:c1]
 
     cofire = stats["cofire"][key].double()
@@ -208,7 +226,7 @@ def compute_pair(stats, p_blk, c_blk):
     outdeg = outdeg[outdeg > 0].double()
 
     sib = {}
-    if c_blk in C.SIBLING_BLOCKS:
+    if c_blk in sibling_blocks:
         sib = sibling_redundancy(edge_mask, stats["within_cofire"][c_blk].double(), fire_c)
     redundancy = [v["redundancy"] for v in sib.values()]
 
@@ -218,6 +236,11 @@ def compute_pair(stats, p_blk, c_blk):
 
     return {
         "key": key,
+        # First global feature index of each endpoint's block, carried alongside
+        # the tensors so every downstream plot labels features from the SAME
+        # structure these numbers were computed with.
+        "p0": p0,
+        "c0": c0,
         "n_edges": n_edges,
         "n_recon": n_recon,
         "n_survive": n_survive,
@@ -267,8 +290,11 @@ def build_dashboard(pairs_data, labels=None, stats=None):
     )
 
     stages = ["candidate", "improves recon", "survives freq", "PMI > 0", "pass S_res"]
-    for pd_ in pairs_data:
-        col = PAIR_COLORS[pairs_data.index(pd_)]
+    for i, pd_ in enumerate(pairs_data):
+        # Cycle: the palette holds gemma's four pairs, and a dictionary with more
+        # blocks has more pairs (the PCFG SAE's 8 blocks give 7). Repeating a
+        # colour is survivable; running off the end of the list is not.
+        col = PAIR_COLORS[i % len(PAIR_COLORS)]
         name = pd_["key"]
         n_pmi = pd_.get("n_pmi")
         n_sres = pd_.get("n_sres")
@@ -312,7 +338,7 @@ def build_dashboard(pairs_data, labels=None, stats=None):
         # (3,2) superparents
         sp = pd_["superparents"]
         if sp:
-            p_base = C.BLOCK_RANGES[int(name.split('->')[0])][0]
+            p_base = pd_["p0"]
             fig.add_trace(
                 go.Scatter(
                     x=[s["outdeg_frac"] for s in sp],
@@ -369,8 +395,7 @@ def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=No
     if not sp:
         return None
     parent_local = sp[0]["parent_local"]
-    p0 = C.BLOCK_RANGES[p_blk][0]
-    c0 = C.BLOCK_RANGES[c_blk][0]
+    p0, c0 = pd_["p0"], pd_["c0"]
     gp = p0 + parent_local
 
     kids = torch.nonzero(pd_["edge_mask"][parent_local]).flatten()
@@ -1175,8 +1200,7 @@ def main():
         second = json.loads(C.SECOND_PASS_PATH.read_text())
         for pd_ in pairs_data:
             sp_entry = second.get(pd_["key"], {}).get("sres", {})
-            p0 = C.BLOCK_RANGES[int(pd_["key"].split("->")[0])][0]
-            c0 = C.BLOCK_RANGES[int(pd_["key"].split("->")[1])][0]
+            p0, c0 = pd_["p0"], pd_["c0"]
             mat = torch.zeros_like(pd_["edge_mask"], dtype=torch.bool)
             for e in sp_entry.get("edges", []):
                 if e["pass"]:
@@ -1200,7 +1224,9 @@ def main():
     if sk is None:
         print("note: no superparent found in any block pair - skipping sankey")
     else:
-        n_panels = len(sk.data)
+        # Sankeys only: _add_sres_legend puts two off-canvas Scatter markers in
+        # the same figure, so len(sk.data) reported two panels more than there are.
+        n_panels = sum(1 for t in sk.data if t.type == "sankey")
         sk_path = C.RUN_DIR / "superparent_sankey.html"
         write_page(sk, sk_path, up=2)
         print(f"saved: {sk_path}  ({n_panels} block pair{'s' if n_panels != 1 else ''})")
