@@ -59,8 +59,11 @@ crashes obscurely later or, worse, silently reads a stale file from a previous r
 | 01b | `fetch_labels.py` | Neuronpedia | `feature_labels.json` | display only, optional |
 | **02** | `run_metrics.py` | `exp0_stats.pt` | `metrics_report.{json,md}` | the ten-metric battery |
 | 02b | `validation/qualitative_check.py` | 01 + 02 | `qualitative_check.json` | Tier 3 |
-| **03** | `run_token_metrics.py` | 02 + `token_cache/` | `second_pass.json` | `S_res`, parent-conditioned siblings, kept-children union — model-free |
+| **03** | `run_token_metrics.py` | 02 + `token_cache/` + a decoder | `second_pass.json` | `S_res`, parent-conditioned siblings, kept-children union — model-free |
 | 04 | `reporting/visualize.py` | 02 | dashboards | |
+
+Stage 03's decoder is the released gemma SAE unless the run dir holds a `w_dec.pt`, which
+the non-gemma adapters write; `--w-dec` overrides both.
 
 Stage 03 needs `token_cache/`, which stage 01 writes only when `CACHE_RESIDUALS=1`.
 
@@ -91,7 +94,22 @@ EXP0_LAYER=12 python3 collect_statistics.py          # any layer 0–24
 EXP0_DEVICE=cuda:1 python3 collect_statistics.py     # device (default: mps on Mac, cuda on server)
 CUDA_VISIBLE_DEVICES=1 python3 collect_statistics.py # pin one GPU on the shared server
 EXP0_OUT=my_run python3 run_metrics.py               # redirect all outputs away from the published outputs/
+EXP0_RUN=pcfg python3 -m reporting.visualize         # a run that is not a gemma layer
 ```
+
+### Grading a source that is not gemma
+
+Stages 02, 03 and 04 take the block structure, the model and the dictionary from the stats
+file, so an SAE with a different shape needs an adapter and no metric code — see
+[`adapters/from_pcfg.py`](../adapters/from_pcfg.py) in the umbrella repo, which also writes
+the `token_cache/` stage 03 reads and the `w_dec.pt` it scores S_res with.
+
+`EXP0_RUN` names the output directory, because such a run is not a layer:
+`EXP0_RUN=pcfg` publishes at `outputs/pcfg/` instead of `outputs/layer_NN/`. Keep it a direct
+child of `outputs/` — the nav bar and the shared plotly bundle both assume one level — and
+give the directory an index with `python3 -m reporting.layer_index --run`, or its URL 404s on
+GitHub Pages. Pages generated this way carry the site-wide nav and no layer pills, and their
+headers name the run's own model and dictionary. First one published: [`outputs/pcfg/`](outputs/pcfg/README.md).
 
 The heavy cache (`exp0_stats.pt`, ~700 MB per layer) is not in git — pull it from the Hub instead of
 recomputing:
@@ -227,7 +245,11 @@ metrics/                              the repository
 ├── reporting/                        everything that produces something to read
 │   ├── visualize.py                  the interactive dashboards
 │   ├── make_report_figures.py        static proof-figures
-│   └── layer_index.py                each layer's landing page
+│   └── layer_index.py                each layer's landing page (--run: a non-layer run's)
+│
+├── tests/                            guards on claims the code makes about itself
+│   ├── test_collect_generic.py       stage 01 runs on a source that is not gemma
+│   └── test_dashboards_generic.py    stages 02-04 grade and render one too
 │
 ├── validation/                       the three calibration tiers + a lateral control
 │   ├── toy_world.py                  the synthetic ground-truth world
@@ -249,15 +271,20 @@ metrics/                              the repository
     ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
     ├── toy_trained/                  the Tier-2 checkpoint
     ├── README.md
-    └── layer_06/                     identical in layer_03, layer_12, layer_18, layer_24
-        ├── README.md                 the layer's landing page
-        ├── metrics_dashboard.html
-        ├── superparent_sankey.html
-        ├── qualitative_dashboard.html
-        ├── metrics_report.json       (+ .md)
-        ├── qualitative_check.json    (+ .md)
-        ├── feature_labels.json
-        └── npedia_labels_cache.json
+    ├── layer_06/                     identical in layer_03, layer_12, layer_18, layer_24
+    │   ├── README.md                 the layer's landing page
+    │   ├── metrics_dashboard.html
+    │   ├── superparent_sankey.html
+    │   ├── qualitative_dashboard.html
+    │   ├── metrics_report.json       (+ .md)
+    │   ├── qualitative_check.json    (+ .md)
+    │   ├── feature_labels.json
+    │   └── npedia_labels_cache.json
+    └── pcfg/                         a run that is not a gemma layer (EXP0_RUN=pcfg)
+        ├── README.md                 same generator, --run
+        ├── metrics_dashboard.html    the two pages a source without
+        ├── superparent_sankey.html     Neuronpedia labels can produce
+        └── metrics_report.json       (+ .md, + second_pass.json)
 ```
 
 Two directories exist only when you run the pipeline and are deliberately kept out of git:
