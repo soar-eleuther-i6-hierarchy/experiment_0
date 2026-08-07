@@ -300,7 +300,8 @@ metrics/                              the repository
     │   └── npedia_labels_cache.json
     └── pcfg/                         a second source, same shape as gemma's
         ├── README.md                 the source index (layer_index --source pcfg)
-        └── layer_01/                 the one layer trained so far
+        ├── layer_01/                 a 4-layer base model, so 0-3 exist and
+        └── layer_03/                   an SAE was trained on two of them
             ├── README.md
             ├── metrics_dashboard.html    the pages a source without Neuronpedia
             ├── superparent_sankey.html     labels can produce

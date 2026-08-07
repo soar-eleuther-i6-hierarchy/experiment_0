@@ -285,7 +285,10 @@ SOURCES = {
     },
     "pcfg": {
         "label": "PCFG",
-        "layers": [1],
+        # 1 and 3, because those are the layers an SAE was trained on -- and the
+        # PCFG base transformer has four layers in total (0-3), so gemma's
+        # 6/12/18/24 do not exist here and never will for this model.
+        "layers": [1, 3],
         "pages": [p for p in NAV_PAGES if not p[0].startswith("qualitative")],
     },
 }

@@ -49,10 +49,11 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
   in 5. Produced by `adapters/from_pcfg.py` in the umbrella repo; the metric code is untouched,
   which is the point of it being here rather than in a repo of its own.
 
-  Same shape as gemma: a source directory of layers, `pcfg/layer_01/`, with its own entry in the nav
-  and its own layer row — one pill, because one layer of that sweep has been trained. Its Page row is
-  three wide rather than five: the two qualitative pages read Neuronpedia labels, which exist for
-  gemma's dictionary and no other.
+  Same shape as gemma: a source directory of layers, with its own entry in the nav and its own layer
+  row. Two pills, **1 and 3** — the base transformer has four layers in total (0–3), so gemma's
+  6/12/18/24 do not exist for this model and never will; of those four, an SAE has been trained on
+  two. Its Page row is three wide rather than five: the two qualitative pages read Neuronpedia
+  labels, which exist for gemma's dictionary and no other.
 
 ## Moved pages
 
