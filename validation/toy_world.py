@@ -49,8 +49,27 @@ from dataclasses import dataclass, field
 import torch
 
 # ---- world dimensions ------------------------------------------------------
-D_MODEL = 16
-P = 8           # parent-block features
+# D_MODEL is set by the rank rule, not by the statistics-only metrics -- those
+# read counts and are indifferent to it. `sres_rank_check` asks whether the
+# parent decoder is among the top-k probe correlations over ALL D features, so it
+# is only measuring parenthood if unrelated directions are roughly orthogonal.
+# Random unit vectors in d dims correlate by about sqrt(2/(pi*d)): at d=16 that
+# is 0.20 with a worst pair at 0.73, and unrelated features then outrank a true
+# parent on crowding alone. Measured at d=16, three genuine edges failed with the
+# CHILD at rank 0 and the parent pushed to rank 6-8 by features it has nothing to
+# do with -- a fact about 42 directions in 16 dimensions, not about the metric.
+# gemma sits at d=2304 (about 0.02), which no toy can reach; d=64 (about 0.10)
+# is enough for the true parent to clear the noise floor.
+D_MODEL = 64
+
+# Residual-error energy per token, held FIXED as D_MODEL changes. Scaling the
+# noise per-dimension instead would tie the reconstruction metric's denominator
+# (err_sum_c) to a constant chosen for the probe geometry, so raising D_MODEL
+# would quietly shrink every relative gain. The two knobs are independent
+# properties of the world and are kept independent here.
+RESID_ERR_ENERGY = 0.64
+
+P = 10          # parent-block features
 C = 32          # child-block features
 N_FREQ_BUCKETS = 3
 
@@ -68,6 +87,30 @@ FREQ_PARENT = 6
 FREQ_CHILD = 20                    # frequency-coincidence -> pathology (B)
 SUPERPARENT = 7                    # fires ~everywhere -> pathology (A)
 
+# --- pathologies (D)-(F): added to calibrate the metric rows that had no toy --
+# (D) ABSORPTION. The child took over the parent's direction, so on the child's
+#     own tokens the parent is SILENT -- the operational signature of an absorbed
+#     feature. Truth: (8, 21) is a real refinement. Coverage cannot see it, since
+#     R = cofire / fire_c = 0. This is a NEGATIVE control: it exists to
+#     demonstrate the blind spot the properties matrix already claims, rather
+#     than to be caught.
+ABSORB_PARENT = 8
+ABSORB_CHILD = 21
+# (E) TOPICAL CO-OCCURRENCE. Both features are driven by a shared latent topic
+#     and are conditionally INDEPENDENT given it: neither refines the other.
+#     Coverage, reconstruction, frequency control and PMI all pass, because each
+#     tests a different confound and none of them tests this one. The second
+#     negative control -- the open column in the matrix.
+TOPIC_PARENT = 9
+TOPIC_CHILD = 22
+# (F) WITHIN-BLOCK structure, for metric 7 (in_block_edges). Same block, so no
+#     block ordering fixes the direction: it has to come out of the coverage
+#     asymmetry. 28 fires only inside 27 (directed edge); 29 and 30 fire on
+#     exactly the same tokens (co-extensive -> a duplicate, never an edge).
+IN_BLOCK_PARENT = 27
+IN_BLOCK_CHILD = 28
+IN_BLOCK_DUP = (29, 30)
+
 # ---- token-id frequency design (drives the frequency buckets) --------------
 FREQ_IDS = [0, 1]                  # high-frequency ids (bucket 0)
 MID_IDS = list(range(2, 12))       # mid ids (bucket 1)
@@ -83,6 +126,18 @@ class ToyLabels:
     split_children: set[int] = field(default_factory=set)
     superparent_parents: set[int] = field(default_factory=set)
     split_parents: set[int] = field(default_factory=set)
+    # A real edge that coverage cannot propose, because the absorbed child fires
+    # where its parent does not. Kept apart from `genuine` on purpose: scoring it
+    # as a miss would penalise metrics 2-9 for a candidate they never receive.
+    absorbed_edges: set[tuple[int, int]] = field(default_factory=set)
+    # Not an edge at all -- two features under a shared topic. Kept apart from
+    # the pathologies for the opposite reason: no metric here is expected to
+    # reject it, so counting it as a false positive would misattribute a known
+    # gap in the battery to the metric that happens to pass it.
+    topical_edges: set[tuple[int, int]] = field(default_factory=set)
+    # Within-block ground truth, in child-local space.
+    in_block_edges: set[tuple[int, int]] = field(default_factory=set)
+    in_block_duplicates: set[tuple[int, int]] = field(default_factory=set)
 
 
 class _Gen:
@@ -168,6 +223,41 @@ def build_world(
         gen.add({P + FREQ_CHILD: child_act()}, gen.rare_id())
     labels.freq_edges.add((FREQ_PARENT, FREQ_CHILD))
 
+    # (2D) absorption: the parent fires on its own tokens, the absorbed child on
+    # tokens where the parent is SILENT. They never co-fire, so cofire = 0 and no
+    # candidate edge is ever proposed -- which is the point being demonstrated.
+    for i in range(60):
+        gen.add({ABSORB_PARENT: parent_act()}, _bucket_id_for_genuine(gen, i))
+    for i in range(25):
+        gen.add({P + ABSORB_CHILD: child_act()}, _bucket_id_for_genuine(gen, i))
+    labels.absorbed_edges.add((ABSORB_PARENT, ABSORB_CHILD))
+
+    # (2E) topical co-occurrence: on a shared "topic" token the parent always
+    # fires and the child fires 60% of the time, drawn independently of the
+    # parent given the topic. Reverse coverage is therefore 1.0 -- the child
+    # never fires off-topic -- while neither feature refines the other.
+    for i in range(60):
+        feats = {TOPIC_PARENT: parent_act()}
+        if i % 5 < 3:                              # 36 of 60 -> clears MIN_JOINT
+            feats[P + TOPIC_CHILD] = child_act()
+        gen.add(feats, _bucket_id_for_genuine(gen, i))
+    labels.topical_edges.add((TOPIC_PARENT, TOPIC_CHILD))
+
+    # (2F) within-block structure, in the CHILD block. 28 fires only on a subset
+    # of 27's tokens (asymmetric containment -> a directed edge), 29 and 30 fire
+    # on identical tokens (symmetric -> a duplicate, not an edge).
+    for i in range(80):
+        feats = {P + IN_BLOCK_PARENT: child_act()}
+        if i < 35:
+            feats[P + IN_BLOCK_CHILD] = child_act()
+        gen.add(feats, _bucket_id_for_genuine(gen, i))
+    a, b = IN_BLOCK_DUP
+    for i in range(40):
+        shared = child_act()
+        gen.add({P + a: shared, P + b: shared}, _bucket_id_for_genuine(gen, i))
+    labels.in_block_edges.add((IN_BLOCK_PARENT, IN_BLOCK_CHILD))
+    labels.in_block_duplicates.add(IN_BLOCK_DUP)
+
     # (3) background tokens on frequent ids (make FREQ_IDS actually frequent).
     for i in range(n_background):
         gen.add({}, FREQ_IDS[i % len(FREQ_IDS)])
@@ -200,7 +290,8 @@ def _reduce(gen: _Gen) -> dict:
     # unit-norm decoder directions; residual error = isotropic gaussian noise.
     W_dec = torch.randn(D, D_MODEL, generator=gen.g, dtype=torch.float64)
     W_dec = W_dec / W_dec.norm(dim=1, keepdim=True).clamp(min=1e-8)
-    resid_err = 0.20 * torch.randn(n, D_MODEL, generator=gen.g, dtype=torch.float64)
+    err_scale = (RESID_ERR_ENERGY / D_MODEL) ** 0.5      # E||err||^2 = RESID_ERR_ENERGY
+    resid_err = err_scale * torch.randn(n, D_MODEL, generator=gen.g, dtype=torch.float64)
     err = (resid_err * resid_err).sum(dim=1)                       # [n]
 
     fired = (feats > C_cfg.FIRE_THRESHOLD).double()               # [n, D]
@@ -266,4 +357,14 @@ def _reduce(gen: _Gen) -> dict:
         "fire_c_by_bucket": fire_c_by_bucket,
         "buckets": buckets,
         "token_counts": token_counts,
+        # --- per-token view, for the four functions the reduced statistics
+        # cannot reach. `resid` is the residual stream the SAE decomposes,
+        # x = x_hat + err, which is exactly what stage 03 trains its probes on;
+        # building it here rather than in the caller keeps the toy the single
+        # definition of the world. `fired` is the [n, D] boolean the probe target
+        # and the parent-conditioned masks are read off.
+        "resid": feats @ W_dec + resid_err,        # [n, d_model]
+        "fired": fired.bool(),                     # [n, D]
+        "W_dec": W_dec,                            # [D, d_model]
+        "tok_ids": tok_ids,                        # [n]
     }

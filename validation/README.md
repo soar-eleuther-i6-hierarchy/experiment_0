@@ -38,8 +38,8 @@ Full results and the three-tier table: [outputs/README.md](../outputs/README.md#
 
 | File | Tier | Runs on | Scored against | What it does |
 | ---- | ---- | ------- | -------------- | ------------ |
-| [`toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus three injected pathologies (superparent, feature-split parent, frequency-coincidence edge), reduced to exactly the statistics the metrics read |
-| [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics | **known tree** | runs every metric on that world and scores it on the job it claims — **9/9 pass across seeds 0–5**, covering 13/13 statistics-only metric functions |
+| [`toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
+| [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass across seeds 0–7**, covering **21/21 metric functions** |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features and scores edge recovery — **precision 1.00, recall 0.67** |
 | [`qualitative_check.py`](qualitative_check.py) | 3 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
 
@@ -67,6 +67,26 @@ also reads that repo's `configs/tree.json` for the ground-truth tree, and expect
 Both tiers write into [`outputs/`](../outputs/) (`toy_calibration.json`,
 `trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`
 and `python3 -m reporting.visualize --trained-calibration`.
+
+## What Tier 1 did not cover until 7 August
+
+Tier 1's own page used to say the four per-token functions (`train_probe`, `sres_rank_check`,
+`negative_parent_composition`, `parent_conditioned_redundancy`) were *calibrated in Tier 2*. They
+were not. Tier 2 imports `coverage_legs`, `keep_edges`, `edge_reconstruction_condition`,
+`frequency_controlled_coverage` and `frequency_buckets` — nothing else. So **metric 2b, the strict
+test that rejects most of what survives on gemma, had no ground-truth calibration anywhere**, and
+neither did the within-block metric. The claim read as verified because it named a tier rather than
+a file.
+
+Both are covered now. `build_world` additionally returns `resid`, `fired` and `W_dec` — the
+per-token view the probes read — so the four functions run against a known tree instead of against
+nothing.
+
+**One thing the toy cannot show.** The rank rule passes an unrelated parent whenever chance puts it
+in the top *k* of *D*, so its null rate is `k/D`: 11.9% here, 0.28% on PCFG's 1792 latents, 0.015%
+on gemma's 32768. The row asserts that genuine edges all pass and that the superparent passes *at
+chance*, because asserting zero would assert something the rule does not claim. The dependence is
+worth carrying into any cross-source comparison of S_res pass rates.
 
 ## Why both
 

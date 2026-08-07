@@ -1,16 +1,28 @@
 """
-Calibrate the five hierarchy metrics on the synthetic ground-truth toy.
+Calibrate the hierarchy metrics on the synthetic ground-truth toy.
 
 For each metric we know, by construction, which edges it SHOULD keep and which
 pathology it SHOULD catch (see validation/toy_world.py). We run the production metric
 functions with the production thresholds from config.py and check:
 
     Metric 1  coverage          recovers 100% of the genuine tree edges.
-    Metric 2  reconstruction    rejects the superparent's edges, keeps genuine.
+    Metric 2a reconstruction    rejects the superparent's edges, keeps genuine.
+    Metric 2b probe S_res       accepts every true parent from a self-labeled probe.
     Metric 3  sibling redundancy flags the feature-split parent, spares healthy.
+    Metric 3' conditioned form   the same, inside the parent's own firing set.
     Metric 4  out-degree        identifies the superparent, spares genuine.
     Metric 5  frequency control rejects the frequency-coincidence edge, keeps
                                 genuine.
+    Metric 6  independence null ranks genuine above base-rate co-firing.
+    Metrics 7-9 joint-child / energy concentration.
+    Metric 7 (in-block)         directs a containment pair, calls a co-extensive
+                                pair a duplicate.
+
+Plus two NEGATIVE controls, which pass when the battery does *not* do something:
+an absorbed edge coverage can never propose, and a shared-topic pair every filter
+here accepts. They are the two open columns in the properties matrix, and they
+are scored so that a regression turns them from a demonstrated limitation into a
+visible failure.
 
 Each metric gets a pass/fail plus a decision MARGIN (how decisively it separated
 the two classes); the scorecard is ranked by margin. Run directly for the
@@ -44,7 +56,19 @@ from metrics import (  # noqa: E402
     sibling_redundancy,
 )
 from metrics.coverage import joint_child_coverage_exact  # noqa: E402  (not in metrics.__all__)
-from validation.toy_world import build_world  # noqa: E402
+from metrics.sres import (  # noqa: E402
+    negative_parent_composition,
+    sres_rank_check,
+    train_probe,
+)
+from metrics.sibling_redundancy import parent_conditioned_redundancy  # noqa: E402
+from in_block_edges import directed_coverage, duplicate_pairs  # noqa: E402
+from validation.toy_world import (  # noqa: E402
+    GENUINE_TREE,
+    IN_BLOCK_DUP,
+    SPLIT_CHILDREN,
+    build_world,
+)
 
 # One child holding >= this fraction of the parent's energy flags a feature split
 # (matches run_metrics.py's n_share_energy_ge_09 gate).
@@ -107,6 +131,7 @@ def _score(stats, labels, m) -> list[dict]:
                   f"edge set also holds {len(kept) - len(recovered)} non-genuine "
                   f"(that is what metrics 2-5 must prune)",
         "margin": len(recovered) / max(len(genuine), 1),
+        "margin_kind": "categorical",
     })
 
     # --- Metric 2: reconstruction rejects superparent, keeps genuine --------
@@ -156,6 +181,7 @@ def _score(stats, labels, m) -> list[dict]:
                   f"Gini={m['deg']['outdeg_gini']:.3f}, "
                   f"top-1 share={100 * m['deg']['top1_edge_share']:.0f}%",
         "margin": 1.0 if found == labels.superparent_parents else 0.0,
+        "margin_kind": "categorical",
     })
 
     # --- Metric 5: frequency control rejects the coincidence edge -----------
@@ -240,6 +266,176 @@ def _score(stats, labels, m) -> list[dict]:
                   f"genuine parents max={gen_share_max:.2f}",
         "margin": split_share / max(gen_share_max, 1e-9),
     })
+
+    rows += _score_per_token(stats, labels, m, kept)
+    rows += _score_blind_spots(stats, labels, m, kept)
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# The four per-token functions. They read residuals and firing masks rather than
+# the reduced statistics, which is why they sat outside this file -- and why they
+# had no ground-truth calibration anywhere: Tier 2 does not call them either.
+# ---------------------------------------------------------------------------
+def _score_per_token(stats, labels, m, kept) -> list[dict]:
+    resid, fired, W_dec = stats["resid"], stats["fired"], stats["W_dec"]
+    P_ = stats["P"]
+    sp_parent = next(iter(labels.superparent_parents))
+    rows: list[dict] = []
+
+    # --- Metric 2b: probe S_res, rank-scored --------------------------------
+    # One probe per child, then the SAME probe scores its true parent and the
+    # superparent. Identical input, so the rank rule is the only thing deciding:
+    # a difference cannot be an artefact of how the two probes were trained.
+    gen_pass = gen_total = sp_pass = sp_total = 0
+    gen_ranks, sp_ranks = [], []
+    for c in sorted({c for (_, c) in labels.genuine}):
+        gc = P_ + c
+        probe = train_probe(resid.float(), fired[:, gc], seed=gc,
+                            neg_ratio=C.SRES_NEG_RATIO,
+                            max_tokens=C.SRES_MAX_PROBE_TOKENS,
+                            min_neg=C.SRES_MIN_NEG)
+        if probe is None:
+            continue
+        corr = probe.double() @ W_dec.T                    # [D] over ALL features
+        for p in [p for (p, cc) in labels.genuine if cc == c]:
+            ok, det = sres_rank_check(corr, p, gc, C.SRES_RANK_TOP_K)
+            gen_total += 1
+            gen_pass += int(ok)
+            gen_ranks.append(det["parent_rank"])
+        if (sp_parent, c) in kept:
+            ok, det = sres_rank_check(corr, sp_parent, gc, C.SRES_RANK_TOP_K)
+            sp_total += 1
+            sp_pass += int(ok)
+            sp_ranks.append(det["parent_rank"])
+
+    neg_share = negative_parent_composition(
+        ~fired[:, P_ + sorted({c for (_, c) in labels.genuine})[0]], fired[:, sp_parent]
+    )
+    # The rank rule is a geometry test on decoder directions, so an unrelated
+    # parent passes exactly when chance puts it in the top k of D -- there is no
+    # mechanism by which it detects a superparent. Its null rate is therefore
+    # k/D, and asserting zero here would be asserting something the rule does not
+    # claim. D = 42 in this toy gives 11.9%; gemma's 32768 gives 0.015%. That
+    # dependence is the finding, and it is why an S_res pass rate is only
+    # comparable across sources of similar dictionary size.
+    D_toy = int(W_dec.shape[0])
+    chance = C.SRES_RANK_TOP_K / D_toy
+    expected = chance * sp_total
+    tol = expected + 3.0 * max(expected, 1.0) ** 0.5          # Poisson slack
+    rows.append({
+        "metric": "2b. probe S_res (rank rule)",
+        "job": "accept every true parent; carry no signal against an unrelated one",
+        "pass": gen_total > 0 and gen_pass == gen_total and sp_pass <= tol,
+        "detail": f"{gen_pass}/{gen_total} genuine edges pass the top-{C.SRES_RANK_TOP_K} "
+                  f"rank rule (median true-parent rank "
+                  f"{sorted(gen_ranks)[len(gen_ranks) // 2] if gen_ranks else float('nan')}); "
+                  f"superparent {sp_pass}/{sp_total} (median rank "
+                  f"{sorted(sp_ranks)[len(sp_ranks) // 2] if sp_ranks else float('nan')}) "
+                  f"against {expected:.1f} expected by chance at k/D={chance:.1%}. "
+                  f"The superparent holds {100 * neg_share:.0f}% of the negative class, so "
+                  f"it cannot enter the probe direction; what passes is coincidence, not "
+                  f"detection. **The rule's strictness is set by dictionary size** — the "
+                  f"same k is 0.015% on gemma's 32768 and 0.28% on PCFG's 1792 "
+                  f"(covers train_probe, sres_rank_check, negative_parent_composition)",
+        "margin": (min(sp_ranks, default=D_toy)
+                   / max(max(gen_ranks, default=0) + 1, 1)),
+    })
+
+    # --- Metric 3': sibling redundancy conditioned on the parent ------------
+    # The global form measures co-firing anywhere; this one measures it inside
+    # the parent's firing set, which is the quantity feature splitting is about.
+    split_parent = next(iter(labels.split_parents))
+    gen_parent = sorted(GENUINE_TREE)[0]
+    red_split = parent_conditioned_redundancy(
+        fired[:, split_parent], fired[:, [P_ + c for c in SPLIT_CHILDREN]])
+    red_gen = parent_conditioned_redundancy(
+        fired[:, gen_parent], fired[:, [P_ + c for c in GENUINE_TREE[gen_parent]]])
+    rows.append({
+        "metric": "3'. parent-conditioned redundancy",
+        "job": "flag the split parent inside its own firing set, spare a genuine one",
+        "pass": red_split >= C.SIBLING_REDUNDANCY_FLAG and red_gen < C.SIBLING_REDUNDANCY_FLAG,
+        "detail": f"split parent={red_split:.2f}, genuine parent={red_gen:.2f} "
+                  f"(thr={C.SIBLING_REDUNDANCY_FLAG}); the conditioned form the global "
+                  f"Jaccard defers to (covers parent_conditioned_redundancy)",
+        "margin": red_split / max(red_gen, 1e-9),
+    })
+
+    # --- Metric 7: within-block directed edges and duplicates ---------------
+    # No block ordering exists inside a block, so direction has to fall out of
+    # the coverage asymmetry: 28 fires only inside 27, while 29 and 30 fire on
+    # identical tokens and must be reported as co-extensive, never as an edge.
+    d = directed_coverage(stats["within_cofire"], stats["fire_c"],
+                          C.EDGE_TAU, C.MIN_FIRE_COUNT, C.MIN_JOINT)
+    ib_edges = {(int(i), int(j)) for i, j in torch.nonzero(d["parent_of"]).tolist()}
+    ib_dups = set(duplicate_pairs(d["duplicate"]))
+    want_edge = next(iter(labels.in_block_edges))
+    antisym = not any((j, i) in ib_edges for (i, j) in ib_edges)
+    split_locals = set(SPLIT_CHILDREN)
+    split_dups = {(a, b) for (a, b) in ib_dups if a in split_locals and b in split_locals}
+    rows.append({
+        "metric": "7. in-block directed edges",
+        "job": "direct the containment pair, call the co-extensive pair a duplicate",
+        "pass": (want_edge in ib_edges and IN_BLOCK_DUP in ib_dups
+                 and want_edge not in ib_dups and antisym),
+        "detail": f"containment {want_edge} recovered as a directed edge; "
+                  f"co-extensive {IN_BLOCK_DUP} reported as a duplicate and not an edge; "
+                  f"parent_of antisymmetric: {antisym} (so the in-block graph is acyclic); "
+                  f"the {len(split_dups)} split-child pairs also surface as duplicates, "
+                  f"which is the same pathology seen from inside one block "
+                  f"(covers directed_coverage, duplicate_pairs)",
+        "margin": 1.0 if want_edge in ib_edges and IN_BLOCK_DUP in ib_dups else 0.0,
+        "margin_kind": "categorical",
+    })
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Negative controls. These two rows pass when the battery does NOT do something.
+# They exist because the properties matrix claims two columns are open, and a
+# claim that no metric catches X is worth exactly as much as a demonstration.
+# ---------------------------------------------------------------------------
+def _score_blind_spots(stats, labels, m, kept) -> list[dict]:
+    R, edge_mask = m["R"], m["edge_mask"]
+    rows: list[dict] = []
+
+    # --- Absorption is unreachable through coverage -------------------------
+    ap, ac = next(iter(labels.absorbed_edges))
+    absorbed_R = float(R[ap, ac])
+    rows.append({
+        "metric": "— absorption (negative control)",
+        "job": "confirm coverage cannot propose an absorbed edge at all",
+        "pass": (ap, ac) not in kept and absorbed_R < C.EDGE_TAU,
+        "detail": f"true edge ({ap}->{ac}) has R={absorbed_R:.2f} < tau={C.EDGE_TAU} and is "
+                  f"absent from the candidate set, so metrics 2-9 never see it. "
+                  f"Absorption is not measurable in this design — a blind spot that is "
+                  f"now demonstrated rather than argued. Fixing it needs a different "
+                  f"candidate generator, not a better grader",
+        "margin": C.EDGE_TAU / max(absorbed_R, 1e-9),
+    })
+
+    # --- Topical co-occurrence passes the whole battery ---------------------
+    tp, tc = next(iter(labels.topical_edges))
+    survives = {
+        "coverage": (tp, tc) in kept,
+        "reconstruction": bool((m["recon"]["passes"] & edge_mask)[tp, tc]),
+        "frequency": bool(m["fcov"]["survival"][tp, tc] >= C.FREQ_SURVIVAL_MIN),
+        "PMI": bool(m["pmi_valid"][tp, tc]) and float(m["pmi"][tp, tc]) > 0,
+    }
+    rows.append({
+        "metric": "— topical co-occurrence (negative control)",
+        "job": "confirm no metric here rejects a shared-topic pair",
+        "pass": all(survives.values()),
+        "detail": "a non-edge (conditionally independent given a shared topic) survives "
+                  + ", ".join(k for k, v in survives.items() if v)
+                  + (f"; rejected by {', '.join(k for k, v in survives.items() if not v)}"
+                     if not all(survives.values()) else "")
+                  + f" — R={float(R[tp, tc]):.2f}, PMI={float(m['pmi'][tp, tc]):.2f}. "
+                    "This is the open column in the properties matrix; closing it needs a "
+                    "model-based topic null, not another threshold",
+        "margin": 1.0 if all(survives.values()) else 0.0,
+        "margin_kind": "categorical",
+    })
     return rows
 
 
@@ -272,11 +468,23 @@ def _render(rows) -> str:
                 "injected pathology on this toy." if n_pass == len(rows)
                 else "Some metrics did not separate cleanly - see FAIL rows."))
     L.append("")
-    L.append("These rows cover **13/13 statistics-only metric functions**. The 4 "
-             "per-token functions (`train_probe`, `sres_rank_check`, "
-             "`negative_parent_composition`, `parent_conditioned_redundancy`) need "
-             "per-token residuals/masks from the token cache and are calibrated in "
-             "Tier 2, not on these reduced statistics.")
+    L.append("These rows cover **21/21 metric functions**, including the four that read "
+             "per-token residuals and masks (`train_probe`, `sres_rank_check`, "
+             "`negative_parent_composition`, `parent_conditioned_redundancy`) and the two "
+             "within-block ones (`directed_coverage`, `duplicate_pairs`).")
+    L.append("")
+    L.append("Until 7 August this page claimed the four per-token functions were "
+             "*calibrated in Tier 2*. They were not: Tier 2 imports coverage, "
+             "reconstruction and the frequency control and nothing else, so the strict "
+             "test — the one that rejects most surviving edges on gemma — had no "
+             "ground-truth calibration anywhere. The toy now carries the per-token view "
+             "(`resid`, `fired`, `W_dec`) that made it testable.")
+    L.append("")
+    L.append("The last two rows are **negative controls**: they pass when the battery does "
+             "*not* do something. Absorption is unreachable because coverage gates the "
+             "candidate set, and a shared-topic pair survives every filter here. Both are "
+             "open columns in the properties matrix, and a claim that nothing catches them "
+             "is worth what a demonstration is worth.")
     return "\n".join(L)
 
 

@@ -3,29 +3,31 @@
     "metric": "1. coverage (edge set)",
     "job": "recover genuine tree edges",
     "pass": true,
-    "detail": "20/20 genuine edges kept; edge set also holds 28 non-genuine (that is what metrics 2-5 must prune)",
-    "margin": 1.0
+    "detail": "20/20 genuine edges kept; edge set also holds 35 non-genuine (that is what metrics 2-5 must prune)",
+    "margin": 1.0,
+    "margin_kind": "categorical"
   },
   {
     "metric": "2. reconstruction",
     "job": "reject superparent edges, keep genuine",
     "pass": true,
-    "detail": "24/24 superparent edges rejected, 20/20 genuine kept (parent-gain: genuine>=3.05, superparent<=0.0046, thr=0.01)",
-    "margin": 661.4276990065217
+    "detail": "30/30 superparent edges rejected, 20/20 genuine kept (parent-gain: genuine>=3.35, superparent<=0.0027, thr=0.01)",
+    "margin": 1229.1655713545863
   },
   {
     "metric": "3. sibling redundancy",
     "job": "flag feature-split parent, spare healthy",
     "pass": true,
     "detail": "split parent redundancy=1.00 (flagged); healthy parents max=0.01 (thr=0.5)",
-    "margin": 92.0
+    "margin": 98.0281690140845
   },
   {
     "metric": "4. out-degree / superparent",
     "job": "identify superparent, spare genuine parents",
     "pass": true,
-    "detail": "detected superparents [7] (truth [7]); Gini=0.432, top-1 share=50%",
-    "margin": 1.0
+    "detail": "detected superparents [7] (truth [7]); Gini=0.562, top-1 share=55%",
+    "margin": 1.0,
+    "margin_kind": "categorical"
   },
   {
     "metric": "5. frequency control",
@@ -38,22 +40,22 @@
     "metric": "6. independence null (PMI)",
     "job": "rank genuine edges above base-rate/superparent co-firing",
     "pass": true,
-    "detail": "min genuine PMI=2.59 > max superparent PMI=0.07; base-rate confound only - topical co-occurrence is not in this toy (needs a model-based null)",
-    "margin": 36.08906151616907
+    "detail": "min genuine PMI=2.71 > max superparent PMI=0.07; base-rate confound only - topical co-occurrence is not in this toy (needs a model-based null)",
+    "margin": 41.00441472255791
   },
   {
     "metric": "7. joint-child coverage (support)",
     "job": "children cover a genuine parent's firing, not a superparent's",
     "pass": true,
-    "detail": "genuine R_supp>=1.00 vs superparent=0.43; r_supp==joint_child_coverage_exact: True; upper>=exact for all parents: True (covers r_supp, joint_child_coverage_exact, joint_child_coverage_upper)",
-    "margin": 2.301190476190476
+    "detail": "genuine R_supp>=1.00 vs superparent=0.47; r_supp==joint_child_coverage_exact: True; upper>=exact for all parents: True (covers r_supp, joint_child_coverage_exact, joint_child_coverage_upper)",
+    "margin": 2.1473477406679766
   },
   {
     "metric": "8. joint-child coverage (energy)",
     "job": "energy-weighted child coverage separates genuine from superparent",
     "pass": true,
-    "detail": "genuine R_mass>=1.00 vs superparent=0.43",
-    "margin": 2.314992222088543
+    "detail": "genuine R_mass>=1.00 vs superparent=0.46",
+    "margin": 2.170059703788573
   },
   {
     "metric": "9. energy concentration (share_energy)",
@@ -61,5 +63,42 @@
     "pass": true,
     "detail": "split parent max child share=1.00 (thr=0.9); genuine parents max=0.27",
     "margin": 3.6985993054459856
+  },
+  {
+    "metric": "2b. probe S_res (rank rule)",
+    "job": "accept every true parent; carry no signal against an unrelated one",
+    "pass": true,
+    "detail": "20/20 genuine edges pass the top-5 rank rule (median true-parent rank 1); superparent 4/20 (median rank 24) against 2.4 expected by chance at k/D=11.9%. The superparent holds 91% of the negative class, so it cannot enter the probe direction; what passes is coincidence, not detection. **The rule's strictness is set by dictionary size** \u2014 the same k is 0.015% on gemma's 32768 and 0.28% on PCFG's 1792 (covers train_probe, sres_rank_check, negative_parent_composition)",
+    "margin": 0.6666666666666666
+  },
+  {
+    "metric": "3'. parent-conditioned redundancy",
+    "job": "flag the split parent inside its own firing set, spare a genuine one",
+    "pass": true,
+    "detail": "split parent=1.00, genuine parent=0.00 (thr=0.5); the conditioned form the global Jaccard defers to (covers parent_conditioned_redundancy)",
+    "margin": 999999999.9999999
+  },
+  {
+    "metric": "7. in-block directed edges",
+    "job": "direct the containment pair, call the co-extensive pair a duplicate",
+    "pass": true,
+    "detail": "containment (27, 28) recovered as a directed edge; co-extensive (29, 30) reported as a duplicate and not an edge; parent_of antisymmetric: True (so the in-block graph is acyclic); the 3 split-child pairs also surface as duplicates, which is the same pathology seen from inside one block (covers directed_coverage, duplicate_pairs)",
+    "margin": 1.0,
+    "margin_kind": "categorical"
+  },
+  {
+    "metric": "\u2014 absorption (negative control)",
+    "job": "confirm coverage cannot propose an absorbed edge at all",
+    "pass": true,
+    "detail": "true edge (8->21) has R=0.00 < tau=0.5 and is absent from the candidate set, so metrics 2-9 never see it. Absorption is not measurable in this design \u2014 a blind spot that is now demonstrated rather than argued. Fixing it needs a different candidate generator, not a better grader",
+    "margin": 499999999.99999994
+  },
+  {
+    "metric": "\u2014 topical co-occurrence (negative control)",
+    "job": "confirm no metric here rejects a shared-topic pair",
+    "pass": true,
+    "detail": "a non-edge (conditionally independent given a shared topic) survives coverage, reconstruction, frequency, PMI \u2014 R=1.00, PMI=3.69. This is the open column in the properties matrix; closing it needs a model-based topic null, not another threshold",
+    "margin": 1.0,
+    "margin_kind": "categorical"
   }
 ]

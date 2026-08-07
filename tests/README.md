@@ -8,10 +8,12 @@ itself — the kind that break silently, with every downstream number still look
 | ---- | ------ | ---- |
 | [`test_collect_generic.py`](test_collect_generic.py) | `collect_statistics.collect()` runs on a source that is not gemma | no network, no GPU, ~1s |
 | [`test_dashboards_generic.py`](test_dashboards_generic.py) | stages 02 → 03 → 04 grade and *render* a source that is not gemma | no network, no GPU, ~13s |
+| [`test_calibration_covers_metrics.py`](test_calibration_covers_metrics.py) | every function in `metrics.__all__` is actually called by the Tier-1 calibration | AST only, ~0.1s |
 
 ```bash
 python3 -m tests.test_collect_generic
 python3 -m tests.test_dashboards_generic
+python3 -m tests.test_calibration_covers_metrics
 ```
 
 ## Why this one exists
