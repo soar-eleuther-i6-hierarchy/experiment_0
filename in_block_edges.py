@@ -20,11 +20,13 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
 import torch
 
 import config as C
-from utils import sae_utils as U
+from run_metrics import source_structure
+from run_token_metrics import load_w_dec
 from metrics import (
     degree_stats,
     find_superparents,
@@ -99,9 +101,9 @@ def duplicate_pairs(duplicate: torch.Tensor) -> list[tuple[int, int]]:
     return [(int(i), int(j)) for i, j in ij.tolist()]
 
 
-def within_cofire_from_cache(cache: TokenCache, b: int) -> torch.Tensor:
+def within_cofire_from_cache(cache: TokenCache, ranges, b: int) -> torch.Tensor:
     """[Cb, Cb] within-block co-firing rebuilt from the sparse token cache."""
-    s, e = C.BLOCK_RANGES[b]
+    s, e = ranges[b]
     Cb = e - s
     acc = torch.zeros(Cb, Cb, dtype=torch.float64)
     for _, fb in cache.chunks_dense(s, e):            # [n, Cb] fired indicators
@@ -114,15 +116,15 @@ def _clip(s, n=46):
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
-def analyse_block(b, stats, cache, labels, W_dec, device, do_sres):
-    s0, s1 = C.BLOCK_RANGES[b]
+def analyse_block(b, stats, ranges, cache, labels, W_dec, device, do_sres):
+    s0, s1 = ranges[b]
     fire = stats["fire_count"][s0:s1].double()
     total = int(stats["total_tokens"])
 
     if "within_cofire" in stats and b in stats["within_cofire"]:
         wc = stats["within_cofire"][b].double()
     else:                                             # B0 isn't cached by collect_statistics -> rebuild from token cache
-        wc = within_cofire_from_cache(cache, b)
+        wc = within_cofire_from_cache(cache, ranges, b)
 
     d = directed_coverage(wc, fire, C.EDGE_TAU, C.MIN_FIRE_COUNT, C.MIN_JOINT)
     parent_of, dup = d["parent_of"], d["duplicate"]
@@ -233,21 +235,50 @@ def to_md(report):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--layer", type=int, help="which layer to grade (overrides EXP0_LAYER)")
     ap.add_argument("--skip-sres", action="store_true")
     ap.add_argument("--device", default=None)
+    ap.add_argument("--w-dec", type=Path, default=None,
+                    help="decoder [D_SAE, d_model] for a non-gemma dictionary "
+                         "(default: RUN_DIR/w_dec.pt, else gemma's)")
     args = ap.parse_args()
+    C.use_layer(args.layer)          # re-execs when it changes anything; see config.use_layer
     device = args.device or C.pick_device()
 
     stats = torch.load(C.EXP0_STATS_PATH, weights_only=False)
     labels = C.load_feature_labels()
     cache = TokenCache(C.TOKEN_CACHE_DIR) if (C.TOKEN_CACHE_DIR / "meta.json").exists() else None
+
+    # Structure from the file being graded, never from this module: gemma is 32768
+    # latents in 5 blocks, a PCFG SAE 1792 in 8, and slicing one with the other's
+    # ranges returns a full report computed from the wrong feature columns. Same
+    # reason stages 02, 03 and 04 stopped holding it as a constant.
+    ranges, _ = source_structure(stats)
+
+    # Which blocks: every one whose within-block matrix the file carries, plus any
+    # the token cache can rebuild. `config.IN_BLOCK_BLOCKS` is not consulted -- it
+    # is a *collection* directive telling stage 01 which matrices to accumulate,
+    # and reusing it here would reimpose gemma's [0, 1, 2] on a source with eight
+    # blocks. Analysis reads what was collected. B4 is absent on gemma by
+    # construction: 24576^2 was never cached.
+    cached = sorted(stats.get("within_cofire", {}))
+    have = cached if cache is None else sorted(set(cached) | set(range(len(ranges))))
+    have = [b for b in have if b < len(ranges)]
+    if not have:
+        raise SystemExit("[ib] no within-block matrices and no token cache - rerun collect_statistics.py")
     if cache is None and not args.skip_sres:
         raise SystemExit("[ib] token cache missing - rerun collect_statistics.py or pass --skip-sres")
-    sae = U.load_sae("cpu")
-    W_dec = sae.W_dec.detach().float()
 
-    blocks = [analyse_block(b, stats, cache, labels, W_dec, device, not args.skip_sres)
-              for b in C.IN_BLOCK_BLOCKS]
+    W_dec = load_w_dec(args.w_dec)
+    d_sae = int(stats["fire_count"].numel())
+    if W_dec.shape[0] != d_sae:
+        raise SystemExit(
+            f"[ib] decoder has {W_dec.shape[0]} features but the statistics have {d_sae}. "
+            "Pass --w-dec pointing at this SAE's decoder; the default is gemma's."
+        )
+
+    blocks = [analyse_block(b, stats, ranges, cache, labels, W_dec, device, not args.skip_sres)
+              for b in have]
     report = {"total_tokens": int(stats["total_tokens"]),
               "n_docs": stats["config"].get("n_docs"),
               # Carried so the digest can name the source it graded; without it

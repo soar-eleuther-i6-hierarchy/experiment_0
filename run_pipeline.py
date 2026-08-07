@@ -49,6 +49,15 @@ def stages() -> list[Stage]:
         Stage("01b", [sys.executable, "fetch_labels.py"],
               "Neuronpedia feature labels for this layer (display only)",
               needs=(), produces=(run / "feature_labels.json",), optional=True),
+        # Sits here because it needs 01 and nothing after it: it builds its own
+        # candidate set from the within-block co-firing matrix rather than filtering
+        # stage 02's, so it answers the same question on a different domain. Optional
+        # because nothing downstream reads its output -- `reporting/make_report_figures`
+        # draws fig5 when `in_block_edges.json` happens to exist and skips it otherwise.
+        Stage("01c", [sys.executable, "in_block_edges.py"],
+              "same-level (within-block) edges and duplicates",
+              needs=(C.EXP0_STATS_PATH, C.TOKEN_CACHE_DIR),
+              produces=(C.IN_BLOCK_PATH,), optional=True),
         Stage("02", [sys.executable, "run_metrics.py"],
               "grade every block pair -> metrics_report.{json,md}",
               needs=(C.EXP0_STATS_PATH,), produces=(C.METRICS_JSON_PATH,)),
@@ -66,20 +75,19 @@ def stages() -> list[Stage]:
     ]
 
 
-# Not a stage. It builds its own candidate set from a within-block co-firing matrix
-# rather than filtering stage 02's, so it answers the same question on a different
-# domain and does not sit anywhere in this order.
-ASIDE = "in_block_edges.py  --  same formula, within-block matrix (needs 01, not 02)"
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--layer", type=int, help="which layer to run (overrides EXP0_LAYER)")
     ap.add_argument("--from", dest="start", metavar="NN", help="start at this stage")
     ap.add_argument("--only", nargs="+", metavar="NN", help="run just these")
     ap.add_argument("--list", action="store_true", help="show the order, run nothing")
     ap.add_argument("--skip-optional", action="store_true")
     args = ap.parse_args()
+    # Before stages(), which reads C.RUN_DIR to decide what each stage needs. The
+    # re-exec also puts EXP0_LAYER in the environment the child stages inherit, so
+    # one flag reaches all of them without any stage growing its own.
+    C.use_layer(args.layer)
 
     all_stages = stages()
     print(f"layer {C.LAYER} -> {C.RUN_DIR}\n")
@@ -91,7 +99,6 @@ def main() -> int:
             tail = "" if not miss else f"   <- needs {', '.join(p.name for p in miss)}"
             opt = " (optional)" if s.optional else ""
             print(f"  [{s.num:<3}] {mark} {s.what}{opt}{tail}")
-        print(f"\n  aside: {ASIDE}")
         return 0
 
     todo = all_stages

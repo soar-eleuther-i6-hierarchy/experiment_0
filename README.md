@@ -59,6 +59,7 @@ crashes obscurely later or, worse, silently reads a stale file from a previous r
 | --- | --- | --- | --- | --- |
 | **01** | `collect_statistics.py` | model + SAE + corpus | `exp0_stats.pt`, `token_cache/` | the only stage that touches the model; slow |
 | 01b | `fetch_labels.py` | Neuronpedia | `feature_labels.json` | display only, optional |
+| 01c | `in_block_edges.py` | 01 + `token_cache/` | `in_block_edges.{json,md}` | same-level edges; optional, nothing downstream reads it |
 | **02** | `run_metrics.py` | `exp0_stats.pt` | `metrics_report.{json,md}` | the ten-metric battery |
 | 02b | `validation/qualitative_check.py` | 01 + 02 | `qualitative_check.json` | Tier 3 |
 | **03** | `run_token_metrics.py` | 02 + `token_cache/` + a decoder | `second_pass.json` | `S_res`, parent-conditioned siblings, kept-children union — model-free |
@@ -69,9 +70,13 @@ the non-gemma adapters write; `--w-dec` overrides both.
 
 Stage 03 needs `token_cache/`, which stage 01 writes only when `CACHE_RESIDUALS=1`.
 
-**Not a stage:** [`in_block_edges.py`](in_block_edges.py) builds its own candidate set from
-a *within-block* co-firing matrix instead of filtering stage 02's, so it answers the same
-question on a different domain and sits nowhere in this chain. It needs 01, not 02.
+Stage 01c is numbered before 02 because that is where its dependencies put it: it builds its
+own candidate set from a *within-block* co-firing matrix instead of filtering stage 02's, so
+it answers the same question on a different domain and needs 01, not 02. It was outside the
+pipeline until 7 August, which is most of why it has never been run on any layer — nothing
+missed it. **It is still gemma-only:** it reads `config.BLOCK_RANGES` and loads the released
+gemma decoder, the two constants stages 03 and 04 stopped holding in `89294a4`. Do not point
+it at a non-gemma cache until it reads the structure from the file it grades.
 
 **Why the filenames are not numbered.** A module whose name starts with a digit cannot be
 imported, and `collect_statistics.collect` is imported by the adapters that grade non-gemma
