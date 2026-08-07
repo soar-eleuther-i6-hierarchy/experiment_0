@@ -45,7 +45,7 @@ EXTRA = {
 # them while reducing the toy to cached statistics -- that is still coverage.
 SOURCES = (
     ROOT / "validation" / "calibrate_on_synthetic_toy.py",
-    ROOT / "validation" / "toy_world.py",
+    ROOT / "validation" / "synthetic_toy_world.py",
 )
 
 

@@ -101,7 +101,7 @@ def identity(path):
     # the Page row is not drawn; the pills still carry `page` and stay on this
     # kind of page when you jump to a gemma layer.
     # `.md` -> `.html` here too: Jekyll serves the markdown under the .html name,
-    # which is the name the nav entries carry, so toy_calibration.md must
+    # which is the name the nav entries carry, so synthetic_toy_calibration.md must
     # highlight the same entry its rendered form does.
     served = rel.with_suffix(".html").as_posix() if rel.suffix == ".md" else rel.as_posix()
     current = f"outputs/{rel.parent.as_posix()}/" if is_index and len(rel.parts) > 1 else \

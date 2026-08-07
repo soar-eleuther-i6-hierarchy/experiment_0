@@ -21,7 +21,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="../outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="" href="../outputs/">Results</a><a class="" href="../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="../outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # `validation/` — metric calibration
 
@@ -38,7 +38,7 @@ Full results and the three-tier table: [outputs/README.md](../outputs/README.md#
 
 | File | Tier | Runs on | Scored against | What it does |
 | ---- | ---- | ------- | -------------- | ------------ |
-| [`toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
+| [`synthetic_toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass across seeds 0–7**, covering **21/21 metric functions** |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
 | [`qualitative_check.py`](qualitative_check.py) | 3 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
@@ -64,7 +64,7 @@ from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/s
 also reads that repo's `configs/tree.json` for the ground-truth tree, and expects the clone **beside**
 `experiment_0/` (`../sae-training/`); set `EXP0_SAE_TRAINING` if yours lives elsewhere.
 
-Both tiers write into [`outputs/`](../outputs/) (`toy_calibration.json`,
+Both tiers write into [`outputs/`](../outputs/) (`synthetic_toy_calibration.json`,
 `trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`
 and `python3 -m reporting.visualize --trained-calibration`.
 
@@ -170,6 +170,6 @@ same toy, `synthetic` vs `trained` statistics, ladder legible from the filenames
 
 A new metric earns its place by catching a property no existing metric catches
 (see the matrix in the [root README](../README.md#what-each-metric-catches)). So the calibration has
-two halves: inject that property into `toy_world.py`, then assert the new metric flags it **and**
+two halves: inject that property into `synthetic_toy_world.py`, then assert the new metric flags it **and**
 that it spares the genuine tree edges. A metric that only fires on the pathology is a detector; one
 that also kills healthy edges is a filter with a false-positive problem.

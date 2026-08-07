@@ -1,6 +1,6 @@
 """Ground-truth calibration on Bussmann's toy, with a *trained* SAE.
 
-`toy_world.py` hands the five metrics hand-built statistics: it proves the maths
+`synthetic_toy_world.py` hands the five metrics hand-built statistics: it proves the maths
 but not that the metrics survive a real training run. This closes that gap:
 
   1. rebuild the toy hierarchy from the team's repo (sae-training/configs/tree.json),

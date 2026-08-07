@@ -334,7 +334,7 @@ NAV_GLOBAL = [
     # first was THE toy calibration and the second was a different kind of
     # thing, when they are the same calibration on hand-built and on learned
     # statistics. The file names are unchanged: they are published URLs.
-    ("outputs/toy_calibration.html", "Synthetic Toy Calibration"),
+    ("outputs/synthetic_toy_calibration.html", "Synthetic Toy Calibration"),
     ("outputs/trained_toy_calibration.html", "Trained Toy Calibration"),
 ] + [(f"outputs/{name}/", cfg["label"]) for name, cfg in SOURCES.items()]
 

@@ -612,10 +612,10 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: superparent_fanout_vs_firing(layers))
 
-    toy = _json(C.OUT_DIR / "toy_calibration.json")
+    toy = _json(C.OUT_DIR / "synthetic_toy_calibration.json")
     run("calibration_synthetic_toy_scorecard", bool(toy),
-        "outputs/toy_calibration.json" if toy
-        else "needs outputs/toy_calibration.json (validation.calibrate_on_synthetic_toy)",
+        "outputs/synthetic_toy_calibration.json" if toy
+        else "needs outputs/synthetic_toy_calibration.json (validation.calibrate_on_synthetic_toy)",
         lambda: calibration_synthetic_toy_scorecard(toy))
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")

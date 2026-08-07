@@ -5,7 +5,7 @@ Hierarchy-metric calibration harness.
 tensors so "the same code runs on the synthetic ground-truth toy in validation/
 and the real gemma-2-2b caches". This package IS that toy:
 
-  - `toy_world.py`      builds a small SAE-like world with a KNOWN parent-child
+  - `synthetic_toy_world.py`      builds a small SAE-like world with a KNOWN parent-child
                         tree plus three injected pathologies, and emits exactly
                         the cached statistics `analyse_pair` consumes.
   - `calibrate_on_synthetic_toy.py`

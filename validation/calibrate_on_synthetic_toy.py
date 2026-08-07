@@ -2,7 +2,7 @@
 Calibrate the hierarchy metrics on the synthetic ground-truth toy.
 
 For each metric we know, by construction, which edges it SHOULD keep and which
-pathology it SHOULD catch (see validation/toy_world.py). We run the production metric
+pathology it SHOULD catch (see validation/synthetic_toy_world.py). We run the production metric
 functions with the production thresholds from config.py and check:
 
     Metric 1  coverage          recovers 100% of the genuine tree edges.
@@ -63,7 +63,7 @@ from metrics.sres import (  # noqa: E402
 )
 from metrics.sibling_redundancy import parent_conditioned_redundancy  # noqa: E402
 from in_block_edges import directed_coverage, duplicate_pairs  # noqa: E402
-from validation.toy_world import (  # noqa: E402
+from validation.synthetic_toy_world import (  # noqa: E402
     GENUINE_TREE,
     IN_BLOCK_DUP,
     SPLIT_CHILDREN,
@@ -221,6 +221,8 @@ def _score(stats, labels, m) -> list[dict]:
                   f"base-rate confound only - topical co-occurrence is not in this toy "
                   f"(needs a model-based null)",
         "margin": gen_min_pmi / max(sp_max_pmi, 1e-9),
+        "series": {"name": "PMI against the independence null",
+                   "keep": gen_pmi, "reject": sp_pmi, "threshold": 0.0},
     })
 
     # --- Metric 7: joint-child coverage (support) - genuine covered, not SP --
@@ -340,6 +342,12 @@ def _score_per_token(stats, labels, m, kept) -> list[dict]:
                   f"(covers train_probe, sres_rank_check, negative_parent_composition)",
         "margin": (min(sp_ranks, default=D_toy)
                    / max(max(gen_ranks, default=0) + 1, 1)),
+        # the two classes as numbers, so a page can plot the separation instead
+        # of quoting the sentence about it -- and so nothing retrains 20 probes
+        # to redraw a chart.
+        "series": {"name": "probe rank of the parent (0 = top of the dictionary)",
+                   "keep": gen_ranks, "reject": sp_ranks,
+                   "threshold": C.SRES_RANK_TOP_K, "reject_above": True},
     })
 
     # --- Metric 3': sibling redundancy conditioned on the parent ------------
@@ -359,6 +367,9 @@ def _score_per_token(stats, labels, m, kept) -> list[dict]:
                   f"(thr={C.SIBLING_REDUNDANCY_FLAG}); the conditioned form the global "
                   f"Jaccard defers to (covers parent_conditioned_redundancy)",
         "margin": red_split / max(red_gen, 1e-9),
+        "series": {"name": "redundancy inside the parent's firing set",
+                   "keep": [red_gen], "reject": [red_split],
+                   "threshold": C.SIBLING_REDUNDANCY_FLAG, "reject_above": True},
     })
 
     # --- Metric 7: within-block directed edges and duplicates ---------------
@@ -449,7 +460,7 @@ def calibrate(seed: int = 0):
 def _render(rows) -> str:
     ranked = sorted(rows, key=lambda r: (-int(r["pass"]), -r["margin"]))
     # Site-wide page (no layer): one level down from the site root.
-    L = [C.nav_html(depth=1, current="outputs/toy_calibration.html"), "",
+    L = [C.nav_html(depth=1, current="outputs/synthetic_toy_calibration.html"), "",
          "# Synthetic toy calibration — every metric against a known tree", ""]
     L.append("Each metric is graded on the pathology it is meant to catch, using "
              "the production thresholds in `config.py`. Margin = how decisively the "
@@ -492,8 +503,8 @@ def main():
     _, _, rows = calibrate()
     md = _render(rows)
     print("\n" + md + "\n")
-    out_md = C.OUT_DIR / "toy_calibration.md"
-    out_json = C.OUT_DIR / "toy_calibration.json"
+    out_md = C.OUT_DIR / "synthetic_toy_calibration.md"
+    out_json = C.OUT_DIR / "synthetic_toy_calibration.json"
     out_md.write_text(md)
     out_json.write_text(json.dumps(
         [{k: (v if not isinstance(v, float) or v != float("inf") else "inf")

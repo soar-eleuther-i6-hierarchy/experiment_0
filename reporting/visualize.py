@@ -9,7 +9,7 @@ distributions), then writes:
     outputs/metrics_dashboard.html    aggregate dashboard: filter funnel + distributions
     outputs/superparent_sankey.html   one superparent's fan-out to its children
 
-    outputs/toy_calibration.html      (--calibration) metric scorecard + the
+    outputs/synthetic_toy_calibration.html      (--calibration) metric scorecard + the
                                       genuine-vs-pathological separation each
                                       metric achieves on the synthetic toy
     outputs/trained_toy_calibration.html (--trained-calibration) Tier-2 scorecard:
@@ -533,7 +533,7 @@ def _calibration_data():
     """Run the metrics on the toy and split each metric's per-edge score
     into the class it should KEEP (genuine) vs the class it should REJECT."""
     from validation.calibrate_on_synthetic_toy import _render, _run_metrics, _score
-    from validation.toy_world import build_world
+    from validation.synthetic_toy_world import build_world
 
     stats, labels = build_world()
     m = _run_metrics(stats)
@@ -571,6 +571,33 @@ def _calibration_data():
         "deg_keep": [int(outdeg[p]) for p in genuine_parents],
         "deg_reject": [int(outdeg[p]) for p in labels.superparent_parents],
         "deg_thr": C.SUPERPARENT_OUTDEG_FRAC * stats["C"],
+        # Panels are built from whatever rows carry a `series`, plus the four
+        # above that are computed here because their two classes are edge sets
+        # rather than a per-row list. The page used to hardcode exactly those
+        # four, so it showed 4 of 14 graded metrics and looked like the battery
+        # was five metrics wide.
+        "panels": [
+            ("2a. reconstruction — parent gain (log)", data_recon := {
+                "keep": [float(pgain[p, c]) for p, c in genuine],
+                "reject": [float(pgain[p, c]) for p, c in sp_edges],
+                "threshold": C.RECON_REL_GAIN_MIN, "log": True}),
+            ("5. frequency control — survival", {
+                "keep": [float(survival[p, c]) for p, c in genuine
+                         if not torch.isnan(survival[p, c])],
+                "reject": [float(survival[p, c]) for p, c in freq_edges],
+                "threshold": C.FREQ_SURVIVAL_MIN}),
+            ("3. sibling redundancy — global Jaccard", {
+                "keep": [sib[p]["redundancy"] for p in genuine_parents if p in sib],
+                "reject": [v["redundancy"] for p, v in sib.items()
+                           if p in labels.split_parents],
+                "threshold": C.SIBLING_REDUNDANCY_FLAG, "reject_above": True}),
+            ("4. out-degree — children per parent", {
+                "keep": [int(outdeg[p]) for p in genuine_parents],
+                "reject": [int(outdeg[p]) for p in labels.superparent_parents],
+                "threshold": C.SUPERPARENT_OUTDEG_FRAC * stats["C"],
+                "reject_above": True}),
+        ] + [(r["metric"] + " — " + r["series"]["name"], r["series"])
+             for r in rows if "series" in r],
     }
 
 
@@ -600,24 +627,32 @@ def _strip(fig, row, col, keep, reject, log_y=False, rng=None):
 
 
 def build_calibration_dashboard(data):
-    ranked = sorted(data["rows"], key=lambda r: (-int(r["pass"]), -r["margin"]))
+    """Scorecard for every row, a margin overview, then one panel per metric that
+    has two classes to separate.
+
+    The margin overview is split in two, because two kinds of row live in this
+    scorecard and only one belongs on a ratio axis. A row scored categorically
+    (the recovered edge set is right or it is not) carries margin 1.0 meaning
+    "correct", which on a log ratio axis is indistinguishable from "separated by
+    a factor of one" -- that is, from no separation at all.
+    """
+    rows = data["rows"]
+    ranked = sorted(rows, key=lambda r: (-int(r["pass"]), -r["margin"]))
+    panels = data["panels"]
+    ncol = 2
+    prow = (len(panels) + ncol - 1) // ncol
+
+    specs = ([[{"type": "table", "colspan": 2}, None],
+              [{}, {}]] + [[{}, {}] for _ in range(prow)])
+    titles = ["", "separation margin (log) — ratio-scored rows",
+              "categorically scored — right or not"]
+    titles += [t for t, _ in panels] + [""] * (prow * ncol - len(panels))
     fig = make_subplots(
-        rows=3, cols=2,
-        specs=[[{"type": "table", "colspan": 2}, None], [{}, {}], [{}, {}]],
-        subplot_titles=(
-            "",
-            "Metric 2 - reconstruction parent-gain (log)",
-            "Metric 5 - frequency survival",
-            "Metric 3 - sibling redundancy",
-            "Metric 4 - out-degree (children per parent)",
-        ),
-        vertical_spacing=0.09, horizontal_spacing=0.12,
-        row_heights=[0.30, 0.35, 0.35],
+        rows=2 + prow, cols=2, specs=specs, subplot_titles=titles,
+        vertical_spacing=0.055, horizontal_spacing=0.12,
+        row_heights=[0.30, 0.16] + [0.54 / prow] * prow,
     )
 
-    # (1) scorecard table
-    def vcell(r):
-        return "PASS" if r["pass"] else "FAIL"
     fig.add_trace(
         go.Table(
             columnwidth=[36, 150, 200, 50, 55, 380],
@@ -631,7 +666,7 @@ def build_calibration_dashboard(data):
                     [i for i in range(1, len(ranked) + 1)],
                     [r["metric"] for r in ranked],
                     [r["job"] for r in ranked],
-                    [vcell(r) for r in ranked],
+                    ["PASS" if r["pass"] else "FAIL" for r in ranked],
                     [">1000x" if r["margin"] >= 1000 else f"{r['margin']:.1f}x" for r in ranked],
                     [r["detail"] for r in ranked],
                 ],
@@ -646,51 +681,68 @@ def build_calibration_dashboard(data):
         row=1, col=1,
     )
 
-    # (2) separation strips, one per graded metric. The dashed threshold is a
-    # line trace (not add_hline, which trips over the Table subplot in plotly).
-    def thr(row, col, y):
+    ratio = sorted((r for r in rows if r.get("margin_kind") != "categorical"),
+                   key=lambda r: r["margin"])
+    cat = [r for r in rows if r.get("margin_kind") == "categorical"]
+    for col, group, logx in ((1, ratio, True), (2, cat, False)):
+        if not group:
+            continue
         fig.add_trace(
-            go.Scatter(x=[-0.5, 1.5], y=[y, y], mode="lines", hoverinfo="skip",
-                       line=dict(color=RED, width=1, dash="dash"), showlegend=False),
-            row=row, col=col,
+            go.Bar(
+                x=[min(r["margin"], 1e4) if logx else 1 for r in group],
+                y=[r["metric"] for r in group], orientation="h",
+                marker=dict(color=[GREEN if r["pass"] else RED for r in group],
+                            pattern=dict(shape=["/" if r["metric"].lstrip().startswith("—")
+                                                else "" for r in group])),
+                text=[(">1000x" if r["margin"] >= 1000 else f"{r['margin']:.1f}x") if logx
+                      else ("correct" if r["pass"] else "wrong") for r in group],
+                textposition="auto", hoverinfo="y+text", showlegend=False,
+            ),
+            row=2, col=col,
         )
+        if logx:
+            fig.update_xaxes(type="log", row=2, col=col, title_text="× separation")
+        else:
+            fig.update_xaxes(visible=False, row=2, col=col)
+        fig.update_yaxes(tickfont=dict(size=9), row=2, col=col)
 
-    _strip(fig, 2, 1, data["recon_keep"], data["recon_reject"], log_y=True)
-    thr(2, 1, data["recon_thr"])
-    _strip(fig, 2, 2, data["freq_keep"], data["freq_reject"], rng=[-0.1, 1.6])
-    thr(2, 2, data["freq_thr"])
-    _strip(fig, 3, 1, data["sib_keep"], data["sib_reject"], rng=[-0.1, 1.1])
-    thr(3, 1, data["sib_thr"])
-    _strip(fig, 3, 2, data["deg_keep"], data["deg_reject"], log_y=True)
-    thr(3, 2, data["deg_thr"])
+    for i, (_, ser) in enumerate(panels):
+        r, c = 3 + i // ncol, 1 + i % ncol
+        _strip(fig, r, c, ser.get("keep", []), ser.get("reject", []),
+               log_y=bool(ser.get("log")))
+        thr = ser.get("threshold")
+        if thr is not None:
+            fig.add_trace(
+                go.Scatter(x=[-0.5, 1.5], y=[thr, thr], mode="lines", hoverinfo="skip",
+                           line=dict(color=RED, width=1, dash="dash"), showlegend=False),
+                row=r, col=c,
+            )
 
-    fig.update_yaxes(title_text="parent-gain", row=2, col=1)
-    fig.update_yaxes(title_text="survival", row=2, col=2)
-    fig.update_yaxes(title_text="redundancy", row=3, col=1)
-    fig.update_yaxes(title_text="out-degree", row=3, col=2)
-
-    n_pass = sum(r["pass"] for r in data["rows"])
+    n_pass = sum(r["pass"] for r in rows)
     fig.update_layout(
+        height=430 + 300 * prow, showlegend=True,
+        legend=dict(orientation="h", y=1.02, x=1, xanchor="right", yanchor="bottom"),
+        margin=dict(l=60, r=30, t=190, b=40), plot_bgcolor="white",
         title=dict(text=_titled(
-                       "Synthetic toy calibration",
-                       f"{n_pass}/{len(data['rows'])} metrics recover the true tree and reject their "
-                       f"injected pathology　·　"
-                       f"<span style='color:{RED}'>- - dashed = config threshold</span>",
-                       subtitle=scope_subtitle("No layer: synthetic toy, layer-independent")
-                       + "　·　applies to every layer　·　production metrics and thresholds, unchanged"),
-                   x=0.01, xanchor="left", yref="container", y=0.985, yanchor="top",
-                   font=dict(size=14, color=INK)),
-        font=FONT, paper_bgcolor="white", plot_bgcolor="#FbFcFd",
-        width=1200, height=1280, margin=dict(l=60, r=40, t=170, b=50),
-        legend=dict(orientation="h", y=1.008, yanchor="bottom", x=0.01, xanchor="left"),
+            "Synthetic toy calibration",
+            f"every metric scored against a known tree — <b>{n_pass}/{len(rows)}</b> rows, "
+            f"covering all 21 metric functions; the two hatched rows are negative controls "
+            f"that pass when the battery does <b>not</b> act",
+            subtitle=scope_subtitle(
+                "No layer: a hand-built world with a known 5-parent tree and six injected "
+                "structures"),
+        ), x=0.01, xanchor="left", font=dict(size=15)),
     )
+    for ax in fig.layout:
+        if ax.startswith("xaxis") or ax.startswith("yaxis"):
+            fig.layout[ax].update(gridcolor="#EEF1F5", zeroline=False)
     return fig
 
 
 def run_calibration():
     data = _calibration_data()
     fig = build_calibration_dashboard(data)
-    out = C.OUT_DIR / "toy_calibration.html"
+    out = C.OUT_DIR / "synthetic_toy_calibration.html"
     write_page(fig, out)          # lives in outputs/
     print(f"saved: {out}")
 
@@ -769,6 +821,39 @@ def trained_scorecard(d, align):
                    f"This bounds recall from above: it is a fact about the SAE, so it is "
                    f"reported and not graded"},
     ]
+
+    pt = d.get("per_token")
+    if pt:
+        red = pt.get("parent_conditioned_redundancy") or {}
+        worst = max(red.items(), key=lambda kv: kv[1], default=(None, 0.0))
+        clean = [k for k, v in red.items() if v < C.SIBLING_REDUNDANCY_FLAG]
+        rows += [
+            {"check": "3b. probe S_res on LEARNED latents",
+             "job": "accept a parent the SAE had to find, not one we constructed",
+             "pass": pt["n_pass"] == pt["n_testable"] and pt["n_testable"] > 0,
+             "value": f"{pt['n_pass']}/{pt['n_testable']}",
+             "margin": f"chance {pt['chance_pass_rate']:.0%}",
+             "detail": "the true parent lands at rank 0 or 1 of the whole dictionary. "
+                       f"With {int(5 / max(pt['chance_pass_rate'], 1e-9))} latents a top-5 "
+                       f"rank rule passes an unrelated parent at k/D = "
+                       f"{pt['chance_pass_rate']:.0%} by chance, so this tier shows a learned "
+                       f"true parent is ACCEPTED and cannot show an unrelated one is rejected; "
+                       "gemma's 32768 puts the same null at 0.015%. Untestable edges: "
+                       + "; ".join(f"{r['edge']} ({r['why']})"
+                                   for r in pt["edges"] if not r["testable"])},
+            {"check": "3c. sibling redundancy inside each true parent",
+             "job": "the tree says every parent's children are mutually exclusive",
+             "pass": bool(worst[0]) and worst[1] >= C.SIBLING_REDUNDANCY_FLAG,
+             "value": f"{worst[1]:.2f} vs {', '.join(f'{v:.2f}' for k, v in red.items() if k in clean)}",
+             "margin": "found, not injected",
+             "detail": f"parent {worst[0]} scores {worst[1]:.3f} where the other parents score "
+                       f"{', '.join(f'{v:.3f}' for k, v in red.items() if k in clean)}. The tree "
+                       "declares all of them `mutually_exclusive_children`, so this is a real "
+                       "conflation the SAE introduced — a defect nobody injected, which the "
+                       "synthetic tier structurally cannot produce. Edge recovery calls both of "
+                       "that parent's edges recovered and precision stays 1.00, so this metric "
+                       "is adding a column coverage and reconstruction do not have"},
+        ]
 
     if align:
         gaps = [r["child_block"] - r["parent_block"]
