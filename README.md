@@ -172,7 +172,12 @@ co-firing is base rate, carried by high-frequency tokens. *Concept co-occurrence
 specific and genuinely unrelated (`enzyme`, `CT scan`) but share a latent topic (`biology`), so they
 co-fire in the same documents.
 
-**Two columns are still open.**
+**Two columns are still open — and are now demonstrated rather than argued.**
+[`validation/toy_world.py`](validation/toy_world.py) carries a scored negative control for each:
+an absorbed child (the true edge has `R = 0.00` and never enters the candidate set) and a
+shared-topic pair (a non-edge that clears coverage, reconstruction, the frequency control *and*
+PMI). Both rows pass when the battery does **nothing**, so a regression turns a stated limitation
+into a visible failure.
 
 - **Concept co-occurrence is caught by nothing.** `enzyme` → `CT scan` passes coverage (they co-fire),
   passes reconstruction (both carry mass on biology tokens), passes token-frequency control (biology
@@ -180,13 +185,27 @@ co-fire in the same documents.
   PMI > 0). Closing it needs a **model-based null**: a topic model / LDA-style `M` that removes the
   shared concept and asks whether the residuals `a = enzyme − biology`, `b = CT − biology` are still
   dependent. Not implemented in this tranche.
+
+  **It is not hypothetical, and it is the commonest way a survivor is wrong.** Reading all 40
+  surviving edges at B0→B1 against Neuronpedia labels (8 per layer, five layers), eight are a
+  semantic parent with a function-word or formatting child — *"formal legal terminology"* → the word
+  **"the"**, *"code, formulas and citations"* → **blank lines**. Every one clears the whole battery.
+  So this column costs roughly **20% of what survives**.
 - **Absorption** is only reachable through decoder geometry (`S_res`), and even there the edge never
   arrives: coverage gates the candidate set, and an absorbed child has low `R` by construction, so
   the pair is dropped before any later metric sees it.
 
 Cells are read off each metric's construction (see the module docstrings) together with the
 calibrations below — they state what a metric is *able* to separate, not a measured accuracy on the
-real SAE.
+real SAE. Every cell is now exercised by a Tier-1 row: the calibration covers **21/21 metric
+functions**, which it did not until 7 August.
+
+One cell needs its own caveat. **2b's ability to disfavour a superparent is bounded by dictionary
+size.** The rank rule is a geometry test, so an unrelated parent passes whenever chance puts it in
+the top *k* of *D* — `k/D`, which is 0.015% on gemma's 32768 latents but 0.28% on a 1792-latent PCFG
+dictionary and 11.9% on the toy. It ranks a superparent far down (median rank 24 of 42 against the
+true parent's 1), and the top-*k* cutoff is what lets chance through. An `S_res` pass rate is only
+comparable between dictionaries of similar size.
 
 ### Why trust the table: three tiers
 
