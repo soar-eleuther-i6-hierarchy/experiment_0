@@ -901,17 +901,70 @@ def build_trained_calibration_dashboard(d, align=None):
                                                  r["parent"], r["child"]))
     have_align = bool(align)
 
+    # Row 2 is this tier's own question -- do the metrics work on LEARNED
+    # features -- and rows 3-4 are the nesting control, which asks about the
+    # architecture instead. The page used to give the control three panels and
+    # the calibration one, so the two results added on 7 August (S_res on learned
+    # latents, and the conflation the sibling metric found) lived only in table
+    # cells while three charts described something else.
+    pt = d.get("per_token") or {}
     fig = make_subplots(
-        rows=3, cols=2,
+        rows=4, cols=2,
         specs=[[{"type": "table", "colspan": 2}, None],
+               [{}, {}],
                [{"type": "table"}, {}],
                [{"type": "table"}, {}]],
-        subplot_titles=("", "Edge recovery vs the known tree",
+        subplot_titles=("",
+                        "Probe S_res on LEARNED latents: where the true parent ranks",
+                        "Children the tree keeps apart, and what the SAE did with them",
+                        "Edge recovery vs the known tree",
                         "Matryoshka nesting: parent block vs child block",
                         "Nesting, edge by edge", "Where the tree landed in the blocks"),
-        vertical_spacing=0.075, horizontal_spacing=0.08,
-        row_heights=[0.34, 0.33, 0.33],
+        vertical_spacing=0.06, horizontal_spacing=0.08,
+        row_heights=[0.28, 0.24, 0.24, 0.24],
     )
+
+    # (row 2, left) rank of the true parent per edge, against the two lines that
+    # decide it: the top-k cutoff, and D -- the floor an unrelated feature sits at.
+    edges = [e for e in pt.get("edges", []) if e.get("testable")]
+    if edges:
+        names = [e["edge"] for e in edges]
+        fig.add_trace(go.Bar(x=names, y=[e["parent_rank"] for e in edges],
+                             marker_color=GREEN, name="true parent's rank",
+                             text=[e["parent_rank"] for e in edges], textposition="outside"),
+                      row=2, col=1)
+        fig.add_trace(go.Bar(x=names, y=[e["child_rank"] for e in edges],
+                             marker_color=TEAL, name="child's rank",
+                             text=[e["child_rank"] for e in edges], textposition="outside"),
+                      row=2, col=1)
+        D = int(round(5 / max(pt.get("chance_pass_rate", 0.25), 1e-9)))
+        for y, col, lab in ((C.SRES_RANK_TOP_K - 0.5, RED, f"top-{C.SRES_RANK_TOP_K} cutoff"),
+                            (D - 1, GREY, f"bottom of the dictionary (D = {D})")):
+            fig.add_trace(go.Scatter(x=names, y=[y] * len(names), mode="lines",
+                                     line=dict(color=col, width=1, dash="dash"),
+                                     name=lab, hoverinfo="skip"), row=2, col=1)
+        fig.update_yaxes(title_text="rank among all latents (0 = top)",
+                         range=[-1.5, D], row=2, col=1)
+
+    # (row 2, right) the fact under the redundancy number. The tree makes every
+    # parent's children mutually exclusive, so the ground-truth column is zero by
+    # construction and any bar on the right is the SAE's own conflation.
+    cof = pt.get("child_cofire") or {}
+    if cof:
+        ps = sorted(cof, key=lambda k: -cof[k]["learned"])
+        red = pt.get("parent_conditioned_redundancy") or {}
+        fig.add_trace(go.Bar(x=[f"parent {k}" for k in ps],
+                             y=[cof[k]["ground_truth"] for k in ps],
+                             marker_color=GREY, name="co-firings the grammar allows"),
+                      row=2, col=2)
+        fig.add_trace(go.Bar(x=[f"parent {k}" for k in ps],
+                             y=[cof[k]["learned"] for k in ps],
+                             marker_color=[RED if cof[k]["learned"] else GREEN for k in ps],
+                             name="co-firings the SAE produced",
+                             text=[f"{cof[k]['learned']:,}<br>redundancy "
+                                   f"{red.get(k, 0):.2f}" for k in ps],
+                             textposition="outside"), row=2, col=2)
+        fig.update_yaxes(title_text="co-firing tokens (200,000 draws)", row=2, col=2)
 
     # (1) the scorecard — same six columns as Tier 1, same verdict colouring
     fig.add_trace(
@@ -960,7 +1013,7 @@ def build_trained_calibration_dashboard(d, align=None):
             cells=dict(values=[edge, verdict, note], align="left", height=26,
                        font=dict(size=10, color=[[INK] * len(edge), vcol, [INK] * len(edge)]),
                        fill_color=[fill, fill, fill], line=dict(color="white", width=1)),
-        ), row=2, col=1,
+        ), row=3, col=1,
     )
 
     if have_align:
@@ -972,7 +1025,7 @@ def build_trained_calibration_dashboard(d, align=None):
         # to disbelieve than the word "respected" in a cell.
         fig.add_trace(go.Scatter(x=[0, nb - 1], y=[0, nb - 1], mode="lines",
                                  line=dict(color="#CBD5E1", width=1, dash="dot"),
-                                 hoverinfo="skip", showlegend=False), row=2, col=2)
+                                 hoverinfo="skip", showlegend=False), row=3, col=2)
         fig.add_trace(
             go.Scatter(
                 x=[r["parent_block"] for r in tested],
@@ -984,11 +1037,11 @@ def build_trained_calibration_dashboard(d, align=None):
                             color=["#166534" if r["verdict"] == "respected" else "#991B1B"
                                    for r in tested]),
                 hovertemplate="%{text}<br>parent B%{x} → child B%{y}<extra></extra>",
-                showlegend=False), row=2, col=2)
+                showlegend=False), row=3, col=2)
         fig.update_xaxes(title_text="parent block", range=[-0.7, nb - 0.3], dtick=1,
-                         row=2, col=2)
+                         row=3, col=2)
         fig.update_yaxes(title_text="child block", range=[-0.7, nb + 0.3], dtick=1,
-                         row=2, col=2)
+                         row=3, col=2)
 
         # (3,1) the same six edges as a table, plus the three that cannot be tested
         av, ap, ac, aw, afill, aink = [], [], [], [], [], []
@@ -1012,7 +1065,7 @@ def build_trained_calibration_dashboard(d, align=None):
                 cells=dict(values=[av, ap, ac, aw], align="left", height=26,
                            font=dict(size=10, color=[[INK] * len(av)] * 3 + [aink]),
                            fill_color=[afill] * 4, line=dict(color="white", width=1)),
-            ), row=3, col=1,
+            ), row=4, col=1,
         )
 
         # (3,2) parents early, children late — the nesting claim in aggregate
@@ -1023,10 +1076,10 @@ def build_trained_calibration_dashboard(d, align=None):
                                  ("children", children, "#F59E0B")):
             fig.add_bar(x=list(range(nb)),
                         y=[sum(1 for f in feats if fb.get(f) == b) for b in range(nb)],
-                        name=name, marker_color=col, row=3, col=2)
+                        name=name, marker_color=col, row=4, col=2)
         fig.update_xaxes(title_text="earliest Matryoshka block holding the feature",
-                         dtick=1, row=3, col=2)
-        fig.update_yaxes(title_text="features", row=3, col=2)
+                         dtick=1, row=4, col=2)
+        fig.update_yaxes(title_text="features", row=4, col=2)
         fig.update_layout(barmode="group",
                           legend=dict(orientation="h", x=0.62, y=0.055,
                                       bgcolor="rgba(255,255,255,0.7)"))
@@ -1050,7 +1103,9 @@ def build_trained_calibration_dashboard(d, align=None):
             x=0.01, xanchor="left", yref="container", y=0.99, yanchor="top",
             font=dict(size=14, color=INK)),
         font=FONT, paper_bgcolor="white", plot_bgcolor="white",
-        width=1180, height=1180 if have_align else 780,
+        # a fourth row was added for this tier's own two results; without the
+        # extra height every panel is squeezed and the rank bars lose their labels
+        width=1180, height=(1560 if have_align else 1160) if pt else (1180 if have_align else 780),
         margin=dict(l=40, r=40, t=150, b=30),
     )
     return fig
@@ -1224,12 +1279,12 @@ def build_in_block_dashboard(report):
                       f"{s['outdeg']} children, fires {100*s['fire_frac']:.0f}%" for s in sps],
                 hovertemplate="%{text}<extra></extra>",
                 name=f"B{b['block']} superparents", legendgroup=f"sp{b['block']}",
-            ), row=2, col=1)
+            ), row=3, col=1)
     if not any_sp:
-        fig.add_annotation(text="no in-block superparents", row=2, col=1,
+        fig.add_annotation(text="no in-block superparents", row=3, col=1,
                            showarrow=False, font=dict(color=INK))
-    fig.update_xaxes(title_text="out-degree fraction of block", row=2, col=1)
-    fig.update_yaxes(title_text="firing rate", row=2, col=1)
+    fig.update_xaxes(title_text="out-degree fraction of block", row=3, col=1)
+    fig.update_yaxes(title_text="firing rate", row=3, col=1)
 
     fig.update_layout(
         title=dict(text=_titled(

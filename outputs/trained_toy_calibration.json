@@ -266,6 +266,33 @@
       "0": 0.0,
       "4": 0.9582,
       "8": 0.0
-    }
+    },
+    "child_cofire": {
+      "0": {
+        "ground_truth": 0,
+        "learned": 0,
+        "children": [
+          1,
+          2
+        ]
+      },
+      "4": {
+        "ground_truth": 0,
+        "learned": 27592,
+        "children": [
+          5,
+          7
+        ]
+      },
+      "8": {
+        "ground_truth": 0,
+        "learned": 0,
+        "children": [
+          10,
+          9
+        ]
+      }
+    },
+    "redundancy_threshold": 0.5
   }
 }

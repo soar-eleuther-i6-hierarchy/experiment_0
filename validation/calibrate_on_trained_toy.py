@@ -62,7 +62,7 @@ from metrics.sres import sres_rank_check, train_probe             # noqa: E402
 from metrics.sibling_redundancy import parent_conditioned_redundancy  # noqa: E402
 
 
-def score_per_token(x, fired, W_dec, truth, m, parent_lat, child_lat, recovered):
+def score_per_token(x, fired, gt, W_dec, truth, m, parent_lat, child_lat, recovered):
     """The probe functions, on LEARNED latents against the known tree.
 
     Tier 1 grades these on hand-built statistics: the parent direction is one we
@@ -98,12 +98,26 @@ def score_per_token(x, fired, W_dec, truth, m, parent_lat, child_lat, recovered)
         ok, det = sres_rank_check(corr, gp, gc, 5)
         rows.append({"edge": f"{tp_} -> {tc_}", "testable": True, "pass": bool(ok), **det})
 
-    # sibling redundancy inside each true parent's own firing set
+    # sibling redundancy inside each true parent's own firing set, and the fact
+    # under it: how often the children co-fire in the GRAMMAR against how often
+    # the latents that recovered them co-fire. The tree makes them mutually
+    # exclusive, so the first column is zero by construction and any gap is the
+    # SAE's. Carried as numbers so the page can plot it instead of quoting it.
+    cofire = {}
     for tp_ in sorted({p for p, _ in truth}):
-        kids = [lat_of[c] for (p, c) in truth if p == tp_ and c in lat_of]
+        true_kids = [c for (p, c) in truth if p == tp_]
+        kids = [lat_of[c] for c in true_kids if c in lat_of]
         if tp_ in lat_of and len(kids) >= 2:
             red[str(tp_)] = round(parent_conditioned_redundancy(
                 fired[:, lat_of[tp_]].bool(), fired[:, kids].bool()), 4)
+            learned = [c for c in true_kids if c in lat_of]
+            g = t = 0
+            for a in range(len(learned)):
+                for b in range(a + 1, len(learned)):
+                    g += int(((gt[:, learned[a]] > 0) & (gt[:, learned[b]] > 0)).sum())
+                    t += int((fired[:, lat_of[learned[a]]].bool()
+                              & fired[:, lat_of[learned[b]]].bool()).sum())
+            cofire[str(tp_)] = {"ground_truth": g, "learned": t, "children": learned}
 
     testable = [r for r in rows if r["testable"]]
     n_pass = sum(r["pass"] for r in testable)
@@ -112,6 +126,8 @@ def score_per_token(x, fired, W_dec, truth, m, parent_lat, child_lat, recovered)
         "chance_pass_rate": round(5 / W_dec.shape[0], 4),
         "edges": rows,
         "parent_conditioned_redundancy": red,
+        "child_cofire": cofire,
+        "redundancy_threshold": 0.5,
     }
 
 
@@ -306,7 +322,7 @@ def main():
     print(f"precision {prec:.2f}   recall {rec:.2f}")
     print(f"VERDICT: {'PASS' if prec >= 0.8 and rec >= 0.8 else 'NEEDS WORK'}")
 
-    pt = score_per_token(x, fired, w["W_dec"], truth, m, parent_lat, child_lat, recovered)
+    pt = score_per_token(x, fired, gt, w["W_dec"], truth, m, parent_lat, child_lat, recovered)
     print(f"\nprobe S_res on LEARNED latents: {pt['n_pass']}/{pt['n_testable']} true edges "
           f"accepted (chance {pt['chance_pass_rate']:.0%} at k/D)")
     for r in pt["edges"]:
