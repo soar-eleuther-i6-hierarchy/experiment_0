@@ -191,19 +191,7 @@ One thing the toy cannot show: the rank rule passes an unrelated parent whenever
 the top *k* of *D*, so its null rate is `k/D` — 11.9% here, 0.28% on PCFG's 1792 latents, 0.015% on
 gemma's 32768. An `S_res` pass rate is only comparable between dictionaries of similar size.
 
-**Tier 1 detail** — each metric is scored on the job it claims:
-
-| Metric | Job | Result |
-| ------ | --- | ------ |
-| 1. coverage | recover genuine tree edges | 20/20 kept (plus 28 non-genuine for metrics 2–5 to prune) |
-| 2. reconstruction | reject superparent edges, keep genuine | 24/24 superparent edges rejected, 20/20 genuine kept |
-| 3. sibling redundancy | flag the feature-split parent, spare healthy ones | split parent 1.00 (flagged), healthy max 0.01 |
-| 4. out-degree | identify the superparent, spare genuine parents | detected `[7]`, truth `[7]`; Gini 0.432 |
-| 5. frequency control | reject the frequency-coincidence edge | 1/1 rejected (survival 0.0), 20/20 genuine survive |
-| 6. independence null (PMI) | rank genuine edges above base-rate co-firing | min genuine PMI 2.59 > max superparent PMI 0.07 |
-| 7. joint-child coverage (support) | children cover a genuine parent's firing, not a superparent's | genuine `R_supp` ≥ 1.00 vs superparent 0.43 |
-| 8. joint-child coverage (energy) | same, energy-weighted | genuine `R_mass` ≥ 1.00 vs superparent 0.43 |
-| 9. energy concentration | flag the feature-split parent (one child holds ≥90% of its energy) | split parent max child share 1.00 (thr 0.9), genuine max 0.27 |
+**Tier 1 detail.** The per-metric scorecard is not copied here any more. It was, and it drifted: it still read 9 rows and "28 non-genuine" after the toy had grown to 14 rows and 35. The live table is [`toy_calibration.md`](toy_calibration.md), written by the calibration itself on every run, so it cannot say something the run did not.
 
 **Tier 2 detail** — on the trained toy the metrics keep **every** edge whose two endpoints the SAE
 actually recovered, with **no false positives**. The three missed edges are exactly the three child
@@ -238,10 +226,23 @@ python3 -m reporting.visualize --qualitative                # Tier 3 dashboard
 
 ## The finding these outputs support
 
-Reconstruction and frequency control kill the vast majority of coverage edges — B1→B2 at layer 6:
-271k candidates, ~0% improve reconstruction, 99.4% frequency-driven — and a handful of high-firing
-superparents generate most of the co-occurrence edges. That is the point of the experiment, not a
-data error. Semantic agreement with Neuronpedia labels is clean at L3/L6 and collapses by L24.
+**This section stated the pre-BOS numbers until 7 August.** It said B1→B2 at layer 6 held 271k
+candidates of which ~0% improved reconstruction and 99.4% were frequency-driven; that pair holds
+**280** candidates, **35.7%** of them pass reconstruction and **27.8%** are frequency-driven. It also
+said semantic agreement "collapses by L24", which was withdrawn with the rest of the depth claim.
 
-Static PNG versions of the main claims live in each run dir's `figures/`, rebuilt with
-`python3 -m reporting.make_report_figures`.
+What the regenerated outputs support:
+
+- **The cheap filters barely bite; the refinement test does.** At layer 6, B0→B1 proposes 2,428
+  candidates and 85.9% of them improve reconstruction — but only **10 of 1,700 (0.6%)** pass probe
+  `S_res`. Stage 03 has run on layer 6 alone, so that ratio has one layer behind it.
+- **The graph is not a tree.** Multi-parenting in B0→B1 is 99 / 100 / 100 / 89 / 100% across L3–L24.
+  The one claim that did not move, because it is a ratio over children that already have a parent.
+- **About half the survivors read as genuine refinement**, and the commonest way the rest are wrong
+  is a semantic parent with a function-word or formatting child — "formal legal terminology" → the
+  word "the". That is topical co-occurrence: it clears coverage, reconstruction, the frequency
+  control *and* PMI, and nothing in the battery detects it.
+
+Figures for the write-up are in [`paper_figuers/`](paper_figuers/), rebuilt with
+`python3 -m reporting.make_report_figures`; each one derives every number in its title from the JSON
+it plots, so a caption cannot outlive its data.
