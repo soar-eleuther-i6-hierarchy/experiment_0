@@ -27,7 +27,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 
 **Layer 6**　·　gemma-2-2b / 6-res-matryoshka-dc　·　blocks.6.hook_resid_post　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
-For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia (not fetched - URLs only).
+For each block pair we compare edges the metrics KEEP (survivors) against edges they REJECT despite passing the crude coverage test. Read the parent/child labels: survivors should be semantically related; rejected edges should look like frequency / co-occurrence artifacts. Labels from Neuronpedia.
 
 ## Block pair 0->1
 
@@ -60,18 +60,18 @@ For each block pair we compare edges the metrics KEEP (survivors) against edges 
 
 ### reject:superparent  (4)
 
+- **15 -> 433**  `R=1.00 F=0.01 recon_gain=1.690 recon=Y surv=1.00 p_fires=99%`
+    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
+    - child  [433](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/433): _occurrences of the word "then" and nearby words_
+- **15 -> 344**  `R=1.00 F=0.01 recon_gain=2.184 recon=Y surv=1.00 p_fires=99%`
+    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
+    - child  [344](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/344): _LaTeX math mode formatting_
 - **15 -> 133**  `R=1.00 F=0.01 recon_gain=1.075 recon=Y surv=1.00 p_fires=99%`
     - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
     - child  [133](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/133): _the word "name" and its variants in programming contexts_
-- **15 -> 188**  `R=1.00 F=0.08 recon_gain=2.437 recon=n surv=1.00 p_fires=99%`
-    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
-    - child  [188](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/188): _statements of statistical significance within scientific research text_
 - **15 -> 283**  `R=1.00 F=0.00 recon_gain=0.724 recon=Y surv=1.00 p_fires=99%`
     - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
     - child  [283](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/283): _legal citations_
-- **15 -> 456**  `R=1.00 F=0.01 recon_gain=1.482 recon=Y surv=1.00 p_fires=99%`
-    - parent [15](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/15): _technical documentation-like language, including code snippets, software names, specifications, and error messages._
-    - child  [456](https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/456): _mathematical fractions_
 
 ### reject:freq-driven  (4)
 

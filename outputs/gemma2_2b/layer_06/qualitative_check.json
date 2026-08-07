@@ -107,6 +107,32 @@
     {
       "category": "reject:superparent",
       "parent": 15,
+      "child": 433,
+      "reverse_cov": 1.0,
+      "forward_cov": 0.009841659557645491,
+      "recon_parent_gain": 1.6904380841033964,
+      "recon_pass": true,
+      "freq_survival": 1.0,
+      "parent_fire_rate": 0.9894999073521237,
+      "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+      "child_label": "occurrences of the word \"then\" and nearby words"
+    },
+    {
+      "category": "reject:superparent",
+      "parent": 15,
+      "child": 344,
+      "reverse_cov": 1.0,
+      "forward_cov": 0.005909157112835771,
+      "recon_parent_gain": 2.184445290396709,
+      "recon_pass": true,
+      "freq_survival": 1.0,
+      "parent_fire_rate": 0.9894999073521237,
+      "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+      "child_label": "LaTeX math mode formatting"
+    },
+    {
+      "category": "reject:superparent",
+      "parent": 15,
       "child": 133,
       "reverse_cov": 1.0,
       "forward_cov": 0.007740163542165165,
@@ -120,19 +146,6 @@
     {
       "category": "reject:superparent",
       "parent": 15,
-      "child": 188,
-      "reverse_cov": 1.0,
-      "forward_cov": 0.08297788227460935,
-      "recon_parent_gain": 2.437393722701909,
-      "recon_pass": false,
-      "freq_survival": 1.0,
-      "parent_fire_rate": 0.9894999073521237,
-      "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-      "child_label": "statements of statistical significance within scientific research text"
-    },
-    {
-      "category": "reject:superparent",
-      "parent": 15,
       "child": 283,
       "reverse_cov": 1.0,
       "forward_cov": 0.0009571169971494559,
@@ -142,19 +155,6 @@
       "parent_fire_rate": 0.9894999073521237,
       "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
       "child_label": "legal citations"
-    },
-    {
-      "category": "reject:superparent",
-      "parent": 15,
-      "child": 456,
-      "reverse_cov": 1.0,
-      "forward_cov": 0.005264143484322008,
-      "recon_parent_gain": 1.4823743932658822,
-      "recon_pass": true,
-      "freq_survival": 1.0,
-      "parent_fire_rate": 0.9894999073521237,
-      "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
-      "child_label": "mathematical fractions"
     },
     {
       "category": "reject:freq-driven",
