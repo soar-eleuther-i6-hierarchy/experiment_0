@@ -20,6 +20,7 @@ SAME sampled corpus.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -49,6 +50,37 @@ HOOK_NAME = SAE_ID
 SAE_SOURCE = f"{LAYER}-res-matryoshka-dc"  # e.g. "6-res-matryoshka-dc"
 MODEL_KWARGS = {"center_writing_weights": False}
 PREPEND_BOS = True
+
+
+def use_layer(layer: int | None) -> None:
+    """Make a script's `--layer N` authoritative, by re-execing with EXP0_LAYER set.
+
+    LAYER is read from the environment above, and everything downstream — SAE_ID,
+    HOOK_NAME, SAE_SOURCE, RUN_DIR and every path under it — is derived from it at
+    import time. A script's argparse runs long after that, so a `--layer` flag
+    cannot simply assign: the constants are already fixed, and any module that did
+    `from config import RUN_DIR` would keep the old value while its neighbour saw
+    the new one. That is a wrong path with no error, which is the failure this repo
+    keeps logging.
+
+    Re-exec instead. The replacement process derives every constant from the flag
+    in the normal way, and child stages inherit it through the environment, so the
+    flag and the env var can never disagree — passing both is not an error, the
+    flag simply wins.
+
+    Called after parse_args() and before the layer is used. A no-op when the flag
+    is absent or already agrees, which is what stops it re-execing forever.
+    """
+    if layer is None or os.environ.get("EXP0_LAYER") == str(layer):
+        return
+    os.environ["EXP0_LAYER"] = str(layer)
+    # `python3 -m pkg.mod` must be rebuilt as `-m`, not as a path: running the file
+    # directly puts its own directory on sys.path instead of the repo root, and
+    # `import config` then fails.
+    spec = getattr(sys.modules.get("__main__"), "__spec__", None)
+    head = [sys.executable, "-m", spec.name] if spec else [sys.executable, sys.argv[0]]
+    os.execve(sys.executable, head + sys.argv[1:], os.environ)
+
 
 MATRYOSHKA_STEPS = [128, 512, 2048, 8192, 32768]
 D_SAE = 32768

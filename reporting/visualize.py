@@ -954,7 +954,7 @@ def build_trained_calibration_dashboard(d, align=None):
                 f"/{align['n_testable']}</span></b>")
     fig.update_layout(
         title=dict(text=_titled(
-            "Trained-toy calibration (Tier 2)",
+            "Trained-toy calibration",
             f"metrics run on a Matryoshka SAE trained on Bussmann's tree　·　"
             f"<b><span style='color:#166534'>precision {d['precision']:.2f}</span></b>, "
             f"<b>recall {d['recall']:.2f}</b> "
@@ -1164,6 +1164,7 @@ def build_in_block_dashboard(report):
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--layer", type=int, help="which layer to render (overrides EXP0_LAYER)")
     ap.add_argument("--in-block", action="store_true",
                     help="visualise in-block same-level edges (needs in_block_edges.json)")
     ap.add_argument("--calibration", action="store_true",
@@ -1173,6 +1174,7 @@ def main():
     ap.add_argument("--trained-calibration", action="store_true",
                     help="Tier-2: edge recovery on a trained toy SAE (needs trained_toy_calibration.json)")
     args = ap.parse_args()
+    C.use_layer(args.layer)          # re-execs when it changes anything; see config.use_layer
     if args.calibration:
         run_calibration()
         return
