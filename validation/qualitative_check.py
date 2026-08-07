@@ -192,7 +192,8 @@ def to_markdown(all_rows, fetched) -> str:
     # Raw HTML passes through Jekyll's markdown rendering, giving this report the
     # same nav bar as the generated dashboards.
     nav = C.nav_html(depth=C.page_depth(C.RUN_DIR / "qualitative_check.md"),
-                     layer=C.LAYER, page="qualitative_check.html")
+                     layer=C.LAYER, page="qualitative_check.html",
+                     current=f"outputs/{C.RUN_NAME}/qualitative_check.html")
     L = [nav, "", "# Exp 0 - qualitative agreement check (real gemma-2-2b SAE)", "",
          C.scope_line(), ""]
     L.append("For each block pair we compare edges the metrics KEEP (survivors) "

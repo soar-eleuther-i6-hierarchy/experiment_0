@@ -143,17 +143,14 @@ def _page_identity(path):
 def _site_path(path):
     """This page's path from the site root, for highlighting the global row.
 
-    The page's position in the OUTPUT TREE, not on disk: a source with its own
-    run directory (outputs/pcfg/) is site-wide too -- it describes no gemma layer
-    -- and the old fixed `outputs/<file>` gave it a path matching no nav entry,
-    so its own link never lit up. Deriving it from OUT_DIR rather than the repo
-    root keeps a scratch run under EXP0_OUT identical to the published page:
-    where the file was written is not what the page IS.
+    The page's position in the OUTPUT TREE, not on disk. Every page has one,
+    including a layer page: the source entry it sits under lights up from it, so
+    the bar answers "which source am I in" as well as "which layer". Deriving it
+    from OUT_DIR rather than the repo root keeps a scratch run under EXP0_OUT
+    identical to the published page: where the file was written is not what the
+    page IS.
     """
-    path = Path(path)
-    if path.parent.name.startswith("layer_"):
-        return None
-    return "outputs/" + Path(os.path.relpath(path.resolve(), C.OUT_DIR)).as_posix()
+    return "outputs/" + Path(os.path.relpath(Path(path).resolve(), C.OUT_DIR)).as_posix()
 
 
 def scope_subtitle(text):

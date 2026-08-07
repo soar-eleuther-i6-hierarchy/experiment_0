@@ -47,7 +47,9 @@ def render(layer: int) -> str:
     # grouping results by source moved every layer page one level down, and every
     # hand-counted `../` in here pointed somewhere else afterwards.
     to_root, to_outputs = "../" * depth, "../" * (depth - 1)
-    L = [C.nav_html(depth=depth, layer=layer), "", f"# Layer {layer:02d}", ""]
+    L = [C.nav_html(depth=depth, layer=layer,
+                    current=f"outputs/{C.SOURCE_NAME}/layer_{layer:02d}/"), "",
+         f"# Layer {layer:02d}", ""]
     L.append(
         f"The five pages for layer {layer} of `{C.MODEL_NAME}`'s residual stream, graded by the "
         f"metrics in [`metrics/`]({to_root}metrics/README.md). Use the bar above to move between "

@@ -77,11 +77,10 @@ def identity(path):
     # Exactly `layer_NN`, so an ARCHIVED copy -- layer_24__v1__2026-08-06T17-45 --
     # is not marked as the current layer 24. It is a withdrawn page; its banner
     # says so, and lighting the pill would say the opposite.
-    if re.fullmatch(r"layer_\d+", parent):
-        return depth, int(parent.split("_")[1]), page, None
+    layer = int(parent.split("_")[1]) if re.fullmatch(r"layer_\d+", parent) else None
 
     if not under_outputs:
-        return depth, None, page, None
+        return depth, layer, page, None
     # Site-wide: a run directory, or a page directly in outputs/. layer=None, so
     # the Page row is not drawn; the pills still carry `page` and stay on this
     # kind of page when you jump to a gemma layer.
@@ -92,7 +91,7 @@ def identity(path):
     current = f"outputs/{rel.parent.as_posix()}/" if is_index and len(rel.parts) > 1 else \
               "outputs/" if is_index else \
               f"outputs/{served}"
-    return depth, None, page, current
+    return depth, layer, page, current
 
 
 def refresh(path, write=True):

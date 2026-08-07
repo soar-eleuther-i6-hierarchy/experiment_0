@@ -343,7 +343,7 @@ def to_markdown(report) -> str:
     nav = C.nav_html(depth=C.page_depth(C.METRICS_MD_PATH),
                      layer=report["config"].get("layer", C.LAYER) if is_layer else None,
                      page="metrics_report.html",
-                     current=None if is_layer else f"outputs/{C.RUN_NAME}/metrics_report.html")
+                     current=f"outputs/{C.RUN_NAME}/metrics_report.html")
     L = [nav, "", "# Exp 0 - metrics report", ""]
     L.append(C.scope_line(report["total_tokens"], n_docs=report["config"].get("n_docs"),
                           config=report["config"]))

@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a><a class="on" href="../../outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../../outputs/gemma2_2b/layer_03/">3</a><a class="pill" href="../../outputs/gemma2_2b/layer_06/">6</a><a class="pill" href="../../outputs/gemma2_2b/layer_12/">12</a><a class="pill" href="../../outputs/gemma2_2b/layer_18/">18</a><a class="pill" href="../../outputs/gemma2_2b/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained toy</a><a class="on" href="../../outputs/pcfg/">PCFG</a><a class="" href="../../outputs/gemma2_2b/">Gemma2_2b</a></div></nav>
 
 # pcfg
 

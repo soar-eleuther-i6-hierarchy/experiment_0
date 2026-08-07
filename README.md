@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="./outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="./outputs/gemma2_2b/layer_03/">3</a><a class="pill" href="./outputs/gemma2_2b/layer_06/">6</a><a class="pill" href="./outputs/gemma2_2b/layer_12/">12</a><a class="pill" href="./outputs/gemma2_2b/layer_18/">18</a><a class="pill" href="./outputs/gemma2_2b/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="./outputs/pcfg/">PCFG</a><a class="" href="./outputs/gemma2_2b/">Gemma2_2b</a></div></nav>
 
 # experiment_0: Implement Metrics (SOAR I-6)
 
@@ -112,7 +112,11 @@ bundle from its path — but the LAST component decides how the page reads: a di
 with `python3 -m reporting.layer_index --run`, or its URL 404s on GitHub Pages. Pages generated this way mark no layer as current and their headers name the run's
 own model and dictionary. First one published: [`outputs/pcfg/`](outputs/pcfg/README.md).
 
-Listing it in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
+Each source is one entry in `NAV_GLOBAL` — a place you go, not a row that follows you. The layer
+pills belong to gemma, so they appear only inside `outputs/gemma2_2b/`; before that they sat on
+every page, offering to "switch layer" from a PCFG dashboard built on a different model entirely.
+
+Listing a source in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
 page's bar wrong, including ten dashboards whose generator needs that layer's ~700 MB cache.
 `python3 -m reporting.refresh_nav` re-renders the bar in place instead, deriving each page's
 identity from its own path; `--check` reports without writing. It changes navigation and nothing

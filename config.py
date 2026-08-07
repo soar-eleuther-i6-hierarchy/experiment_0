@@ -278,6 +278,9 @@ NAV_GLOBAL = [
     # pills. Adding an entry here changes the bar on EVERY page, including ones
     # whose generator needs a 700 MB cache -- see reporting/refresh_nav.py.
     ("outputs/pcfg/", "PCFG"),
+    # gemma is a source like any other now, so it is a place you go rather than a
+    # row that follows you: its layer pills appear once you are inside it.
+    (f"outputs/{SOURCE_NAME}/", SOURCE_NAME.replace("gemma", "Gemma")),
 ]
 
 NAV_CSS = """<style>
@@ -338,13 +341,20 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
         top.append(f'<a class="{on}" href="{root}{href}">{label}</a>')
     rows = ['<div class="row">' + "".join(top) + "</div>"]
 
-    # The layer row is on EVERY page, not just layer pages: without it there is
-    # no way into a given layer from the index or a site-wide page. On a layer
-    # page a pill keeps the current page kind; elsewhere it opens that layer's
-    # dashboard. The "Page" group needs a layer to stay within, so it is the one
-    # part that only appears on a layer page.
-    # A pill keeps the current page kind when there is one; from anywhere else
-    # it opens that layer's index, which is why every layer_NN/ has a README.
+    # The layer row belongs to ONE source, so it appears only inside that source:
+    # on a gemma layer page, and on the source's own index. It used to be on every
+    # page, from when gemma was the only thing here -- which put five gemma pills
+    # on the PCFG dashboard, offering to "switch layer" to a different model.
+    # Reaching a layer from elsewhere is now one hop through the source entry.
+    #
+    # The "Page" group needs a layer to stay within, so it is the narrower case:
+    # a layer page only. A pill keeps the current page kind when there is one;
+    # from the source index it opens that layer's index, which is why every
+    # layer_NN/ has a README.
+    in_source = layer is not None or (current or "").startswith(f"outputs/{SOURCE_NAME}/")
+    if not in_source:
+        return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
+
     second = ['<span class="lbl">Layer</span>']
     for L in NAV_LAYERS:
         on = " on" if L == layer else ""
