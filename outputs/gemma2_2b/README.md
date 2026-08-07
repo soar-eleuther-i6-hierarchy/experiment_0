@@ -31,11 +31,11 @@ One directory per layer, graded by the same battery as every other source in [ou
 
 | Layer | Pages |
 | --- | --- |
-| [**3**](layer_03/) | [dashboard](layer_03/metrics_dashboard.html), [superparents](layer_03/superparent_sankey.html), [qualitative](layer_03/qualitative_dashboard.html), [metrics report](layer_03/metrics_report.html), [qualitative report](layer_03/qualitative_check.html) |
-| [**6**](layer_06/) | [dashboard](layer_06/metrics_dashboard.html), [superparents](layer_06/superparent_sankey.html), [qualitative](layer_06/qualitative_dashboard.html), [metrics report](layer_06/metrics_report.html), [qualitative report](layer_06/qualitative_check.html) |
-| [**12**](layer_12/) | [dashboard](layer_12/metrics_dashboard.html), [superparents](layer_12/superparent_sankey.html), [qualitative](layer_12/qualitative_dashboard.html), [metrics report](layer_12/metrics_report.html), [qualitative report](layer_12/qualitative_check.html) |
-| [**18**](layer_18/) | [dashboard](layer_18/metrics_dashboard.html), [superparents](layer_18/superparent_sankey.html), [qualitative](layer_18/qualitative_dashboard.html), [metrics report](layer_18/metrics_report.html), [qualitative report](layer_18/qualitative_check.html) |
-| [**24**](layer_24/) | [dashboard](layer_24/metrics_dashboard.html), [superparents](layer_24/superparent_sankey.html), [qualitative](layer_24/qualitative_dashboard.html), [metrics report](layer_24/metrics_report.html), [qualitative report](layer_24/qualitative_check.html) |
+| [**3**](layer_03/) | [dashboard](layer_03/metrics_dashboard.html), [superparents](layer_03/superparent_sankey.html), [in-block](layer_03/in_block_dashboard.html), [qualitative](layer_03/qualitative_dashboard.html), [metrics report](layer_03/metrics_report.html), [qualitative report](layer_03/qualitative_check.html) |
+| [**6**](layer_06/) | [dashboard](layer_06/metrics_dashboard.html), [superparents](layer_06/superparent_sankey.html), [in-block](layer_06/in_block_dashboard.html), [qualitative](layer_06/qualitative_dashboard.html), [metrics report](layer_06/metrics_report.html), [qualitative report](layer_06/qualitative_check.html) |
+| [**12**](layer_12/) | [dashboard](layer_12/metrics_dashboard.html), [superparents](layer_12/superparent_sankey.html), [in-block](layer_12/in_block_dashboard.html), [qualitative](layer_12/qualitative_dashboard.html), [metrics report](layer_12/metrics_report.html), [qualitative report](layer_12/qualitative_check.html) |
+| [**18**](layer_18/) | [dashboard](layer_18/metrics_dashboard.html), [superparents](layer_18/superparent_sankey.html), [in-block](layer_18/in_block_dashboard.html), [qualitative](layer_18/qualitative_dashboard.html), [metrics report](layer_18/metrics_report.html), [qualitative report](layer_18/qualitative_check.html) |
+| [**24**](layer_24/) | [dashboard](layer_24/metrics_dashboard.html), [superparents](layer_24/superparent_sankey.html), [in-block](layer_24/in_block_dashboard.html), [qualitative](layer_24/qualitative_dashboard.html), [metrics report](layer_24/metrics_report.html), [qualitative report](layer_24/qualitative_check.html) |
 
 These sat at `outputs/layer_NN/` until 7 August. They moved when a second source was published beside them: with only gemma here, `layer_06` read as a global fact rather than a fact about one model.
 

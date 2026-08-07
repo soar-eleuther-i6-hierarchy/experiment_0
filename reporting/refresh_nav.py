@@ -66,9 +66,9 @@ def identity(path):
     parent = rel.parts[-2] if len(rel.parts) > 1 else ""
     is_index = path.name == "README.md"
 
-    # `page` is which of the five per-layer page kinds this is -- it drives where
+    # `page` is which per-layer page kind this is -- it drives where
     # the layer pills point, so it must name a file that exists in every layer.
-    # The calibration pages are not one of the five: marking them would send
+    # The calibration pages are not one of them: marking them would send
     # every pill to a 404. Reports are markdown Jekyll serves as .html, hence the
     # rename.
     page = path.name.replace(".md", ".html")

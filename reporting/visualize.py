@@ -125,7 +125,7 @@ def _page_identity(path):
     A page under layer_NN/ describes that layer; anything else is site-wide and
     gets no Page row. It can still keep the page KIND, though: from a run
     directory's dashboard the layer pills should land on each gemma layer's
-    dashboard, not on its index. `page` only names one of the five per-layer
+    dashboard, not on its index. `page` only names one of the per-layer
     kinds -- the calibration pages are not among them, and marking one would
     point every pill at a file no layer has.
     """
@@ -374,7 +374,7 @@ def build_dashboard(pairs_data, labels=None, stats=None):
         # paper-space rows (title on top, legend under it) or they overlap.
         title=dict(text=_titled(
                        "Metrics dashboard",
-                       "Grading coverage edges with the five metrics "
+                       "Grading coverage edges with the metric battery "
                        f"({pairs_data[0]['n_edges']:,} to {pairs_data[-1]['n_edges']:,} candidate edges "
                        "across the block pairs)",
                        stats),
@@ -530,7 +530,7 @@ def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_label
 # Calibration dashboard (synthetic ground-truth toy from validation/)
 # ---------------------------------------------------------------------------
 def _calibration_data():
-    """Run the five metrics on the toy and split each metric's per-edge score
+    """Run the metrics on the toy and split each metric's per-edge score
     into the class it should KEEP (genuine) vs the class it should REJECT."""
     from validation.calibrate_on_synthetic_toy import _render, _run_metrics, _score
     from validation.toy_world import build_world

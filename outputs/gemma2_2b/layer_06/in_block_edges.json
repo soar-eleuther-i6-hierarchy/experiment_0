@@ -1,0 +1,805 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 6,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "6-res-matryoshka-dc",
+    "sae_id": "blocks.6.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "blocks": [
+    {
+      "block": 0,
+      "n_features": 128,
+      "n_edges": 712,
+      "n_duplicates": 11,
+      "n_after_pmi": 468,
+      "poly_frac": 0.9919354838709677,
+      "outdeg_gini": 0.9397164676966292,
+      "n_superparents": 5,
+      "superparents": [
+        {
+          "parent_local": 15,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.9894999073521237,
+          "strict": true,
+          "global": 15,
+          "label": "technical documentation-like language, including code snippets, software names, specifications, and error messages."
+        },
+        {
+          "parent_local": 42,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.9506289761380248,
+          "strict": true,
+          "global": 42,
+          "label": "code and code-like snippets, with a preference for Java-related syntax"
+        },
+        {
+          "parent_local": 37,
+          "outdeg": 121,
+          "outdeg_frac": 0.9453125,
+          "fire_frac": 0.7111650985155752,
+          "strict": true,
+          "global": 37,
+          "label": "code or formatting appearing in court opinions or java documentation"
+        },
+        {
+          "parent_local": 1,
+          "outdeg": 98,
+          "outdeg_frac": 0.765625,
+          "fire_frac": 0.6071112392168166,
+          "strict": true,
+          "global": 1,
+          "label": "words related to science, research, medicine, awards, and commerce"
+        },
+        {
+          "parent_local": 105,
+          "outdeg": 87,
+          "outdeg_frac": 0.6796875,
+          "fire_frac": 0.5103868563546149,
+          "strict": true,
+          "global": 105,
+          "label": "content from research papers about biological or chemical processes and articles providing instructions."
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 15,
+          "child": 8,
+          "R": 0.9991360691144708,
+          "pmi": 0.009691303281627598,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "code blocks and math formulas"
+        },
+        {
+          "parent": 15,
+          "child": 34,
+          "R": 0.9985559566787003,
+          "pmi": 0.009110520613842314,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "discourse markers and conjunctions like \"that\", \"since\", \"those\", or \",and\""
+        },
+        {
+          "parent": 15,
+          "child": 0,
+          "R": 0.9979581419091373,
+          "pmi": 0.008511662045448284,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "numerical quantities"
+        },
+        {
+          "parent": 15,
+          "child": 19,
+          "R": 0.9973432518597237,
+          "pmi": 0.007895324011706588,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "possessive pronouns, especially \"your,\" \"our,\" \"my,\" and \"their.\""
+        },
+        {
+          "parent": 15,
+          "child": 28,
+          "R": 0.9973082099596231,
+          "pmi": 0.007860188148850658,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "\"is\" or other forms of the verb \"to be\""
+        },
+        {
+          "parent": 15,
+          "child": 91,
+          "R": 0.9972095755617565,
+          "pmi": 0.007761282640297997,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "terms related to medical and biological processes, particularly those involving molecular biology, biochemistry, and cellular mechanisms."
+        },
+        {
+          "parent": 15,
+          "child": 99,
+          "R": 0.9970628887353145,
+          "pmi": 0.007614174530114872,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "words related to research, studies, and data analysis"
+        },
+        {
+          "parent": 15,
+          "child": 38,
+          "R": 0.9967977228251201,
+          "pmi": 0.007348192133732331,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "words frequently used in online forum posts or social media, particularly common phrases and questions"
+        },
+        {
+          "parent": 15,
+          "child": 35,
+          "R": 0.9966198185376267,
+          "pmi": 0.007169700388501803,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "mentions of mathematical derivations and existing research"
+        },
+        {
+          "parent": 15,
+          "child": 120,
+          "R": 0.9965933725611644,
+          "pmi": 0.007143164364576114,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "hexadecimal codes and numbers."
+        },
+        {
+          "parent": 15,
+          "child": 75,
+          "R": 0.9956472534169061,
+          "pmi": 0.006193360206335256,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "words describing solid physical matter and objects"
+        },
+        {
+          "parent": 15,
+          "child": 110,
+          "R": 0.995575221238938,
+          "pmi": 0.006121010502657136,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "the preposition \"in\", with some increased occurrences in mathematical or scientific contexts"
+        },
+        {
+          "parent": 15,
+          "child": 54,
+          "R": 0.9954545454545455,
+          "pmi": 0.005999791034662147,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "periods at the end of sentences or after closing parentheses/brackets"
+        },
+        {
+          "parent": 15,
+          "child": 86,
+          "R": 0.9953947368421052,
+          "pmi": 0.0059397075185567555,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "occurrences of the words \"it\", \"is\", and/or \"there\" appearing together"
+        },
+        {
+          "parent": 15,
+          "child": 32,
+          "R": 0.995373665480427,
+          "pmi": 0.005918538444691102,
+          "parent_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "child_label": "auxiliary verbs like 'can', 'could', 'will', 'would', 'have', and 'had', often alongside 'to'"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 1,
+          "b": 15,
+          "a_label": "words related to science, research, medicine, awards, and commerce",
+          "b_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages."
+        },
+        {
+          "a": 1,
+          "b": 37,
+          "a_label": "words related to science, research, medicine, awards, and commerce",
+          "b_label": "code or formatting appearing in court opinions or java documentation"
+        },
+        {
+          "a": 1,
+          "b": 42,
+          "a_label": "words related to science, research, medicine, awards, and commerce",
+          "b_label": "code and code-like snippets, with a preference for Java-related syntax"
+        },
+        {
+          "a": 15,
+          "b": 37,
+          "a_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "b_label": "code or formatting appearing in court opinions or java documentation"
+        },
+        {
+          "a": 15,
+          "b": 42,
+          "a_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "b_label": "code and code-like snippets, with a preference for Java-related syntax"
+        },
+        {
+          "a": 15,
+          "b": 105,
+          "a_label": "technical documentation-like language, including code snippets, software names, specifications, and error messages.",
+          "b_label": "content from research papers about biological or chemical processes and articles providing instructions."
+        },
+        {
+          "a": 24,
+          "b": 92,
+          "a_label": "descriptions of technical studies with mentions of characteristics, identification, and other related terms.",
+          "b_label": "words related to legal, official, or technical actions/documents"
+        },
+        {
+          "a": 37,
+          "b": 42,
+          "a_label": "code or formatting appearing in court opinions or java documentation",
+          "b_label": "code and code-like snippets, with a preference for Java-related syntax"
+        },
+        {
+          "a": 37,
+          "b": 105,
+          "a_label": "code or formatting appearing in court opinions or java documentation",
+          "b_label": "content from research papers about biological or chemical processes and articles providing instructions."
+        },
+        {
+          "a": 42,
+          "b": 105,
+          "a_label": "code and code-like snippets, with a preference for Java-related syntax",
+          "b_label": "content from research papers about biological or chemical processes and articles providing instructions."
+        },
+        {
+          "a": 89,
+          "b": 125,
+          "a_label": "abbreviations and identifiers like codes or chemical formulae including \"cli\", \"acr\", \"task\", \"PTRH2\", \"KO\", \"MDR\", \"ATD\", \"DEA\", \"AdoHcyase\", \"ORM\"",
+          "b_label": "words related to scientific publications, statistical analysis, and tables of data"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 1,
+      "n_features": 384,
+      "n_edges": 15,
+      "n_duplicates": 1,
+      "n_after_pmi": 15,
+      "poly_frac": 0.07142857142857142,
+      "outdeg_gini": 0.9918402777777777,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 302,
+          "child": 479,
+          "R": 0.657769304099142,
+          "pmi": 2.6294788913479175,
+          "parent_label": "source code and/or documents with very particular formatting and special characters",
+          "child_label": "leading whitespace followed by numerical values"
+        },
+        {
+          "parent": 236,
+          "child": 159,
+          "R": 0.6041666666666666,
+          "pmi": 4.569849041641053,
+          "parent_label": "section headers",
+          "child_label": "horizontal lines of dashes used within tables"
+        },
+        {
+          "parent": 302,
+          "child": 311,
+          "R": 0.5527027027027027,
+          "pmi": 2.455444871997496,
+          "parent_label": "source code and/or documents with very particular formatting and special characters",
+          "child_label": "something, but it's too difficult to determine from this data"
+        },
+        {
+          "parent": 311,
+          "child": 479,
+          "R": 0.551954242135367,
+          "pmi": 2.8966944263872287,
+          "parent_label": "something, but it's too difficult to determine from this data",
+          "child_label": "leading whitespace followed by numerical values"
+        },
+        {
+          "parent": 401,
+          "child": 370,
+          "R": 0.53596757852077,
+          "pmi": 0.37125365537477284,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "possessive pronouns and the word it"
+        },
+        {
+          "parent": 401,
+          "child": 482,
+          "R": 0.5233281493001555,
+          "pmi": 0.34738868779711807,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "code snippets and programming terms"
+        },
+        {
+          "parent": 401,
+          "child": 208,
+          "R": 0.521513353115727,
+          "pmi": 0.34391486328836757,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "mentions of children and adolescents along with their age and related terms."
+        },
+        {
+          "parent": 401,
+          "child": 133,
+          "R": 0.521505376344086,
+          "pmi": 0.3438995677401365,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "the word \"name\" and its variants in programming contexts"
+        },
+        {
+          "parent": 401,
+          "child": 243,
+          "R": 0.5066505441354293,
+          "pmi": 0.3150014878484015,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "words related to existence and sentencing"
+        },
+        {
+          "parent": 401,
+          "child": 319,
+          "R": 0.5066225165562914,
+          "pmi": 0.314946166967521,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "measurements expressed as a mean with standard deviation"
+        },
+        {
+          "parent": 401,
+          "child": 312,
+          "R": 0.5063241106719367,
+          "pmi": 0.31435698312512333,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "quotes"
+        },
+        {
+          "parent": 362,
+          "child": 320,
+          "R": 0.5059360730593607,
+          "pmi": 0.6073976026794764,
+          "parent_label": "marketing and promotional content related to products and services",
+          "child_label": "the pronoun \"you\" often followed by auxiliary verbs"
+        },
+        {
+          "parent": 401,
+          "child": 464,
+          "R": 0.505764411027569,
+          "pmi": 0.3132509539796002,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "words related to body parts, spatial orientation, and categorization"
+        },
+        {
+          "parent": 223,
+          "child": 367,
+          "R": 0.5035714285714286,
+          "pmi": 1.023723575681767,
+          "parent_label": "words and phrases related to Javascript, CSS, and other web programming languages",
+          "child_label": "first-person pronouns"
+        },
+        {
+          "parent": 401,
+          "child": 459,
+          "R": 0.5029868578255675,
+          "pmi": 0.30774402614286117,
+          "parent_label": "computing-related content, especially software configuration, errors, and file types",
+          "child_label": "the word \"before\" and sometimes other words that often appear near it"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 159,
+          "b": 462,
+          "a_label": "horizontal lines of dashes used within tables",
+          "b_label": "section dividers in research papers"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 2,
+      "n_features": 1536,
+      "n_edges": 88,
+      "n_duplicates": 0,
+      "n_after_pmi": 88,
+      "poly_frac": 0.14285714285714285,
+      "outdeg_gini": 0.9663677793560606,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 1554,
+          "child": 1501,
+          "R": 0.912751677852349,
+          "pmi": 3.374341545803709,
+          "parent_label": "the numeral 1",
+          "child_label": "numbers starting with 1"
+        },
+        {
+          "parent": 1191,
+          "child": 1091,
+          "R": 0.8559322033898306,
+          "pmi": 1.3463435667139965,
+          "parent_label": "scientific and technical writing, particularly related to experiments and data.",
+          "child_label": "names of people or places, abbreviations, and job titles"
+        },
+        {
+          "parent": 1554,
+          "child": 1694,
+          "R": 0.8227848101265823,
+          "pmi": 3.2705723834417317,
+          "parent_label": "the numeral 1",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1472,
+          "child": 1694,
+          "R": 0.8227848101265823,
+          "pmi": 4.687638403228376,
+          "parent_label": "code-related terms, including both assembly language directives and iOS UI element declarations",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1501,
+          "child": 1694,
+          "R": 0.8227848101265823,
+          "pmi": 4.205480674331957,
+          "parent_label": "numbers starting with 1",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1351,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 3.877702135700887,
+          "parent_label": "references to the World Meteorological Organization and World Health Organization and similar groups",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1195,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 3.9789870361324655,
+          "parent_label": "text related to automated technology and artificial intelligence",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1380,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 1.8317688835824686,
+          "parent_label": "an assortment of common words and parts of words, seemingly without a clear pattern",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1757,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 2.308083341030427,
+          "parent_label": "words related to describing small quantities relative to something else as in lesser, smaller, fractions, and the like.",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 778,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 3.9138350986850754,
+          "parent_label": "code snippets with \".NET\" references",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1862,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 3.7068529800691694,
+          "parent_label": "words or names that seem Italian",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1179,
+          "child": 1694,
+          "R": 0.7848101265822784,
+          "pmi": 4.430371258505414,
+          "parent_label": "the word \"benefit\" or \"benefits\"",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1191,
+          "child": 650,
+          "R": 0.7749510763209393,
+          "pmi": 1.246952295389178,
+          "parent_label": "scientific and technical writing, particularly related to experiments and data.",
+          "child_label": "strings of text that could be identifiers like URLs, filenames in a file system, or variable names in code"
+        },
+        {
+          "parent": 1321,
+          "child": 1694,
+          "R": 0.7721518987341772,
+          "pmi": 4.278379124099509,
+          "parent_label": "code imports for the Android operating system and the Java utility library",
+          "child_label": "references to US legal cases"
+        },
+        {
+          "parent": 1352,
+          "child": 1694,
+          "R": 0.7721518987341772,
+          "pmi": 2.8233483346278065,
+          "parent_label": "words that don't individually carry strong meaning; it finds stop words, prepositions, pronouns, and similar \"helper\" words.",
+          "child_label": "references to US legal cases"
+        }
+      ],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 3,
+      "n_features": 6144,
+      "n_edges": 566,
+      "n_duplicates": 19,
+      "n_after_pmi": 566,
+      "poly_frac": 0.45454545454545453,
+      "outdeg_gini": 0.9833639299911661,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 5308,
+          "child": 4624,
+          "R": 0.9701492537313433,
+          "pmi": 5.275679640982707,
+          "parent_label": "code syntax",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 3791,
+          "child": 4624,
+          "R": 0.9701492537313433,
+          "pmi": 4.651228991708997,
+          "parent_label": "java and android code",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 7840,
+          "child": 4624,
+          "R": 0.9701492537313433,
+          "pmi": 4.3275364817341835,
+          "parent_label": "text fragments that are not standard and/or indicate strong emotion",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 3099,
+          "child": 4624,
+          "R": 0.9701492537313433,
+          "pmi": 3.758320620069741,
+          "parent_label": "names of places and people, especially in political or financial contexts",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 5535,
+          "child": 4624,
+          "R": 0.9701492537313433,
+          "pmi": 4.885545843621332,
+          "parent_label": "words and phrases related to inflammation and autoimmune rheumatic diseases",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 4615,
+          "child": 4624,
+          "R": 0.9402985074626866,
+          "pmi": 5.7524902885486835,
+          "parent_label": "angle brackets followed by certain html input tags",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 2836,
+          "child": 4624,
+          "R": 0.9402985074626866,
+          "pmi": 2.9095877286016663,
+          "parent_label": "words and phrases that indicate a comparison, progression, or transition",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 7600,
+          "child": 4624,
+          "R": 0.9402985074626866,
+          "pmi": 5.138237050458401,
+          "parent_label": "email headers and starting lines",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 4724,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 5.257902574265116,
+          "parent_label": "different elements used in formatting, such as figures, tables, listings, and lines",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 5393,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 3.1902827715504465,
+          "parent_label": "names or fragments of names of people, places, organizations, or publications",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 2755,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 3.7248105076232254,
+          "parent_label": "text regarding possibility, ability, or requirements",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 7648,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 4.516779561828296,
+          "parent_label": "HTML code and references to software systems and other technical words",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 7965,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 4.905081199642373,
+          "parent_label": "words related to physical or topographical features",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 3054,
+          "child": 4624,
+          "R": 0.9253731343283582,
+          "pmi": 1.5304600854168688,
+          "parent_label": "words related to legal or medical approval",
+          "child_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "parent": 4380,
+          "child": 4624,
+          "R": 0.9104477611940298,
+          "pmi": 5.884778813378619,
+          "parent_label": "command line code snippets",
+          "child_label": "mentions of asynchronous operations in code"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 2624,
+          "b": 5936,
+          "a_label": "LaTeX math notation",
+          "b_label": "LaTeX markup, especially subscripts and math symbols"
+        },
+        {
+          "a": 3014,
+          "b": 4217,
+          "a_label": "decimal numbers",
+          "b_label": "code snippets and numeric values within code-like contexts, possibly related to data formats or versioning."
+        },
+        {
+          "a": 3513,
+          "b": 3772,
+          "a_label": "words relating to scientific or medical testing and clinical trials",
+          "b_label": "mathematical formulas"
+        },
+        {
+          "a": 3513,
+          "b": 5838,
+          "a_label": "words relating to scientific or medical testing and clinical trials",
+          "b_label": "complex mathematical operations and expressions including fractions and exponents"
+        },
+        {
+          "a": 3513,
+          "b": 5963,
+          "a_label": "words relating to scientific or medical testing and clinical trials",
+          "b_label": "questions in a technical type forum"
+        },
+        {
+          "a": 3717,
+          "b": 4476,
+          "a_label": "C++ documentation block delimiters.",
+          "b_label": "questions, denoted by \"Q:\""
+        },
+        {
+          "a": 3717,
+          "b": 4624,
+          "a_label": "C++ documentation block delimiters.",
+          "b_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "a": 3717,
+          "b": 5918,
+          "a_label": "C++ documentation block delimiters.",
+          "b_label": "mathematical proofs or derivations by detecting phrases such as \"it follows that\""
+        },
+        {
+          "a": 3717,
+          "b": 6992,
+          "a_label": "C++ documentation block delimiters.",
+          "b_label": "answers following questions in a forum setting"
+        },
+        {
+          "a": 3772,
+          "b": 5838,
+          "a_label": "mathematical formulas",
+          "b_label": "complex mathematical operations and expressions including fractions and exponents"
+        },
+        {
+          "a": 3772,
+          "b": 5963,
+          "a_label": "mathematical formulas",
+          "b_label": "questions in a technical type forum"
+        },
+        {
+          "a": 4380,
+          "b": 6992,
+          "a_label": "command line code snippets",
+          "b_label": "answers following questions in a forum setting"
+        },
+        {
+          "a": 4476,
+          "b": 4624,
+          "a_label": "questions, denoted by \"Q:\"",
+          "b_label": "mentions of asynchronous operations in code"
+        },
+        {
+          "a": 4476,
+          "b": 5918,
+          "a_label": "questions, denoted by \"Q:\"",
+          "b_label": "mathematical proofs or derivations by detecting phrases such as \"it follows that\""
+        },
+        {
+          "a": 4476,
+          "b": 6992,
+          "a_label": "questions, denoted by \"Q:\"",
+          "b_label": "answers following questions in a forum setting"
+        }
+      ],
+      "sres": null
+    }
+  ]
+}

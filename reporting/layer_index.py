@@ -2,7 +2,7 @@
 Write the landing page for each layer: outputs/layer_NN/README.md.
 
 Without one, the layer directory is a 404 on GitHub Pages -- it holds
-five pages but nothing that answers "show me layer 3". That made the layer
+per-layer pages but nothing that answers "show me layer 3". That made the layer
 pills in the nav bar unable to point at a layer as such; they had to pick one
 of its pages. This closes that: every layer is now addressable on its own.
 
@@ -33,6 +33,7 @@ import config as C
 BLURB = {
     "metrics_dashboard.html": "filter funnel and the per-block-pair distributions",
     "superparent_sankey.html": "one superparent's fan-out to its children",
+    "in_block_dashboard.html": "same-level edges and duplicates inside one block, where no block ordering fixes direction",
     "qualitative_dashboard.html": "surviving vs rejected edges, with Neuronpedia labels",
     "metrics_report.html": "the numbers behind the dashboard, as text",
     "qualitative_check.html": "survivor vs rejected edges read against the labels",
@@ -40,9 +41,9 @@ BLURB = {
 
 
 def render(layer: int) -> str:
-    """The layer landing page: nav bar, then its five pages."""
+    """The layer landing page: nav bar, then the pages this source has."""
     # page=None marks nothing in the Page group -- this page is the index, not
-    # one of the five.
+    # one of the pages themselves.
     path = C.OUT_DIR / C.SOURCE_NAME / f"layer_{layer:02d}" / "README.md"
     depth = C.page_depth(path)
     # Relative links, computed from the page's depth rather than written out:
@@ -53,7 +54,7 @@ def render(layer: int) -> str:
                     current=f"outputs/{C.SOURCE_NAME}/layer_{layer:02d}/"), "",
          f"# Layer {layer:02d}", ""]
     L.append(
-        f"The five pages for layer {layer} of `{C.MODEL_NAME}`'s residual stream, graded by the "
+        f"The {len(C.NAV_PAGES)} pages for layer {layer} of `{C.MODEL_NAME}`'s residual stream, graded by the "
         f"metrics in [`metrics/`]({to_root}metrics/README.md). Use the bar above to move between "
         f"layers while staying on the same page."
     )

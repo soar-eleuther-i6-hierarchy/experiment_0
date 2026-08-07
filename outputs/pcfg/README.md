@@ -31,5 +31,5 @@ One directory per layer, graded by the same battery as every other source in [ou
 
 | Layer | Pages |
 | --- | --- |
-| [**1**](layer_01/) | [dashboard](layer_01/metrics_dashboard.html), [superparents](layer_01/superparent_sankey.html), [metrics report](layer_01/metrics_report.html) |
-| [**3**](layer_03/) | [dashboard](layer_03/metrics_dashboard.html), [superparents](layer_03/superparent_sankey.html), [metrics report](layer_03/metrics_report.html) |
+| [**1**](layer_01/) | [dashboard](layer_01/metrics_dashboard.html), [superparents](layer_01/superparent_sankey.html), [in-block](layer_01/in_block_dashboard.html), [metrics report](layer_01/metrics_report.html) |
+| [**3**](layer_03/) | [dashboard](layer_03/metrics_dashboard.html), [superparents](layer_03/superparent_sankey.html), [in-block](layer_03/in_block_dashboard.html), [metrics report](layer_03/metrics_report.html) |

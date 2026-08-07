@@ -476,32 +476,42 @@ def cross_source_funnel_shares(runs):
 # ---------------------------------------------------------------------------
 # 9. Within-block relations.
 # ---------------------------------------------------------------------------
-def in_block_relations(inblock, where=""):
-    blocks = inblock["blocks"]
-    names = [f"B{b['block']}\n{b['n_features']} feats" for b in blocks]
-    series = [
-        ("directed edges", NEUTRAL, [b["n_edges"] for b in blocks]),
-        ("above chance (PMI > 0)", CAT[0], [b["n_after_pmi"] for b in blocks]),
-        ("pass S_res", GOOD, [(b["sres"] or {}).get("n_pass", 0) for b in blocks]),
-        ("duplicate pairs", CAT[1], [b["n_duplicates"] for b in blocks]),
-    ]
-    x = np.arange(len(blocks))
-    w = 0.2
-    fig, ax = plt.subplots(figsize=(max(7.6, 1.1 * len(blocks) + 3.4), 3.8))
-    for j, (label, col, vals) in enumerate(series):
-        ax.bar(x + (j - 1.5) * w, vals, w * 0.92, color=col, label=label)
-    ax.set_yscale("symlog")
-    ax.set_xticks(x)
-    ax.set_xticklabels(names, fontsize=8.5)
-    ax.set_ylabel("count (symlog)")
-    ax.legend(fontsize=8.5, frameon=False, ncol=2)
-    top = max(blocks, key=lambda b: b["n_edges"])
-    _title(ax, f"{where}: same-level relations inside each block",
-           f"B{top['block']} carries {top['n_edges']:,} directed edges and "
-           f"{top['n_duplicates']:,} co-extensive pairs; deeper blocks are near-empty", width=74)
-    ax.grid(True, axis="y", alpha=0.12)
-    ax.set_axisbelow(True)
-    return _finish(fig, ax, "in_block_relations")
+def in_block_relations(runs):
+    """Within-block relations as a RATE per pair, across every graded run.
+
+    Counts cannot be compared across these blocks. gemma's are nested prefixes of
+    very different sizes -- 128, 384, 1536, 6144 -- so B3's 833 duplicate pairs at
+    L18 look like the deep blocks are where duplication lives, and read as a rate
+    they are 0.04 per thousand pairs against B0's 0.12: three times rarer. The
+    raw-count reading is the same mistake the project already logs about counts
+    across sources, one level down.
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.0), sharex=True)
+    for i, (name, d) in enumerate(runs):
+        blocks = d["blocks"]
+        xs = [b["block"] for b in blocks]
+        n = [b["n_features"] for b in blocks]
+        edge_rate = [1e3 * b["n_edges"] / (f * (f - 1)) for b, f in zip(blocks, n)]
+        dup_rate = [1e3 * b["n_duplicates"] / (f * (f - 1) / 2) for b, f in zip(blocks, n)]
+        col = DEPTH[i] if name.startswith("gemma") else CAT[3 if "03" in name else 1]
+        style = "-o" if name.startswith("gemma") else "--s"
+        axes[0].plot(xs, edge_rate, style, color=col, lw=1.8, ms=5, label=name)
+        axes[1].plot(xs, dup_rate, style, color=col, lw=1.8, ms=5, label=name)
+    for ax, lab in [(axes[0], "directed edges per 1000 ordered pairs"),
+                    (axes[1], "duplicate pairs per 1000 unordered pairs")]:
+        ax.set_yscale("symlog", linthresh=1e-2)
+        ax.set_xlabel("block")
+        ax.set_ylabel(lab)
+        ax.grid(True, alpha=0.12)
+        ax.set_axisbelow(True)
+    axes[0].legend(fontsize=7.5, frameon=False, ncol=2)
+    _title(fig, "Same-level structure lives in B0, on both sources — as a rate, not a count",
+           "gemma blocks are nested prefixes of 128 to 6144 features and PCFG's are eight equal "
+           "blocks of 224, so only a per-pair rate compares them; B0 is not the densest because "
+           "it is the smallest. PCFG's blocks below B0 hold 0-4 edges in total, so every bend in "
+           "those dashed lines is one edge", width=124)
+    fig.subplots_adjust(top=0.78)
+    return _finish(fig, axes, "in_block_relations")
 
 
 # ---------------------------------------------------------------------------
@@ -624,16 +634,16 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"{len(runs)} sources" if len(runs) >= 2 else "needs a gemma report and a PCFG report",
         lambda: cross_source_funnel_shares(runs))
 
-    ib_paths = [G / "layer_06" / "in_block_edges.json"] + [
-        p / "in_block_edges.json" for p in sorted((C.OUT_DIR / "pcfg").glob("layer_*"))]
-    ib = next(((p, _json(p)) for p in ib_paths if _json(p)), (None, None))
-    run("in_block_relations", bool(ib[1]),
-        str(ib[0].relative_to(C.OUT_DIR)) if ib[1]
-        else "needs in_block_edges.json — pipeline stage 01c, not yet run on any gemma layer",
-        # source AND layer: "layer 01" alone does not say which dictionary, and
-        # this figure exists precisely to be compared across sources
-        lambda: in_block_relations(
-            ib[1], where=" ".join(ib[0].parent.relative_to(C.OUT_DIR).parts).replace("_", " ")))
+    ib = []
+    for base, label in [(G, "gemma"), (C.OUT_DIR / "pcfg", "PCFG")]:
+        for lay in sorted(base.glob("layer_*")):
+            j = _json(lay / "in_block_edges.json")
+            if j:
+                ib.append((f"{label} {lay.name.replace('_', ' ')}", j))
+    run("in_block_relations", bool(ib),
+        f"{len(ib)} runs with in_block_edges.json" if ib
+        else "needs in_block_edges.json — pipeline stage 01c",
+        lambda: in_block_relations(ib))
 
     # observed S_res shares, read off whatever second_pass.json files exist
     observed = []
@@ -663,7 +673,7 @@ CLAIMS = {
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
-    "in_block_relations": "same-level edges and duplicates, which need no block ordering",
+    "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
 }
 

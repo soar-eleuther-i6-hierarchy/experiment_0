@@ -281,6 +281,7 @@ NAV_LAYERS = [3, 6, 12, 18, 24]
 NAV_PAGES = [
     ("metrics_dashboard.html", "Dashboard"),
     ("superparent_sankey.html", "Superparents"),
+    ("in_block_dashboard.html", "In-block"),
     ("qualitative_dashboard.html", "Qualitative"),
     ("metrics_report.html", "Metrics report"),
     ("qualitative_check.html", "Qualitative report"),
