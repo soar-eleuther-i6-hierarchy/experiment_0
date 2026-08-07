@@ -30,14 +30,14 @@
 # When a layer is added, add its two label files here too.
 
 exclude:
-  - outputs/layer_03/feature_labels.json
-  - outputs/layer_06/feature_labels.json
-  - outputs/layer_12/feature_labels.json
-  - outputs/layer_18/feature_labels.json
-  - outputs/layer_24/feature_labels.json
-  - outputs/layer_03/npedia_labels_cache.json
-  - outputs/layer_06/npedia_labels_cache.json
-  - outputs/layer_12/npedia_labels_cache.json
-  - outputs/layer_18/npedia_labels_cache.json
-  - outputs/layer_24/npedia_labels_cache.json
-  - outputs/layer_06/second_pass.json
+  - outputs/gemma2_2b/layer_03/feature_labels.json
+  - outputs/gemma2_2b/layer_06/feature_labels.json
+  - outputs/gemma2_2b/layer_12/feature_labels.json
+  - outputs/gemma2_2b/layer_18/feature_labels.json
+  - outputs/gemma2_2b/layer_24/feature_labels.json
+  - outputs/gemma2_2b/layer_03/npedia_labels_cache.json
+  - outputs/gemma2_2b/layer_06/npedia_labels_cache.json
+  - outputs/gemma2_2b/layer_12/npedia_labels_cache.json
+  - outputs/gemma2_2b/layer_18/npedia_labels_cache.json
+  - outputs/gemma2_2b/layer_24/npedia_labels_cache.json
+  - outputs/gemma2_2b/layer_06/second_pass.json

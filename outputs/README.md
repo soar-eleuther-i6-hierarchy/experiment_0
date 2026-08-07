@@ -19,12 +19,16 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="../outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/layer_03/">3</a><a class="pill" href="../outputs/layer_06/">6</a><a class="pill" href="../outputs/layer_12/">12</a><a class="pill" href="../outputs/layer_18/">18</a><a class="pill" href="../outputs/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="../outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/gemma2_2b/layer_03/">3</a><a class="pill" href="../outputs/gemma2_2b/layer_06/">6</a><a class="pill" href="../outputs/gemma2_2b/layer_12/">12</a><a class="pill" href="../outputs/gemma2_2b/layer_18/">18</a><a class="pill" href="../outputs/gemma2_2b/layer_24/">24</a></div></nav>
 
 # `outputs/` — results
 
-Everything the pipeline produces. Per-layer artifacts live in `layer_NN/`; layer-independent ones
-(the toy calibrations) sit directly here.
+Everything the pipeline produces, grouped by SOURCE: gemma's layers in `gemma2_2b/layer_NN/`,
+the PCFG run in `pcfg/`. Layer-independent artifacts (the toy calibrations) sit directly here.
+
+The layers moved out of `outputs/layer_NN/` on 7 August, when a second source was published beside
+them and the old layout implied "layer 6" was a global fact rather than a fact about one model.
+Old URLs still resolve — see *Moved pages* below.
 
 `assets/plotly.min.js` is the one shared plotly bundle every dashboard links to. Inlining it in each
 page instead cost 4.6 MB per file and added ~70 MB of blobs to git on every regeneration; the pages
@@ -49,6 +53,17 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
   Page row — that row navigates *within* a layer — but the pills still work and land on the same kind
   of page in gemma.
 
+## Moved pages
+
+The five layer directories were at `outputs/layer_NN/` until 7 August. Every one of those URLs was
+published and cited, so each still resolves: `reporting/moved_pages.py` writes a redirect stub at
+the old path pointing at `gemma2_2b/layer_NN/`. Thirty of them — the five pages per layer plus each
+directory index.
+
+They are stubs, not pages: generated, listed by `--list`, and removed by `--remove` when the old
+links have stopped being followed. Nothing reads them, nothing regenerates from them, and they hold
+no numbers.
+
 ## Withdrawn pages
 
 `kill_rates.html` and `cross_depth_comparison.html` are no longer here. Both were hand-built with no
@@ -64,7 +79,7 @@ place. If the cross-depth view is wanted back, it should come back as a generato
 
 ## The second pass has run on layer 6 only
 
-`layer_06/second_pass.json` is the sole stage-03 output in the repository. Stages 01, 01b, 02 and 02b
+`gemma2_2b/layer_06/second_pass.json` is the sole stage-03 output in the repository. Stages 01, 01b, 02 and 02b
 have run on all five layers; stage 03 (`run_token_metrics.py` — S_res, parent-conditioned sibling
 redundancy, the kept-children union) has run on layer 6 alone. Do not read the other four layers'
 pages as though that pass is missing by accident.
@@ -86,16 +101,17 @@ the answer; the answer is here.
 ## Per layer
 
 Every layer has the same five pages: three interactive dashboards, then the two rendered text
-reports behind them. Each layer also has its own landing page — `layer_NN/`, written by
-`python3 -m reporting.layer_index` — which is where the nav bar's layer buttons go.
+reports behind them. Each layer also has its own landing page — `gemma2_2b/layer_NN/`, written by
+`python3 -m reporting.layer_index` — which is where the nav bar's layer buttons go, and the source
+itself has one at [`gemma2_2b/`](gemma2_2b/) from `--source`.
 
 | Layer | Metrics dashboard | Superparent fan-out | Qualitative dashboard | metrics report | qualitative report |
 | ----- | ----------------- | ------------------- | --------------------- | -------------- | ------------------ |
-| **L3**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_03/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_03/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_03/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_03/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_03/qualitative_check.html) |
-| **L6**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_06/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_06/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_06/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_06/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_06/qualitative_check.html) |
-| **L12** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_12/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_12/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_12/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_12/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_12/qualitative_check.html) |
-| **L18** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_18/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_18/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_18/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_18/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_18/qualitative_check.html) |
-| **L24** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_24/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_24/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_24/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_24/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/layer_24/qualitative_check.html) |
+| **L3**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_03/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_03/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_03/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_03/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_03/qualitative_check.html) |
+| **L6**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_06/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_06/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_06/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_06/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_06/qualitative_check.html) |
+| **L12** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_12/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_12/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_12/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_12/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_12/qualitative_check.html) |
+| **L18** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_18/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_18/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_18/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_18/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_18/qualitative_check.html) |
+| **L24** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_24/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_24/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_24/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_24/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma2_2b/layer_24/qualitative_check.html) |
 
 ## What is in a `layer_NN/` directory
 

@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="./outputs/layer_03/">3</a><a class="pill" href="./outputs/layer_06/">6</a><a class="pill" href="./outputs/layer_12/">12</a><a class="pill" href="./outputs/layer_18/">18</a><a class="pill" href="./outputs/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/toy_calibration.html">Toy calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="./outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="./outputs/gemma2_2b/layer_03/">3</a><a class="pill" href="./outputs/gemma2_2b/layer_06/">6</a><a class="pill" href="./outputs/gemma2_2b/layer_12/">12</a><a class="pill" href="./outputs/gemma2_2b/layer_18/">18</a><a class="pill" href="./outputs/gemma2_2b/layer_24/">24</a></div></nav>
 
 # experiment_0: Implement Metrics (SOAR I-6)
 
@@ -86,7 +86,7 @@ python3 -m validation.qualitative_check   # Tier 3: survivor-vs-rejected edges v
 python3 -m reporting.visualize  # rebuild the dashboards
 ```
 
-`EXP0_LAYER` (default 6) selects the layer; everything writes to `outputs/layer_NN/`.
+`EXP0_LAYER` (default 6) selects the layer; everything writes to `outputs/<source>/layer_NN/`.
 
 ```bash
 python3 collect_statistics.py --docs 16              # quick smoke slice (16 docs instead of 400)
@@ -105,10 +105,11 @@ file, so an SAE with a different shape needs an adapter and no metric code — s
 the `token_cache/` stage 03 reads and the `w_dec.pt` it scores S_res with.
 
 `EXP0_RUN` names the output directory, because such a run is not a layer:
-`EXP0_RUN=pcfg` publishes at `outputs/pcfg/` instead of `outputs/layer_NN/`. Keep it a direct
-child of `outputs/` — the nav bar and the shared plotly bundle both assume one level — and
-give the directory an index with `python3 -m reporting.layer_index --run`, or its URL 404s on
-GitHub Pages. Pages generated this way mark no layer as current and their headers name the run's
+`EXP0_RUN=pcfg` publishes at `outputs/pcfg/` instead of `outputs/gemma2_2b/layer_NN/`. Any depth
+works — every page derives its own distance to the site root and its link to the shared plotly
+bundle from its path — but the LAST component decides how the page reads: a directory named
+`layer_NN` gets the layer nav, anything else gets the site-wide one. Give the directory an index
+with `python3 -m reporting.layer_index --run`, or its URL 404s on GitHub Pages. Pages generated this way mark no layer as current and their headers name the run's
 own model and dictionary. First one published: [`outputs/pcfg/`](outputs/pcfg/README.md).
 
 Listing it in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
@@ -251,8 +252,9 @@ metrics/                              the repository
 ├── reporting/                        everything that produces something to read
 │   ├── visualize.py                  the interactive dashboards
 │   ├── make_report_figures.py        static proof-figures
-│   ├── layer_index.py                each layer's landing page (--run: a non-layer run's)
-│   └── refresh_nav.py                re-render the nav bar in place, no cache needed
+│   ├── layer_index.py                landing pages: per layer, --source, --run
+│   ├── refresh_nav.py                re-render the nav bar in place, no cache needed
+│   └── moved_pages.py                redirect stubs at pre-move URLs (--remove to drop)
 │
 ├── tests/                            guards on claims the code makes about itself
 │   ├── test_collect_generic.py       stage 01 runs on a source that is not gemma
@@ -278,7 +280,8 @@ metrics/                              the repository
     ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
     ├── toy_trained/                  the Tier-2 checkpoint
     ├── README.md
-    ├── layer_06/                     identical in layer_03, layer_12, layer_18, layer_24
+    ├── gemma2_2b/                    the five gemma layers, grouped by source
+    │   └── layer_06/                 identical in layer_03, layer_12, layer_18, layer_24
     │   ├── README.md                 the layer's landing page
     │   ├── metrics_dashboard.html
     │   ├── superparent_sankey.html
@@ -295,8 +298,8 @@ metrics/                              the repository
 ```
 
 Two directories exist only when you run the pipeline and are deliberately kept out of git:
-`outputs/layer_NN/exp0_stats.pt` (~700 MB per layer, on the Hub instead) and
-`outputs/layer_NN/token_cache/` (rebuildable). `outputs_local/` is where a scratch run goes,
+`outputs/<source>/layer_NN/exp0_stats.pt` (~700 MB per layer, on the Hub instead) and
+`outputs/<source>/layer_NN/token_cache/` (rebuildable). `outputs_local/` is where a scratch run goes,
 via `EXP0_OUT`.
 
 The team's other repos are **siblings** of this one, not nested inside it:

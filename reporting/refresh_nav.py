@@ -46,9 +46,16 @@ def identity(path):
     anything else is site-wide. Derived from the path rather than stored, which
     is why this can run over a page nobody can rebuild.
     """
+    if path.resolve() == (C.HERE / "README.md").resolve():
+        # The site index itself: depth 0, and it is the brand link's target rather
+        # than any nav entry, so nothing is marked current.
+        return 0, None, None, None
     rel = path.resolve().relative_to(C.OUT_DIR.resolve())
-    depth = len(rel.parts)                       # outputs/x.html -> 1, outputs/d/x.html -> 2
-    parent = rel.parts[0] if depth > 1 else ""
+    depth = len(rel.parts)                       # outputs/x.html -> 1, outputs/a/b/x.html -> 3
+    # The IMMEDIATE parent decides, not the first component: results are grouped
+    # by source, so a layer page is outputs/gemma2_2b/layer_NN/x.html and
+    # rel.parts[0] is the source, which says nothing about which page this is.
+    parent = rel.parts[-2] if depth > 1 else ""
     is_index = path.name == "README.md"
 
     # `page` is which of the five per-layer page kinds this is -- it drives where
@@ -95,12 +102,14 @@ def main() -> int:
     ap.add_argument("--check", action="store_true", help="report, write nothing")
     args = ap.parse_args()
 
+    # The repo README is the site's index page and carries the same bar, one level
+    # above OUT_DIR -- it was the one page a walk of outputs/ could never reach.
     changed = []
-    for path in sorted(C.OUT_DIR.rglob("*")):
+    for path in [C.HERE / "README.md", *sorted(C.OUT_DIR.rglob("*"))]:
         if path.suffix not in (".html", ".md") or not path.is_file():
             continue
         if refresh(path, write=not args.check):
-            changed.append(path.relative_to(C.OUT_DIR))
+            changed.append(path.relative_to(C.HERE))
 
     verb = "would update" if args.check else "updated"
     for p in changed:

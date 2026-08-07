@@ -161,21 +161,37 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = Path(os.environ.get("EXP0_OUT", HERE / "outputs"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Per-layer artifacts live in outputs/layer_NN/ so runs on different layers never
-# clobber each other. Layer-independent artifacts (e.g. the synthetic toy
-# calibration) stay directly in OUT_DIR.
-#
+# Results are grouped by SOURCE first, layer second: outputs/gemma2_2b/layer_NN/.
+# They used to sit at outputs/layer_NN/, from when gemma was the only source there
+# could be -- which stopped being true the moment a PCFG run was published beside
+# them, and left the site claiming that "layer 6" is a global fact rather than a
+# fact about one model.
+SOURCE_NAME = "gemma2_2b"
+LAYER_RUN = f"{SOURCE_NAME}/layer_{LAYER:02d}"
+
 # EXP0_RUN names the directory instead, for a run that is not a gemma layer: the
 # PCFG SAE is 1792 latents in 8 blocks over its own base model, and `layer_01`
-# would both collide with a future gemma layer and misdescribe it. Keep such a
-# run a DIRECT child of OUT_DIR (EXP0_RUN=pcfg, not EXP0_RUN=pcfg/run-1): the
-# whole site is built for pages exactly one level under outputs/ -- the nav's
-# `up=2`, the shared plotly bundle at ../assets/, and reporting's
-# `_page_identity`, which gives any non-`layer_` directory the site-wide nav
-# instead of gemma's layer pills.
-RUN_NAME = os.environ.get("EXP0_RUN", f"layer_{LAYER:02d}")
+# would both collide with a future gemma layer and misdescribe it. Any depth under
+# OUT_DIR works -- every page derives its own distance to the site root from its
+# path -- but the LAST component decides how it is read: a directory named
+# `layer_NN` gets the layer nav, anything else gets the site-wide one.
+RUN_NAME = os.environ.get("EXP0_RUN", LAYER_RUN)
 RUN_DIR = OUT_DIR / RUN_NAME
 RUN_DIR.mkdir(parents=True, exist_ok=True)
+# Layer-independent artifacts (the toy calibrations) stay directly in OUT_DIR.
+IS_LAYER_RUN = Path(RUN_NAME).name.startswith("layer_")
+
+
+def page_depth(path) -> int:
+    """Levels from a generated page's directory up to the site root.
+
+    The site root is the repo root, and OUT_DIR is `outputs/` one level under it,
+    so a page is 1 + however deep it sits inside OUT_DIR. Derived rather than
+    passed, because the depth changed for 25 published pages the day results were
+    grouped by source, and every caller that had hardcoded 2 was then wrong.
+    """
+    rel = Path(path).resolve().relative_to(OUT_DIR.resolve())
+    return len(rel.parts)
 
 def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None, config=None):
     """Which layer, and the knobs a reader needs to interpret the numbers.
@@ -286,7 +302,9 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     """The site nav bar for one page.
 
     depth    levels from this page's directory up to the site root
-             (1 for outputs/x.html, 2 for outputs/layer_NN/x.html)
+             (1 for outputs/x.html, 3 for outputs/gemma2_2b/layer_NN/x.html);
+             `page_depth(path)` computes it, and callers should use that rather
+             than count by hand
     layer    the layer this page describes, or None for a site-wide page
     page     which of NAV_PAGES this is, so the row can mark it current
     current  this page's own path from the site root, used to highlight its
@@ -324,21 +342,21 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     for L in NAV_LAYERS:
         on = " on" if L == layer else ""
         second.append(
-            f'<a class="pill{on}" href="{root}outputs/layer_{L:02d}/{page or ""}">{L}</a>'
+            f'<a class="pill{on}" href="{root}outputs/{SOURCE_NAME}/layer_{L:02d}/{page or ""}">{L}</a>'
         )
     if layer is not None:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in NAV_PAGES:
             on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
             second.append(
-                f'<a class="{on.strip()}" href="{root}outputs/layer_{layer:02d}/{f}">{label}</a>'
+                f'<a class="{on.strip()}" href="{root}outputs/{SOURCE_NAME}/layer_{layer:02d}/{f}">{label}</a>'
             )
     rows.append('<div class="row">' + "".join(second) + "</div>")
 
     return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
 
 # --- keeping previous runs -------------------------------------------------
-# A run writes into a FIXED path (outputs/layer_NN/) because the published site
+# A run writes into a FIXED path (outputs/<source>/layer_NN/) because the published site
 # links to it by name -- timestamping that directory would 404 every page. So a
 # rerun would otherwise replace the previous run's numbers with no trace. This
 # takes a dated copy first. Copy, not move, so the site stays whole even if the
@@ -399,7 +417,7 @@ def missing_stats_msg() -> str:
     return (
         f"missing {EXP0_STATS_PATH}\n"
         f"  download it:  hf download {HF_STATS_DATASET} --repo-type dataset "
-        f'--include "{RUN_DIR.name}/*" --local-dir outputs/\n'
+        f'--include "{RUN_DIR.name}/*" --local-dir {RUN_DIR.parent}/\n'
         f"  or rebuild it: EXP0_LAYER={LAYER} python3 collect_statistics.py"
     )
 

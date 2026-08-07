@@ -1,13 +1,14 @@
 """
 Write the landing page for each layer: outputs/layer_NN/README.md.
 
-Without one, outputs/layer_NN/ is a 404 on GitHub Pages -- the directory holds
+Without one, the layer directory is a 404 on GitHub Pages -- it holds
 five pages but nothing that answers "show me layer 3". That made the layer
 pills in the nav bar unable to point at a layer as such; they had to pick one
 of its pages. This closes that: every layer is now addressable on its own.
 
 Needs nothing (no model, no cache, no stats) -- the page list is config.
-Writes: outputs/layer_NN/README.md for every layer in config.NAV_LAYERS
+Writes: outputs/<source>/layer_NN/README.md for every layer in config.NAV_LAYERS
+        (--source: the source directory's own index; --run: a non-layer run's)
 
 A run that is not a gemma layer (EXP0_RUN=pcfg) has the same problem and gets the
 same treatment via --run, with two differences: its page list is whatever it
@@ -40,10 +41,16 @@ def render(layer: int) -> str:
     """The layer landing page: nav bar, then its five pages."""
     # page=None marks nothing in the Page group -- this page is the index, not
     # one of the five.
-    L = [C.nav_html(depth=2, layer=layer), "", f"# Layer {layer:02d}", ""]
+    path = C.OUT_DIR / C.SOURCE_NAME / f"layer_{layer:02d}" / "README.md"
+    depth = C.page_depth(path)
+    # Relative links, computed from the page's depth rather than written out:
+    # grouping results by source moved every layer page one level down, and every
+    # hand-counted `../` in here pointed somewhere else afterwards.
+    to_root, to_outputs = "../" * depth, "../" * (depth - 1)
+    L = [C.nav_html(depth=depth, layer=layer), "", f"# Layer {layer:02d}", ""]
     L.append(
         f"The five pages for layer {layer} of `{C.MODEL_NAME}`'s residual stream, graded by the "
-        f"metrics in [`metrics/`](../../metrics/README.md). Use the bar above to move between "
+        f"metrics in [`metrics/`]({to_root}metrics/README.md). Use the bar above to move between "
         f"layers while staying on the same page."
     )
     L += ["", "| Page | What is on it |", "| ---- | ------------- |"]
@@ -53,7 +60,7 @@ def render(layer: int) -> str:
         "",
         "Both reports are also in the repo as `.md`; the `.html` links above are what "
         "GitHub Pages renders. The `exp0_stats.pt` cache behind these numbers is not in git "
-        f"-- see [outputs/README.md](../README.md#the-big-caches-are-not-in-git).",
+        f"-- see [outputs/README.md]({to_outputs}README.md#the-big-caches-are-not-in-git).",
         "",
     ]
     return "\n".join(L)
@@ -74,7 +81,7 @@ def render_run(run: str) -> str:
     r = json.loads(report.read_text())
     cfg = r.get("config") or {}
 
-    L = [C.nav_html(depth=2, current=f"outputs/{run}/"), "",
+    L = [C.nav_html(depth=C.page_depth(run_dir / "README.md"), current=f"outputs/{run}/"), "",
          f"# {run}", ""]
     L.append(C.scope_line(r.get("total_tokens"), n_docs=cfg.get("n_docs"), config=cfg))
     L += ["", "The same metric battery as the gemma layers, on an SAE from a different source. "
@@ -89,8 +96,48 @@ def render_run(run: str) -> str:
     return "\n".join(L)
 
 
+def render_source() -> str:
+    """The landing page for a source directory: outputs/<source>/README.md.
+
+    Same reason every layer has one -- a directory with no index is a 404 on
+    GitHub Pages, and this one is where the nav's brand and the results index
+    now send a reader looking for "the gemma results".
+    """
+    path = C.OUT_DIR / C.SOURCE_NAME / "README.md"
+    depth = C.page_depth(path)
+    to_outputs = "../" * (depth - 1)
+    L = [C.nav_html(depth=depth, current=f"outputs/{C.SOURCE_NAME}/"), "",
+         f"# `{C.SOURCE_NAME}/` — {C.MODEL_NAME}", ""]
+    L.append(
+        f"The five residual-stream layers of `{C.MODEL_NAME}` graded against its released "
+        f"Matryoshka SAE ({C.D_SAE:,} latents in {C.N_BLOCKS} nested blocks "
+        f"{C.MATRYOSHKA_STEPS}). One directory per layer, five pages each; the bar above "
+        f"moves between them."
+    )
+    L += ["", "| Layer | SAE | Pages |", "| --- | --- | --- |"]
+    for layer in C.NAV_LAYERS:
+        d = C.OUT_DIR / C.SOURCE_NAME / f"layer_{layer:02d}"
+        pages = ", ".join(f"[{label.lower()}](layer_{layer:02d}/{f})"
+                          for f, label in C.NAV_PAGES if (d / f).exists()
+                          or (d / f.replace(".html", ".md")).exists())
+        L.append(f"| [**{layer}**](layer_{layer:02d}/) | `blocks.{layer}.hook_resid_post` | {pages} |")
+    L += [
+        "",
+        "These sat at `outputs/layer_NN/` until 7 August. They moved when a second source was "
+        "published beside them: with only gemma here, `layer_06` read as a global fact rather "
+        f"than a fact about one model. Other sources are listed in "
+        f"[outputs/README.md]({to_outputs}README.md).",
+        "",
+        f"Stage 03 (`run_token_metrics.py`) has run on layer 6 only — see "
+        f"[outputs/README.md]({to_outputs}README.md#the-second-pass-has-run-on-layer-6-only) "
+        "before reading the sibling-redundancy figure on the other four.",
+        "",
+    ]
+    return "\n".join(L)
+
+
 def write(layer: int) -> None:
-    path = C.OUT_DIR / f"layer_{layer:02d}" / "README.md"
+    path = C.OUT_DIR / C.SOURCE_NAME / f"layer_{layer:02d}" / "README.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render(layer))
     print(f"[index] wrote {path}")
@@ -101,7 +148,15 @@ def main() -> None:
     ap.add_argument("--layer", type=int, help="one layer instead of all of NAV_LAYERS")
     ap.add_argument("--run", action="store_true",
                     help="write the index for EXP0_RUN's directory instead of a gemma layer")
+    ap.add_argument("--source", action="store_true",
+                    help="write outputs/<source>/README.md, the index over the layers")
     args = ap.parse_args()
+    if args.source:
+        path = C.OUT_DIR / C.SOURCE_NAME / "README.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(render_source())
+        print(f"[index] wrote {path}")
+        return
     if args.run:
         path = C.RUN_DIR / "README.md"
         path.write_text(render_run(C.RUN_NAME))

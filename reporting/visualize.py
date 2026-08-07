@@ -94,13 +94,14 @@ def plotly_asset(page_dir):
     return Path(os.path.relpath(dest, page_dir)).as_posix()
 
 
-def write_page(fig, path, up=2):
+def write_page(fig, path, up=None):
     """Write a plotly figure with the site nav bar on top.
 
     Every page is reachable only by a deep link, so each carries its own nav
-    (`config.nav_html`); `up` is its distance to the site root. Which layer and
-    which page this is are read off the output path, so callers never have to
-    repeat what the filename already says.
+    (`config.nav_html`). Which layer, which page and how far the site root is are
+    all read off the output path, so callers never have to repeat what the path
+    already says — `up` remains only for a caller that must override, and the day
+    results were grouped by source every hardcoded `up=2` in here was wrong.
 
     Injected after write_html because plotly gives no layout slot for it — the
     same slot also carries the <script> tag for the shared plotly bundle that
@@ -110,7 +111,7 @@ def write_page(fig, path, up=2):
     fig.write_html(str(path), include_plotlyjs=False)
     layer, page = _page_identity(path)
     head = (
-        f"{C.nav_html(depth=up, layer=layer, page=page, current=_site_path(path))}\n"
+        f"{C.nav_html(depth=up or C.page_depth(path), layer=layer, page=page, current=_site_path(path))}\n"
         "<script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>\n"
         f'<script charset="utf-8" src="{plotly_asset(path.parent)}"></script>'
     )
@@ -693,7 +694,7 @@ def run_calibration():
     data = _calibration_data()
     fig = build_calibration_dashboard(data)
     out = C.OUT_DIR / "toy_calibration.html"
-    write_page(fig, out, up=1)          # lives in outputs/
+    write_page(fig, out)          # lives in outputs/
     print(f"saved: {out}")
 
 
@@ -987,7 +988,7 @@ def run_trained_calibration():
               "run `python3 -m validation.block_tree_alignment` for the nesting panels")
     fig = build_trained_calibration_dashboard(json.loads(path.read_text()), align)
     out = C.OUT_DIR / "trained_toy_calibration.html"
-    write_page(fig, out, up=1)
+    write_page(fig, out)
     print(f"saved: {out}")
 
 
@@ -1093,7 +1094,7 @@ def run_qualitative():
     # qualitative_check.html would shadow Jekyll's render of qualitative_check.md,
     # leaving the text report unreachable on the published site.
     out = C.RUN_DIR / "qualitative_dashboard.html"
-    write_page(fig, out, up=2)          # lives in outputs/layer_NN/
+    write_page(fig, out)
     print(f"saved: {out}")
 
 
@@ -1189,7 +1190,7 @@ def main():
             raise SystemExit(f"missing {C.IN_BLOCK_PATH} - run in_block_edges.py first")
         fig = build_in_block_dashboard(json.loads(C.IN_BLOCK_PATH.read_text()))
         path = C.RUN_DIR / "in_block_dashboard.html"
-        write_page(fig, path, up=2)
+        write_page(fig, path)
         print(f"saved: {path}")
         return
 
@@ -1222,7 +1223,7 @@ def main():
 
     dash = build_dashboard(pairs_data, feat_labels, stats=stats)
     dash_path = C.RUN_DIR / "metrics_dashboard.html"
-    write_page(dash, dash_path, up=2)
+    write_page(dash, dash_path)
     print(f"saved: {dash_path}")
 
     # One Sankey per block pair that has a superparent, stacked in a single file.
@@ -1234,7 +1235,7 @@ def main():
         # the same figure, so len(sk.data) reported two panels more than there are.
         n_panels = sum(1 for t in sk.data if t.type == "sankey")
         sk_path = C.RUN_DIR / "superparent_sankey.html"
-        write_page(sk, sk_path, up=2)
+        write_page(sk, sk_path)
         print(f"saved: {sk_path}  ({n_panels} block pair{'s' if n_panels != 1 else ''})")
 
 

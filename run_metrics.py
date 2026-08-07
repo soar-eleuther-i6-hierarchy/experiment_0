@@ -339,8 +339,8 @@ def to_markdown(report) -> str:
     # A run that is not a gemma layer takes the site-wide nav, same rule the
     # dashboards use: marking a layer here would point the "Page" row at
     # outputs/layer_NN/ files that describe a different SAE entirely.
-    is_layer = C.RUN_NAME.startswith("layer_")
-    nav = C.nav_html(depth=2,
+    is_layer = C.IS_LAYER_RUN
+    nav = C.nav_html(depth=C.page_depth(C.METRICS_MD_PATH),
                      layer=report["config"].get("layer", C.LAYER) if is_layer else None,
                      page="metrics_report.html",
                      current=None if is_layer else f"outputs/{C.RUN_NAME}/metrics_report.html")
