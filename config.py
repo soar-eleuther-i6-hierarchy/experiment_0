@@ -327,7 +327,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{border:1px solid #E3DAFB;border-radius:7px;padding:5px 10px;background:#F6F3FE;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
-.x0nav .gh{display:inline-flex;align-items:center;gap:5px;}
+.x0nav .gh{display:inline-flex;align-items:center;gap:5px;margin-left:auto;}
 .x0nav .gh svg{width:15px;height:15px;fill:currentColor;display:block;}
 @media (prefers-color-scheme:dark){
 .x0nav{background:#141414;border-bottom-color:#2E2E2E;}
@@ -364,13 +364,7 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     # depth 0 is the site root itself (the repo README): "" is not a usable href.
     root = "../" * depth or "./"
 
-    # Left end, next to the brand: the site shows results, the repository shows
-    # how they were produced, and a reader who wants the second should not have
-    # to guess the URL from the first.
-    top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>',
-           f'<a class="gh" href="{REPO_URL}" title="Browse the code on GitHub">'
-           f'{GITHUB_MARK}Code</a>',
-           '<span class="sep"></span>']
+    top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
     for href, label in NAV_GLOBAL:
         # A directory entry owns every page under it, so a run that publishes a
         # whole directory (outputs/pcfg/) lights up its own nav entry from any of
@@ -382,6 +376,12 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
                                         (owns and current.startswith(href)))
         on = "on" if here else ""
         top.append(f'<a class="{on}" href="{root}{href}">{label}</a>')
+    # Right end, past everything else: it is the one link that leaves the site,
+    # so it does not belong in the sequence of places within it. `margin-left:auto`
+    # does the pushing, which keeps it last in the DOM too -- it should also be
+    # last for a keyboard or a screen reader, not first.
+    top.append(f'<a class="gh" href="{REPO_URL}" title="Browse the code on GitHub">'
+               f'{GITHUB_MARK}Code</a>')
     rows = ['<div class="row">' + "".join(top) + "</div>"]
 
     # The layer row belongs to ONE source, so it appears only inside that source:
