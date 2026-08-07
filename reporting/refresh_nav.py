@@ -1,5 +1,5 @@
 """
-Rewrite the nav bar in every generated page, without regenerating the pages.
+Rewrite the nav bar and the plotly asset link in every page, without regenerating.
 
 The bar is baked into each artifact rather than served from one place -- there is
 no layout to put it in, because these are plotly HTML files and Jekyll-rendered
@@ -15,8 +15,13 @@ opens with `<style>` and the bar closes with `</nav>` -- and every input to
 generation time. So the bar can be re-rendered in place, and the rest of the file
 is not touched.
 
-It is not a substitute for regenerating a page: it changes navigation and nothing
-else. If the NUMBERS on a page are stale, this will not tell you, and a page whose
+It repairs the shared-plotly `<script src>` on the same terms, and for the same
+reason: it is a path derived from the file's location, so a file that moved carries
+a stale one. That one is not cosmetic -- a page whose bundle 404s renders its nav
+and nothing else, which is how fifteen pages sat blank on the published site.
+
+It is not a substitute for regenerating a page: it changes navigation and asset
+paths, and nothing else. If the NUMBERS on a page are stale, this will not tell you, and a page whose
 bar is fresh looks maintained. Rerun the stage.
 
     python3 -m reporting.refresh_nav            # every page under OUT_DIR
@@ -31,13 +36,24 @@ claiming the archived page is the live one.
 from __future__ import annotations
 
 import argparse
+import os
 import re
+from pathlib import Path
 
 import config as C
 
 # NAV_CSS ... </nav>, the whole injected region. Non-greedy so a page holding two
 # (none do, but a future one might) is handled one at a time.
 NAV_RE = re.compile(r"<style>\s*\.x0nav\{.*?</nav>", re.DOTALL)
+
+# The <script src> for the shared plotly bundle, injected by visualize.write_page
+# right after the nav. Same class of thing as the bar: a path derivable from the
+# file's own location, baked in at generation time and wrong ever after if the
+# file moves. Grouping results under outputs/<source>/layer_NN/ added a level, so
+# every page not regenerated since kept `../assets/` and pointed one directory
+# short. The nav still rendered -- it is plain HTML -- so the pages looked alive
+# and drew nothing.
+ASSET_RE = re.compile(r'(<script charset="utf-8" src=")([^"]*?assets/plotly\.min\.js)(")')
 
 
 def identity(path):
@@ -94,14 +110,26 @@ def identity(path):
     return depth, layer, page, current
 
 
+def asset_src(path):
+    """Where THIS page must reach the shared plotly bundle from.
+
+    Same computation visualize.plotly_asset does at generation time, from the
+    page's directory rather than from a level count.
+    """
+    dest = C.OUT_DIR / "assets" / "plotly.min.js"
+    return Path(os.path.relpath(dest, path.parent)).as_posix()
+
+
 def refresh(path, write=True):
-    """Replace the file's nav block. Returns True if it changed."""
+    """Rewrite the file's nav block and its plotly src. Returns True if changed."""
     text = path.read_text(encoding="utf-8")
     if not NAV_RE.search(text):
         return False
     depth, layer, page, current = identity(path)
     nav = C.nav_html(depth=depth, layer=layer, page=page, current=current)
     new = NAV_RE.sub(lambda _: nav, text, count=1)
+    src = asset_src(path)
+    new = ASSET_RE.sub(lambda m: m.group(1) + src + m.group(3), new)
     if new == text:
         return False
     if write:
