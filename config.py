@@ -283,6 +283,11 @@ NAV_GLOBAL = [
     (f"outputs/{SOURCE_NAME}/", SOURCE_NAME.replace("gemma", "Gemma")),
 ]
 
+# Inlined rather than linked: every page must render identically offline and on
+# Pages, and one <img> to an external host would be the only request any of
+# these pages makes.
+GITHUB_MARK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>'
+
 NAV_CSS = """<style>
 .x0nav{position:sticky;top:0;z-index:999;background:#fff;border-bottom:1px solid #E3DAFB;
 font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px;}
@@ -296,6 +301,8 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{border:1px solid #E3DAFB;border-radius:7px;padding:5px 10px;background:#F6F3FE;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
+.x0nav .gh{display:inline-flex;align-items:center;gap:5px;}
+.x0nav .gh svg{width:15px;height:15px;fill:currentColor;display:block;}
 @media (prefers-color-scheme:dark){
 .x0nav{background:#141414;border-bottom-color:#2E2E2E;}
 .x0nav .row+.row{border-top-color:#242424;}
@@ -327,7 +334,13 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     # depth 0 is the site root itself (the repo README): "" is not a usable href.
     root = "../" * depth or "./"
 
-    top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
+    # Left end, next to the brand: the site shows results, the repository shows
+    # how they were produced, and a reader who wants the second should not have
+    # to guess the URL from the first.
+    top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>',
+           f'<a class="gh" href="{REPO_URL}" title="Browse the code on GitHub">'
+           f'{GITHUB_MARK}Code</a>',
+           '<span class="sep"></span>']
     for href, label in NAV_GLOBAL:
         # A directory entry owns every page under it, so a run that publishes a
         # whole directory (outputs/pcfg/) lights up its own nav entry from any of
@@ -427,6 +440,10 @@ METRICS_MD_PATH = RUN_DIR / "metrics_report.md"      # written by run_metrics.py
 # hosted on the Hub instead. A fresh clone has no exp0_stats.pt, so every consumer
 # points at both ways to get one: download it, or recompute it.
 HF_STATS_DATASET = "soar-eleuther-i6-hierarchy/experiment_0-stats"
+
+# The source this site is generated from. Absolute, so it is the one nav link
+# whose depth does not matter, and the only one that leaves the site.
+REPO_URL = "https://github.com/soar-eleuther-i6-hierarchy/metrics"
 
 
 def missing_stats_msg() -> str:
