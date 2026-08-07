@@ -58,6 +58,61 @@ from metrics import (                                             # noqa: E402
     frequency_controlled_coverage, frequency_buckets,
 )
 from metrics.reconstruction import per_token_ablation_gain        # noqa: E402
+from metrics.sres import sres_rank_check, train_probe             # noqa: E402
+from metrics.sibling_redundancy import parent_conditioned_redundancy  # noqa: E402
+
+
+def score_per_token(x, fired, W_dec, truth, m, parent_lat, child_lat, recovered):
+    """The probe functions, on LEARNED latents against the known tree.
+
+    Tier 1 grades these on hand-built statistics: the parent direction is one we
+    chose, so "the rank rule finds it" is a statement about the arithmetic. Here
+    the parent is a direction the SAE had to learn, which is the only place the
+    question can be asked -- gemma has no known answer, and the synthetic toy has
+    no training run.
+
+    `x` is the toy's activation vector, which IS its residual stream: the object
+    the SAE decomposes, and what stage 03 trains its probes on. No token cache is
+    needed because nothing here is streamed.
+
+    One limit is structural and stated in the result. The dictionary is 20
+    latents, so a top-5 rank rule passes an unrelated parent at k/D = 25% by
+    chance. This tier can therefore confirm that a LEARNED true parent is
+    accepted; it cannot show an unrelated one is rejected. gemma's 32768 puts
+    that null at 0.015%.
+    """
+    lat_of = {t: i for i, t in enumerate(m) if t >= 0}
+    rows, red = [], {}
+    for (tp_, tc_) in sorted(truth):
+        if tp_ not in lat_of or tc_ not in lat_of:
+            rows.append({"edge": f"{tp_} -> {tc_}", "testable": False,
+                         "why": "endpoint never learned"})
+            continue
+        gp, gc = lat_of[tp_], lat_of[tc_]
+        probe = train_probe(x.float(), fired[:, gc].bool(), seed=gc)
+        if probe is None:
+            rows.append({"edge": f"{tp_} -> {tc_}", "testable": False,
+                         "why": "too few negatives for a probe"})
+            continue
+        corr = probe.double() @ W_dec.double().T
+        ok, det = sres_rank_check(corr, gp, gc, 5)
+        rows.append({"edge": f"{tp_} -> {tc_}", "testable": True, "pass": bool(ok), **det})
+
+    # sibling redundancy inside each true parent's own firing set
+    for tp_ in sorted({p for p, _ in truth}):
+        kids = [lat_of[c] for (p, c) in truth if p == tp_ and c in lat_of]
+        if tp_ in lat_of and len(kids) >= 2:
+            red[str(tp_)] = round(parent_conditioned_redundancy(
+                fired[:, lat_of[tp_]].bool(), fired[:, kids].bool()), 4)
+
+    testable = [r for r in rows if r["testable"]]
+    n_pass = sum(r["pass"] for r in testable)
+    return {
+        "n_testable": len(testable), "n_pass": n_pass,
+        "chance_pass_rate": round(5 / W_dec.shape[0], 4),
+        "edges": rows,
+        "parent_conditioned_redundancy": red,
+    }
 
 
 # --------------------------------------------------------------------------
@@ -251,6 +306,17 @@ def main():
     print(f"precision {prec:.2f}   recall {rec:.2f}")
     print(f"VERDICT: {'PASS' if prec >= 0.8 and rec >= 0.8 else 'NEEDS WORK'}")
 
+    pt = score_per_token(x, fired, w["W_dec"], truth, m, parent_lat, child_lat, recovered)
+    print(f"\nprobe S_res on LEARNED latents: {pt['n_pass']}/{pt['n_testable']} true edges "
+          f"accepted (chance {pt['chance_pass_rate']:.0%} at k/D)")
+    for r in pt["edges"]:
+        if r["testable"]:
+            print(f"  {r['edge']:<10} parent rank {r['parent_rank']:>2}  "
+                  f"child rank {r['child_rank']:>2}  {'pass' if r['pass'] else 'FAIL'}")
+        else:
+            print(f"  {r['edge']:<10} untestable — {r['why']}")
+    print(f"parent-conditioned sibling redundancy: {pt['parent_conditioned_redundancy']}")
+
     # per-edge verdict rows for the dashboard, ordered parent then child
     def edge_row(e):
         p, c = e
@@ -272,6 +338,7 @@ def main():
                      [{"edge": f"{p} -> {c}", "parent": p, "child": c, "found": True,
                        "category": "spurious"} for (p, c) in sorted(fp_)],
         "missed_children": sorted({c for _, c in fn if c not in recovered}),
+        "per_token": pt,
     }
     out = ROOT / "outputs" / "trained_toy_calibration.json"
     out.write_text(json.dumps(result, indent=2))

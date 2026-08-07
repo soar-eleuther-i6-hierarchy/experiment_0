@@ -185,5 +185,87 @@
     3,
     6,
     11
-  ]
+  ],
+  "per_token": {
+    "n_testable": 5,
+    "n_pass": 5,
+    "chance_pass_rate": 0.25,
+    "edges": [
+      {
+        "edge": "0 -> 1",
+        "testable": true,
+        "pass": true,
+        "parent_rank": 0,
+        "child_rank": 1,
+        "parent_corr": 1.642456576400582,
+        "child_corr": 1.0814991960441531,
+        "s_res": 1.0814991960441531
+      },
+      {
+        "edge": "0 -> 2",
+        "testable": true,
+        "pass": true,
+        "parent_rank": 0,
+        "child_rank": 1,
+        "parent_corr": 0.8700693266808663,
+        "child_corr": 0.7556484389352933,
+        "s_res": 0.7556484389352933
+      },
+      {
+        "edge": "0 -> 3",
+        "testable": false,
+        "why": "endpoint never learned"
+      },
+      {
+        "edge": "4 -> 5",
+        "testable": true,
+        "pass": true,
+        "parent_rank": 0,
+        "child_rank": 1,
+        "parent_corr": 1.2935276455729083,
+        "child_corr": 1.2422755118210664,
+        "s_res": 1.2422755118210664
+      },
+      {
+        "edge": "4 -> 6",
+        "testable": false,
+        "why": "endpoint never learned"
+      },
+      {
+        "edge": "4 -> 7",
+        "testable": true,
+        "pass": true,
+        "parent_rank": 1,
+        "child_rank": 0,
+        "parent_corr": 1.476606617908091,
+        "child_corr": 1.5104308461049705,
+        "s_res": 1.476606617908091
+      },
+      {
+        "edge": "8 -> 9",
+        "testable": false,
+        "why": "too few negatives for a probe"
+      },
+      {
+        "edge": "8 -> 10",
+        "testable": true,
+        "pass": true,
+        "parent_rank": 1,
+        "child_rank": 0,
+        "parent_corr": 1.6282624699780144,
+        "child_corr": 1.7490635961655014,
+        "s_res": 1.6282624699780144
+      },
+      {
+        "edge": "8 -> 11",
+        "testable": false,
+        "why": "endpoint never learned"
+      }
+    ],
+    "parent_conditioned_redundancy": {
+      "0": 0.0,
+      "4": 0.9582,
+      "8": 0.0
+    }
+  }
 }

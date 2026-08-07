@@ -40,7 +40,7 @@ Full results and the three-tier table: [outputs/README.md](../outputs/README.md#
 | ---- | ---- | ------- | -------------- | ------------ |
 | [`toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass across seeds 0–7**, covering **21/21 metric functions** |
-| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features and scores edge recovery — **precision 1.00, recall 0.67** |
+| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
 | [`qualitative_check.py`](qualitative_check.py) | 3 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
 
 **Why Tier 3 is not named `calibrate_*`.** The first two score metrics against an answer we know.
@@ -67,6 +67,19 @@ also reads that repo's `configs/tree.json` for the ground-truth tree, and expect
 Both tiers write into [`outputs/`](../outputs/) (`toy_calibration.json`,
 `trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`
 and `python3 -m reporting.visualize --trained-calibration`.
+
+## What Tier 2 found in the SAE itself
+
+The tree declares all three parents `mutually_exclusive_children`, and in 200,000 draws true
+features 5 and 7 co-fire **zero** times. The latents that recovered them co-fire **27,592** times,
+and the one matched to feature 5 **never fires alone**. The trained SAE conflated two concepts the
+grammar keeps apart.
+
+`parent_conditioned_redundancy` reports 0.958 for that parent against 0.000 for the other two, so it
+catches a defect **nobody injected** — which is the thing Tier 1 structurally cannot do, since there
+every pathology is one we put in. Edge recovery calls both of that parent's edges recovered, and
+precision stays 1.00: the sibling metric is adding a column the coverage and reconstruction metrics
+do not have, exactly as the properties matrix claims.
 
 ## What Tier 1 did not cover until 7 August
 
