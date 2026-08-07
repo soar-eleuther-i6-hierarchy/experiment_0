@@ -122,15 +122,21 @@ def _page_identity(path):
     """(layer, page-file) for a written page, read off its own path.
 
     A page under layer_NN/ describes that layer; anything else is site-wide and
-    gets only the global nav row.
+    gets no Page row. It can still keep the page KIND, though: from a run
+    directory's dashboard the layer pills should land on each gemma layer's
+    dashboard, not on its index. `page` only names one of the five per-layer
+    kinds -- the calibration pages are not among them, and marking one would
+    point every pill at a file no layer has.
     """
+    name = Path(path).name
+    kind = name if name in {f for f, _ in C.NAV_PAGES} else None
     parent = Path(path).parent.name
     if parent.startswith("layer_"):
         try:
-            return int(parent.split("_")[1]), Path(path).name
+            return int(parent.split("_")[1]), kind
         except ValueError:
             pass
-    return None, None
+    return None, kind
 
 
 def _site_path(path):

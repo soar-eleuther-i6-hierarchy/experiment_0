@@ -19,7 +19,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/layer_03/">3</a><a class="pill" href="../outputs/layer_06/">6</a><a class="pill" href="../outputs/layer_12/">12</a><a class="pill" href="../outputs/layer_18/">18</a><a class="pill" href="../outputs/layer_24/">24</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../">SOAR I-6 · metrics</a><a class="on" href="../outputs/">Results</a><a class="" href="../outputs/toy_calibration.html">Toy calibration</a><a class="" href="../outputs/trained_toy_calibration.html">Trained toy</a><a class="" href="../outputs/pcfg/">PCFG</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../outputs/layer_03/">3</a><a class="pill" href="../outputs/layer_06/">6</a><a class="pill" href="../outputs/layer_12/">12</a><a class="pill" href="../outputs/layer_18/">18</a><a class="pill" href="../outputs/layer_24/">24</a></div></nav>
 
 # `outputs/` — results
 
@@ -44,8 +44,10 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
   in 5. Produced by `adapters/from_pcfg.py` in the umbrella repo; the metric code is untouched,
   which is the point of it being here rather than in a repo of its own.
 
-  It is a *run*, not a layer, so it sits directly under `outputs/` with its own name and carries no
-  layer pills. The layer bar above still works from it — it goes to gemma.
+  It is a *run*, not a layer, so it sits directly under `outputs/` with its own name and reaches the
+  nav bar as a global entry rather than a sixth pill. Its pages mark no layer as current and carry no
+  Page row — that row navigates *within* a layer — but the pills still work and land on the same kind
+  of page in gemma.
 
 ## Withdrawn pages
 

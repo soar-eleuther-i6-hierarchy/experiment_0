@@ -108,8 +108,14 @@ the `token_cache/` stage 03 reads and the `w_dec.pt` it scores S_res with.
 `EXP0_RUN=pcfg` publishes at `outputs/pcfg/` instead of `outputs/layer_NN/`. Keep it a direct
 child of `outputs/` — the nav bar and the shared plotly bundle both assume one level — and
 give the directory an index with `python3 -m reporting.layer_index --run`, or its URL 404s on
-GitHub Pages. Pages generated this way carry the site-wide nav and no layer pills, and their
-headers name the run's own model and dictionary. First one published: [`outputs/pcfg/`](outputs/pcfg/README.md).
+GitHub Pages. Pages generated this way mark no layer as current and their headers name the run's
+own model and dictionary. First one published: [`outputs/pcfg/`](outputs/pcfg/README.md).
+
+Listing it in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
+page's bar wrong, including ten dashboards whose generator needs that layer's ~700 MB cache.
+`python3 -m reporting.refresh_nav` re-renders the bar in place instead, deriving each page's
+identity from its own path; `--check` reports without writing. It changes navigation and nothing
+else, so it is not a way to freshen stale numbers.
 
 The heavy cache (`exp0_stats.pt`, ~700 MB per layer) is not in git — pull it from the Hub instead of
 recomputing:
@@ -245,7 +251,8 @@ metrics/                              the repository
 ├── reporting/                        everything that produces something to read
 │   ├── visualize.py                  the interactive dashboards
 │   ├── make_report_figures.py        static proof-figures
-│   └── layer_index.py                each layer's landing page (--run: a non-layer run's)
+│   ├── layer_index.py                each layer's landing page (--run: a non-layer run's)
+│   └── refresh_nav.py                re-render the nav bar in place, no cache needed
 │
 ├── tests/                            guards on claims the code makes about itself
 │   ├── test_collect_generic.py       stage 01 runs on a source that is not gemma

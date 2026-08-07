@@ -250,6 +250,11 @@ NAV_GLOBAL = [
     ("outputs/", "Results"),
     ("outputs/toy_calibration.html", "Toy calibration"),
     ("outputs/trained_toy_calibration.html", "Trained toy"),
+    # A run, not a layer: the PCFG SAE has its own base model and its own
+    # dictionary, so it belongs in the global row rather than among the layer
+    # pills. Adding an entry here changes the bar on EVERY page, including ones
+    # whose generator needs a 700 MB cache -- see reporting/refresh_nav.py.
+    ("outputs/pcfg/", "PCFG"),
 ]
 
 NAV_CSS = """<style>
