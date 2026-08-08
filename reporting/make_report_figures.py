@@ -839,6 +839,297 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     return written, skipped, sources
 
 
+# ---------------------------------------------------------------------------
+# figures.tex — the same figures with captions, ordered as the paper reads.
+#
+# Same two rules as the rest of this file. Every quantity in every caption is
+# read from the JSON its figure plots, so a caption cannot outlive its data --
+# which is exactly how this file's own titles came to quote withdrawn numbers.
+# And a figure with no caption entry is emitted with none rather than silently
+# dropped, so the omission is visible in the .tex.
+#
+# Captions sit BELOW the figure, which is the convention for figures and the
+# mirror of tables.tex, where they sit above.
+# ---------------------------------------------------------------------------
+TWOCOLUMN = False       # set from --twocolumn; the ICLR template is onecolumn
+
+
+def _wrap(t: str) -> str:
+    import textwrap
+    # break_on_hyphens=False: textwrap splits "0--7" across lines by default and
+    # LaTeX turns the break into a space, printing "0-- 7".
+    return "\n".join(textwrap.wrap(t, 94, initial_indent="    ", subsequent_indent="    ",
+                                   break_on_hyphens=False, break_long_words=False))
+
+
+def _captions():
+    """Caption bodies, with their numbers interpolated from the plotted JSON."""
+    G = C.OUT_DIR / C.SOURCE_NAME
+    lay = gemma_layers()
+    d: dict[str, str] = {}
+
+    def rp(L, pair="0->1"):
+        return _pair(_json(G / f"layer_{L:02d}" / "metrics_report.json"), pair)
+
+    if lay:
+        p6, sp6 = rp(6), _json(G / "layer_06" / "second_pass.json")
+        poly = [100 * rp(L)["degree"]["poly_frac"] for L, _ in lay]
+        ch = [100 * rp(L)["independence_null"]["frac_chance_level"] for L, _ in lay]
+        fq = [100 * rp(L)["freq_control"]["frac_freq_driven"] for L, _ in lay]
+        fires = [x["fire_frac"] for _, r in lay for q in r["pairs"]
+                 for x in q.get("superparents", [])]
+        free = sum(1 for f in fires if f >= C.EDGE_TAU)
+
+        d["multiparenting_by_layer"] = (
+            "Percentage of child features with two or more parents, per block pair, across the "
+            r"five graded layers. In the top pair B0$\rightarrow$B1 the value is "
+            + " / ".join(rf"{v:.0f}\%" for v in poly) + "---nearly every child in the second "
+            "block is claimed by several first-block features, which no reading as a hierarchy "
+            "survives. This is the only one of the project's four original claims that BOS "
+            "exclusion left unchanged, because it is a ratio over children that already have a "
+            "parent rather than a count of candidate edges, and so does not depend on the "
+            "contaminated candidate set. Deeper pairs are much lower, on candidate sets that are "
+            "also much smaller.")
+        if sp6:
+            sr = sp6["0->1"]["sres"]
+            d["funnel_coverage_to_sres"] = (
+                r"Block pair B0$\rightarrow$B1 of the layer-6 Matryoshka SAE on "
+                rf"\texttt{{gemma-2-2b}}. Reverse coverage $R \geq {C.EDGE_TAU}$ with a "
+                f"joint-support guard admits {p6['n_candidate_edges']:,} candidate edges. The "
+                "reconstruction-ablation filter---drawn as a dashed reference rather than a "
+                "funnel stage, because it is applied to all candidates in parallel and does not "
+                f"nest---passes {p6['reconstruction']['n_pass']:,} of them "
+                rf"({100 * p6['reconstruction']['frac_pass']:.0f}\%), so the cheap filter barely "
+                f"bites. Of the {sr['n_edges_scored']:,} edges reaching the probe-based "
+                rf"$S_\mathrm{{res}}$ rank test, {sr['n_pass']} pass "
+                rf"({100 * sr['frac_pass']:.1f}\%). \textbf{{Caveat:}} stage~03 has been run on "
+                "layer~6 only, so this ratio has a single layer behind it.")
+        d["base_rate_vs_frequency_capture"] = (
+            r"Two per-edge diagnostics on the same candidate sets, B0$\rightarrow$B1. The "
+            "independence null asks whether co-firing exceeds what the parent's own firing rate "
+            rf"already forces, and rejects {min(ch):.0f}--{max(ch):.0f}\% of edges. The "
+            "token-frequency control asks whether the edge survives once globally frequent tokens "
+            rf"are removed, and rejects {min(fq):.1f}--{max(fq):.1f}\%. They disagree by "
+            rf"{min(c / f for c, f in zip(ch, fq)):.0f}--"
+            rf"{max(c / f for c, f in zip(ch, fq)):.0f}$\times$ at every layer. This tests the "
+            "observation the bottleneck-hijacking hypothesis is built on---that the "
+            "over-connected parents mostly track high-frequency tokens such as spaces, "
+            r"punctuation and \emph{the}---and does not support it: the frequency control "
+            r"exonerates 98--99\% of edges while the base-rate null rejects most of them.")
+        d["superparent_fanout_vs_firing"] = (
+            r"An edge is kept when $P(\mathrm{parent} \mid \mathrm{child}) \geq \tau = "
+            rf"{C.EDGE_TAU}$. Under independence that probability is simply the parent's firing "
+            r"rate $\rho$, so the enrichment a parent needs over chance is $\tau/\rho$, the grey "
+            rf"curve. All {len(fires)} parents flagged as superparents, across five layers and "
+            rf"every block pair, lie on it. {free} of them fire on at least "
+            rf"{100 * C.EDGE_TAU:.0f}\% of tokens and therefore clear the bar at "
+            r"$\leq 1\times$ enrichment---on base rate alone, with no association whatsoever "
+            r"between parent and child. A parent firing on 1\% of tokens would need "
+            rf"{C.EDGE_TAU / 0.01:.0f}$\times$ enrichment for the same edge. This is the "
+            "mechanism behind the previous figure.")
+        d["depth_profile_across_layers"] = (
+            r"Four quantities for block pair B0$\rightarrow$B1 across the five graded layers, "
+            "each on its own axis because they are not commensurable. The project previously "
+            "reported that hierarchy quality degrades with depth. That claim came from caches in "
+            "which the beginning-of-sequence position was counted, and it does not survive "
+            "regeneration: the distinct-parent counts among survivors read 5, 7, 6, 7, 6. The "
+            "figure is included because the withdrawal is itself a result about how easily a "
+            "depth trend can be manufactured.")
+        d["edge_survival_by_block_pair"] = (
+            r"\emph{Left:} the share of candidate edges whose reconstruction improves when the "
+            r"parent is ablated. \emph{Right:} the share the token-frequency control judges to be "
+            "carried by globally frequent tokens. Panels are on separate scales; layers are "
+            "ordered, so depth is encoded as a single-hue ramp rather than as five categorical "
+            "colours. The frequency control is nearly silent in the top block pair and rises "
+            "sharply in the deeper ones, on candidate sets that are also far smaller there.")
+
+    arch = sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json"))
+    if arch and lay:
+        d["shared_input_moved_every_metric"] = (
+            "Change in each metric, averaged over the five layers, when a single contaminating "
+            "token position is excluded from the corpus. The beginning-of-sequence token is an "
+            "attention sink on which effectively every feature fires; with 400 documents it "
+            "handed every pair in the dictionary 400 joint firings against a support guard set "
+            "at 30, so the guard admitted pairs that never co-occur anywhere else. Five of these "
+            "six quantities are computed from that one co-firing matrix, and all five moved. The "
+            "sixth, multi-parenting, is a ratio over children that already have a parent, does "
+            "not read the matrix, and did not move. Agreement among detectors that share an "
+            r"input is far weaker evidence than the word \emph{battery} implies. The grey value "
+            "in each pair is the withdrawn one, plotted to size the error and not as a result.")
+
+    toy = _json(C.OUT_DIR / "synthetic_toy_calibration.json")
+    if toy:
+        d["calibration_synthetic_toy_scorecard"] = (
+            f"All {len(toy)} scorecard rows on a hand-built world with a known five-parent tree "
+            f"and six injected structures; {sum(r['pass'] for r in toy)} pass, across seeds "
+            r"0--7, covering 21 of 21 metric functions. \emph{Left:} rows whose two classes "
+            r"separate by a ratio, on a log axis. \emph{Right:} rows scored categorically, where "
+            "the recovered answer is either right or not. The two are kept apart because a "
+            r"categorical margin of $1.0$ means \emph{correct}, and on a ratio axis that would "
+            r"read as \emph{no separation at all}. The two hatched rows are negative controls, "
+            r"which pass when the battery does \emph{not} act: an absorbed child, whose true edge "
+            "coverage can never propose because the child fires exactly where its parent is "
+            "silent, and a shared-topic pair that clears coverage, reconstruction, the frequency "
+            "control and the independence null. They turn the two open columns of the properties "
+            "matrix into demonstrated limitations rather than asserted ones, and a regression "
+            "makes them fail visibly.")
+
+    tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
+    if tt:
+        pt = tt.get("per_token") or {}
+        red = pt.get("parent_conditioned_redundancy") or {}
+        cof = pt.get("child_cofire") or {}
+        extra = ""
+        if red and cof:
+            w = max(red.items(), key=lambda kv: kv[1])
+            if w[0] in cof:
+                extra = (
+                    " Beyond edge recovery, the parent-conditioned sibling metric reports "
+                    f"{w[1]:.2f} for one true parent against "
+                    + " and ".join(f"{v:.2f}" for k, v in red.items() if k != w[0])
+                    + " for the others. The grammar declares every parent's children mutually "
+                    f"exclusive, and they co-fire {cof[w[0]]['ground_truth']} times in "
+                    "200{,}000 draws; the latents that recovered them co-fire "
+                    f"{cof[w[0]]['learned']:,} times, and one of the two never fires alone. The "
+                    "SAE conflated two concepts the grammar keeps apart. This is a defect nobody "
+                    "injected, which the synthetic tier structurally cannot produce, and which "
+                    "the rest of the battery misses: both of that parent's edges are counted as "
+                    "recovered and precision stays $1.00$.")
+        d["calibration_trained_toy_recovery"] = (
+            "A Matryoshka SAE trained on the toy hierarchy, with the metrics run on the "
+            r"\emph{learned} latents rather than on constructed statistics. Precision "
+            rf"{tt['precision']:.2f}, recall {tt['recall']:.2f}: {tt['true_positives']} of "
+            f"{len(tt['true_edges'])} true edges recovered with {tt['false_positives']} false "
+            "positives, and every miss is an edge whose child the SAE never learned---it "
+            f"recovered {tt['n_recovered_features']} of {tt['n_features']} true features, which "
+            r"bounds recall from above. \emph{Right:} the lateral control, asking whether the "
+            "Matryoshka nesting itself places a parent in an earlier block than its children."
+            + extra)
+
+    ib = [q for base in (C.OUT_DIR / C.SOURCE_NAME, C.OUT_DIR / "pcfg")
+          for q in sorted(base.glob("layer_*")) if (q / "in_block_edges.json").exists()]
+    if ib:
+        d["in_block_relations"] = (
+            r"Directed edges and co-extensive duplicates \emph{within} each block, where no block "
+            "ordering fixes the direction and it must be derived from coverage asymmetry, across "
+            f"all {len(ib)} graded runs. Reported as a rate per available pair rather than as a "
+            "count: gemma's blocks are nested prefixes of 128 to 6{,}144 features, so the number "
+            "of available pairs differs by a factor of 2{,}300 and raw counts invert the "
+            "reading---the deepest block holds the most duplicate pairs and the fewest per pair. "
+            "The concentration in B0 also holds on a PCFG SAE whose eight blocks are all 224 "
+            "features, so it is not an artefact of B0 being small. What distinguishes B0 is "
+            "being the outermost Matryoshka prefix: the one block trained to reconstruct on its "
+            "own.")
+
+    d["cross_source_funnel_shares"] = (
+        "The same metric code and the same global thresholds, applied to the released Matryoshka "
+        r"SAE on \texttt{gemma-2-2b} and to Matryoshka SAEs trained on a PCFG corpus. Reported "
+        "as shares of each run's own candidate set, because the dictionaries differ in size and "
+        "in block count and counts would not compare. Thresholds are deliberately not tuned per "
+        "source: holding them fixed is what makes any cross-source comparison mean something. "
+        "The reconstruction filter should be read with care on PCFG, where the weakest candidate "
+        r"edge sits $3.5\times$ above the threshold---the filter is inert there, and the "
+        "surviving edges have passed coverage alone.")
+    d["sres_null_rate_vs_dictionary_size"] = (
+        r"The $S_\mathrm{res}$ test passes an edge when both decoders fall within the top "
+        rf"$k = {C.SRES_RANK_TOP_K}$ of the probe's correlations over the whole dictionary. It "
+        "is a geometry test, so an unrelated parent passes whenever chance places it there: the "
+        r"null rate is $k/D$, the grey line, which is $11.9\%$ on the 42-feature synthetic toy, "
+        r"$0.28\%$ on a 1{,}792-latent PCFG SAE and $0.015\%$ on gemma's 32{,}768. Each measured "
+        "pass rate is drawn with a vertical drop to its own null, and that distance---not the "
+        r"rate---is what the measurement is worth. Two runs on the \emph{same} 1{,}792-latent "
+        "dictionary land on opposite sides of their null, which is why a raw pass rate compares "
+        "nothing across sources. A measured zero has no position on a logarithmic axis and is "
+        "drawn at a marked floor rather than silently dropped.")
+    return d
+
+
+# (slot, figure, wide?, bold lead sentence). Order is an argument, not taste: the
+# instrument has to be established before any number it produces means anything,
+# so the calibrations come first; the empirical claims then follow in order of how
+# much evidence stands behind them (multi-parenting has five layers, the funnel
+# has one); the hypothesis figure and the mechanism that explains it are adjacent;
+# and the battery's own failure closes, because it qualifies everything above it.
+TEX_ORDER = [
+    ("MAIN 1", "calibration_synthetic_toy_scorecard", True,
+     "Every metric scored against a known tree.", "The instrument"),
+    ("MAIN 2", "calibration_trained_toy_recovery", True,
+     "The same tree, after a real training run.", None),
+    ("MAIN 3", "multiparenting_by_layer", False,
+     "The recovered graph is not a tree.", "What the battery finds on gemma-2-2b"),
+    ("MAIN 4", "funnel_coverage_to_sres", False,
+     "Coverage proposes; the strict test disposes.", None),
+    ("MAIN 5", "base_rate_vs_frequency_capture", False,
+     "The over-connection is a base-rate effect, not token-frequency capture.",
+     "The bottleneck-hijacking hypothesis, tested"),
+    ("MAIN 6", "superparent_fanout_vs_firing", False,
+     "Why a parent that fires often enough clears the coverage bar for nothing.", None),
+    ("MAIN 7", "shared_input_moved_every_metric", True,
+     "Six metrics designed as independent detectors failed together.",
+     "What this says about metric batteries"),
+    ("APP 1", "sres_null_rate_vs_dictionary_size", False,
+     "A top-$k$ rank rule is only as strict as the dictionary is large.", "Appendix"),
+    ("APP 2", "in_block_relations", True,
+     "Same-level structure lives in the outermost block.", None),
+    ("APP 3", "edge_survival_by_block_pair", True,
+     "What each filter removes, by block pair and by depth.", None),
+    ("APP 4", "cross_source_funnel_shares", False,
+     "One unchanged battery across SAE sources.", None),
+    ("APP 5", "depth_profile_across_layers", True,
+     "No measure is monotonic in depth.", None),
+]
+
+TEX_HEAD = r"""% ===========================================================================
+% Figures and captions.
+%
+% Generated by reporting/make_report_figures.py. Every quantity in every
+% caption was read from the JSON its figure plots, at generation time; do not
+% edit a number here by hand, regenerate.
+%
+% Ordered as the paper reads. MAIN 1-7 are the main text, APP 1-5 the appendix.
+%
+% Requires: graphicx. Emitted for a ONECOLUMN class, which is what the ICLR
+% template uses; pass --twocolumn for full-width figure* floats.
+% Captions sit below the image, as figures take them, and the mirror of
+% tables.tex where they sit above.
+%
+% Expects the PNGs reachable via \graphicspath below. To compile on its own,
+% prepend
+%     \documentclass{article}\usepackage{graphicx}\begin{document}
+% and append \end{document}.
+% ===========================================================================
+"""
+
+
+def write_tex(out_dir: Path, graphics: str):
+    """figures.tex beside the PNGs, or wherever --out points."""
+    caps = _captions()
+    paths = [graphics] if graphics.strip("/.") == "" else [graphics, "./"]
+    L = [TEX_HEAD, r"\graphicspath{" + "".join(f"{{{g}}}" for g in paths) + "}", ""]
+    seen, n = set(), 0
+    for slot, name, wide, lead, section in TEX_ORDER:
+        if not (PAPER_DIR / f"{name}.png").exists():
+            continue
+        if section and section not in seen:
+            seen.add(section)
+            L += [r"% " + "-" * 73, f"% {section}", r"% " + "-" * 73, ""]
+        env = "figure*" if (wide and TWOCOLUMN) else "figure"
+        width = r"\textwidth" if (wide and TWOCOLUMN) else r"\linewidth"
+        body = caps.get(name)
+        L += [f"% [{slot}]", rf"\begin{{{env}}}[tbp]", r"  \centering",
+              rf"  \includegraphics[width={width}]{{{name}}}",
+              r"  \caption{%", rf"    \textbf{{{lead}}}"]
+        if body:
+            L.append(_wrap(body))
+        else:
+            L.append(r"    % no caption body: nothing in _captions() covers this figure")
+        L += [r"  }", rf"  \label{{fig:{name.replace('_', '-')}}}",
+              rf"\end{{{env}}}", ""]
+        n += 1
+    (out_dir / "figures.tex").write_text("\n".join(L))
+    return n
+
+
 CLAIMS = {
     "funnel_coverage_to_sres": "co-firing proposes far more edges than survive the strict test",
     "edge_survival_by_block_pair": "what each filter removes, by block pair and by depth",
@@ -886,19 +1177,39 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--list", action="store_true",
                     help="show the plan and each figure's input, draw nothing")
+    ap.add_argument("--out", type=Path, default=None, metavar="DIR",
+                    help=f"write figures.tex here instead of {PAPER_DIR.name}/ "
+                         "(the PNGs are always written beside the code)")
+    ap.add_argument("--graphicspath", default=None, metavar="PATH",
+                    help="what \\graphicspath should point at; defaults to ./ when "
+                         "figures.tex sits with the PNGs and figures/ when it does not")
+    ap.add_argument("--twocolumn", action="store_true",
+                    help="emit figure* full-width floats (needs a twocolumn class)")
     args = ap.parse_args()
+    globals()["TWOCOLUMN"] = args.twocolumn
 
     if not args.list:
         PAPER_DIR.mkdir(parents=True, exist_ok=True)
     written, skipped, sources = build(args.list)
+    tex_dir = None
     if not args.list:
         write_readme(written, skipped, sources)
+        # Default beside the PNGs; --out puts the .tex somewhere else, in which
+        # case graphicspath has to reach back to them and "figures/" is the
+        # layout the paper repo uses.
+        tex_dir = (args.out or PAPER_DIR)
+        tex_dir.mkdir(parents=True, exist_ok=True)
+        gp = args.graphicspath or ("./" if tex_dir.resolve() == PAPER_DIR.resolve()
+                                   else "figures/")
+        n_tex = write_tex(tex_dir, gp)
 
     print(f"[fig] {'plan for' if args.list else 'wrote'} {PAPER_DIR}")
     for w in written:
         print(f"  ok    {w}")
     for name, why in skipped:
         print(f"  SKIP  {name}\n          {why}")
+    if tex_dir is not None:
+        print(f"  ok    figures.tex  ({n_tex} figures, graphicspath {gp!r}) -> {tex_dir}")
     if skipped and not args.list:
         print(f"\n[fig] {len(written)} written, {len(skipped)} skipped — "
               "the set above is not complete, and the reasons are printed rather "
