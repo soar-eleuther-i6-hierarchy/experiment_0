@@ -14,7 +14,7 @@ stale when the order changes.
     edge_survival_by_block_pair             what each filter removes, per block pair
     depth_profile_across_layers             whether anything varies with depth
     multiparenting_by_layer                 the graph is not a tree
-    superparent_fanout_vs_firing            a parent's fan-out against its base rate
+    superparent_fanout_vs_firing            why a high-firing parent clears the bar for free
     calibration_synthetic_toy_scorecard     every metric against a known tree
     calibration_trained_toy_recovery        the same tree, through a real training run
     cross_source_funnel_shares              the same battery on gemma and on PCFG
@@ -217,10 +217,12 @@ def edge_survival_by_block_pair(layers):
         ax.set_title(title, fontsize=10.5, loc="left")
         ax.grid(True, axis="y", alpha=0.12)
         ax.set_axisbelow(True)
-    axes[0].legend(title="layer", fontsize=8.5, title_fontsize=8.5,
-                   frameon=False, ncol=5, loc="upper right")
-    fig.suptitle("What each filter removes, by block pair and depth",
-                 fontsize=11.5, x=0.006, ha="left", y=1.0)
+    axes[0].legend(title="layer", fontsize=8.5, title_fontsize=8.5, frameon=False,
+                   ncol=5, loc="upper center", bbox_to_anchor=(0.5, -0.10))
+    _title(fig, "What each filter removes, by block pair and depth",
+           "each panel on its own scale; layers are ordered, so depth is a single-hue ramp",
+           width=104)
+    fig.subplots_adjust(top=0.80, bottom=0.22)
     return _finish(fig, axes, "edge_survival_by_block_pair")
 
 
@@ -300,29 +302,45 @@ def multiparenting_by_layer(layers):
 #    pair, which is what this needs.
 # ---------------------------------------------------------------------------
 def superparent_fanout_vs_firing(layers):
-    fig, ax = plt.subplots(figsize=(6.8, 4.4))
-    n = 0
-    for i, (L, rep) in enumerate(layers):
-        xs, ys = [], []
-        for pr in rep["pairs"]:
-            for sp in pr.get("superparents", []):
-                xs.append(100 * sp["fire_frac"])
-                ys.append(100 * sp["outdeg_frac"])
-        n += len(xs)
-        ax.scatter(xs, ys, s=34, color=DEPTH[i], label=f"L{L}",
-                   edgecolor="white", linewidth=0.7, zorder=3)
-    ax.axhline(100 * C.SUPERPARENT_OUTDEG_FRAC, ls=(0, (4, 3)), lw=1.2, color=CAT[3])
-    ax.text(0.6, 100 * C.SUPERPARENT_OUTDEG_FRAC + 2,
-            f"gate: fan-out ≥ {100 * C.SUPERPARENT_OUTDEG_FRAC:.0f}%",
-            fontsize=8, color=CAT[3])
-    ax.set_xscale("log")
-    ax.set_xlabel("parent firing rate, % of tokens (log)")
-    ax.set_ylabel("fan-out, % of the child block")
-    ax.legend(title="layer", fontsize=8.5, title_fontsize=8.5, frameon=False, loc="lower right")
-    _title(ax, f"Flagged parents: fan-out against base rate ({n} parents, all block pairs)",
-           "the gate reads the vertical axis only — firing rate is handled per edge, by PMI",
-           width=68)
-    ax.grid(True, alpha=0.12)
+    """Why a high-firing parent clears the coverage bar: it barely has to.
+
+    The previous version scattered fan-out against firing rate on a log x-axis.
+    It was close to a tautology -- every point is above the gate because the gate
+    is what selected it -- the log scale spanned less than a decade and printed
+    "4x10^1" where "40" would do, and the five-layer ramp encoded nothing the
+    points clustered on.
+
+    What the same numbers do show is the mechanism. Coverage keeps an edge when
+    P(parent | child) >= tau. Under independence that probability is just the
+    parent's firing rate, so the enrichment a parent needs over chance is tau/rho
+    -- 50x for a parent firing on 1% of tokens, and at or below 1x for anything
+    firing more often than tau itself.
+    """
+    fires = [sp["fire_frac"] for _, rep in layers for pr in rep["pairs"]
+             for sp in pr.get("superparents", [])]
+    tau = C.EDGE_TAU
+    free = sum(1 for f in fires if f >= tau)
+
+    fig, ax = plt.subplots(figsize=(7.8, 4.6))
+    rho = np.linspace(0.005, 1.0, 400)
+    ax.plot(100 * rho, tau / rho, lw=2, color=NEUTRAL, zorder=1,
+            label=f"enrichment needed to reach R ≥ {tau}   (= {tau}/ρ)")
+    ax.axhline(1.0, ls=(0, (4, 3)), lw=1.3, color=CAT[3])
+    ax.text(2, 1.45, "1× — no enrichment at all: the edge is kept on base rate",
+            fontsize=8.5, color=CAT[3])
+    ax.scatter([100 * f for f in fires], [tau / f for f in fires], s=46, color=CAT[0],
+               zorder=3, edgecolor="white", linewidth=0.8,
+               label=f"the {len(fires)} flagged parents")
+    ax.set_yscale("log")
+    ax.set_xlim(0, 104)
+    ax.set_xlabel("parent firing rate ρ, % of tokens")
+    ax.set_ylabel("enrichment over chance the parent needs (log)")
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right")
+    _title(ax, "A parent that fires often enough clears the coverage bar without any enrichment",
+           f"{free} of the {len(fires)} flagged parents fire on ≥ {100 * tau:.0f}% of tokens, so "
+           f"co-firing with most of the next block is arithmetic. One firing on 1% would need "
+           f"{tau / 0.01:.0f}× enrichment for the same edge", width=78)
+    ax.grid(True, which="both", alpha=0.12)
     ax.set_axisbelow(True)
     return _finish(fig, ax, "superparent_fanout_vs_firing")
 
@@ -399,7 +417,7 @@ def calibration_synthetic_toy_scorecard(rows):
 # ---------------------------------------------------------------------------
 def calibration_trained_toy_recovery(tt, align):
     tp, fp, fn = tt["true_positives"], tt["false_positives"], tt["false_negatives"]
-    fig, axes = plt.subplots(1, 2, figsize=(9.6, 3.4),
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 3.9),
                              gridspec_kw={"width_ratios": [1.25, 1]})
 
     ax = axes[0]
@@ -410,10 +428,9 @@ def calibration_trained_toy_recovery(tt, align):
         ax.text(i, v + 0.15, str(v), ha="center", fontsize=10, color=INK)
     ax.set_ylabel("true edges")
     ax.set_ylim(0, max(tp, fn, fp) * 1.35 + 0.5)
-    ax.set_title(f"Edge recovery — precision {tt['precision']:.2f}, recall {tt['recall']:.2f}\n"
-                 f"the SAE learned {tt['n_recovered_features']}/{tt['n_features']} true features; "
-                 f"every miss is an edge whose child it never learned",
-                 fontsize=10, loc="left")
+    _title(ax, f"Edge recovery — precision {tt['precision']:.2f}, recall {tt['recall']:.2f}",
+           f"the SAE learned {tt['n_recovered_features']}/{tt['n_features']} true features; every "
+           f"miss is an edge whose child it never learned", width=52)
 
     ax = axes[1]
     if align:
@@ -424,11 +441,10 @@ def calibration_trained_toy_recovery(tt, align):
                 ha="center", fontsize=10, color=INK)
         ax.set_ylim(0, max(align["n_testable"], 1) * 1.4)
         ax.set_ylabel("true edges")
-        ax.set_title(f"Nesting control — {align['n_respected']}/{align['n_testable']} testable "
-                     f"edges run early block → late\n"
-                     f"mean block {align['mean_parent_block']:.1f} for parents, "
-                     f"{align['mean_child_block']:.1f} for children",
-                     fontsize=10, loc="left")
+        _title(ax, f"Nesting control — {align['n_respected']}/{align['n_testable']} testable edges "
+                   f"run early block → late",
+               f"mean block {align['mean_parent_block']:.1f} for parents, "
+               f"{align['mean_child_block']:.1f} for children", width=46)
     else:
         ax.axis("off")
         ax.text(0.5, 0.5, "block_tree_alignment.json absent\nrun validation.block_tree_alignment",
@@ -444,7 +460,11 @@ def calibration_trained_toy_recovery(tt, align):
 #    blocks against 32768 in 5 is not a comparison counts can carry.
 # ---------------------------------------------------------------------------
 def cross_source_funnel_shares(runs):
-    stages = ["improve\nreconstruction", "above chance\n(PMI > 0)", "frequency-\ndriven"]
+    # "above chance" here is the report's n_chance_level, whose cutoff is PMI < 0.5
+    # -- NOT the PMI > 0 shortlist that stage 03 scores. Labelling it "PMI > 0" put
+    # 14% on the chart where the shortlist is 70%, two different thresholds under
+    # one name.
+    stages = ["improve\nreconstruction", "clears chance\n(PMI ≥ 0.5)", "frequency-\ndriven"]
     fig, ax = plt.subplots(figsize=(8.0, 3.8))
     x = np.arange(len(stages))
     w = 0.8 / max(len(runs), 1)
@@ -660,11 +680,23 @@ def sres_null_rate_vs_dictionary_size(observed):
             label=f"chance pass rate = k/D  (k = {k})")
     ax.scatter(Ds, null, s=70, color=CAT[0], zorder=3, edgecolor="white", linewidth=1,
                label="chance, per source")
-    for (name, d), v in zip(sources, null):
+    for i, ((name, d), v) in enumerate(zip(sources, null)):
+        # below-left, except the first (no room to its left) and the last (the
+        # zero-floor note lives under it)
+        left = 0 < i < len(sources) - 1
         ax.annotate(f"{name}\nD = {d:,} → {v:.2f}%", (d, v),
-                    textcoords="offset points", xytext=(9, 9), fontsize=8, color=MUTED)
+                    ha="right" if left else "left",
+                    textcoords="offset points",
+                    xytext=(-10 if left else 11, -20 if i < len(sources) - 1 else 4),
+                    fontsize=8, color=MUTED)
     floor = float(np.min(null)) / 4                      # a visible place for zero
     drew_obs = zeros = False
+    # A drop-line from each measurement to its own chance point. The message is
+    # the RATIO between them, and on a log axis that is a vertical distance --
+    # which the reader had to estimate by eye against a sloping grey line.
+    for name, d, obs in observed:
+        y0, y1 = (floor if obs <= 0 else obs), 100 * k / d
+        ax.plot([d, d], [min(y0, y1), max(y0, y1)], lw=1.2, color=GOOD, alpha=0.45, zorder=2)
     for name, d, obs in observed:
         # A measured 0% has no position on a log axis. Plotting it at the floor
         # with an open marker and saying so beats dropping the point, which would
@@ -679,21 +711,25 @@ def sres_null_rate_vs_dictionary_size(observed):
         ax.annotate(f"{name}: {'0% — no edge passed' if at_zero else f'observed {obs:.2f}%'}"
                     + ("" if at_zero else f"\n≈{obs / (100 * k / d):.0f}× its own chance rate"),
                     (d, floor if at_zero else obs), textcoords="offset points",
-                    xytext=(10, -6 if at_zero else -22), fontsize=8, color=GOOD)
+                    xytext=(11, -4 if at_zero else 8), fontsize=8, color=GOOD)
         drew_obs = True
     ax.set_xscale("log")
     ax.set_yscale("log")
     if zeros:
         ax.axhline(floor, ls=(0, (1, 4)), lw=1, color=NEUTRAL)
-        ax.text(ax.get_xlim()[1] * 0.94, floor * 1.15, "0% drawn here — a log axis has no zero",
-                fontsize=7.5, color=MUTED, style="italic", ha="right")
+        ax.text(ax.get_xlim()[0] * 1.15, floor * 1.15, "0% drawn here — a log axis has no zero",
+                fontsize=7.5, color=MUTED, style="italic", ha="left")
     ax.set_xlabel("dictionary size D (log)")
     ax.set_ylabel("% of unrelated parents that pass (log)")
     # lifted clear of the zero-floor rule that runs along the bottom
     ax.legend(fontsize=8.5, frameon=False, loc="lower left", bbox_to_anchor=(0.0, 0.10))
+    ratios = [f"{name} {obs / (100 * k / d):.0f}×" if obs > 0 else f"{name} below chance"
+              for name, d, obs in observed]
     _title(ax, "The rank rule's strictness is set by dictionary size, not by k alone",
-           "an unrelated parent passes whenever chance puts it in the top k of D, so an S_res "
-           "pass rate is only comparable between dictionaries of similar size", width=72)
+           "grey line = what chance alone gives at each D; the vertical drop to it is what a "
+           "measured rate is worth. " + ", ".join(ratios) +
+           ". Two runs on the same 1,792-latent dictionary land on opposite sides of their own "
+           "null, so a raw pass rate compares nothing", width=78)
     ax.grid(True, which="both", alpha=0.12)
     ax.set_axisbelow(True)
     return _finish(fig, ax, "sres_null_rate_vs_dictionary_size")
@@ -765,7 +801,10 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     pcfg = [(p.name, _json(p / "metrics_report.json"))
             for p in sorted((C.OUT_DIR / "pcfg").glob("layer_*")) if p.is_dir()]
     pcfg = [(f"PCFG {n.replace('_', ' ')}", r) for n, r in pcfg if r]
-    runs = ([("gemma-2-2b layer 06", l6)] if l6 else []) + pcfg[:1]
+    # Every PCFG layer, not the first one. `pcfg[:1]` silently dropped layer 03,
+    # which is the run that carries the strict test -- the exact "renders 6 of 10
+    # and reads as complete" failure this file is written against.
+    runs = ([("gemma-2-2b layer 06", l6)] if l6 else []) + pcfg
     run("cross_source_funnel_shares", len(runs) >= 2,
         f"{len(runs)} sources" if len(runs) >= 2 else "needs a gemma report and a PCFG report",
         lambda: cross_source_funnel_shares(runs))
@@ -783,10 +822,10 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
 
     # observed S_res shares, read off whatever second_pass.json files exist
     observed = []
-    for label, d_sae, path in [
-        ("gemma", 32768, G / "layer_06" / "second_pass.json"),
-        ("PCFG", 1792, C.OUT_DIR / "pcfg" / "layer_01" / "second_pass.json"),
-    ]:
+    probes = [("gemma L6", 32768, G / "layer_06" / "second_pass.json")]
+    probes += [(f"PCFG {q.parent.name.replace('_', ' ')}", 1792, q)
+               for q in sorted((C.OUT_DIR / "pcfg").glob("layer_*/second_pass.json"))]
+    for label, d_sae, path in probes:
         sp = _json(path)
         if sp and "0->1" in sp:
             s = sp["0->1"]["sres"]
