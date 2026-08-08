@@ -19,6 +19,7 @@ stale when the order changes.
     calibration_trained_toy_recovery        the same tree, through a real training run
     cross_source_funnel_shares              the same battery on gemma and on PCFG
     in_block_relations                      same-level edges and duplicates
+    shared_input_moved_every_metric         the battery's own failure mode
     base_rate_vs_frequency_capture          the hypothesis's premise, tested
     sres_null_rate_vs_dictionary_size       what a top-k rank rule costs at each D
 
@@ -516,6 +517,93 @@ def in_block_relations(runs):
 
 
 # ---------------------------------------------------------------------------
+# 9a. The battery's own failure mode. Five metrics read the same co-firing matrix
+#     and one contaminating token position moved all of them at once; the sixth
+#     is a ratio over children that already have a parent, and did not move.
+#     Built from the v1 reports kept in outputs_archive/ against the current ones.
+# ---------------------------------------------------------------------------
+def shared_input_moved_every_metric(layers):
+    import math
+    ARCH = C.HERE / "outputs_archive"
+    v1 = []
+    for L, _ in layers:
+        hits = sorted(ARCH.glob(f"layer_{L:02d}__v1__*/metrics_report.json"))
+        if hits:
+            v1.append(_json(hits[0]))
+    if len(v1) != len(layers):
+        raise SystemExit("archived v1 reports missing")
+
+    def mean(reports, fn):
+        return sum(fn(_pair(r, "0->1")) for r in reports) / len(reports)
+
+    # (label, accessor, reads the co-firing matrix?)
+    rows = [
+        ("frequency-driven edges, %", lambda p: 100 * p["freq_control"]["frac_freq_driven"], True),
+        ("improve reconstruction, %", lambda p: 100 * p["reconstruction"]["frac_pass"], True),
+        ("candidate edges", lambda p: p["n_candidate_edges"], True),
+        ("sibling redundancy", lambda p: p["sibling_redundancy"]["mean_redundancy"], True),
+        ("mean frequency survival", lambda p: p["freq_control"]["mean_survival"], True),
+        ("superparents flagged", lambda p: p["n_superparents"], True),
+        ("multi-parenting, %",
+         lambda p: 100 * (p["degree"].get("poly_frac") if p["degree"].get("poly_frac") is not None
+                          else p["degree"]["n_multi_parented"] / max(p["degree"]["n_children_with_parent"], 1)),
+         False),
+    ]
+    data = [(lab, mean(v1, fn), mean([r for _, r in layers], fn), shared) for lab, fn, shared in rows]
+    data.sort(key=lambda t: abs(math.log2(max(t[2], 1e-9) / max(t[1], 1e-9))))
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8))
+    y = np.arange(len(data))
+    fold = [math.log2(max(b, 1e-9) / max(a, 1e-9)) for _, a, b, _ in data]
+    ax.barh(y, fold, height=0.6,
+            color=[CAT[3] if sh else GOOD for *_, sh in data])
+    # The left-hand value of each pair is a WITHDRAWN number. It is plotted to
+    # size the error, never as a result -- so it is drawn in the muted ink used
+    # for annotation and the surviving value is in body ink, and the axis says
+    # which is which. Withdrawn numbers come back by being readable next to live
+    # ones; this is the whole reason those two hand-built pages were archived.
+    for i, ((lab, a, b, sh), f) in enumerate(zip(data, fold)):
+        fmt = (lambda v: f"{v:,.0f}") if max(a, b) > 20 else (lambda v: f"{v:.2f}")
+        # The pair always reads withdrawn → current, left to right, whichever side
+        # of zero the bar ends on. Anchoring both parts to the bar's end and
+        # flipping only the alignment put them in the wrong order on negative bars.
+        right = f >= 0
+        gap, ch = 0.30, 0.40                     # data units; ch ≈ one character
+        tail = f"→ {fmt(b)}"
+        if right:
+            x0 = f + gap
+            ax.annotate(fmt(a), (x0, i), ha="left", va="center",
+                        fontsize=8.5, color="#B0B4BB")
+            ax.annotate(tail, (x0 + ch * (len(fmt(a)) + 1), i), ha="left", va="center",
+                        fontsize=8.5, color=INK, fontweight="bold")
+        else:
+            x0 = f - gap
+            ax.annotate(tail, (x0, i), ha="right", va="center",
+                        fontsize=8.5, color=INK, fontweight="bold")
+            ax.annotate(fmt(a), (x0 - ch * (len(tail) + 1), i), ha="right", va="center",
+                        fontsize=8.5, color="#B0B4BB")
+    ax.axvline(0, color=INK, lw=1)
+    ax.set_yticks(y)
+    ax.set_yticklabels([lab for lab, *_ in data], fontsize=9)
+    ax.set_xlabel("log₂ change when the contaminating token position is removed, mean over 5 layers\n"
+                  "each pair reads  withdrawn → current")
+    ax.set_xlim(min(fold) - 4.2, max(fold) + 4.2)
+    ax.set_ylim(-0.7, len(data) - 0.3)
+    ax.legend(handles=[
+        plt.Rectangle((0, 0), 1, 1, color=CAT[3], label="reads the co-firing matrix"),
+        plt.Rectangle((0, 0), 1, 1, color=GOOD,
+                      label="does not — a ratio over children that already have a parent"),
+    ], fontsize=8.5, frameon=False, loc="lower left")   # inside: the far left is empty
+    _title(ax, "Six metrics designed as independent detectors moved together",
+           "BOS is an attention sink, so with 400 documents every pair in the dictionary was "
+           "handed 400 joint firings against a guard set at 30. Five of these read that one "
+           "matrix; all five moved. The sixth does not, and did not.", width=92)
+    ax.grid(True, axis="x", alpha=0.12)
+    ax.set_axisbelow(True)
+    return _finish(fig, ax, "shared_input_moved_every_metric")
+
+
+# ---------------------------------------------------------------------------
 # 9b. The premise, tested. The project's motivating observation was that gemma's
 #     superparents "mostly track high-frequency tokens (spaces, punctuation,
 #     'the')". Two per-edge diagnostics separate that from the alternative, and
@@ -648,6 +736,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     run("multiparenting_by_layer", len(layers) >= 1,
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: multiparenting_by_layer(layers))
+    n_arch = len(sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json")))
+    run("shared_input_moved_every_metric", n_arch >= len(layers) and len(layers) >= 2,
+        f"{len(layers)} current reports vs {n_arch} archived v1 reports" if n_arch
+        else "needs the pre-BOS reports in outputs_archive/",
+        lambda: shared_input_moved_every_metric(layers))
     run("base_rate_vs_frequency_capture", len(layers) >= 1,
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: base_rate_vs_frequency_capture(layers))
@@ -716,6 +809,7 @@ CLAIMS = {
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
+    "shared_input_moved_every_metric": "five of six metrics share an input and failed together — the battery's own failure mode",
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
