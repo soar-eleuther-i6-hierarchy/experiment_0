@@ -19,6 +19,7 @@ stale when the order changes.
     calibration_trained_toy_recovery        the same tree, through a real training run
     cross_source_funnel_shares              the same battery on gemma and on PCFG
     in_block_relations                      same-level edges and duplicates
+    base_rate_vs_frequency_capture          the hypothesis's premise, tested
     sres_null_rate_vs_dictionary_size       what a top-k rank rule costs at each D
 
 Two rules this file follows, both learned the hard way:
@@ -515,6 +516,45 @@ def in_block_relations(runs):
 
 
 # ---------------------------------------------------------------------------
+# 9b. The premise, tested. The project's motivating observation was that gemma's
+#     superparents "mostly track high-frequency tokens (spaces, punctuation,
+#     'the')". Two per-edge diagnostics separate that from the alternative, and
+#     they disagree by a factor of 40-80 at every layer.
+# ---------------------------------------------------------------------------
+def base_rate_vs_frequency_capture(layers):
+    Ls = [L for L, _ in layers]
+    chance = [100 * _pair(r, "0->1")["independence_null"]["frac_chance_level"]
+              for _, r in layers]
+    freq = [100 * _pair(r, "0->1")["freq_control"]["frac_freq_driven"] for _, r in layers]
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.0))
+    x = np.arange(len(Ls))
+    w = 0.34
+    ax.bar(x - w / 2, chance, w, color=CAT[0],
+           label="at chance for the parent's base rate  (PMI < 0.5)")
+    ax.bar(x + w / 2, freq, w, color=CAT[3],
+           label="carried by globally frequent tokens  (survival < 0.5)")
+    for xx, v in zip(x - w / 2, chance):
+        ax.text(xx, v + 1.5, f"{v:.0f}%", ha="center", fontsize=8.5, color=MUTED)
+    for xx, v in zip(x + w / 2, freq):
+        ax.text(xx, v + 1.5, f"{v:.1f}%", ha="center", fontsize=8.5, color=MUTED)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"L{L}" for L in Ls])
+    ax.set_ylabel("% of candidate edges, B0→B1")
+    ax.set_ylim(0, 100)
+    ax.legend(fontsize=8.5, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.09))
+    _title(ax, "gemma's over-connected parents are a base-rate effect, not token-frequency capture",
+           f"the two diagnostics disagree by {min(c / f for c, f in zip(chance, freq)):.0f}–"
+           f"{max(c / f for c, f in zip(chance, freq)):.0f}× at every layer. The project's "
+           "motivating observation was that superparents mostly track high-frequency tokens; "
+           "the frequency control exonerates 98–99% of edges while the independence null "
+           "rejects 69–86%", width=82)
+    ax.grid(True, axis="y", alpha=0.12)
+    ax.set_axisbelow(True)
+    return _finish(fig, ax, "base_rate_vs_frequency_capture")
+
+
+# ---------------------------------------------------------------------------
 # 10. What a top-k rank rule costs at each dictionary size. No data file: the
 #     rule is a geometry test, so an unrelated parent passes at exactly k/D.
 #     Measured on the toy (k/D = 11.9%, observed 2-4 of 20 against 2.4 expected),
@@ -608,6 +648,9 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     run("multiparenting_by_layer", len(layers) >= 1,
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: multiparenting_by_layer(layers))
+    run("base_rate_vs_frequency_capture", len(layers) >= 1,
+        f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
+        lambda: base_rate_vs_frequency_capture(layers))
     run("superparent_fanout_vs_firing", len(layers) >= 1,
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: superparent_fanout_vs_firing(layers))
@@ -673,6 +716,7 @@ CLAIMS = {
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
+    "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
 }
