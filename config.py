@@ -312,11 +312,6 @@ NAV_PAGES = [
 # dictionary and no other, so the two qualitative pages exist only there. Listing
 # a page a source does not have would put a 404 in its own nav bar.
 SOURCES = {
-    SOURCE_NAME: {
-        "label": "gemma-2-2b",
-        "layers": [1, 3, 6, 12, 18, 24],
-        "pages": NAV_PAGES,
-    },
     "pcfg-matryoshka": {
         "label": "pcfg-matryoshka",
         # 1 and 3, because those are the layers an SAE was trained on -- and the
@@ -324,6 +319,11 @@ SOURCES = {
         # 6/12/18/24 do not exist here and never will for this model.
         "layers": [1, 3],
         "pages": [p for p in NAV_PAGES if not p[0].startswith("qualitative")],
+    },
+    SOURCE_NAME: {
+        "label": "gemma-2-2b",
+        "layers": [1, 3, 6, 12, 18, 24],
+        "pages": NAV_PAGES,
     },
 }
 
