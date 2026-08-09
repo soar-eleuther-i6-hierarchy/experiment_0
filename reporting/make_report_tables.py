@@ -222,7 +222,7 @@ def t_tiers(toy, tt, align_json):
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
          rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
-        ("2 Trained toy", "a SAE trained on toy model", "the tree is known",
+        ("2 Trained toy", "a SAE trained on a toy model", "the tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
         ("3 PCFG SAE", "a Matryoshka SAE trained on a small model build on PCFG tree", "the PCFG tree is known", "---"),
         ("4 Real SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
