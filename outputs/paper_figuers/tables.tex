@@ -112,8 +112,8 @@
     Tier & Runs on & Ground truth & Result \\
     \midrule
     1 Synthetic toy & hand-built statistics & by construction & 14/14 rows, 21/21 functions, seeds 0--7 \\
-    2 Trained toy & a Matryoshka SAE trained on that tree & the tree is known & precision 1.00, recall 0.67 \\
-    3 PCFG SAE & A small transformer trained on PCFG corpora, then a Matryoshka SAE on its activations. & the PCFG tree is known & --- \\
+    2 Trained toy & a SAE trained on toy model & the tree is known & precision 1.00, recall 0.67 \\
+    3 PCFG SAE & a Matryoshka SAE trained on a small model build on PCFG tree & the PCFG tree is known & --- \\
     4 Real SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
     \bottomrule
   \end{tabular}
