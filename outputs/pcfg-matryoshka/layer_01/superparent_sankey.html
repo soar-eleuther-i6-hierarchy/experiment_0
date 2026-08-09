@@ -32,6 +32,8 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 
 
 
+
+
 <style>
 .x0cap{max-width:1150px;margin:8px auto 42px;padding:0 18px;
 font:400 13px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:#3F4B57;}
@@ -49,6 +51,6 @@ border-radius:4px;padding:1px 4px;}
 @media (max-width:720px){.x0cap dl{grid-template-columns:1fr;gap:2px 0;}
 .x0cap dd{margin:0 0 12px;}}
 </style>
-<section class="x0cap"><h2>What each panel shows</h2><dl><dt>Each diagram</dt><dd>One block pair that has a flagged superparent (1 of 7 pairs qualify: 0->1). The left node is the parent feature; the right nodes are up to 25 of its children, ordered by the strength of the link.</dd><dt>Ribbon width</dt><dd>The reverse coverage of that one parent&rarr;child edge &mdash; <i>P(parent fires | child fires)</i>, the quantity the edge criterion (<code>&ge; 0.5</code>) is applied to. Width is per edge; it is not a share of the parent.</dd><dt>Ribbon colour</dt><dd>The verdict on that edge. Where stage 03 has run the colour is the probe-based <code>S_res</code> rank test (both decoders inside the top <code>k = 5</code> of the child probe's correlations); where it has not, it falls back to the reconstruction and frequency filters. The legend above the first diagram names whichever is in force.</dd><dt>Node labels</dt><dd>The feature index, plus its Neuronpedia label when <code>feature_labels.json</code> is present. Bare indices mean the labels were not fetched for this run, not that the features are unlabelled.</dd></dl></section>
+<section class="x0cap"><h2>What each panel shows</h2><dl><dt>Each diagram</dt><dd>One block pair that has a flagged superparent: B0&rarr;B1 &mdash; 1 of the 7 pairs graded in this run. The left node is the parent feature; the right nodes are up to 25 of its children, ordered by the strength of the link.</dd><dt>Pairs with no diagram</dt><dd>B1&rarr;B2, B2&rarr;B3, B3&rarr;B4, B4&rarr;B5, B5&rarr;B6, B6&rarr;B7 are graded but no parent there reaches the flag, so they get no diagram. The gate is fan-out alone, at <code>SUPERPARENT_OUTDEG_FRAC = 30%</code> of the child block.</dd><dt>Ribbon width</dt><dd>The reverse coverage of that one parent&rarr;child edge &mdash; <i>P(parent fires | child fires)</i>, the quantity the edge criterion (<code>&ge; 0.5</code>) is applied to. Width is per edge; it is not a share of the parent.</dd><dt>Ribbon colour</dt><dd>The verdict on that edge. Where stage 03 has run the colour is the probe-based <code>S_res</code> rank test (both decoders inside the top <code>k = 5</code> of the child probe's correlations); where it has not, it falls back to the reconstruction and frequency filters. The legend above the first diagram names whichever is in force.</dd><dt>Node labels</dt><dd>The feature index, plus its Neuronpedia label when <code>feature_labels.json</code> is present. Bare indices mean the labels were not fetched for this run, not that the features are unlabelled.</dd></dl></section>
 </body>
 </html>

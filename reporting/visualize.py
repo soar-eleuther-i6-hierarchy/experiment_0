@@ -570,13 +570,38 @@ def captions_sankey(report, top_n=None):
     """The stacked superparent Sankey page. JSON-only, for the reason above."""
     top_n = SANKEY_TOP_N if top_n is None else top_n
     pairs = report["pairs"]
+    graded = [p["pair"] for p in pairs]
     named = [p["pair"] for p in pairs if p.get("n_superparents")]
+    empty = [p["pair"] for p in pairs if not p.get("n_superparents")]
+    # Adjacent pairs the block structure allows, minus the ones actually graded.
+    # A pair can be missing for two different reasons and a reader cannot tell
+    # them apart from an absent diagram: graded and found nothing, or never
+    # computed at all. B3->B4 is the second kind -- a 6144 x 24576 co-firing
+    # matrix, off unless EXP0_B3B4=1 -- and calling both "no diagram" hides that.
+    nb = len(report.get("block_ranges") or [])
+    absent = [f"{i}->{i + 1}" for i in range(max(nb - 1, 0))
+              if f"{i}->{i + 1}" not in graded]
+
+    def blocks(keys):
+        return ", ".join("B" + k.replace("->", "&rarr;B") for k in keys)
+
+    why = ""
+    if empty:
+        why += (f"{blocks(empty)} {'is' if len(empty) == 1 else 'are'} graded but no parent "
+                f"there reaches the flag, so {'it gets' if len(empty) == 1 else 'they get'} no "
+                "diagram. The gate is fan-out alone, at <code>SUPERPARENT_OUTDEG_FRAC = "
+                f"{100 * C.SUPERPARENT_OUTDEG_FRAC:.0f}%</code> of the child block.")
+    if absent:
+        why += (f" {blocks(absent)} is a different case: not graded at all, so absent rather "
+                "than empty. It is the largest co-firing matrix in the run and is off unless "
+                "<code>EXP0_B3B4=1</code>, which needs stage 01 re-run, not just a redraw.")
     return [
         ("Each diagram",
-         f"One block pair that has a flagged superparent ({len(named)} of "
-         f"{len(pairs)} pairs qualify: {', '.join(named) or 'none'}). The left node is the "
+         f"One block pair that has a flagged superparent: {blocks(named) or 'none'} &mdash; "
+         f"{len(named)} of the {len(pairs)} pairs graded in this run. The left node is the "
          f"parent feature; the right nodes are up to {top_n} of its children, ordered by the "
          "strength of the link."),
+        ("Pairs with no diagram", why.strip() or None),
         ("Ribbon width",
          "The reverse coverage of that one parent&rarr;child edge &mdash; "
          "<i>P(parent fires | child fires)</i>, the quantity the edge criterion "
