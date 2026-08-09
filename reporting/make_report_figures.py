@@ -66,7 +66,7 @@ PAPER_DIR = C.OUT_DIR / "paper_figuers"
 CAT = ["#0072B2", "#E69F00", "#009E73", "#D55E00"]
 # Layers are ORDERED, so depth gets a single-hue sequential ramp rather than four
 # categorical hues. Reading L24 as "the dark one" is the encoding doing its job.
-DEPTH = ["#9ECAE1", "#6BAED6", "#4292C6", "#2171B5", "#084594"]
+DEPTH = ["#9ECAE1", "#6BAED6", "#4292C6", "#2171B5", "#084594", "#08306b"]
 NEUTRAL = "#C9CCD1"          # "removed" / reference — not a category
 GOOD = "#009E73"             # status: survived. Reserved, never a series colour.
 INK, MUTED = "#2B2B33", "#5A6B7B"
