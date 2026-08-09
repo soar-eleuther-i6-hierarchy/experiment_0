@@ -1,0 +1,1179 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 1,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "1-res-matryoshka-dc",
+    "sae_id": "blocks.1.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "blocks": [
+    {
+      "block": 0,
+      "n_features": 128,
+      "n_edges": 875,
+      "n_duplicates": 22,
+      "n_after_pmi": 451,
+      "poly_frac": 1.0,
+      "outdeg_gini": 0.9304732142857144,
+      "n_superparents": 8,
+      "superparents": [
+        {
+          "parent_local": 53,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.9957587861069362,
+          "strict": true,
+          "global": 53,
+          "label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions"
+        },
+        {
+          "parent_local": 86,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.9946676000082354,
+          "strict": true,
+          "global": 86,
+          "label": "descriptions of technological or mechanical modes or settings"
+        },
+        {
+          "parent_local": 124,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.8606781824545511,
+          "strict": true,
+          "global": 124,
+          "label": "references to legal proceedings and related information"
+        },
+        {
+          "parent_local": 126,
+          "outdeg": 123,
+          "outdeg_frac": 0.9609375,
+          "fire_frac": 0.9886969590908155,
+          "strict": true,
+          "global": 126,
+          "label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols"
+        },
+        {
+          "parent_local": 121,
+          "outdeg": 114,
+          "outdeg_frac": 0.890625,
+          "fire_frac": 0.6507998599987647,
+          "strict": true,
+          "global": 121,
+          "label": "references or mentions of texting and communication"
+        },
+        {
+          "parent_local": 4,
+          "outdeg": 63,
+          "outdeg_frac": 0.4921875,
+          "fire_frac": 0.498672047106298,
+          "strict": true,
+          "global": 4,
+          "label": "references to technical documentation, standards, or scholarly articles"
+        },
+        {
+          "parent_local": 95,
+          "outdeg": 45,
+          "outdeg_frac": 0.3515625,
+          "fire_frac": 0.29470260031706164,
+          "strict": true,
+          "global": 95,
+          "label": "references to color spaces, especially HSV"
+        },
+        {
+          "parent_local": 70,
+          "outdeg": 39,
+          "outdeg_frac": 0.3046875,
+          "fire_frac": 0.3471824751394865,
+          "strict": true,
+          "global": 70,
+          "label": "descriptions of technical procedures involved in time synchronization systems"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 53,
+          "child": 17,
+          "R": 1.0,
+          "pmi": 0.0042502333520441785,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "sequences of special characters and formatted code snippets"
+        },
+        {
+          "parent": 53,
+          "child": 35,
+          "R": 1.0,
+          "pmi": 0.0042502333520441785,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "references to specific \"this\" or \"these,\" indicating focus on particular items or concepts being discussed"
+        },
+        {
+          "parent": 86,
+          "child": 57,
+          "R": 1.0,
+          "pmi": 0.005346667980954373,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to specific time, place, and event details related to incidents or occurrences"
+        },
+        {
+          "parent": 53,
+          "child": 50,
+          "R": 1.0,
+          "pmi": 0.0042502333520441785,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "references to the computer system or technology infrastructure"
+        },
+        {
+          "parent": 53,
+          "child": 57,
+          "R": 1.0,
+          "pmi": 0.0042502333520441785,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "references to specific time, place, and event details related to incidents or occurrences"
+        },
+        {
+          "parent": 86,
+          "child": 48,
+          "R": 1.0,
+          "pmi": 0.005346667980954373,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "indicators of complex mathematical expressions or equations"
+        },
+        {
+          "parent": 86,
+          "child": 109,
+          "R": 0.99936,
+          "pmi": 0.004706463093531154,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the definite article \"the\" and its various forms"
+        },
+        {
+          "parent": 53,
+          "child": 16,
+          "R": 0.9993589743589744,
+          "pmi": 0.0036090021662378794,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "references to legal descriptions and obligations"
+        },
+        {
+          "parent": 86,
+          "child": 16,
+          "R": 0.9993589743589744,
+          "pmi": 0.0047054367951481985,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to legal descriptions and obligations"
+        },
+        {
+          "parent": 86,
+          "child": 31,
+          "R": 0.9993368700265252,
+          "pmi": 0.004683318039548449,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to technical concepts related to the percolation threshold, lattice transformations, or phase transitions in graph structures"
+        },
+        {
+          "parent": 86,
+          "child": 111,
+          "R": 0.9993145990404386,
+          "pmi": 0.004661032026772167,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "segments of text that are enclosed by quotation marks"
+        },
+        {
+          "parent": 86,
+          "child": 100,
+          "R": 0.9992774566473989,
+          "pmi": 0.004623863468097809,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "the presence of mentions related to \"dry\" or \"moist fur\" with specific numerical measurements, often referring to descriptions of fur appearance or condition"
+        },
+        {
+          "parent": 53,
+          "child": 87,
+          "R": 0.9992435703479576,
+          "pmi": 0.0034935174627378535,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "numerical values associated with prices, markets, or financial data"
+        },
+        {
+          "parent": 86,
+          "child": 55,
+          "R": 0.9991899554475496,
+          "pmi": 0.004536295165131559,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to specific measurements, quantities, or proportions"
+        },
+        {
+          "parent": 86,
+          "child": 73,
+          "R": 0.9991518235793045,
+          "pmi": 0.004498131655115508,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to formal mathematical expressions involving parentheses and their nested structures"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 6,
+          "b": 8,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "references to experiments and models involving the Bell inequality and their associated characteristics"
+        },
+        {
+          "a": 6,
+          "b": 13,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "references to regulatory agencies, especially the FDA and related health authorities"
+        },
+        {
+          "a": 6,
+          "b": 70,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "descriptions of technical procedures involved in time synchronization systems"
+        },
+        {
+          "a": 6,
+          "b": 95,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "references to color spaces, especially HSV"
+        },
+        {
+          "a": 6,
+          "b": 105,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "a pattern of symbols, characters, or formatting elements"
+        },
+        {
+          "a": 6,
+          "b": 114,
+          "a_label": "references to fuel injection components and their functions within internal combustion engines",
+          "b_label": "descriptive imagery related to physical appearance and facial features"
+        },
+        {
+          "a": 8,
+          "b": 101,
+          "a_label": "references to experiments and models involving the Bell inequality and their associated characteristics",
+          "b_label": "discussions of epidemiology, modeling, and ecological interactions related to disease transmission"
+        },
+        {
+          "a": 8,
+          "b": 105,
+          "a_label": "references to experiments and models involving the Bell inequality and their associated characteristics",
+          "b_label": "a pattern of symbols, characters, or formatting elements"
+        },
+        {
+          "a": 53,
+          "b": 86,
+          "a_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "b_label": "descriptions of technological or mechanical modes or settings"
+        },
+        {
+          "a": 53,
+          "b": 121,
+          "a_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "b_label": "references or mentions of texting and communication"
+        },
+        {
+          "a": 53,
+          "b": 124,
+          "a_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "b_label": "references to legal proceedings and related information"
+        },
+        {
+          "a": 53,
+          "b": 126,
+          "a_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "b_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols"
+        },
+        {
+          "a": 70,
+          "b": 95,
+          "a_label": "descriptions of technical procedures involved in time synchronization systems",
+          "b_label": "references to color spaces, especially HSV"
+        },
+        {
+          "a": 70,
+          "b": 114,
+          "a_label": "descriptions of technical procedures involved in time synchronization systems",
+          "b_label": "descriptive imagery related to physical appearance and facial features"
+        },
+        {
+          "a": 86,
+          "b": 121,
+          "a_label": "descriptions of technological or mechanical modes or settings",
+          "b_label": "references or mentions of texting and communication"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 1,
+      "n_features": 384,
+      "n_edges": 225,
+      "n_duplicates": 2,
+      "n_after_pmi": 225,
+      "poly_frac": 0.3422818791946309,
+      "outdeg_gini": 0.9786226851851851,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 190,
+          "child": 237,
+          "R": 0.9448818897637795,
+          "pmi": 5.0607633131206535,
+          "parent_label": "questions related to identifying specific information or asking for clarification",
+          "child_label": "questions or prompts asking for specific information"
+        },
+        {
+          "parent": 134,
+          "child": 148,
+          "R": 0.8117647058823529,
+          "pmi": 0.7420089591786971,
+          "parent_label": "references or citations in a text",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 361,
+          "child": 148,
+          "R": 0.7529411764705882,
+          "pmi": 0.9069989566600238,
+          "parent_label": "references to specific technical and statistical details",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 134,
+          "child": 400,
+          "R": 0.7301901743264659,
+          "pmi": 0.6361034450804739,
+          "parent_label": "references or citations in a text",
+          "child_label": "occurrences of code snippets involving output statements, buffer manipulations, and conditional structures in programming code"
+        },
+        {
+          "parent": 186,
+          "child": 148,
+          "R": 0.7294117647058823,
+          "pmi": 3.819824702155819,
+          "parent_label": "references to scientific or academic contexts",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 285,
+          "child": 148,
+          "R": 0.7294117647058823,
+          "pmi": 1.913480977779354,
+          "parent_label": "neural responses related to the perception and recognition of the age or novelty of visual objects",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 276,
+          "child": 148,
+          "R": 0.7294117647058823,
+          "pmi": 4.53772884744104,
+          "parent_label": "patterns indicating code structures or syntax elements",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 420,
+          "child": 148,
+          "R": 0.7294117647058823,
+          "pmi": 3.3340199301729756,
+          "parent_label": "references to legal case citations and related legal procedural language",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 219,
+          "child": 281,
+          "R": 0.7206477732793523,
+          "pmi": 3.4156599162755037,
+          "parent_label": "references to self-organization and emergent states in physical systems",
+          "child_label": "references to the concept of a \"between\" or \"comparison\" indicating the neuron looks for the idea of relationships, comparisons, or connections between entities"
+        },
+        {
+          "parent": 362,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 4.684452986107278,
+          "parent_label": "key words and phrases related to ranking or identifying the most significant item in a sequence",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 254,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 3.764442473130591,
+          "parent_label": "questions related to specific inquiry or clarification",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 201,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 4.430726011420988,
+          "parent_label": "code snippets or comments related to file operations and handling",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 400,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 2.6254043079905824,
+          "parent_label": "occurrences of code snippets involving output statements, buffer manipulations, and conditional structures in programming code",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 346,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 4.072125212289041,
+          "parent_label": "statements about the capability or possibility of doing something",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        },
+        {
+          "parent": 499,
+          "child": 148,
+          "R": 0.7176470588235294,
+          "pmi": 4.411632352605408,
+          "parent_label": "references to variables typically represented by symbols like X, Y, Z, or similar",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 371,
+          "b": 403,
+          "a_label": "detected regions or features in complex data representations",
+          "b_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks"
+        },
+        {
+          "a": 375,
+          "b": 395,
+          "a_label": "instructions for updating or handling software components",
+          "b_label": "references to specific punctuation marks, primarily periods and dots"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 2,
+      "n_features": 1536,
+      "n_edges": 3481,
+      "n_duplicates": 184,
+      "n_after_pmi": 3481,
+      "poly_frac": 0.7483443708609272,
+      "outdeg_gini": 0.9057777563319926,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 1478,
+          "child": 1846,
+          "R": 0.9324324324324325,
+          "pmi": 4.8743845603040565,
+          "parent_label": "references to energy, energy differences, or related energetic concepts",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 646,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 4.680358562115314,
+          "parent_label": "references to laboratory tests and medical conditions involving immune response or blood incompatibility",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 979,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 4.670743103415872,
+          "parent_label": "mentions of molecules or structures containing viral DNA or nucleic acids",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1006,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 3.8635412537022065,
+          "parent_label": "a pattern involving complex mathematical formulas and numerical calculations",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 790,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 3.9423396273781934,
+          "parent_label": "references to specific levels of a biomarker associated with disease prognosis",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1082,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 2.6995236905002615,
+          "parent_label": "expressions of nostalgia and longing for the past",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 517,
+          "child": 1791,
+          "R": 0.918918918918919,
+          "pmi": 4.763425160813927,
+          "parent_label": "patterns related to capturing or directing console output from Python scripts",
+          "child_label": "structures related to tensor products in mathematical decomposition"
+        },
+        {
+          "parent": 868,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 3.3105029273385833,
+          "parent_label": "references to investigations or inquiries",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1155,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 4.1885532630283535,
+          "parent_label": "references to the word \"man\" and its variations",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1770,
+          "child": 1791,
+          "R": 0.918918918918919,
+          "pmi": 4.633180001840223,
+          "parent_label": "instances of \"induced\" or related terms referring to phenomena caused by external or internal factors",
+          "child_label": "structures related to tensor products in mathematical decomposition"
+        },
+        {
+          "parent": 1013,
+          "child": 1846,
+          "R": 0.918918918918919,
+          "pmi": 4.8341067464652125,
+          "parent_label": "instances of the word \"meet\" or \"meeting\"",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1878,
+          "child": 1846,
+          "R": 0.9054054054054054,
+          "pmi": 4.582161867391123,
+          "parent_label": "references to legal concepts or terms",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1666,
+          "child": 1846,
+          "R": 0.9054054054054054,
+          "pmi": 4.945206259615334,
+          "parent_label": "references to specific observations or measurements",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 1204,
+          "child": 1846,
+          "R": 0.9054054054054054,
+          "pmi": 3.8286515371040863,
+          "parent_label": "references to measurement or measuring devices",
+          "child_label": "judgments and related legal final decisions"
+        },
+        {
+          "parent": 708,
+          "child": 1846,
+          "R": 0.9054054054054054,
+          "pmi": 4.783326511986557,
+          "parent_label": "references to individual persons",
+          "child_label": "judgments and related legal final decisions"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 526,
+          "b": 676,
+          "a_label": "the sequence of the letter \"m\" repeated multiple times",
+          "b_label": "references to surveys, questionnaires, and respondent data"
+        },
+        {
+          "a": 526,
+          "b": 1791,
+          "a_label": "the sequence of the letter \"m\" repeated multiple times",
+          "b_label": "structures related to tensor products in mathematical decomposition"
+        },
+        {
+          "a": 526,
+          "b": 1845,
+          "a_label": "the sequence of the letter \"m\" repeated multiple times",
+          "b_label": "references to network-related technology or terminology"
+        },
+        {
+          "a": 562,
+          "b": 724,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "code snippets related to system calls and file operations"
+        },
+        {
+          "a": 562,
+          "b": 766,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "references to mentions of experimental or procedural details in scientific texts"
+        },
+        {
+          "a": 562,
+          "b": 1163,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "references to the presence or measurement of specific bits, error probabilities, or related calculations"
+        },
+        {
+          "a": 562,
+          "b": 1195,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "references to gases or gas-related formulations involved in chemical processes"
+        },
+        {
+          "a": 562,
+          "b": 1273,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "descriptions or instances related to specific settings"
+        },
+        {
+          "a": 562,
+          "b": 1379,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "mathematical expressions and formulas related to statistical estimators"
+        },
+        {
+          "a": 562,
+          "b": 1431,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "mathematical expressions involving complex matrix operations and special functions"
+        },
+        {
+          "a": 562,
+          "b": 1460,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "references to specific frame or image sizing parameters"
+        },
+        {
+          "a": 562,
+          "b": 1497,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "structures containing components that induce electromagnetic radiation and facilitate electrical currents"
+        },
+        {
+          "a": 562,
+          "b": 1607,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "references to specific details or instances"
+        },
+        {
+          "a": 562,
+          "b": 1773,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "mentions of the wall of a recessed area or enclosure"
+        },
+        {
+          "a": 562,
+          "b": 1866,
+          "a_label": "references to rules, guidelines, or policies",
+          "b_label": "expressions of spatial direction or movement"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 3,
+      "n_features": 6144,
+      "n_edges": 6718,
+      "n_duplicates": 4885,
+      "n_after_pmi": 6695,
+      "poly_frac": 0.16654753395282346,
+      "outdeg_gini": 0.9908007657443931,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 7353,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 4.114958702333843,
+          "parent_label": "patterns related to structured data or code syntax",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 5088,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 5.766901403122415,
+          "parent_label": "references to formal agreements or alliances",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 3482,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 4.2955163680316835,
+          "parent_label": "instances of the word \"then\"",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 3482,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 4.2955163680316835,
+          "parent_label": "instances of the word \"then\"",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 5839,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 5.379135872113651,
+          "parent_label": "HTML tags and dropdown menu elements in documents",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 6402,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 3.640865087836583,
+          "parent_label": "records of timing and synchronization codes",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 2906,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 5.6202979289305395,
+          "parent_label": "references to legal remand actions",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 3443,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 3.298021623046312,
+          "parent_label": "statements or phrases that express personal opinions or judgments",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 6243,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 5.938751660049074,
+          "parent_label": "references to high-definition video quality",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 8180,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 5.703185588736307,
+          "parent_label": "negative evaluations of actions or opinions as inappropriate or unacceptable",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 4157,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 5.807175302260355,
+          "parent_label": "references to rental housing or rent-related concepts",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 6238,
+          "child": 5659,
+          "R": 1.0,
+          "pmi": 3.866169527920132,
+          "parent_label": "references to spatial or temporal contexts within discussions, often related to locations, time periods, or sequences",
+          "child_label": "representations of byte size information"
+        },
+        {
+          "parent": 8184,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 3.8880391868100985,
+          "parent_label": "references to specific characters, such as particular names, species, or objects",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 8085,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 5.4629057551791105,
+          "parent_label": "references to contact information and related communication identifiers",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        },
+        {
+          "parent": 7477,
+          "child": 6191,
+          "R": 1.0,
+          "pmi": 5.734536118620383,
+          "parent_label": "references to the amino acid isomer \"idah\"",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 2050,
+          "b": 2295,
+          "a_label": "recurring visual or textual patterns characterized by graphical elements or symbols",
+          "b_label": "patterns involving special characters and encoded strings"
+        },
+        {
+          "a": 2050,
+          "b": 4600,
+          "a_label": "recurring visual or textual patterns characterized by graphical elements or symbols",
+          "b_label": "specific programming code structures and syntax elements"
+        },
+        {
+          "a": 2050,
+          "b": 8064,
+          "a_label": "recurring visual or textual patterns characterized by graphical elements or symbols",
+          "b_label": "references to nameless or unspecified objects or entities"
+        },
+        {
+          "a": 2092,
+          "b": 2179,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to court decisions or rulings"
+        },
+        {
+          "a": 2092,
+          "b": 2261,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to chest-related medical issues or findings"
+        },
+        {
+          "a": 2092,
+          "b": 2310,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "mathematical expressions and array-based structures in documents"
+        },
+        {
+          "a": 2092,
+          "b": 2474,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to the technique of pattern lithography"
+        },
+        {
+          "a": 2092,
+          "b": 2485,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to specific types of transportation, specifically taxis and cabs"
+        },
+        {
+          "a": 2092,
+          "b": 2578,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to measures of diversity or biodiversity"
+        },
+        {
+          "a": 2092,
+          "b": 2595,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to the scientific term \"inflammatory marker\" or similar, specifically detecting mentions of \"IL-9\" as an indicator of inflammatory response"
+        },
+        {
+          "a": 2092,
+          "b": 2625,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "key concepts related to focus or attention in a context"
+        },
+        {
+          "a": 2092,
+          "b": 2880,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to the name \"ja\" in different contexts"
+        },
+        {
+          "a": 2092,
+          "b": 3113,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to the liver"
+        },
+        {
+          "a": 2092,
+          "b": 3410,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "references to celestial bodies, particularly the Earth"
+        },
+        {
+          "a": 2092,
+          "b": 3452,
+          "a_label": "references to property-like entities within code, such as property names or property objects",
+          "b_label": "mentions of physical health behaviors or physical activity"
+        }
+      ],
+      "sres": null
+    },
+    {
+      "block": 4,
+      "n_features": 24576,
+      "n_edges": 7403,
+      "n_duplicates": 5578,
+      "n_after_pmi": 7403,
+      "poly_frac": 0.45300751879699247,
+      "outdeg_gini": 0.9969971934326314,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 18377,
+          "child": 12852,
+          "R": 1.0,
+          "pmi": 5.900432795746938,
+          "parent_label": "references to specific years or dates",
+          "child_label": "references to empty objects or placeholders in structured data"
+        },
+        {
+          "parent": 11540,
+          "child": 26243,
+          "R": 1.0,
+          "pmi": 0.9046440097676763,
+          "parent_label": "mentions of specific clothing accessory components and their sizing or measurement details",
+          "child_label": "explicit numerical identifiers and versions in technical contexts"
+        },
+        {
+          "parent": 23821,
+          "child": 30462,
+          "R": 1.0,
+          "pmi": 5.528091735063806,
+          "parent_label": "references to monetary amounts, financial transactions, or legal issues involving money",
+          "child_label": "mathematical expressions related to specific equations"
+        },
+        {
+          "parent": 18377,
+          "child": 12928,
+          "R": 1.0,
+          "pmi": 5.900432795746938,
+          "parent_label": "references to specific years or dates",
+          "child_label": "references to bacteria"
+        },
+        {
+          "parent": 23821,
+          "child": 14181,
+          "R": 1.0,
+          "pmi": 5.528091735063806,
+          "parent_label": "references to monetary amounts, financial transactions, or legal issues involving money",
+          "child_label": "references to specific individuals named Garcia"
+        },
+        {
+          "parent": 8785,
+          "child": 9120,
+          "R": 1.0,
+          "pmi": 4.997768315584548,
+          "parent_label": "references to specific laboratory assay types and related procedural terminology",
+          "child_label": "references to a specific chemical process or compound, particularly \"epitaxial growth\" and \"high resistivity\" materials"
+        },
+        {
+          "parent": 16895,
+          "child": 12928,
+          "R": 1.0,
+          "pmi": 5.65498348691843,
+          "parent_label": "the names of individuals mentioned in the text",
+          "child_label": "references to bacteria"
+        },
+        {
+          "parent": 25602,
+          "child": 9120,
+          "R": 1.0,
+          "pmi": 5.7735020871537674,
+          "parent_label": "references to the sensory perception of the five senses",
+          "child_label": "references to a specific chemical process or compound, particularly \"epitaxial growth\" and \"high resistivity\" materials"
+        },
+        {
+          "parent": 16895,
+          "child": 14181,
+          "R": 1.0,
+          "pmi": 5.65498348691843,
+          "parent_label": "the names of individuals mentioned in the text",
+          "child_label": "references to specific individuals named Garcia"
+        },
+        {
+          "parent": 10513,
+          "child": 14181,
+          "R": 1.0,
+          "pmi": 5.044578733428538,
+          "parent_label": "patterns related to complex scientific and chemical notation",
+          "child_label": "references to specific individuals named Garcia"
+        },
+        {
+          "parent": 23821,
+          "child": 12852,
+          "R": 1.0,
+          "pmi": 5.528091735063806,
+          "parent_label": "references to monetary amounts, financial transactions, or legal issues involving money",
+          "child_label": "references to empty objects or placeholders in structured data"
+        },
+        {
+          "parent": 15042,
+          "child": 10032,
+          "R": 1.0,
+          "pmi": 5.72187772174846,
+          "parent_label": "references to religious teachings and scriptures",
+          "child_label": "words related to errors, mistakes, or misjudgments"
+        },
+        {
+          "parent": 23821,
+          "child": 12312,
+          "R": 1.0,
+          "pmi": 5.528091735063806,
+          "parent_label": "references to monetary amounts, financial transactions, or legal issues involving money",
+          "child_label": "references to the Sobolev space in mathematical contexts"
+        },
+        {
+          "parent": 18377,
+          "child": 14181,
+          "R": 1.0,
+          "pmi": 5.900432795746938,
+          "parent_label": "references to specific years or dates",
+          "child_label": "references to specific individuals named Garcia"
+        },
+        {
+          "parent": 23441,
+          "child": 10032,
+          "R": 1.0,
+          "pmi": 5.970500358363655,
+          "parent_label": "code snippets written in a programming language",
+          "child_label": "words related to errors, mistakes, or misjudgments"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 8289,
+          "b": 8695,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to the best-fitting or most accurate options in data or models"
+        },
+        {
+          "a": 8289,
+          "b": 9120,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to a specific chemical process or compound, particularly \"epitaxial growth\" and \"high resistivity\" materials"
+        },
+        {
+          "a": 8289,
+          "b": 9621,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "sequences of closing parentheses"
+        },
+        {
+          "a": 8289,
+          "b": 9712,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "mentions of laboratory procedures involving the isolation, purification, or processing of biological samples, especially focusing on the term \"pellet.\""
+        },
+        {
+          "a": 8289,
+          "b": 9762,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to hepatitis B (Hep) related content"
+        },
+        {
+          "a": 8289,
+          "b": 9955,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to crushed or broken objects"
+        },
+        {
+          "a": 8289,
+          "b": 10241,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to financial markets or market-related entities"
+        },
+        {
+          "a": 8289,
+          "b": 12312,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to the Sobolev space in mathematical contexts"
+        },
+        {
+          "a": 8289,
+          "b": 12413,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to specific Q key and wheel event-related terms"
+        },
+        {
+          "a": 8289,
+          "b": 12427,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to orders or trading activity"
+        },
+        {
+          "a": 8289,
+          "b": 12852,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to empty objects or placeholders in structured data"
+        },
+        {
+          "a": 8289,
+          "b": 12928,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to bacteria"
+        },
+        {
+          "a": 8289,
+          "b": 13263,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "instances of the word \"or\""
+        },
+        {
+          "a": 8289,
+          "b": 13296,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "the chi-squared statistic value"
+        },
+        {
+          "a": 8289,
+          "b": 13365,
+          "a_label": "references to the Earth's atmospheric phenomena",
+          "b_label": "references to code definitions"
+        }
+      ],
+      "sres": null
+    }
+  ]
+}

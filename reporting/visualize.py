@@ -1245,7 +1245,7 @@ def build_in_block_dashboard(report):
     blocks = report["blocks"]
     names = [f"B{b['block']} ({b['n_features']})" for b in blocks]
     fig = make_subplots(
-        rows=2, cols=1, vertical_spacing=0.16,
+        rows=3, cols=1, vertical_spacing=0.16,
         subplot_titles=(
             "Same-level relations per block: directed edges, duplicates, and how "
             "many survive PMI then S_res (log)",
