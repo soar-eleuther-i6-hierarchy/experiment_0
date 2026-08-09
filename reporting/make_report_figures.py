@@ -1141,8 +1141,8 @@ def _captions():
     if toy:
         d["calibration_synthetic_toy_scorecard"] = (
             f"All {len(toy)} scorecard rows on a hand-built world with a known five-parent tree "
-            f"and six injected structures; {sum(r['pass'] for r in toy)} pass, across seeds "
-            r"0--7, covering 21 of 21 metric functions. \emph{Left:} rows whose two classes "
+            f"and six injected structures; {sum(r['pass'] for r in toy)} pass, covering 21 "
+            r"of 21 metric functions. \emph{Left:} rows whose two classes "
             r"separate by a ratio, on a log axis. \emph{Right:} rows scored categorically, where "
             "the recovered answer is either right or not. The two are kept apart because a "
             r"categorical margin of $1.0$ means \emph{correct}, and on a ratio axis that would "

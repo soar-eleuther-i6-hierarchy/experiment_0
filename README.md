@@ -73,10 +73,14 @@ Stage 03 needs `token_cache/`, which stage 01 writes only when `CACHE_RESIDUALS=
 Stage 01c is numbered before 02 because that is where its dependencies put it: it builds its
 own candidate set from a *within-block* co-firing matrix instead of filtering stage 02's, so
 it answers the same question on a different domain and needs 01, not 02. It was outside the
-pipeline until 7 August, which is most of why it has never been run on any layer — nothing
-missed it. **It is still gemma-only:** it reads `config.BLOCK_RANGES` and loads the released
-gemma decoder, the two constants stages 03 and 04 stopped holding in `89294a4`. Do not point
-it at a non-gemma cache until it reads the structure from the file it grades.
+pipeline until 7 August. It has since run on **all eight runs** — every gemma layer and both
+PCFG layers have an `in_block_edges.json` and an `in_block_dashboard.html`.
+
+It is also no longer gemma-only. This page said it was, and said it "has never been run on any
+layer"; both were true before it was fixed and neither is now. `in_block_edges.py` reads the block
+structure from the statistics file it grades (`source_structure(stats)` — `config.IN_BLOCK_BLOCKS`
+is not consulted) and prefers a `w_dec.pt` in the run directory, which is what the non-gemma
+adapters write. The PCFG runs are graded across their own eight 224-feature blocks.
 
 **Why the filenames are not numbered.** A module whose name starts with a digit cannot be
 imported, and `collect_statistics.collect` is imported by the adapters that grade non-gemma
@@ -214,7 +218,7 @@ all four. ("Tier", not "layer", to avoid confusion with the model's residual-str
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic toy** | a known 5-parent tree plus six injected structures, reduced to cached stats *and* to the per-token view the probes need | yes, by construction | the maths is right — **14/14 across seeds 0–7**, covering all 21 metric functions, each pathology caught by its intended metric |
+| **1. Synthetic toy** | a known 5-parent tree plus six injected structures, reduced to cached stats *and* to the per-token view the probes need | yes, by construction | the maths is right — **14/14 rows**, covering all 21 metric functions, each pathology caught by its intended metric |
 | **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
 | **3. PCFG SAE** | a Matryoshka SAE over a 4-layer transformer trained on a PCFG corpus | grammar known, **not yet used** — nothing maps a latent to a grammar symbol | the battery runs on a source with a base model — layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
 | **4. Released SAE** | the published `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | none — human reading | 40 survivors read against autointerp labels |
@@ -235,7 +239,7 @@ Tier 3's ground truth is available but unconsumed: the PCFG repo's
 what a latent→symbol mapping would be built from. Until that exists Tier 3 reports the same battery
 outputs as Tier 4, not a recovery score.
 
-**Scope.** Tier 1 scores **14/14 rows across seeds 0–7**, covering **21/21 metric functions** —
+**Scope.** Tier 1 scores **14/14 rows**, covering **21/21 metric functions** —
 including `S_res` and in-block directed coverage, which until 7 August were graded by nothing. The
 page used to say the probe functions were "calibrated in Tier 2"; Tier 2 imports five functions and
 none of them is one of those. Two rows are negative controls that pass when the battery does *not*
@@ -264,7 +268,7 @@ result that vanishes is indistinguishable from one that was never made. See
   whose blocks are all the same size — so it is not an artefact of B0 being small.
 - ~~**Semantic quality degrades with depth.**~~ **Withdrawn.** The distinct-parent counts read
   5 · 7 · 6 · 7 · 6 after regeneration — flat. The layer-24 collapse was one contaminated layer.
-- **The metrics themselves hold up.** **14/14** on the synthetic toy across seeds 0–7, covering every
+- **The metrics themselves hold up.** **14/14** on the synthetic toy, covering every
   metric function, and **precision 1.00 / recall 0.67** on a Matryoshka SAE actually trained on
   Bussmann's tree — every miss traced to a feature the SAE never learned, not to a metric.
 

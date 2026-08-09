@@ -294,7 +294,7 @@ def t_tiers(toy, tt, align_json, pcfg=None):
     W = (0.22, 0.18, 0.25)
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
-         rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
+         rf"{n_pass}/{len(toy)} rows, 21/21 functions" if toy else "---"),
         ("2 Trained toy", "an SAE trained on Bussmann's tree", "Bussmann's tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
         ("3 PCFG SAE", pcfg_runs_on,
@@ -380,7 +380,7 @@ def t_tier1(toy):
     n_pass = sum(r["pass"] for r in toy)
     return table(
         "tier1", rf"\textbf{{Tier 1: every metric against a known tree.}} {n_pass} of {len(toy)} "
-        "rows pass, on every seed from 0 to 7. Margin is how decisively the metric separated the "
+        "rows pass. Margin is how decisively the metric separated the "
         "class it must keep from the class it must reject; rows scored categorically have no "
         "margin, because their answer is right or it is not and a value of $1.0$ on a ratio scale "
         "would read as no separation. The last two rows are negative controls that pass when the "

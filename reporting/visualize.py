@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 
 import numpy as np
@@ -94,7 +95,67 @@ def plotly_asset(page_dir):
     return Path(os.path.relpath(dest, page_dir)).as_posix()
 
 
-def write_page(fig, path, up=None):
+CAPTION_CSS = """
+<style>
+.x0cap{max-width:1150px;margin:8px auto 42px;padding:0 18px;
+font:400 13px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;color:#3F4B57;}
+.x0cap h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:#9AA7B3;
+font-weight:700;margin:0 0 10px;}
+.x0cap dl{margin:0;display:grid;grid-template-columns:minmax(140px,auto) 1fr;
+gap:9px 18px;align-items:baseline;}
+.x0cap dt{font-weight:700;color:#5A3E8C;}
+.x0cap dd{margin:0;}
+.x0cap code{font:12px/1.4 "DejaVu Sans Mono",monospace;background:#F6F3FE;
+border-radius:4px;padding:1px 4px;}
+@media (prefers-color-scheme:dark){
+.x0cap{color:#B9C3CE;} .x0cap h2{color:#77828E;} .x0cap dt{color:#C79BF2;}
+.x0cap code{background:#1E1830;}}
+@media (max-width:720px){.x0cap dl{grid-template-columns:1fr;gap:2px 0;}
+.x0cap dd{margin:0 0 12px;}}
+</style>
+"""
+
+
+def report_json(run_dir):
+    """`metrics_report.json` for a run, or None. The captions' only data source."""
+    p = Path(run_dir) / "metrics_report.json"
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+def second_json(run_dir):
+    """`second_pass.json` for a run, or None -- stage 03 has not run everywhere."""
+    p = Path(run_dir) / "second_pass.json"
+    return json.loads(p.read_text()) if p.exists() else None
+
+
+def caption_block(items) -> str:
+    """The descriptive captions that sit under a figure, as real HTML.
+
+    Not plotly annotations. An annotation lives in the figure's coordinate space,
+    so it has to be positioned by hand per panel, it does not reflow when the
+    window narrows, and its text cannot be selected or found by the browser's
+    search. These pages are read, not just looked at, so the captions are a
+    normal <dl> under the plot.
+
+    `items` is a sequence of (term, description). A term is the panel as it is
+    labelled in the figure, so a reader can match caption to panel by name rather
+    than by counting; the description says what the panel *is* -- what one mark
+    represents, what the axes carry, what a threshold line is set to. It does not
+    say which value is larger than which. That is the reader's job, and a
+    generated sentence claiming it would be a finding nobody checked.
+
+    Any number inside a description must be passed in by the caller from the data
+    or from `config`, never typed here.
+    """
+    items = [(t, d) for t, d in items if d]
+    if not items:
+        return ""
+    rows = "".join(f"<dt>{t}</dt><dd>{d}</dd>" for t, d in items)
+    return (CAPTION_CSS + '<section class="x0cap"><h2>What each panel shows</h2>'
+            f"<dl>{rows}</dl></section>")
+
+
+def write_page(fig, path, up=None, captions=None):
     """Write a plotly figure with the site nav bar on top.
 
     Every page is reachable only by a deep link, so each carries its own nav
@@ -106,6 +167,10 @@ def write_page(fig, path, up=None):
     Injected after write_html because plotly gives no layout slot for it — the
     same slot also carries the <script> tag for the shared plotly bundle that
     `include_plotlyjs=False` leaves out.
+
+    `captions` is the (term, description) sequence documented on `caption_block`,
+    rendered under the plot. A page called without them keeps working and simply
+    has none, so a new page kind is never blocked on prose being written for it.
     """
     path = Path(path)
     fig.write_html(str(path), include_plotlyjs=False)
@@ -117,6 +182,38 @@ def write_page(fig, path, up=None):
     )
     html = path.read_text().replace("<body>", "<body>\n" + head, 1)
     path.write_text(html)
+    if captions:
+        inject_captions(path, captions)
+
+
+CAP_RE = re.compile(r"\n?<style>\n\.x0cap.*?</section>", re.S)
+
+
+def inject_captions(path, items) -> bool:
+    """Put the caption block into an already-written page, replacing any previous one.
+
+    Separate from `write_page` because the caption does not depend on the plot.
+    The plots on this site are drawn from `exp0_stats.pt`, which is far too large
+    for git, so most pages cannot be redrawn from a clone -- but every number in
+    their captions is in the committed JSON. Keeping the injection standalone is
+    what lets `--captions` caption the whole site from a clone instead of only
+    the layers whose cache happens to be present.
+
+    Idempotent: the previous block is matched and replaced, so re-running does
+    not stack two copies.
+    """
+    path = Path(path)
+    html = path.read_text()
+    block = caption_block(items)
+    if not block:
+        return False
+    html, n = CAP_RE.subn("\n" + block, html, count=1)
+    if not n:
+        if "</body>" not in html:
+            return False
+        html = html.replace("</body>", block + "\n</body>", 1)
+    path.write_text(html)
+    return True
 
 
 def _page_identity(path):
@@ -388,6 +485,243 @@ def build_dashboard(pairs_data, labels=None, stats=None):
     return fig
 
 
+# ---------------------------------------------------------------------------
+# Captions. One builder per page kind, kept together so the prose has one home
+# and a reader auditing it does not have to walk six figure builders.
+#
+# Two rules, both of which the module docstring's "nothing hardcoded" already
+# implies and which are easy to break in prose:
+#
+#   1. Every NUMBER comes from the data or from `config`. A threshold typed into
+#      a sentence is a second copy of a constant, and it is the copy that goes
+#      stale when the constant moves.
+#   2. Captions DESCRIBE, they do not read. "one marker per flagged parent, x is
+#      the fraction of the child block it covers" is a description; "most
+#      superparents fire on more tokens than genuine parents" is a finding, and
+#      a generated finding is one nobody checked.
+# ---------------------------------------------------------------------------
+def captions_dashboard(report, second=None):
+    """Six panels of the per-layer metrics dashboard.
+
+    Reads `metrics_report.json`, never the `.pt` cache -- even though the figure
+    itself is drawn from the cache. The caches are not in git (they are hundreds
+    of megabytes), so a builder that needed one could only caption the layers
+    whose cache happened to be on the machine, and the published site would carry
+    captions on some pages and not others with nothing saying why. Every count
+    below is already in the committed report, so a bare clone can caption every
+    page. `--captions` relies on exactly that.
+    """
+    pairs = report["pairs"]
+
+    def tot(section, field):
+        # A pair with too few scored parents writes `null` for a whole section
+        # rather than a zeroed one, so this sums what exists instead of assuming
+        # every pair reports every metric.
+        return sum((p.get(section) or {}).get(field) or 0 for p in pairs)
+
+    n_par = tot("degree", "n_parents_with_children")
+    n_sp = sum(p.get("n_superparents") or 0 for p in pairs)
+    n_red = tot("sibling_redundancy", "n_parents_scored")
+    n_surv = tot("freq_control", "n_testable")
+    keys = ", ".join(p["pair"] for p in pairs)
+    scored = [k for k in (p["pair"] for p in pairs) if (second or {}).get(k, {}).get("sres")]
+    strict = ("Both strict stages are present for " + ", ".join(scored) + "."
+              if scored else
+              "The two strict stages are blank here: they come from stage 03 "
+              "(<code>second_pass.json</code>), which this run does not have.")
+    return [
+        ("Edges passing each metric",
+         "Number of candidate parent&rarr;child edges left by each test, one bar group per "
+         f"block pair ({keys}), on a logarithmic y-axis. The five stages are applied "
+         "<b>independently to the same candidate set</b> and do not nest, so the bars are not "
+         "a funnel: <code>improves recon</code> and <code>survives freq</code> are the lenient "
+         f"filters, <code>PMI &gt; 0</code> and <code>pass S_res</code> the strict ones. {strict}"),
+        ("Share passing each metric",
+         "The same four tests as a percentage of each pair's own candidate set. Pairs differ in "
+         "size by orders of magnitude, so a share is what places them on one axis; a count "
+         "would not."),
+        ("Out-degree CCDF",
+         f"One curve per block pair over {n_par:,} parents in total. A point reads "
+         "<i>P(a parent has at least x children)</i>, both axes logarithmic. The unit is a "
+         "parent, not an edge."),
+        ("Frequency-survival distribution",
+         f"One value per testable candidate edge ({n_surv:,} in total): its reverse coverage "
+         "computed on low- and mid-frequency tokens only, divided by its reverse coverage on "
+         f"all tokens. The dashed line is <code>FREQ_SURVIVAL_MIN = {C.FREQ_SURVIVAL_MIN}</code>, "
+         "the cutoff below which an edge is recorded as frequency-driven. Bars are counts of "
+         "edges."),
+        ("Sibling-redundancy distribution",
+         "Mean pairwise Jaccard overlap between the children of one parent, one value per "
+         f"scored parent ({n_red:,} in total). The dashed line is "
+         f"<code>SIBLING_REDUNDANCY_FLAG = {C.SIBLING_REDUNDANCY_FLAG}</code>. Computed over "
+         "whole-corpus co-firing, so it is confounded by how often each child fires at all; "
+         "the parent-conditioned version is in <code>second_pass.json</code>."),
+        ("Superparents",
+         f"One marker per parent flagged as a superparent ({n_sp} across all block pairs). "
+         "<i>x</i> is the fraction of the child block that parent has edges to, <i>y</i> is the "
+         "fraction of tokens it fires on. The flag is out-degree alone, at "
+         f"<code>SUPERPARENT_OUTDEG_FRAC = {100 * C.SUPERPARENT_OUTDEG_FRAC:.0f}%</code> of the "
+         "child block; the firing rate is plotted, not gated on. Hover gives the feature index "
+         "and its label."),
+    ]
+
+
+def captions_sankey(report, top_n=None):
+    """The stacked superparent Sankey page. JSON-only, for the reason above."""
+    top_n = SANKEY_TOP_N if top_n is None else top_n
+    pairs = report["pairs"]
+    named = [p["pair"] for p in pairs if p.get("n_superparents")]
+    return [
+        ("Each diagram",
+         f"One block pair that has a flagged superparent ({len(named)} of "
+         f"{len(pairs)} pairs qualify: {', '.join(named) or 'none'}). The left node is the "
+         f"parent feature; the right nodes are up to {top_n} of its children, ordered by the "
+         "strength of the link."),
+        ("Ribbon width",
+         "The reverse coverage of that one parent&rarr;child edge &mdash; "
+         "<i>P(parent fires | child fires)</i>, the quantity the edge criterion "
+         f"(<code>&ge; {C.EDGE_TAU}</code>) is applied to. Width is per edge; it is not a share "
+         "of the parent."),
+        ("Ribbon colour",
+         "The verdict on that edge. Where stage 03 has run the colour is the probe-based "
+         "<code>S_res</code> rank test (both decoders inside the top "
+         f"<code>k = {C.SRES_RANK_TOP_K}</code> of the child probe's correlations); where it has "
+         "not, it falls back to the reconstruction and frequency filters. The legend above the "
+         "first diagram names whichever is in force."),
+        ("Node labels",
+         "The feature index, plus its Neuronpedia label when "
+         "<code>feature_labels.json</code> is present. Bare indices mean the labels were not "
+         "fetched for this run, not that the features are unlabelled."),
+    ]
+
+
+def captions_in_block(report):
+    """The in-block (same-level) dashboard."""
+    blocks = report["blocks"]
+    named = ", ".join(f"B{b['block']} ({b['n_features']:,} features)" for b in blocks)
+    n_sp = sum(len(b["superparents"]) for b in blocks)
+    return [
+        ("Scope",
+         "Relations <b>inside</b> a single Matryoshka block, where no block ordering fixes the "
+         "direction, so it is derived from coverage asymmetry instead. Blocks shown: "
+         f"{named}."),
+        ("Counts per block",
+         "Four independent counts per block on a logarithmic axis. <code>directed edges</code> "
+         "is pairs where coverage is asymmetric enough to call one the parent; "
+         "<code>survive PMI &gt; 0</code> and <code>pass S_res</code> are the strict tests "
+         "applied to those edges; <code>duplicate pairs</code> is pairs whose firing sets are "
+         "co-extensive, which are recorded as duplicates and never as edges."),
+        ("Comparing blocks",
+         "These are raw counts, and the blocks differ in size, so the number of pairs available "
+         "to be counted differs with them &mdash; a block of <i>n</i> features offers "
+         "<i>n</i>(<i>n</i>&minus;1) ordered pairs. Divide by that before reading one block "
+         "against another."),
+        ("Superparents",
+         f"One bubble per in-block superparent ({n_sp} in total). <i>x</i> is the fraction of "
+         "its own block it has edges to, <i>y</i> is the fraction of tokens it fires on, and "
+         "the bubble area grows with its out-degree. Hover gives the global feature index and "
+         "its child count."),
+    ]
+
+
+def captions_qualitative(report):
+    """The per-layer qualitative check: one table per block pair."""
+    n = sum(len(v) for v in report.values())
+    cats = sorted({r["category"] for v in report.values() for r in v})
+    return [
+        ("Each table",
+         f"One block pair; {n} edges in total across {len(report)} "
+         f"{'table' if len(report) == 1 else 'tables'}. Rows are grouped by verdict "
+         f"({', '.join(cats)}) and then by descending reverse coverage."),
+        ("Columns",
+         "<code>R</code> reverse coverage, <i>P(parent | child)</i> &mdash; the quantity the "
+         f"edge criterion <code>&ge; {C.EDGE_TAU}</code> tests. <code>F</code> forward coverage, "
+         "<i>P(child | parent)</i>, reported only. <code>gain</code> the relative reconstruction "
+         "error increase when the parent is ablated on the child's firing tokens, with "
+         f"<code>recon</code> its verdict at <code>&ge; {C.RECON_REL_GAIN_MIN}</code>. "
+         "<code>surv</code> the frequency-survival ratio, cut at "
+         f"<code>{C.FREQ_SURVIVAL_MIN}</code>."),
+        ("The two label columns",
+         "Neuronpedia's autointerp descriptions of each endpoint. They are model-generated, so "
+         "they are what this page is judged <i>against</i>, not a ground truth &mdash; this is "
+         "the one tier with no known answer. Labels are truncated for width; the full text and "
+         "the clickable links are in <code>qualitative_check.md</code>."),
+    ]
+
+
+def captions_calibration(data):
+    """Tier 1, the synthetic-toy scorecard."""
+    rows = data["rows"]
+    ratio = [r for r in rows if r.get("margin_kind") != "categorical"]
+    cat = [r for r in rows if r.get("margin_kind") == "categorical"]
+    ctrl = [r for r in rows if r["metric"].lstrip().startswith("—")]
+    return [
+        ("Scorecard (top)",
+         f"All {len(rows)} rows, each a claim one metric makes about a world whose tree is "
+         "known by construction. <code>margin</code> is how far apart the metric put the class "
+         "it must keep from the class it must reject; <code>detail</code> carries the two "
+         "underlying values."),
+        ("Separation margin (left)",
+         f"The {len(ratio)} rows whose two classes separate by a <i>ratio</i>, on a logarithmic "
+         "axis. Bars are clipped for display at 10&#8308;&times;; the text on each bar is the "
+         "unclipped value."),
+        ("Categorically scored (right)",
+         f"The {len(cat)} rows whose answer is not a ratio &mdash; a recovered edge set is right "
+         "or it is not. They are kept off the ratio axis because a categorical margin of 1.0 "
+         "means <i>correct</i>, which on a log ratio axis would be indistinguishable from "
+         "<i>no separation at all</i>."),
+        ("Hatched bars",
+         f"The {len(ctrl)} negative controls. They pass when the battery does <b>not</b> act, so "
+         "they record a demonstrated blind spot rather than a catch."),
+        ("Per-metric panels",
+         f"One panel for each of the {len(data['panels'])} metrics that has two classes to "
+         "separate, showing the individual values behind that row's margin rather than the "
+         "summary."),
+    ]
+
+
+def captions_trained_calibration(d, align=None):
+    """Tier 2, the trained-toy page."""
+    pt = d.get("per_token") or {}
+    edges = [e for e in pt.get("edges", []) if e.get("testable")]
+    cof = pt.get("child_cofire") or {}
+    items = [
+        ("Scorecard (top)",
+         "One row per check, in the same six columns as Tier 1. The difference from Tier 1 is "
+         "the input: every number here is computed from the latents a Matryoshka SAE "
+         f"<b>learned</b> on this tree, not from constructed statistics. The SAE recovered "
+         f"{d['n_recovered_features']} of {d['n_features']} true features, which is the ceiling "
+         "on anything below."),
+        ("Probe S_res on learned latents",
+         f"One bar per testable true edge ({len(edges)} of "
+         f"{len(d['true_edges'])}): where the true parent's decoder ranks among the child "
+         "probe's correlations over the whole dictionary. Rank 0 is the closest. The rule "
+         f"accepts an edge when the rank is inside the top <code>k = {C.SRES_RANK_TOP_K}</code>; "
+         f"an unrelated feature sits at chance in a dictionary of "
+         f"{d['cfg']['d_sae']} latents." if edges else None),
+        ("Children the tree keeps apart",
+         "One bar per parent whose children the grammar declares mutually exclusive: how many "
+         "sampled tokens the SAE's recovered latents co-fire on"
+         + (f", out of {pt['n_draws']:,} draws" if pt.get("n_draws") else "")
+         + ". The ground truth for every one of these is zero, so the bar is the SAE's own "
+         "departure from the tree, not a metric's."
+         if cof else None),
+        ("Edge recovery",
+         f"All {len(d['true_edges'])} true edges with the verdict on each. A miss is attributed: "
+         "<i>child never learned</i> means the SAE has no latent for that endpoint, so the edge "
+         "was unreachable for any metric."),
+    ]
+    if align:
+        items.append((
+            "Nesting control",
+            f"A separate question from everything above: not whether the metrics work, but "
+            "whether the Matryoshka nesting itself places a parent in an earlier block than its "
+            f"children. {align['n_testable']} of {len(d['true_edges'])} true edges are testable "
+            f"&mdash; the rest have an endpoint the SAE never learned &mdash; over "
+            f"{len(align['block_ranges'])} blocks."))
+    return items
+
+
 def _superparent_sankey_trace(stats, pd_, p_blk, c_blk, top_n=25, feat_labels=None):
     """Build the Sankey trace + title for one block pair's top superparent.
 
@@ -476,7 +810,11 @@ def _add_sres_legend(fig):
     fig.update_yaxes(visible=False)
 
 
-def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=25, feat_labels=None):
+SANKEY_TOP_N = 25   # children drawn per superparent; named so the caption cannot drift
+
+
+def build_all_superparent_sankeys(stats, pairs, pairs_data, top_n=SANKEY_TOP_N,
+                                  feat_labels=None):
     """Every block pair's top superparent, stacked in ONE figure.
 
     Stacking keeps a single embedded plotly.js bundle, so the file stays the
@@ -743,7 +1081,7 @@ def run_calibration():
     data = _calibration_data()
     fig = build_calibration_dashboard(data)
     out = C.OUT_DIR / "synthetic_toy_calibration.html"
-    write_page(fig, out)          # lives in outputs/
+    write_page(fig, out, captions=captions_calibration(data))   # lives in outputs/
     print(f"saved: {out}")
 
 
@@ -1123,9 +1461,10 @@ def run_trained_calibration():
     if align is None:
         print("note: outputs/block_tree_alignment.json not found - "
               "run `python3 -m validation.block_tree_alignment` for the nesting panels")
-    fig = build_trained_calibration_dashboard(json.loads(path.read_text()), align)
+    d = json.loads(path.read_text())
+    fig = build_trained_calibration_dashboard(d, align)
     out = C.OUT_DIR / "trained_toy_calibration.html"
-    write_page(fig, out)
+    write_page(fig, out, captions=captions_trained_calibration(d, align))
     print(f"saved: {out}")
 
 
@@ -1231,7 +1570,7 @@ def run_qualitative():
     # qualitative_check.html would shadow Jekyll's render of qualitative_check.md,
     # leaving the text report unreachable on the published site.
     out = C.RUN_DIR / "qualitative_dashboard.html"
-    write_page(fig, out)
+    write_page(fig, out, captions=captions_qualitative(report))
     print(f"saved: {out}")
 
 
@@ -1302,6 +1641,64 @@ def build_in_block_dashboard(report):
     return fig
 
 
+def recaption_site():
+    """Refresh the caption block on every page under OUT_DIR, from committed JSON.
+
+    The plots cannot be redrawn from a clone -- `exp0_stats.pt` is not in git --
+    but the captions can, so this walks the published tree and rewrites just the
+    caption section in place. That is what keeps the site from carrying captions
+    on the pages whose cache happened to be present and none on the rest.
+
+    Reports what it skipped and why, rather than passing over a page in silence:
+    a page missing its caption because its JSON is absent is a fact worth seeing.
+    """
+    done, skipped = [], []
+
+    def do(path, items, why_missing):
+        if not path.exists():
+            return
+        if items is None:
+            skipped.append((path, why_missing))
+        elif inject_captions(path, items):
+            done.append(path)
+        else:
+            skipped.append((path, "no </body> to inject into"))
+
+    for src in sorted(C.SOURCES):
+        for run in sorted((C.OUT_DIR / src).glob("layer_*")):
+            rep, sec = report_json(run), second_json(run)
+            do(run / "metrics_dashboard.html",
+               captions_dashboard(rep, sec) if rep else None, "no metrics_report.json")
+            do(run / "superparent_sankey.html",
+               captions_sankey(rep) if rep else None, "no metrics_report.json")
+            q = run / "qualitative_check.json"
+            do(run / "qualitative_dashboard.html",
+               captions_qualitative(json.loads(q.read_text())) if q.exists() else None,
+               "no qualitative_check.json")
+            ib = run / "in_block_edges.json"
+            do(run / "in_block_dashboard.html",
+               captions_in_block(json.loads(ib.read_text())) if ib.exists() else None,
+               "no in_block_edges.json")
+
+    cal = C.OUT_DIR / "synthetic_toy_calibration.json"
+    do(C.OUT_DIR / "synthetic_toy_calibration.html",
+       captions_calibration(_calibration_data()) if cal.exists() else None,
+       "no synthetic_toy_calibration.json")
+    tt = C.OUT_DIR / "trained_toy_calibration.json"
+    al = C.OUT_DIR / "block_tree_alignment.json"
+    do(C.OUT_DIR / "trained_toy_calibration.html",
+       captions_trained_calibration(json.loads(tt.read_text()),
+                                    json.loads(al.read_text()) if al.exists() else None)
+       if tt.exists() else None, "no trained_toy_calibration.json")
+
+    for pth in done:
+        print(f"  captioned  {pth.relative_to(C.OUT_DIR)}")
+    for pth, why in skipped:
+        print(f"  SKIP       {pth.relative_to(C.OUT_DIR)}\n               {why}")
+    print(f"[cap] {len(done)} captioned, {len(skipped)} skipped")
+    return len(skipped)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--layer", type=int, help="which layer to render (overrides EXP0_LAYER)")
@@ -1313,8 +1710,14 @@ def main():
                     help="visualise real survivor-vs-rejected edges (needs qualitative_check.json)")
     ap.add_argument("--trained-calibration", action="store_true",
                     help="Tier-2: edge recovery on a trained toy SAE (needs trained_toy_calibration.json)")
+    ap.add_argument("--captions", action="store_true",
+                    help="refresh the caption block on every published page, from the "
+                         "committed JSON; does not redraw any plot, so it needs no cache")
     args = ap.parse_args()
     C.use_layer(args.layer)          # re-execs when it changes anything; see config.use_layer
+    if args.captions:
+        recaption_site()
+        return
     if args.calibration:
         run_calibration()
         return
@@ -1327,9 +1730,10 @@ def main():
     if args.in_block:
         if not C.IN_BLOCK_PATH.exists():
             raise SystemExit(f"missing {C.IN_BLOCK_PATH} - run in_block_edges.py first")
-        fig = build_in_block_dashboard(json.loads(C.IN_BLOCK_PATH.read_text()))
+        ib = json.loads(C.IN_BLOCK_PATH.read_text())
+        fig = build_in_block_dashboard(ib)
         path = C.RUN_DIR / "in_block_dashboard.html"
-        write_page(fig, path)
+        write_page(fig, path, captions=captions_in_block(ib))
         print(f"saved: {path}")
         return
 
@@ -1362,7 +1766,8 @@ def main():
 
     dash = build_dashboard(pairs_data, feat_labels, stats=stats)
     dash_path = C.RUN_DIR / "metrics_dashboard.html"
-    write_page(dash, dash_path)
+    write_page(dash, dash_path,
+               captions=captions_dashboard(report_json(C.RUN_DIR), second_json(C.RUN_DIR)))
     print(f"saved: {dash_path}")
 
     # One Sankey per block pair that has a superparent, stacked in a single file.
@@ -1374,7 +1779,7 @@ def main():
         # the same figure, so len(sk.data) reported two panels more than there are.
         n_panels = sum(1 for t in sk.data if t.type == "sankey")
         sk_path = C.RUN_DIR / "superparent_sankey.html"
-        write_page(sk, sk_path)
+        write_page(sk, sk_path, captions=captions_sankey(report_json(C.RUN_DIR)))
         print(f"saved: {sk_path}  ({n_panels} block pair{'s' if n_panels != 1 else ''})")
 
 

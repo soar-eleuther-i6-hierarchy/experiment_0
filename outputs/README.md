@@ -39,7 +39,7 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 
 ## Across all layers
 
-- [**Synthetic toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/synthetic_toy_calibration.html) — Tier 1, synthetic ground truth (14/14 across seeds 0–7).
+- [**Synthetic toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/synthetic_toy_calibration.html) — Tier 1, synthetic ground truth (14/14 rows).
 - [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
 
 ## Other sources
@@ -79,12 +79,18 @@ They are archived rather than fixed on purpose. Editing the numbers by hand woul
 that no rerun can reproduce and no rerun can invalidate — which is how they went stale in the first
 place. If the cross-depth view is wanted back, it should come back as a generator under `reporting/`.
 
-## The second pass has run on layer 6 only
+## The second pass has run on four runs, not on all of them
 
-`gemma-2-2b/layer_06/second_pass.json` is the sole stage-03 output in the repository. Stages 01, 01b, 02 and 02b
-have run on all five layers; stage 03 (`run_token_metrics.py` — S_res, parent-conditioned sibling
-redundancy, the kept-children union) has run on layer 6 alone. Do not read the other four layers'
-pages as though that pass is missing by accident.
+Stage 03 (`run_token_metrics.py` — S_res, parent-conditioned sibling redundancy, the kept-children
+union) has produced a `second_pass.json` for **`gemma-2-2b/layer_01`, `gemma-2-2b/layer_06`,
+`pcfg-matryoshka/layer_01` and `pcfg-matryoshka/layer_03`**. Stages 01, 01b, 01c, 02 and 02b have
+run on all eight runs (six gemma layers, two PCFG layers). Gemma layers 3, 12, 18 and 24 have no
+second pass, so their `S_res` columns and the strict stages of their dashboards are empty by
+absence, not by result — do not read them as zero.
+
+This heading used to say "layer 6 only", which was true when it was written and stopped being true
+as soon as the PCFG runs and gemma layer 1 were published; the S_res figures quoted elsewhere on
+this page for PCFG could only have come from a stage-03 output.
 
 It is committed even though it is a generated artifact, because it cannot be regenerated from this
 clone: stage 03 reads `token_cache/` and `exp0_stats.pt`, both far too large for git and both absent
@@ -164,7 +170,7 @@ to avoid confusion with the model's residual-stream layers.)
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
-| **1. Synthetic toy** | [`validation/synthetic_toy_world.py`](../validation/synthetic_toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows across seeds 0–7**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
+| **1. Synthetic toy** | [`validation/synthetic_toy_world.py`](../validation/synthetic_toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
 | **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) — and the probe functions now run here too: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy catches a conflation the SAE itself introduced (0.958 against 0.000 for the other parents) |
 | **3. PCFG SAE** | `adapters/from_pcfg.py` in the umbrella repo (an adapter joins two repos and belongs to neither, so it is not in this one) on a 4-layer PCFG base transformer, zipf 1.5, 1792 latents in 8 blocks | grammar known, **not yet used** — nothing maps a latent to a grammar symbol | the battery runs on a source that has a base model — layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
 | **4. Released SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a checkpoint we did not train |
@@ -189,7 +195,7 @@ battery outputs as Tier 4 rather than a recovery score. Note also that both publ
 are a **single grammar configuration** (zipf 1.5, EOS the only delimiter) — one point of the
 three-axis sweep Exp 2 specifies, not a sweep.
 
-**What the tiers do and do not cover.** Tier 1 scores **14/14 rows across seeds 0–7**, covering
+**What the tiers do and do not cover.** Tier 1 scores **14/14 rows**, covering
 **21/21 metric functions**. Until 7 August this paragraph said `S_res` was "calibrated in Tier 2,
 not here". It was not: Tier 2 imports `coverage_legs`, `keep_edges`,
 `edge_reconstruction_condition`, `frequency_controlled_coverage` and `frequency_buckets`, and
