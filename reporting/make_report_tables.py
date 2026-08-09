@@ -132,7 +132,7 @@ def table(label, caption, header, rows, align=None, star=False, note=None):
 # ---------------------------------------------------------------------------
 # 1. Setup. Everything a reader needs to reproduce a number, from config.
 # ---------------------------------------------------------------------------
-def t_setup(layers):
+def t_setup(layers, has_bos=True):
     b = C.BLOCK_RANGES
     tok = layers[0][1]["total_tokens"] if layers else None
     rows = [
@@ -158,8 +158,8 @@ def t_setup(layers):
         "source: holding them fixed is what makes a cross-source comparison mean anything, and "
         "no threshold is tuned per source. The block structure is read from the cached statistics "
         "of the run being graded, not from this table, so a dictionary of a different shape is "
-        "sliced correctly. Token counts exclude the beginning-of-sequence position; see "
-        r"Table~\ref{tab:bos}.",
+        "sliced correctly. Token counts exclude the beginning-of-sequence position"
+        + (r" (Table~\ref{tab:bos})." if has_bos else "."),
         ["", ""], rows, align="ll")
 
 
@@ -288,6 +288,10 @@ def t_tiers(toy, tt, align_json, pcfg=None):
         pcfg_runs_on = ("a Matryoshka SAE over a "
                         + (f"{nl}-layer " if nl else "small ")
                         + "transformer trained on a PCFG corpus")
+    # Columns 2-4 hold sentences, so each is a \parbox rather than an l column
+    # that would run off the page. Fractions sum to 0.65, leaving 0.35 for the
+    # Tier column and the eight \tabcolsep gaps.
+    W = (0.22, 0.18, 0.25)
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
          rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
@@ -306,6 +310,7 @@ def t_tiers(toy, tt, align_json, pcfg=None):
         ("4 Released SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
          "40 survivors read against autointerp labels"),
     ]
+    rows = [[r[0]] + [wrap(c, w) for c, w in zip(r[1:], W)] for r in rows]
     note = " ".join(t for t in [
         rf"Tier~4's dictionary is the released \texttt{{{esc(C.SAE_RELEASE)}}}.",
         pcfg_detail,
@@ -354,24 +359,9 @@ def t_tiers(toy, tt, align_json, pcfg=None):
         # --twocolumn, where the float becomes table* and \linewidth changes.
         # 0.70 for the three, leaving the l column and eight \tabcolsep gaps
         # inside the remaining 0.30.
-        # \raggedright on every p column: a justified 0.18\linewidth column with
-        # "latent<->symbol mapping yet" in it stretches interword space across
-        # half the cell. Ragged right is the normal setting for narrow table text.
-        #
-        # `\let\\\tabularnewline` and NOT `\arraybackslash`, which is the usual
-        # incantation: \arraybackslash lives in tabularx, not in array, so a
-        # preamble that loads array alone -- enough for the >{} syntax itself --
-        # hits "control sequence never \def'ed". The failure is worse than a
-        # missing package message, because \raggedright has already redefined \\
-        # and nothing restores it: rows stop terminating, run together, and the
-        # last column vanishes off the page. \let\\\tabularnewline IS what
-        # \arraybackslash expands to, so this needs array and nothing else.
-        # It must follow \raggedright, which is what redefines \\.
-        align=(r"l "
-               r">{\raggedright\let\\\tabularnewline}p{0.22\linewidth} "
-               r">{\raggedright\let\\\tabularnewline}p{0.18\linewidth} "
-               r">{\raggedright\let\\\tabularnewline}p{0.25\linewidth}"),
-        star=True, note=note)
+        # Plain l columns: the wrapping lives in each cell's \parbox, so this
+        # table needs booktabs and nothing else. See wrap().
+        align="llll", star=True, note=note)
 
 
 # ---------------------------------------------------------------------------
@@ -401,7 +391,7 @@ def t_tier1(toy):
 # ---------------------------------------------------------------------------
 # 6. The gemma result, per layer.
 # ---------------------------------------------------------------------------
-def t_gemma(layers, second6):
+def t_gemma(layers, second6, has_bos=True):
     rows = []
     for L, r in layers:
         p = _pair(r)
@@ -422,7 +412,8 @@ def t_gemma(layers, second6):
         "over-connection is what the parent's own firing rate already forces, not capture of "
         "frequent tokens, which the frequency control puts at 1--2\\%. Multi-parenting is the "
         "measure that does not depend on the candidate set and the only one of the project's "
-        r"original four claims to survive BOS exclusion (Table~\ref{tab:bos}). The "
+        r"original four claims to survive BOS exclusion"
+        + (r" (Table~\ref{tab:bos})" if has_bos else "") + ". The "
         r"$S_\mathrm{res}$ column exists for layer 6 alone: stage~03 needs a cached token stream "
         "that the released statistics do not carry.",
         ["Layer", "Candidates", "Recon.", "At chance", "Freq.-driven",
@@ -670,6 +661,12 @@ def build(dry: bool):
     pcfg = pcfg_runs()
     arch = [_json(p) for p in
             sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json"))]
+    # Two tables cite Table~\ref{tab:bos}. It is only emitted when the archived
+    # pre-BOS reports are present, so the citation has to be conditional too --
+    # otherwise a clone without outputs_archive/ compiles with a dangling ref
+    # printing '??', which is exactly the kind of quiet staleness this file
+    # exists to prevent.
+    has_bos = bool(arch and layers) and len(arch) == len(layers)
 
     def add(slot, name, ok, why, fn, section=None):
         if not ok:
@@ -680,7 +677,7 @@ def build(dry: bool):
             parts.append((slot, section, fn()))
 
     add("MAIN 1", "setup", bool(layers), "config + a graded layer's token count",
-        lambda: t_setup(layers), "The instrument")
+        lambda: t_setup(layers, has_bos), "The instrument")
     add("MAIN 2", "battery", True, "config thresholds", t_battery)
     add("MAIN 3", "matrix", True, "argued, not measured -- see the module docstring", t_matrix)
     add("MAIN 4", "tiers", bool(toy and tt), "toy + trained-toy calibration JSON"
@@ -690,7 +687,7 @@ def build(dry: bool):
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
     add("MAIN 6", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
         if layers else "needs gemma metrics_report.json",
-        lambda: t_gemma(layers, second6), "The result")
+        lambda: t_gemma(layers, second6, has_bos), "The result")
     add("APP 1", "sources", bool(layers and pcfg), f"gemma + {len(pcfg)} PCFG runs"
         if (layers and pcfg) else "needs a gemma report and a PCFG report",
         lambda: t_sources(layers, second6, pcfg), "Appendix")
@@ -729,18 +726,18 @@ HEAD = r"""% ===================================================================
 % Ordered as the paper reads: the instrument is defined before any number it
 % produces is quoted. MAIN 1-6 are the main text, APP 1-3 the appendix.
 %
-% Requires: booktabs AND array -- the tier table uses >{...}p{} columns.
-% Nothing else: it deliberately writes \let\\\tabularnewline rather than
-% \arraybackslash, which looks equivalent but lives in tabularx, and whose
-% absence does not merely warn -- \raggedright has already redefined \\, so
-% rows stop terminating and the last column runs off the page.
+% Requires: booktabs. Nothing else -- deliberately. Wrapping cells use
+% \parbox, a kernel command, rather than array's >{...}p{} columns: this
+% file cannot see the preamble it is pasted into, and a missing array
+% package does not fail politely ("Illegal character in array arg", or
+% rows that stop terminating and a last column off the page).
 % Emitted for a ONECOLUMN class, which is what the ICLR
 % template uses; pass --twocolumn for full-width table* floats.
 % Captions sit above the rules, as tables take them and as the ICLR template's
 % own example does.
 %
 % To compile on its own, prepend
-%     \documentclass{article}\usepackage{booktabs,array}\begin{document}
+%     \documentclass{article}\usepackage{booktabs}\begin{document}
 % and append \end{document}.
 % ===========================================================================
 """
