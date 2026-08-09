@@ -29,19 +29,22 @@ This is **calibration**, not a unit-test suite: how a metric gets *scored* rathe
 (The directory was called `tests/`, which promised coverage of `metrics/` and delivered a toy-world
 generator. [`tests/`](../tests/) now holds real unit tests.)
 
-All three tiers live here. Tiers 1–2 have a ground-truth tree and run offline; **Tier 3 is the odd
+All four tiers live here. Tiers 1–2 have a ground-truth tree and run offline; **Tier 3 is the odd
 one** — it needs the real `exp0_stats.pt`, needs the network for labels, is judged by human reading
-rather than against a known answer, and writes a published artifact into `RUN_DIR`. It sits here
-because the three tiers are one argument, not because it shares their dependencies.
+rather than against a known answer, and writes a published artifact into `RUN_DIR`. **Tier 4** is the
+PCFG run, which uses the same battery on a grammar-generated SAE whose tree structure is known
+through the grammar even though each instance is sampled at runtime. All four sit here because they
+are one argument, not because they share dependencies.
 
-Full results and the three-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-three-tiers)
+Full results and the four-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-four-tiers)
 
 | File | Tier | Runs on | Scored against | What it does |
 | ---- | ---- | ------- | -------------- | ------------ |
 | [`synthetic_toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass across seeds 0–7**, covering **21/21 metric functions** |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
-| [`qualitative_check.py`](qualitative_check.py) | 3 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+| [`from_pcfg.py`](from_pcfg.py) | 3 | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **PCFG grammar known** | same battery on a non-toy source; layer~01: 327 candidates, 100% recon, 0/327 S_res; layer~03: 781 candidates, 95% recon, 4/772 S_res |
+| [`qualitative_check.py`](qualitative_check.py) | 4 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
 
 **Why Tier 3 is not named `calibrate_*`.** The first two score metrics against an answer we know.
 Tier 3 has no such answer: it is judged by reading labels that are themselves model-generated
@@ -111,7 +114,7 @@ it attribute a miss: a missed edge counts against a metric only if the SAE learn
 
 ## The lateral control
 
-The three tiers are a ladder along one axis: ground truth traded against realism, all answering
+The four tiers are a ladder along one axis: ground truth traded against realism, all answering
 *are the metrics trustworthy?* A control answers a different question — one that has to be closed
 before the gemma result means what we say it means.
 

@@ -105,15 +105,15 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{Four tiers, trading ground truth against realism.} Each rung licenses the one above it. Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE actually learned reaches the metrics, which is also what lets it attribute a miss --- a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 uses a smaller base model whose structure is not aligned to language; only Tier~4 has no known answer and is named for how it is judged rather than what it runs on.}
+  \caption{\textbf{Four tiers, trading ground truth against realism.} Each rung licenses the one above it: Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE actually learned reaches the metrics, which is also what lets it attribute a miss --- a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 keeps the known tree but swaps the base model for a smaller transformer trained on PCFG corpora, isolating base-model dependence from SAE quality. Tier~4 is the real SAE: no known answer, named for how it is judged rather than what it runs on.}
   \label{tab:tiers}
   \begin{tabular}{llll}
     \toprule
     Tier & Runs on & Ground truth & Result \\
     \midrule
     1 Synthetic toy & hand-built statistics & by construction & 14/14 rows, 21/21 functions, seeds 0--7 \\
-    2 Trained toy & a SAE trained on a toy model & the tree is known & precision 1.00, recall 0.67 \\
-    3 PCFG SAE & a Matryoshka SAE trained on a small model build on PCFG tree & the PCFG tree is known & --- \\
+    2 Trained toy & an SAE trained on a toy model, Bussmann's tree & the Bussmann's tree is known & precision 1.00, recall 0.67 \\
+    3 PCFG SAE & a Matryoshka SAE trained on a small model built on a PCFG tree & the PCFG tree is known & layer~01: 327 candidates, 100\% recon, 0/327 $S_\mathrm{res}$; layer~03: 781 candidates, 95\% recon, 4/772 $S_\mathrm{res}$ \\
     4 Real SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
     \bottomrule
   \end{tabular}

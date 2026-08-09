@@ -217,14 +217,25 @@ def t_matrix():
 # ---------------------------------------------------------------------------
 # 4. The tiers.
 # ---------------------------------------------------------------------------
-def t_tiers(toy, tt, align_json):
+def t_tiers(toy, tt, align_json, pcfg=None):
     n_pass = sum(r["pass"] for r in toy) if toy else None
+    pcfg_result = "---"
+    if pcfg:
+        parts = []
+        for name, r, sp in pcfg:
+            p = _pair(r)
+            recon = rf"{100 * p['reconstruction']['frac_pass']:.0f}\%"
+            sr = sp["0->1"]["sres"] if sp and "0->1" in sp else None
+            sres = rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"
+            layer_label = name.replace("layer_", "layer~")
+            parts.append(rf"{layer_label}: {p['n_candidate_edges']:,} candidates, {recon} recon, {sres} $S_\mathrm{{res}}$")
+        pcfg_result = "; ".join(parts)
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
          rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
-        ("2 Trained toy", "a SAE trained on a toy model", "the tree is known",
+        ("2 Trained toy", "an SAE trained on a toy model, Bussmann's tree", "the Bussmann's tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
-        ("3 PCFG SAE", "a Matryoshka SAE trained on a small model build on PCFG tree", "the PCFG tree is known", "---"),
+        ("3 PCFG SAE", "a Matryoshka SAE trained on a small model built on a PCFG tree", "the PCFG tree is known", pcfg_result),
         ("4 Real SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
          "40 survivors read against autointerp labels"),
     ]
@@ -235,12 +246,14 @@ def t_tiers(toy, tt, align_json):
                 r"$\rightarrow$ late on the trained toy.")
     return table(
         "tiers", r"\textbf{Four tiers, trading ground truth against realism.} Each rung "
-        "licenses the one above it. Tier~1 proves the arithmetic and nothing about whether an SAE "
-        "would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE "
-        "actually learned reaches the metrics, which is also what lets it attribute a miss --- a "
-        "missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 uses "
-        "a smaller base model whose structure is not aligned to language; only Tier~4 has no "
-        "known answer and is named for how it is judged rather than what it runs on.",
+        "licenses the one above it: Tier~1 proves the arithmetic and nothing about whether "
+        "an SAE would learn such a structure; Tier~2 closes exactly that gap, because only "
+        "what the SAE actually learned reaches the metrics, which is also what lets it "
+        "attribute a miss --- a missed edge counts against a metric only if the SAE learned "
+        "both endpoints. Tier~3 keeps the known tree but swaps the base model for a smaller "
+        "transformer trained on PCFG corpora, isolating base-model dependence from SAE quality. "
+        "Tier~4 is the real SAE: no known answer, named for how it is judged rather than "
+        "what it runs on.",
         ["Tier", "Runs on", "Ground truth", "Result"], rows, align="llll", star=True, note=note)
 
 
@@ -437,7 +450,7 @@ def build(dry: bool):
     add("MAIN 3", "matrix", True, "argued, not measured -- see the module docstring", t_matrix)
     add("MAIN 4", "tiers", bool(toy and tt), "toy + trained-toy calibration JSON"
         if (toy and tt) else "needs both calibration JSONs",
-         lambda: t_tiers(toy, tt, align), "Validation")
+         lambda: t_tiers(toy, tt, align, pcfg), "Validation")
     add("MAIN 5", "tier1", bool(toy), f"{len(toy) if toy else 0} scorecard rows"
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
     add("MAIN 6", "gemma", bool(layers), f"{len(layers)} gemma layer reports"

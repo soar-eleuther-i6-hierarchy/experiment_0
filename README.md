@@ -207,19 +207,21 @@ dictionary and 11.9% on the toy. It ranks a superparent far down (median rank 24
 true parent's 1), and the top-*k* cutoff is what lets chance through. An `S_res` pass rate is only
 comparable between dictionaries of similar size.
 
-### Why trust the table: three tiers
+### Why trust the table: four tiers
 
 Each tier gives up one guarantee and gains one dose of reality; a metric we trust has to hold across
-all three. ("Tier", not "layer", to avoid confusion with the model's residual-stream layers.)
+all four. ("Tier", not "layer", to avoid confusion with the model's residual-stream layers.)
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
 | **1. Synthetic toy** | a known 5-parent tree plus six injected structures, reduced to cached stats *and* to the per-token view the probes need | yes, by construction | the maths is right — **14/14 across seeds 0–7**, covering all 21 metric functions, each pathology caught by its intended metric |
 | **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
-| **3. Real SAE** | the production `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | no, human judgement | the metrics mean something outside a toy |
+| **3. PCFG SAE** | a Matryoshka SAE trained on a small base transformer built from a PCFG grammar | the PCFG grammar is known | the battery runs on a non-trivial, non-toy source — layer~01: 327 candidates, 100% recon, 0/327 S_res; layer~03: 781 candidates, 95% recon, 4/772 S_res |
+| **4. Real SAE** | the production `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | none — human reading | 40 survivors read against autointerp labels |
 
-Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge with
-both a trained SAE and a known answer.
+Tier 1 is certain but artificial; Tier 4 is real but has no ground truth; Tier 2 is the bridge with
+both a trained SAE and a known answer; Tier 3 bridges the toy to a production-scale model using a
+grammar whose structure is known even though each generated tree is sampled at runtime.
 
 **Scope.** Tier 1 scores **14/14 rows across seeds 0–7**, covering **21/21 metric functions** —
 including `S_res` and in-block directed coverage, which until 7 August were graded by nothing. The
@@ -227,7 +229,7 @@ page used to say the probe functions were "calibrated in Tier 2"; Tier 2 imports
 none of them is one of those. Two rows are negative controls that pass when the battery does *not*
 act, so absorption and shared-topic co-occurrence are demonstrated limitations rather than asserted
 ones. Full detail, per-metric scorecards and how to run each tier:
-**[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-three-tiers)**.
+**[outputs/README.md](outputs/README.md#how-the-metrics-are-validated-four-tiers)**.
 
 ## Headline findings
 

@@ -156,20 +156,22 @@ erase the previous numbers, `collect_statistics.py` copies the current artifacts
 `token_cache/` and `figures/`: the caches are on the Hub and rebuildable, and copying them per
 run would fill the disk. Archives are gitignored — they are history, not results.
 
-## How the metrics are validated: three tiers
+## How the metrics are validated: four tiers
 
-The same metrics are checked at three tiers of increasing realism. Each tier gives up one guarantee
-and gains one dose of reality; a metric we trust has to hold across all three. ("Tier", not "layer",
+The same metrics are checked at four tiers of increasing realism. Each tier gives up one guarantee
+and gains one dose of reality; a metric we trust has to hold across all four. ("Tier", not "layer",
 to avoid confusion with the model's residual-stream layers.)
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
 | **1. Synthetic toy** | [`validation/synthetic_toy_world.py`](../validation/synthetic_toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows across seeds 0–7**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
 | **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) — and the probe functions now run here too: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy catches a conflation the SAE itself introduced (0.958 against 0.000 for the other parents) |
-| **3. Real SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a production SAE |
+| **3. PCFG SAE** | [`validation/from_pcfg.py`](../validation/from_pcfg.py) on a PCFG base transformer (zipf 1.5, 1792 latents in 8 blocks) | the PCFG grammar is known | the battery runs on a non-trivial source — layer~01: 327 candidates, 100% recon, 0/327 S_res; layer~03: 781 candidates, 95% recon, 4/772 S_res |
+| **4. Real SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a production SAE |
 
-Tier 1 is certain but artificial; Tier 3 is real but has no ground truth; Tier 2 is the bridge that
-has both a trained SAE and a known answer.
+Tier 1 is certain but artificial; Tier 4 is real but has no ground truth; Tier 2 is the bridge that
+has both a trained SAE and a known answer; Tier 3 bridges the toy to a production-scale model using
+a grammar whose structure is known even though each generated tree is sampled at runtime.
 
 **What the tiers do and do not cover.** Tier 1 scores **14/14 rows across seeds 0–7**, covering
 **21/21 metric functions**. Until 7 August this paragraph said `S_res` was "calibrated in Tier 2,
