@@ -33,7 +33,7 @@
      &  \\
     \midrule
     Base model & \texttt{google/gemma-2-2b}, residual stream \\
-    Layers graded & 3, 6, 12, 18, 24 \\
+    Layers graded & 1, 3, 6, 12, 18, 24 \\
     SAE & \texttt{gemma-2-2b-res-matryoshka-dc}, Matryoshka, $D = 32,768$ \\
     Nested blocks & B0 $[0,128)$, B1 $[128,512)$, B2 $[512,2048)$, B3 $[2048,8192)$, B4 $[8192,32768)$ \\
     Corpus & \texttt{NeelNanda/pile-10k}, 400 docs, context 128 \\
@@ -105,7 +105,7 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{Three tiers, trading ground truth against realism.} Each rung licenses the one above it. Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE actually learned reaches the metrics, which is also what lets it attribute a miss --- a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 has no known answer and is named for how it is judged rather than what it runs on.}
+  \caption{\textbf{Four tiers, trading ground truth against realism.} Each rung licenses the one above it. Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE actually learned reaches the metrics, which is also what lets it attribute a miss --- a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 uses a smaller base model whose structure is not aligned to language; only Tier~4 has no known answer and is named for how it is judged rather than what it runs on.}
   \label{tab:tiers}
   \begin{tabular}{llll}
     \toprule
@@ -113,7 +113,8 @@
     \midrule
     1 Synthetic toy & hand-built statistics & by construction & 14/14 rows, 21/21 functions, seeds 0--7 \\
     2 Trained toy & a Matryoshka SAE trained on that tree & the tree is known & precision 1.00, recall 0.67 \\
-    3 Real SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
+    3 PCFG SAE & A small transformer trained on PCFG corpora, then a Matryoshka SAE on its activations. & the PCFG tree is known & --- \\
+    4 Real SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
     \bottomrule
   \end{tabular}
   \\[2pt] \footnotesize Lateral control (not a tier): 6/6 testable true edges run early block $\rightarrow$ late on the trained toy.
@@ -161,6 +162,7 @@
     \toprule
     Layer & Candidates & Recon. & At chance & Freq.-driven & $\geq 2$ parents & $S_\mathrm{res}$ \\
     \midrule
+    L1 & 2,929 & 86\% & 75\% & 0.7\% & 100\% & --- \\
     L3 & 1,971 & 90\% & 69\% & 0.9\% & 99\% & --- \\
     L6 & 2,428 & 86\% & 86\% & 1.0\% & 100\% & 10/1,700 \\
     L12 & 1,473 & 54\% & 76\% & 1.9\% & 100\% & --- \\
@@ -206,27 +208,6 @@
     \texttt{gemma-2-2b} L6 & 32,768 & 0.015\% & 0.59\% & 39$\times$ \\
     PCFG layer 01 & 1,792 & 0.279\% & 0.00\% & below chance \\
     PCFG layer 03 & 1,792 & 0.279\% & 0.52\% & 2$\times$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-% [APP 3]
-\begin{table}[tbp]
-  \centering
-  \small
-  \caption{\textbf{One contaminating token position moved five of six metrics.} Means over the five graded layers, block pair B0$\rightarrow$B1, before and after excluding the beginning-of-sequence position. BOS is an attention sink on which effectively every feature fires; with 400 documents it gave every pair in the dictionary 400 joint firings against a support guard of $\mathrm{MIN\_JOINT} = 30$, so the guard admitted pairs that never co-occur anywhere else. Every quantity computed from that one co-firing matrix moved, and the one that is not --- a ratio over children that already have a parent --- did not. \textbf{The \emph{before} column is withdrawn} and is reproduced only to size the error. Agreement among detectors that share an input is much weaker evidence than a battery implies.}
-  \label{tab:bos}
-  \begin{tabular}{lrrrr}
-    \toprule
-    Quantity & Reads co-fire & Before & After & Change \\
-    \midrule
-    Candidate edges & \checkmark & 4,865 & 1,855 & 0.38$\times$ \\
-    Improve reconstruction, \% & \checkmark & 18 & 76 & 4.19$\times$ \\
-    Frequency-driven, \% & \checkmark & 50.3 & 1.5 & 0.03$\times$ \\
-    Mean frequency survival & \checkmark & 0.54 & 1.01 & 1.87$\times$ \\
-    Sibling redundancy & \checkmark & 0.31 & 0.05 & 0.16$\times$ \\
-    Superparents flagged & \checkmark & 7.6 & 4.2 & 0.55$\times$ \\
-    Children with $\geq 2$ parents, \% & -- & 99 & 97 & 0.99$\times$ \\
     \bottomrule
   \end{tabular}
 \end{table}

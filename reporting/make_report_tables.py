@@ -215,7 +215,7 @@ def t_matrix():
 
 
 # ---------------------------------------------------------------------------
-# 4. The three tiers.
+# 4. The tiers.
 # ---------------------------------------------------------------------------
 def t_tiers(toy, tt, align_json):
     n_pass = sum(r["pass"] for r in toy) if toy else None
@@ -224,7 +224,9 @@ def t_tiers(toy, tt, align_json):
          rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
         ("2 Trained toy", "a Matryoshka SAE trained on that tree", "the tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
-        ("3 Real SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
+        ("3 PCFG SAE", "A small transformer trained on PCFG corpora, then a Matryoshka SAE on its activations.",
+         "the PCFG tree is known", "---"),
+        ("4 Real SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
          "40 survivors read against autointerp labels"),
     ]
     note = None
@@ -233,12 +235,13 @@ def t_tiers(toy, tt, align_json):
                 rf"{align_json['n_testable']} testable true edges run early block "
                 r"$\rightarrow$ late on the trained toy.")
     return table(
-        "tiers", r"\textbf{Three tiers, trading ground truth against realism.} Each rung "
+        "tiers", r"\textbf{Four tiers, trading ground truth against realism.} Each rung "
         "licenses the one above it. Tier~1 proves the arithmetic and nothing about whether an SAE "
         "would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE "
         "actually learned reaches the metrics, which is also what lets it attribute a miss --- a "
-        "missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 has "
-        "no known answer and is named for how it is judged rather than what it runs on.",
+        "missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 uses "
+        "a smaller base model whose structure is not aligned to language; only Tier~4 has no "
+        "known answer and is named for how it is judged rather than what it runs on.",
         ["Tier", "Runs on", "Ground truth", "Result"], rows, align="llll", star=True, note=note)
 
 
@@ -435,7 +438,7 @@ def build(dry: bool):
     add("MAIN 3", "matrix", True, "argued, not measured -- see the module docstring", t_matrix)
     add("MAIN 4", "tiers", bool(toy and tt), "toy + trained-toy calibration JSON"
         if (toy and tt) else "needs both calibration JSONs",
-        lambda: t_tiers(toy, tt, align), "Validation")
+         lambda: t_tiers(toy, tt, align), "Validation")
     add("MAIN 5", "tier1", bool(toy), f"{len(toy) if toy else 0} scorecard rows"
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
     add("MAIN 6", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
