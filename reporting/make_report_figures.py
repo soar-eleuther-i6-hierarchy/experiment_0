@@ -759,7 +759,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     l6 = _json(G / "layer_06" / "metrics_report.json")
     s6 = _json(G / "layer_06" / "second_pass.json")
     run("funnel_coverage_to_sres", bool(l6 and s6),
-        "gemma2_2b/layer_06 metrics_report.json + second_pass.json"
+        "gemma-2-2b/layer_06 metrics_report.json + second_pass.json"
         if (l6 and s6) else "needs layer_06/second_pass.json (stage 03, run on L6 only)",
         lambda: funnel_coverage_to_sres(l6, s6, where="gemma-2-2b, layer 6"))
 
@@ -799,7 +799,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         lambda: calibration_trained_toy_recovery(tt, align))
 
     pcfg = [(p.name, _json(p / "metrics_report.json"))
-            for p in sorted((C.OUT_DIR / "pcfg").glob("layer_*")) if p.is_dir()]
+            for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")) if p.is_dir()]
     pcfg = [(f"PCFG {n.replace('_', ' ')}", r) for n, r in pcfg if r]
     # Every PCFG layer, not the first one. `pcfg[:1]` silently dropped layer 03,
     # which is the run that carries the strict test -- the exact "renders 6 of 10
@@ -810,7 +810,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         lambda: cross_source_funnel_shares(runs))
 
     ib = []
-    for base, label in [(G, "gemma"), (C.OUT_DIR / "pcfg", "PCFG")]:
+    for base, label in [(G, "gemma"), (C.OUT_DIR / "pcfg-matryoshka", "PCFG")]:
         for lay in sorted(base.glob("layer_*")):
             j = _json(lay / "in_block_edges.json")
             if j:
@@ -824,7 +824,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     observed = []
     probes = [("gemma L6", 32768, G / "layer_06" / "second_pass.json")]
     probes += [(f"PCFG {q.parent.name.replace('_', ' ')}", 1792, q)
-               for q in sorted((C.OUT_DIR / "pcfg").glob("layer_*/second_pass.json"))]
+               for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json"))]
     for label, d_sae, path in probes:
         sp = _json(path)
         if sp and "0->1" in sp:
@@ -1006,7 +1006,7 @@ def _captions():
             "Matryoshka nesting itself places a parent in an earlier block than its children."
             + extra)
 
-    ib = [q for base in (C.OUT_DIR / C.SOURCE_NAME, C.OUT_DIR / "pcfg")
+    ib = [q for base in (C.OUT_DIR / C.SOURCE_NAME, C.OUT_DIR / "pcfg-matryoshka")
           for q in sorted(base.glob("layer_*")) if (q / "in_block_edges.json").exists()]
     if ib:
         d["in_block_relations"] = (

@@ -61,7 +61,7 @@ def gemma_layers():
 
 
 def pcfg_runs():
-    base = C.OUT_DIR / "pcfg"
+    base = C.OUT_DIR / "pcfg-matryoshka"
     return [(d.name, _json(d / "metrics_report.json"), _json(d / "second_pass.json"))
             for d in sorted(base.glob("layer_*")) if (d / "metrics_report.json").exists()]
 

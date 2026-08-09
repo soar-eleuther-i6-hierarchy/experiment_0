@@ -10,16 +10,16 @@ Needs nothing (no model, no cache, no stats) -- the page list is config.
 Writes: outputs/<source>/layer_NN/README.md for every layer in config.NAV_LAYERS
         (--source: the source directory's own index; --run: a non-layer run's)
 
-A run that is not a gemma layer (EXP0_RUN=pcfg) has the same problem and gets the
-same treatment via --run, with two differences: its page list is whatever it
-actually produced -- a PCFG SAE has no Neuronpedia labels, so no qualitative pages
+A run that is not a gemma layer (EXP0_RUN=pcfg-matryoshka-matryoshka) has the same problem and gets the
+    same treatment via --run, with two differences: its page list is whatever it
+    actually produced -- a PCFG SAE has no Neuronpedia labels, so no qualitative pages
 -- and its heading comes from the run's own report rather than from this module's
 gemma constants.
 
 Run:
     python3 -m reporting.layer_index          # all layers in NAV_LAYERS
     python3 -m reporting.layer_index --layer 6
-    EXP0_RUN=pcfg python3 -m reporting.layer_index --run
+    EXP0_RUN=pcfg-matryoshka-matryoshka python3 -m reporting.layer_index --run
 """
 from __future__ import annotations
 
@@ -87,7 +87,7 @@ def render_run(run: str) -> str:
     r = json.loads(report.read_text())
     cfg = r.get("config") or {}
 
-    # A run whose directory IS a layer (pcfg/layer_01) marks that pill, exactly as
+    # A run whose directory IS a layer (pcfg-matryoshka/layer_01) marks that pill, exactly as
     # a gemma layer page does. The refresher derives the same thing from the path;
     # they must not disagree.
     m = re.fullmatch(r"layer_(\d+)", pathlib.Path(run).name)

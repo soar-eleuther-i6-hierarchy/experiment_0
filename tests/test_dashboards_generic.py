@@ -122,7 +122,7 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as td:
         out_dir = Path(td)
-        run_dir = out_dir / "pcfg"
+        run_dir = out_dir / "pcfg-matryoshka"
         run_dir.mkdir(parents=True)
 
         cfg = make_cfg(run_dir)
@@ -134,7 +134,7 @@ def main() -> int:
         # The hand-off stage 03 needs: this dictionary's decoder, beside the stats.
         torch.save(sae.W_dec.detach().cpu(), run_dir / "w_dec.pt")
 
-        env = {**os.environ, "EXP0_OUT": str(out_dir), "EXP0_RUN": "pcfg"}
+        env = {**os.environ, "EXP0_OUT": str(out_dir), "EXP0_RUN": "pcfg-matryoshka"}
         failures = []
         ran = stage([sys.executable, "run_metrics.py", "--stats", str(cfg.EXP0_STATS_PATH),
                      "--out-dir", str(run_dir)], env, failures)
@@ -165,7 +165,12 @@ def main() -> int:
             check((run_dir / "superparent_sankey.html").exists(), "no superparent_sankey.html")
             if dash.exists():
                 html = dash.read_text()
-                check("gemma-2-2b" not in html, "the page header still says gemma-2-2b")
+                # The nav bar links to every source, so the scope line is the
+                # target: it should identify the model from the run's own config,
+                # not gemma's defaults. The scope line renders as
+                # `model / sae_source`, so checking for that separator avoids
+                # false positives from the nav bar's gemma-2-2b href.
+                check("gemma-2-2b /" not in html, "the page header still says gemma-2-2b")
                 check(f"{STEPS[-1]} latents in {len(STEPS)} blocks" in html,
                       "the page header does not state this dictionary's shape")
                 check('src="../assets/plotly.min.js"' in html,

@@ -1,0 +1,3729 @@
+{
+  "config": {
+    "layer": 1,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "1-res-matryoshka-dc",
+    "sae_id": "blocks.1.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "total_tokens": 48571,
+  "pairs": [
+    {
+      "pair": "0->1",
+      "n_candidate_edges": 2929,
+      "n_dropped_min_joint": 28,
+      "n_pairs_below_min_joint": 23961,
+      "independence_null": {
+        "mean_edge_pmi": 0.27696056153104753,
+        "n_chance_level": 2206,
+        "frac_chance_level": 0.7531580744281324
+      },
+      "joint_child": {
+        "r_supp_mean": 0.9935509417364106,
+        "r_mass_mean": 0.9952835027734939,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 67,
+        "n_children_with_parent": 383,
+        "n_multi_parented": 383,
+        "poly_frac": 1.0,
+        "top1_edge_share": 0.13076135199726868,
+        "outdeg_gini": 0.9069034866848753,
+        "max_outdeg": 383
+      },
+      "joint_child_cov_mean": 0.43689130993323266,
+      "reconstruction": {
+        "n_pass": 2522,
+        "frac_pass": 0.8610447251621713
+      },
+      "freq_control": {
+        "n_testable": 2901,
+        "mean_survival": 1.006722574903148,
+        "n_freq_driven": 21,
+        "frac_freq_driven": 0.007238883143743537
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": {
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 47,
+        "mean_redundancy": 0.04591307482129572,
+        "n_over_global_threshold": 0
+      },
+      "n_superparents": 9,
+      "n_superparents_strict": 9,
+      "superparents": [
+        {
+          "parent_local": 53,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9957587861069362,
+          "strict": true,
+          "parent_global": 53,
+          "label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/53"
+        },
+        {
+          "parent_local": 86,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9946676000082354,
+          "strict": true,
+          "parent_global": 86,
+          "label": "descriptions of technological or mechanical modes or settings",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86"
+        },
+        {
+          "parent_local": 126,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9886969590908155,
+          "strict": true,
+          "parent_global": 126,
+          "label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126"
+        },
+        {
+          "parent_local": 124,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.8606781824545511,
+          "strict": true,
+          "parent_global": 124,
+          "label": "references to legal proceedings and related information",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/124"
+        },
+        {
+          "parent_local": 121,
+          "outdeg": 354,
+          "outdeg_frac": 0.921875,
+          "fire_frac": 0.6507998599987647,
+          "strict": true,
+          "parent_global": 121,
+          "label": "references or mentions of texting and communication",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/121"
+        },
+        {
+          "parent_local": 95,
+          "outdeg": 175,
+          "outdeg_frac": 0.4557291666666667,
+          "fire_frac": 0.29470260031706164,
+          "strict": true,
+          "parent_global": 95,
+          "label": "references to color spaces, especially HSV",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/95"
+        },
+        {
+          "parent_local": 70,
+          "outdeg": 142,
+          "outdeg_frac": 0.3697916666666667,
+          "fire_frac": 0.3471824751394865,
+          "strict": true,
+          "parent_global": 70,
+          "label": "descriptions of technical procedures involved in time synchronization systems",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/70"
+        },
+        {
+          "parent_local": 4,
+          "outdeg": 135,
+          "outdeg_frac": 0.3515625,
+          "fire_frac": 0.498672047106298,
+          "strict": true,
+          "parent_global": 4,
+          "label": "references to technical documentation, standards, or scholarly articles",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/4"
+        },
+        {
+          "parent_local": 118,
+          "outdeg": 131,
+          "outdeg_frac": 0.3411458333333333,
+          "fire_frac": 0.3608531839986823,
+          "strict": true,
+          "parent_global": 118,
+          "label": "expressions of dissatisfaction, unhappiness, or passive-aggressive attitudes",
+          "url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/118"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 86,
+          "child": 378,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0019456863719158801,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.7828827517804027,
+          "recon_child_gain": -3.720199035202386e-05,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "mathematical expressions and notation related to statistical formulas and inequalities",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/378"
+        },
+        {
+          "parent": 86,
+          "child": 309,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0031048186785891706,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.9419980592567779,
+          "recon_child_gain": 0.6704076265636795,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "descriptions of experimental procedures, measurements, and data related to scientific studies",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/309"
+        },
+        {
+          "parent": 126,
+          "child": 204,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0031027445754029403,
+          "pmi": 0.011367405747969555,
+          "recon_parent_gain": 0.5683314785327891,
+          "recon_child_gain": 0.682891652534853,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "the concept of the number one",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/204"
+        },
+        {
+          "parent": 126,
+          "child": 237,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0026446212152763317,
+          "pmi": 0.011367405747969336,
+          "recon_parent_gain": 0.7315536433779191,
+          "recon_child_gain": 3.5582066796403904,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "questions or prompts asking for specific information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/237"
+        },
+        {
+          "parent": 126,
+          "child": 238,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0013535462912831618,
+          "pmi": 0.011367405747969555,
+          "recon_parent_gain": 1.472595622651952,
+          "recon_child_gain": 1.8104382480207837,
+          "recon_pass": true,
+          "freq_survival": null,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "examples of equations involving derivatives and algebraic expressions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/238"
+        },
+        {
+          "parent": 126,
+          "child": 252,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.002290616800633043,
+          "pmi": 0.011367405747969555,
+          "recon_parent_gain": 0.9405514759827338,
+          "recon_child_gain": 3.5312204801055693,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "references to hierarchical or structured data patterns, particularly related to nested or separated elements",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/252"
+        },
+        {
+          "parent": 126,
+          "child": 156,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.001416017658573154,
+          "pmi": 0.011367405747969555,
+          "recon_parent_gain": 0.9823064991220744,
+          "recon_child_gain": 0.8646670118495414,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "sequences of closing brackets or similar punctuation marks",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/156"
+        },
+        {
+          "parent": 126,
+          "child": 148,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0017700220732164425,
+          "pmi": 0.011367405747969336,
+          "recon_parent_gain": 0.15179302457670668,
+          "recon_child_gain": 0.23240822337308145,
+          "recon_pass": true,
+          "freq_survival": null,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "expressions of technical or scientific concepts, often involving specialized terminology and symbols",
+          "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/148"
+        },
+        {
+          "parent": 86,
+          "child": 215,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.00856929955290611,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.5676840971756274,
+          "recon_child_gain": 0.18522930909773425,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the following text or concepts",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/215"
+        },
+        {
+          "parent": 53,
+          "child": 252,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0022743719631965263,
+          "pmi": 0.004250233352043957,
+          "recon_parent_gain": 1.861514736810811,
+          "recon_child_gain": 3.5312204801055693,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "linguistic expressions related to organizing, planning, and evaluating group activities or discussions",
+          "child_label": "references to hierarchical or structured data patterns, particularly related to nested or separated elements",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/53",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/252"
+        },
+        {
+          "parent": 86,
+          "child": 292,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.006602914389799636,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.18513463113688922,
+          "recon_child_gain": 0.0026097357200193763,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "sequences of specific accented characters and special symbols",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/292"
+        },
+        {
+          "parent": 86,
+          "child": 329,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.004926312303361484,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.7291116363352136,
+          "recon_child_gain": 0.4644098718783246,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the likelihood or possibility of an event occurring",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/329"
+        },
+        {
+          "parent": 86,
+          "child": 481,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0014489153833416128,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.462179106389612,
+          "recon_child_gain": 0.4482218791902872,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the word \"since\" in the text",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/481"
+        },
+        {
+          "parent": 86,
+          "child": 132,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.002152674283821825,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.33600850419030864,
+          "recon_child_gain": 0.003454736750777303,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the symbol representing the approximate value nine, indicating a focus on numerical or notation-based information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/132"
+        },
+        {
+          "parent": 86,
+          "child": 133,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.007203179334326876,
+          "pmi": 0.005346667980954373,
+          "recon_parent_gain": 0.8121551579467057,
+          "recon_child_gain": 0.11847352494461229,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.01004251796815308,
+          "parent_label": "descriptions of technological or mechanical modes or settings",
+          "child_label": "references to the real part of complex frequency- or energy-related quantities",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/86",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/133"
+        }
+      ]
+    },
+    {
+      "pair": "1->2",
+      "n_candidate_edges": 1861,
+      "n_dropped_min_joint": 294,
+      "n_pairs_below_min_joint": 531010,
+      "independence_null": {
+        "mean_edge_pmi": 2.2228081836181213,
+        "n_chance_level": 187,
+        "frac_chance_level": 0.10048361096184846
+      },
+      "joint_child": {
+        "r_supp_mean": 0.9996286915692297,
+        "r_mass_mean": 0.999857456470236,
+        "n_share_energy_ge_09": 1
+      },
+      "degree": {
+        "n_parents_with_children": 100,
+        "n_children_with_parent": 690,
+        "n_multi_parented": 329,
+        "poly_frac": 0.47681159420289854,
+        "top1_edge_share": 0.14562063406770553,
+        "outdeg_gini": 0.9201748052122514,
+        "max_outdeg": 271
+      },
+      "joint_child_cov_mean": 0.5610929336156508,
+      "reconstruction": {
+        "n_pass": 371,
+        "frac_pass": 0.19935518538420205
+      },
+      "freq_control": {
+        "n_testable": 1833,
+        "mean_survival": 0.5290792123080054,
+        "n_freq_driven": 894,
+        "frac_freq_driven": 0.4877250409165303
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": {
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 68,
+        "mean_redundancy": 0.2739389942547165,
+        "n_over_global_threshold": 0
+      },
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 400,
+          "child": 642,
+          "reverse_cov": 0.9308176100628931,
+          "forward_cov": 0.058637083993660855,
+          "pmi": 2.8854897718514714,
+          "recon_parent_gain": 0.21022541430678338,
+          "recon_child_gain": 0.023450222098107147,
+          "recon_pass": true,
+          "freq_survival": 1.007179054054054,
+          "parent_redundancy": 0.2684989035069293,
+          "parent_label": "occurrences of code snippets involving output statements, buffer manipulations, and conditional structures in programming code",
+          "child_label": "snippets of code or text enclosed within LaTeX command structures",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/400",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/642"
+        },
+        {
+          "parent": 303,
+          "child": 1846,
+          "reverse_cov": 0.918918918918919,
+          "forward_cov": 0.12099644128113879,
+          "pmi": 4.374722686046938,
+          "recon_parent_gain": -0.0016336414152111152,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4176665168964546,
+          "parent_label": "references to unspecified quantities or instances",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/303",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 219,
+          "child": 1846,
+          "reverse_cov": 0.918918918918919,
+          "forward_cov": 0.059130434782608696,
+          "pmi": 3.6587073145833324,
+          "recon_parent_gain": 0.1953171659950697,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.09155421840722976,
+          "parent_label": "references to self-organization and emergent states in physical systems",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/219",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 236,
+          "child": 1846,
+          "reverse_cov": 0.9054054054054054,
+          "forward_cov": 0.05697278911564626,
+          "pmi": 3.6215353216969155,
+          "recon_parent_gain": -0.006174283910893006,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.34427584896635505,
+          "parent_label": "references to groups of people",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/236",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 219,
+          "child": 1791,
+          "reverse_cov": 0.9009009009009009,
+          "forward_cov": 0.08695652173913043,
+          "pmi": 3.638904687287153,
+          "recon_parent_gain": 0.22793798017120076,
+          "recon_child_gain": -0.001961792178582897,
+          "recon_pass": false,
+          "freq_survival": 0.0,
+          "parent_redundancy": 0.09155421840722976,
+          "parent_label": "references to self-organization and emergent states in physical systems",
+          "child_label": "structures related to tensor products in mathematical decomposition",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/219",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1791"
+        },
+        {
+          "parent": 193,
+          "child": 1846,
+          "reverse_cov": 0.8918918918918919,
+          "forward_cov": 0.21019108280254778,
+          "pmi": 4.926978586882694,
+          "recon_parent_gain": -0.0021610031977925864,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.41876739637335425,
+          "parent_label": "examples of the word \"such.\"",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/193",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 249,
+          "child": 1846,
+          "reverse_cov": 0.8918918918918919,
+          "forward_cov": 0.055790363482671176,
+          "pmi": 3.6005627088125602,
+          "recon_parent_gain": -0.002989178649965109,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4056095505747026,
+          "parent_label": "references to the word \"the\"",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/249",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 250,
+          "child": 533,
+          "reverse_cov": 0.8917378917378918,
+          "forward_cov": 0.24723538704581358,
+          "pmi": 3.532581288338857,
+          "recon_parent_gain": 1.6328775506116762,
+          "recon_child_gain": 0.2808576519702529,
+          "recon_pass": true,
+          "freq_survival": 0.7102236421725239,
+          "parent_redundancy": null,
+          "parent_label": "references to the HTML element ' (apostrophe)",
+          "child_label": "references to personal possession or quotations marked by various forms of apostrophes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/250",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/533"
+        },
+        {
+          "parent": 281,
+          "child": 1791,
+          "reverse_cov": 0.8828828828828829,
+          "forward_cov": 0.13225371120107962,
+          "pmi": 4.058218576030843,
+          "recon_parent_gain": -0.002903290979699892,
+          "recon_child_gain": -0.001961792178582897,
+          "recon_pass": false,
+          "freq_survival": 0.0,
+          "parent_redundancy": 0.11817347163720522,
+          "parent_label": "references to the concept of a \"between\" or \"comparison\" indicating the neuron looks for the idea of relationships, comparisons, or connections between entities",
+          "child_label": "structures related to tensor products in mathematical decomposition",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/281",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1791"
+        },
+        {
+          "parent": 298,
+          "child": 1793,
+          "reverse_cov": 0.8823529411764706,
+          "forward_cov": 0.03177966101694915,
+          "pmi": 3.815492614869185,
+          "recon_parent_gain": 0.9298592222223963,
+          "recon_child_gain": 0.9318241884585919,
+          "recon_pass": true,
+          "freq_survival": 0.5666666666666667,
+          "parent_redundancy": 0.29938654802156656,
+          "parent_label": "sentences discussing the possession or occurrence of the word \"have\" in various contexts",
+          "child_label": "references to specific historical figures or royal titles",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/298",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1793"
+        },
+        {
+          "parent": 451,
+          "child": 1846,
+          "reverse_cov": 0.8783783783783784,
+          "forward_cov": 0.07728894173602854,
+          "pmi": 3.9265124406872105,
+          "recon_parent_gain": -0.006110653154888406,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.41000738729362823,
+          "parent_label": "patterns associated with structured data schemas and their components, such as definitions, types, and properties",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/451",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 332,
+          "child": 1846,
+          "reverse_cov": 0.8783783783783784,
+          "forward_cov": 0.011077027948193593,
+          "pmi": 1.9838349613972865,
+          "recon_parent_gain": 0.0005483349728566362,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.1991735696435895,
+          "parent_label": "references to disease cases, medical queries, and related database or statistical information",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/332",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 219,
+          "child": 2027,
+          "reverse_cov": 0.876,
+          "forward_cov": 0.19043478260869565,
+          "pmi": 3.61087551456565,
+          "recon_parent_gain": 0.8673443924368646,
+          "recon_child_gain": 0.12049752731326684,
+          "recon_pass": true,
+          "freq_survival": 0.0,
+          "parent_redundancy": 0.09155421840722976,
+          "parent_label": "references to self-organization and emergent states in physical systems",
+          "child_label": "references to the existence or presence of a certain element or condition",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/219",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/2027"
+        },
+        {
+          "parent": 129,
+          "child": 1846,
+          "reverse_cov": 0.8648648648648649,
+          "forward_cov": 0.17827298050139276,
+          "pmi": 4.762277525635914,
+          "recon_parent_gain": -0.0033536393487259065,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4056095505747026,
+          "parent_label": "occurrences of the word \"make.\"",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        },
+        {
+          "parent": 281,
+          "child": 1846,
+          "reverse_cov": 0.8648648648648649,
+          "forward_cov": 0.08636977058029689,
+          "pmi": 4.0375992888281065,
+          "recon_parent_gain": -0.0029325376970129693,
+          "recon_child_gain": 0.008970069585983969,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.11817347163720522,
+          "parent_label": "references to the concept of a \"between\" or \"comparison\" indicating the neuron looks for the idea of relationships, comparisons, or connections between entities",
+          "child_label": "judgments and related legal final decisions",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/281",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1846"
+        }
+      ]
+    },
+    {
+      "pair": "2->3",
+      "n_candidate_edges": 16729,
+      "n_dropped_min_joint": 2348,
+      "n_pairs_below_min_joint": 9272553,
+      "independence_null": {
+        "mean_edge_pmi": 4.632777761544057,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.9999203810538471,
+        "r_mass_mean": 0.9999173693469814,
+        "n_share_energy_ge_09": 90
+      },
+      "degree": {
+        "n_parents_with_children": 344,
+        "n_children_with_parent": 483,
+        "n_multi_parented": 277,
+        "poly_frac": 0.5734989648033126,
+        "top1_edge_share": 0.009922888397393748,
+        "outdeg_gini": 0.8750456495830592,
+        "max_outdeg": 166
+      },
+      "joint_child_cov_mean": 0.6976740564179197,
+      "reconstruction": {
+        "n_pass": 383,
+        "frac_pass": 0.022894375037360273
+      },
+      "freq_control": {
+        "n_testable": 10463,
+        "mean_survival": 0.04720515553893109,
+        "n_freq_driven": 10078,
+        "frac_freq_driven": 0.9632036700755041
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": {
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 285,
+        "mean_redundancy": 0.4669002422605726,
+        "n_over_global_threshold": 182
+      },
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 1666,
+          "child": 4526,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.2012779552715655,
+          "pmi": 5.044578733428538,
+          "recon_parent_gain": -0.005557221751569488,
+          "recon_child_gain": -0.004110604988546565,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5781191698037939,
+          "parent_label": "references to specific observations or measurements",
+          "child_label": "references to a specific formatting or coding syntax related to mathematical documents",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1666",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/4526"
+        },
+        {
+          "parent": 1130,
+          "child": 6191,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3567251461988304,
+          "pmi": 5.6491183674660315,
+          "recon_parent_gain": -0.0021761040733966927,
+          "recon_child_gain": -0.000848117054886317,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6439492620860187,
+          "parent_label": "references to the concept of mathematical minimality or completeness",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1130",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6191"
+        },
+        {
+          "parent": 884,
+          "child": 7888,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3684210526315789,
+          "pmi": 5.6491183674660315,
+          "recon_parent_gain": -0.0013036145112766846,
+          "recon_child_gain": -0.0008051012572153813,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6378067500730008,
+          "parent_label": "references to ongoing or continuous processes",
+          "child_label": "references to transcription factors involved in epithelial to mesenchymal transition (EMT)",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/884",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/7888"
+        },
+        {
+          "parent": 1294,
+          "child": 6165,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.009224011713030746,
+          "pmi": 1.9617019714038557,
+          "recon_parent_gain": 0.0040981700370760375,
+          "recon_child_gain": 0.10036212542126505,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.5141777326583965,
+          "parent_label": "references to cloud seeding, weather modification, and related climate engineering techniques",
+          "child_label": "references to software licensing and license information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1294",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6165"
+        },
+        {
+          "parent": 582,
+          "child": 5659,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4420289855072464,
+          "pmi": 5.863528238811487,
+          "recon_parent_gain": 0.0003698942538479122,
+          "recon_child_gain": 0.0010624435114151526,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6671816406917479,
+          "parent_label": "references to the European Commission's fines and enforcement criteria",
+          "child_label": "representations of byte size information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/582",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/5659"
+        },
+        {
+          "parent": 1714,
+          "child": 5659,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.02678963548528766,
+          "pmi": 3.060167857904952,
+          "recon_parent_gain": -0.0019766782418606157,
+          "recon_child_gain": 0.0010624435114151526,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.64340491364273,
+          "parent_label": "information related to oxygen levels, oxygen therapy, and hypoxia",
+          "child_label": "representations of byte size information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1714",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/5659"
+        },
+        {
+          "parent": 1261,
+          "child": 6191,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.22932330827067668,
+          "pmi": 5.207285615186993,
+          "recon_parent_gain": -0.0019375404471869068,
+          "recon_child_gain": -0.000848117054886317,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6425964061727454,
+          "parent_label": "references to growth and proliferative processes",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1261",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6191"
+        },
+        {
+          "parent": 936,
+          "child": 5659,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.2824074074074074,
+          "pmi": 5.415503516284526,
+          "recon_parent_gain": -0.005109657664799433,
+          "recon_child_gain": 0.0010624435114151526,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6343807297301145,
+          "parent_label": "the maximum values of relevant geometric or numerical parameters",
+          "child_label": "representations of byte size information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/936",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/5659"
+        },
+        {
+          "parent": 1503,
+          "child": 2979,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.17679558011049723,
+          "pmi": 4.89913771214292,
+          "recon_parent_gain": -0.0020344821567869304,
+          "recon_child_gain": -0.0005758813689471108,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.47438929532115465,
+          "parent_label": "references to properties of electronic systems, specifically related to electron-electron interactions and density operators",
+          "child_label": "references to the mathematical concept of the Bir invariant group",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1503",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/2979"
+        },
+        {
+          "parent": 1836,
+          "child": 5659,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.4552238805970149,
+          "pmi": 5.89294212401778,
+          "recon_parent_gain": 0.0010368001282223054,
+          "recon_child_gain": 0.0010624435114151526,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6671816406917479,
+          "parent_label": "references to a specific mathematical technique called \"minimal regularization\"",
+          "child_label": "representations of byte size information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1836",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/5659"
+        },
+        {
+          "parent": 1987,
+          "child": 6191,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.45864661654135336,
+          "pmi": 5.900432795746938,
+          "recon_parent_gain": -0.005531193522677147,
+          "recon_child_gain": -0.000848117054886317,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6438814683287221,
+          "parent_label": "references to scientific figures and supplementary materials",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1987",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6191"
+        },
+        {
+          "parent": 835,
+          "child": 5659,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.08495821727019498,
+          "pmi": 4.214312354920468,
+          "recon_parent_gain": -0.0021847460808749396,
+          "recon_child_gain": 0.0010624435114151526,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.28041002661209175,
+          "parent_label": "references to the production or synthesis of proteins",
+          "child_label": "representations of byte size information",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/835",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/5659"
+        },
+        {
+          "parent": 517,
+          "child": 2979,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.1679790026246719,
+          "pmi": 4.8479825488419905,
+          "recon_parent_gain": -0.0006874634871047406,
+          "recon_child_gain": -0.0005758813689471108,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.4971742301956703,
+          "parent_label": "patterns related to capturing or directing console output from Python scripts",
+          "child_label": "references to the mathematical concept of the Bir invariant group",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/517",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/2979"
+        },
+        {
+          "parent": 884,
+          "child": 6191,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.3567251461988304,
+          "pmi": 5.6491183674660315,
+          "recon_parent_gain": -0.0014899990100726071,
+          "recon_child_gain": -0.000848117054886317,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.6378067500730008,
+          "parent_label": "references to ongoing or continuous processes",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/884",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6191"
+        },
+        {
+          "parent": 1503,
+          "child": 6191,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.1685082872928177,
+          "pmi": 4.89913771214292,
+          "recon_parent_gain": -0.002251910656856091,
+          "recon_child_gain": -0.000848117054886317,
+          "recon_pass": false,
+          "freq_survival": null,
+          "parent_redundancy": 0.47438929532115465,
+          "parent_label": "references to properties of electronic systems, specifically related to electron-electron interactions and density operators",
+          "child_label": "references to diagrammatic or visual representations related to real-time transport or processes",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/1503",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/1-res-matryoshka-dc/6191"
+        }
+      ]
+    }
+  ],
+  "block_ranges": [
+    [
+      0,
+      128
+    ],
+    [
+      128,
+      512
+    ],
+    [
+      512,
+      2048
+    ],
+    [
+      2048,
+      8192
+    ],
+    [
+      8192,
+      32768
+    ]
+  ],
+  "second_pass": {
+    "0->1": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.36513350832636543,
+        "r_mass_kept_mean": 0.49199604199263897,
+        "per_parent": [
+          {
+            "parent_global": 1,
+            "r_supp_kept": 0.20064435296223376,
+            "r_mass_kept": 0.49192380239643135
+          },
+          {
+            "parent_global": 3,
+            "r_supp_kept": 0.5793966989186112,
+            "r_mass_kept": 0.541795530997925
+          },
+          {
+            "parent_global": 4,
+            "r_supp_kept": 0.9586309400933075,
+            "r_mass_kept": 0.9753230158187757
+          },
+          {
+            "parent_global": 6,
+            "r_supp_kept": 0.9586776859504132,
+            "r_mass_kept": 0.9931839259746267
+          },
+          {
+            "parent_global": 7,
+            "r_supp_kept": 0.07272727272727272,
+            "r_mass_kept": 0.07264096871219579
+          },
+          {
+            "parent_global": 8,
+            "r_supp_kept": 0.5897908979089791,
+            "r_mass_kept": 0.611689846757253
+          },
+          {
+            "parent_global": 9,
+            "r_supp_kept": 0.20014880952380953,
+            "r_mass_kept": 0.9671701314704668
+          },
+          {
+            "parent_global": 13,
+            "r_supp_kept": 0.6645096609551586,
+            "r_mass_kept": 0.68831825919514
+          },
+          {
+            "parent_global": 17,
+            "r_supp_kept": 0.43442223305704536,
+            "r_mass_kept": 0.4144842268376454
+          },
+          {
+            "parent_global": 21,
+            "r_supp_kept": 0.022727272727272728,
+            "r_mass_kept": 0.011337304002103537
+          },
+          {
+            "parent_global": 23,
+            "r_supp_kept": 0.2628526645768025,
+            "r_mass_kept": 0.33042783417025207
+          },
+          {
+            "parent_global": 24,
+            "r_supp_kept": 0.11079706048615037,
+            "r_mass_kept": 0.10602075147765244
+          },
+          {
+            "parent_global": 27,
+            "r_supp_kept": 0.04070042593469001,
+            "r_mass_kept": 0.12870616096001483
+          },
+          {
+            "parent_global": 28,
+            "r_supp_kept": 0.006714225765841376,
+            "r_mass_kept": 0.0013789968361472922
+          },
+          {
+            "parent_global": 29,
+            "r_supp_kept": 0.19795367344038653,
+            "r_mass_kept": 0.3858311555960161
+          },
+          {
+            "parent_global": 33,
+            "r_supp_kept": 0.581022797288971,
+            "r_mass_kept": 0.9924841457406292
+          },
+          {
+            "parent_global": 38,
+            "r_supp_kept": 0.013673655423883319,
+            "r_mass_kept": 0.007084203546369775
+          },
+          {
+            "parent_global": 41,
+            "r_supp_kept": 0.4567731817290727,
+            "r_mass_kept": 0.5669896863647336
+          },
+          {
+            "parent_global": 42,
+            "r_supp_kept": 0.2976545842217484,
+            "r_mass_kept": 0.46206623472625147
+          },
+          {
+            "parent_global": 53,
+            "r_supp_kept": 0.9889589579241187,
+            "r_mass_kept": 0.9849576528135968
+          },
+          {
+            "parent_global": 54,
+            "r_supp_kept": 0.09230769230769231,
+            "r_mass_kept": 0.06438649613322524
+          },
+          {
+            "parent_global": 57,
+            "r_supp_kept": 0.2720371151412906,
+            "r_mass_kept": 0.17473627181554305
+          },
+          {
+            "parent_global": 60,
+            "r_supp_kept": 0.6278440880268557,
+            "r_mass_kept": 0.7686252361043806
+          },
+          {
+            "parent_global": 63,
+            "r_supp_kept": 0.157600406710727,
+            "r_mass_kept": 0.3374399217246008
+          },
+          {
+            "parent_global": 64,
+            "r_supp_kept": 0.16608432331702772,
+            "r_mass_kept": 0.5151097238347258
+          },
+          {
+            "parent_global": 65,
+            "r_supp_kept": 0.24211778703152886,
+            "r_mass_kept": 0.5188879571011966
+          },
+          {
+            "parent_global": 68,
+            "r_supp_kept": 0.027250459277403553,
+            "r_mass_kept": 0.017917288022082877
+          },
+          {
+            "parent_global": 69,
+            "r_supp_kept": 0.12549019607843137,
+            "r_mass_kept": 0.2616331477491122
+          },
+          {
+            "parent_global": 70,
+            "r_supp_kept": 0.9728992468718496,
+            "r_mass_kept": 0.9979355874525803
+          },
+          {
+            "parent_global": 72,
+            "r_supp_kept": 0.08857142857142856,
+            "r_mass_kept": 0.004705415717520451
+          },
+          {
+            "parent_global": 73,
+            "r_supp_kept": 0.2582697201017812,
+            "r_mass_kept": 0.002556022348886287
+          },
+          {
+            "parent_global": 75,
+            "r_supp_kept": 0.031203566121842496,
+            "r_mass_kept": 0.02564144678913494
+          },
+          {
+            "parent_global": 76,
+            "r_supp_kept": 0.344143020476042,
+            "r_mass_kept": 0.436438277518227
+          },
+          {
+            "parent_global": 79,
+            "r_supp_kept": 0.2656482070867812,
+            "r_mass_kept": 0.2899658764949077
+          },
+          {
+            "parent_global": 82,
+            "r_supp_kept": 0.15587808417997098,
+            "r_mass_kept": 0.137325057772086
+          },
+          {
+            "parent_global": 83,
+            "r_supp_kept": 0.15908276603367968,
+            "r_mass_kept": 0.6896185036775829
+          },
+          {
+            "parent_global": 85,
+            "r_supp_kept": 0.04465757530346171,
+            "r_mass_kept": 0.021642402259452246
+          },
+          {
+            "parent_global": 86,
+            "r_supp_kept": 0.9889468455042225,
+            "r_mass_kept": 0.9822659971320351
+          },
+          {
+            "parent_global": 87,
+            "r_supp_kept": 0.046142208774583963,
+            "r_mass_kept": 0.1226197975433221
+          },
+          {
+            "parent_global": 88,
+            "r_supp_kept": 0.22849522116025783,
+            "r_mass_kept": 0.5300918208357367
+          },
+          {
+            "parent_global": 89,
+            "r_supp_kept": 0.17589948600799543,
+            "r_mass_kept": 0.31518230845340156
+          },
+          {
+            "parent_global": 90,
+            "r_supp_kept": 0.24736842105263157,
+            "r_mass_kept": 0.4281177481502186
+          },
+          {
+            "parent_global": 91,
+            "r_supp_kept": 0.06764705882352941,
+            "r_mass_kept": 0.0019142487425580848
+          },
+          {
+            "parent_global": 92,
+            "r_supp_kept": 0.02369485648237334,
+            "r_mass_kept": 0.04875438169307981
+          },
+          {
+            "parent_global": 94,
+            "r_supp_kept": 0.3403141361256545,
+            "r_mass_kept": 0.6184031348815133
+          },
+          {
+            "parent_global": 95,
+            "r_supp_kept": 0.9910577057426296,
+            "r_mass_kept": 0.9997608771088407
+          },
+          {
+            "parent_global": 96,
+            "r_supp_kept": 0.32817990161630356,
+            "r_mass_kept": 0.9196105072170118
+          },
+          {
+            "parent_global": 99,
+            "r_supp_kept": 0.8363782746020932,
+            "r_mass_kept": 0.9690939440377022
+          },
+          {
+            "parent_global": 100,
+            "r_supp_kept": 0.42485549132947975,
+            "r_mass_kept": 0.6277807881937174
+          },
+          {
+            "parent_global": 101,
+            "r_supp_kept": 0.5536773165766882,
+            "r_mass_kept": 0.6656923061324407
+          },
+          {
+            "parent_global": 103,
+            "r_supp_kept": 0.09917355371900827,
+            "r_mass_kept": 0.10110231792159374
+          },
+          {
+            "parent_global": 104,
+            "r_supp_kept": 0.5115063577502146,
+            "r_mass_kept": 0.6496981821644292
+          },
+          {
+            "parent_global": 105,
+            "r_supp_kept": 0.7325364530349271,
+            "r_mass_kept": 0.776977717164106
+          },
+          {
+            "parent_global": 106,
+            "r_supp_kept": 0.22913117546848383,
+            "r_mass_kept": 0.44238946740226304
+          },
+          {
+            "parent_global": 109,
+            "r_supp_kept": 0.32448,
+            "r_mass_kept": 0.6339771530992594
+          },
+          {
+            "parent_global": 110,
+            "r_supp_kept": 0.2248995983935743,
+            "r_mass_kept": 0.3510206012770293
+          },
+          {
+            "parent_global": 111,
+            "r_supp_kept": 0.2021932830705963,
+            "r_mass_kept": 0.9279193264976776
+          },
+          {
+            "parent_global": 113,
+            "r_supp_kept": 0.052231718898385564,
+            "r_mass_kept": 0.6314220472442996
+          },
+          {
+            "parent_global": 114,
+            "r_supp_kept": 0.851502340329156,
+            "r_mass_kept": 0.8992043744311828
+          },
+          {
+            "parent_global": 117,
+            "r_supp_kept": 0.02502254283137962,
+            "r_mass_kept": 0.025755185370614844
+          },
+          {
+            "parent_global": 118,
+            "r_supp_kept": 0.8843498602156673,
+            "r_mass_kept": 0.9387157210309031
+          },
+          {
+            "parent_global": 121,
+            "r_supp_kept": 0.9858272698513129,
+            "r_mass_kept": 0.9927967922493128
+          },
+          {
+            "parent_global": 123,
+            "r_supp_kept": 0.2519633507853403,
+            "r_mass_kept": 0.44087479170403654
+          },
+          {
+            "parent_global": 124,
+            "r_supp_kept": 0.9891397952349058,
+            "r_mass_kept": 0.994094116071265
+          },
+          {
+            "parent_global": 125,
+            "r_supp_kept": 0.07771609833465504,
+            "r_mass_kept": 0.6715850488435529
+          },
+          {
+            "parent_global": 126,
+            "r_supp_kept": 0.9888800966223814,
+            "r_mass_kept": 0.9955592510549052
+          },
+          {
+            "parent_global": 127,
+            "r_supp_kept": 0.1108719052744887,
+            "r_mass_kept": 0.26297639294933106
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [
+        {
+          "parent_local": 53,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9957587861069362,
+          "strict": true,
+          "parent_global": 53,
+          "n_kids_scored": 383,
+          "conditioned_redundancy": 0.009958675614148075
+        },
+        {
+          "parent_local": 86,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9946676000082354,
+          "strict": true,
+          "parent_global": 86,
+          "n_kids_scored": 383,
+          "conditioned_redundancy": 0.01001263928294874
+        },
+        {
+          "parent_local": 126,
+          "outdeg": 383,
+          "outdeg_frac": 0.9973958333333334,
+          "fire_frac": 0.9886969590908155,
+          "strict": true,
+          "parent_global": 126,
+          "n_kids_scored": 383,
+          "conditioned_redundancy": 0.00983310188078846
+        },
+        {
+          "parent_local": 124,
+          "outdeg": 382,
+          "outdeg_frac": 0.9947916666666666,
+          "fire_frac": 0.8606781824545511,
+          "strict": true,
+          "parent_global": 124,
+          "n_kids_scored": 382,
+          "conditioned_redundancy": 0.009899557700411598
+        },
+        {
+          "parent_local": 121,
+          "outdeg": 354,
+          "outdeg_frac": 0.921875,
+          "fire_frac": 0.6507998599987647,
+          "strict": true,
+          "parent_global": 121,
+          "n_kids_scored": 354,
+          "conditioned_redundancy": 0.010317390791524423
+        },
+        {
+          "parent_local": 95,
+          "outdeg": 175,
+          "outdeg_frac": 0.4557291666666667,
+          "fire_frac": 0.29470260031706164,
+          "strict": true,
+          "parent_global": 95,
+          "n_kids_scored": 175,
+          "conditioned_redundancy": 0.018531046844618395
+        },
+        {
+          "parent_local": 70,
+          "outdeg": 142,
+          "outdeg_frac": 0.3697916666666667,
+          "fire_frac": 0.3471824751394865,
+          "strict": true,
+          "parent_global": 70,
+          "n_kids_scored": 142,
+          "conditioned_redundancy": 0.01956123808327391
+        },
+        {
+          "parent_local": 4,
+          "outdeg": 135,
+          "outdeg_frac": 0.3515625,
+          "fire_frac": 0.498672047106298,
+          "strict": true,
+          "parent_global": 4,
+          "n_kids_scored": 135,
+          "conditioned_redundancy": 0.015767182338481685
+        },
+        {
+          "parent_local": 118,
+          "outdeg": 131,
+          "outdeg_frac": 0.3411458333333333,
+          "fire_frac": 0.3608531839986823,
+          "strict": true,
+          "parent_global": 118,
+          "n_kids_scored": 131,
+          "conditioned_redundancy": 0.014589244004349402
+        }
+      ],
+      "sres": {
+        "n_shortlist_edges": 1650,
+        "n_probed_children": 372,
+        "n_untestable_children": 0,
+        "n_edges_scored": 1642,
+        "n_pass": 33,
+        "frac_pass": 0.020097442143727162
+      }
+    },
+    "1->2": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.2270777120214788,
+        "r_mass_kept_mean": 0.23881600011008708,
+        "per_parent": [
+          {
+            "parent_global": 128,
+            "r_supp_kept": 0.008153371529308066,
+            "r_mass_kept": 0.055937138539619576
+          },
+          {
+            "parent_global": 129,
+            "r_supp_kept": 0.3426183844011142,
+            "r_mass_kept": 0.00277851095694047
+          },
+          {
+            "parent_global": 134,
+            "r_supp_kept": 0.5936401406200064,
+            "r_mass_kept": 0.6512200275831855
+          },
+          {
+            "parent_global": 136,
+            "r_supp_kept": 0.1318267419962335,
+            "r_mass_kept": 0.0024024259736078035
+          },
+          {
+            "parent_global": 139,
+            "r_supp_kept": 0.3143879173290938,
+            "r_mass_kept": 0.3885575072139113
+          },
+          {
+            "parent_global": 140,
+            "r_supp_kept": 0.013550135501355014,
+            "r_mass_kept": 0.00039466576650279823
+          },
+          {
+            "parent_global": 143,
+            "r_supp_kept": 0.3140096618357488,
+            "r_mass_kept": 0.003470959112319222
+          },
+          {
+            "parent_global": 148,
+            "r_supp_kept": 0.7176470588235294,
+            "r_mass_kept": 0.012834155985520075
+          },
+          {
+            "parent_global": 154,
+            "r_supp_kept": 0.1738095238095238,
+            "r_mass_kept": 0.0037979390613407686
+          },
+          {
+            "parent_global": 161,
+            "r_supp_kept": 0.34165834165834164,
+            "r_mass_kept": 0.035976960794968434
+          },
+          {
+            "parent_global": 175,
+            "r_supp_kept": 0.2012987012987013,
+            "r_mass_kept": 0.2297599563507756
+          },
+          {
+            "parent_global": 177,
+            "r_supp_kept": 0.4664804469273743,
+            "r_mass_kept": 0.008118557773254093
+          },
+          {
+            "parent_global": 178,
+            "r_supp_kept": 0.16883116883116883,
+            "r_mass_kept": 0.384841963551857
+          },
+          {
+            "parent_global": 179,
+            "r_supp_kept": 0.12013536379018612,
+            "r_mass_kept": 0.2932005802263761
+          },
+          {
+            "parent_global": 180,
+            "r_supp_kept": 0.06269113149847094,
+            "r_mass_kept": 0.18193196756829633
+          },
+          {
+            "parent_global": 184,
+            "r_supp_kept": 0.5388938848920863,
+            "r_mass_kept": 0.7015888794968419
+          },
+          {
+            "parent_global": 185,
+            "r_supp_kept": 0.3256681168427595,
+            "r_mass_kept": 0.5192602035298253
+          },
+          {
+            "parent_global": 186,
+            "r_supp_kept": 0.11325611325611326,
+            "r_mass_kept": 0.04450759874497148
+          },
+          {
+            "parent_global": 190,
+            "r_supp_kept": 0.39862542955326463,
+            "r_mass_kept": 0.64731194987585
+          },
+          {
+            "parent_global": 193,
+            "r_supp_kept": 0.32802547770700635,
+            "r_mass_kept": 0.001462234575409444
+          },
+          {
+            "parent_global": 195,
+            "r_supp_kept": 0.1311787072243346,
+            "r_mass_kept": 0.04489239738748932
+          },
+          {
+            "parent_global": 201,
+            "r_supp_kept": 0.3493975903614458,
+            "r_mass_kept": 0.39522987738653936
+          },
+          {
+            "parent_global": 206,
+            "r_supp_kept": 0.09156626506024096,
+            "r_mass_kept": 0.5803178491684802
+          },
+          {
+            "parent_global": 209,
+            "r_supp_kept": 0.1259765625,
+            "r_mass_kept": 0.4185930836872687
+          },
+          {
+            "parent_global": 212,
+            "r_supp_kept": 0.009381557832366374,
+            "r_mass_kept": 0.016991338464648932
+          },
+          {
+            "parent_global": 214,
+            "r_supp_kept": 0.0758673274876096,
+            "r_mass_kept": 0.10644502759371854
+          },
+          {
+            "parent_global": 215,
+            "r_supp_kept": 0.2028985507246377,
+            "r_mass_kept": 0.002690559063855561
+          },
+          {
+            "parent_global": 219,
+            "r_supp_kept": 0.8139130434782609,
+            "r_mass_kept": 0.9902420293540476
+          },
+          {
+            "parent_global": 221,
+            "r_supp_kept": 0.028901734104046242,
+            "r_mass_kept": 0.01950675404462167
+          },
+          {
+            "parent_global": 235,
+            "r_supp_kept": 0.24545541067859522,
+            "r_mass_kept": 0.5488301074488787
+          },
+          {
+            "parent_global": 236,
+            "r_supp_kept": 0.17687074829931973,
+            "r_mass_kept": 0.010268588447359377
+          },
+          {
+            "parent_global": 237,
+            "r_supp_kept": 0.8582677165354331,
+            "r_mass_kept": 0.9926001451860734
+          },
+          {
+            "parent_global": 239,
+            "r_supp_kept": 0.09120521172638436,
+            "r_mass_kept": 0.0013563677907429965
+          },
+          {
+            "parent_global": 242,
+            "r_supp_kept": 0.08466819221967964,
+            "r_mass_kept": 0.13383227452000435
+          },
+          {
+            "parent_global": 249,
+            "r_supp_kept": 0.10312764158918004,
+            "r_mass_kept": 0.002817870182593031
+          },
+          {
+            "parent_global": 250,
+            "r_supp_kept": 0.24723538704581358,
+            "r_mass_kept": 0.6791357066869129
+          },
+          {
+            "parent_global": 254,
+            "r_supp_kept": 0.16584158415841585,
+            "r_mass_kept": 0.8014995087402924
+          },
+          {
+            "parent_global": 258,
+            "r_supp_kept": 0.01198655167373191,
+            "r_mass_kept": 0.010568270548812183
+          },
+          {
+            "parent_global": 261,
+            "r_supp_kept": 0.9611694837825491,
+            "r_mass_kept": 0.9921176468442756
+          },
+          {
+            "parent_global": 264,
+            "r_supp_kept": 0.09101251422070535,
+            "r_mass_kept": 0.26035517979776973
+          },
+          {
+            "parent_global": 266,
+            "r_supp_kept": 0.21153846153846154,
+            "r_mass_kept": 0.441647542169633
+          },
+          {
+            "parent_global": 267,
+            "r_supp_kept": 0.1377101681345076,
+            "r_mass_kept": 0.03127011263861546
+          },
+          {
+            "parent_global": 276,
+            "r_supp_kept": 0.16358839050131926,
+            "r_mass_kept": 0.0022449949856676427
+          },
+          {
+            "parent_global": 278,
+            "r_supp_kept": 0.2729528535980149,
+            "r_mass_kept": 0.598412405962042
+          },
+          {
+            "parent_global": 281,
+            "r_supp_kept": 0.757085020242915,
+            "r_mass_kept": 0.0627221333972957
+          },
+          {
+            "parent_global": 285,
+            "r_supp_kept": 0.02486610558530987,
+            "r_mass_kept": 0.01856205147723727
+          },
+          {
+            "parent_global": 289,
+            "r_supp_kept": 0.1738312735088662,
+            "r_mass_kept": 0.7070865766111685
+          },
+          {
+            "parent_global": 291,
+            "r_supp_kept": 0.4305555555555556,
+            "r_mass_kept": 0.0027599096281911728
+          },
+          {
+            "parent_global": 295,
+            "r_supp_kept": 0.06324110671936758,
+            "r_mass_kept": 0.02750358340364686
+          },
+          {
+            "parent_global": 296,
+            "r_supp_kept": 0.06923297902901465,
+            "r_mass_kept": 0.14069425685495554
+          },
+          {
+            "parent_global": 298,
+            "r_supp_kept": 0.19385593220338984,
+            "r_mass_kept": 0.1159877608484704
+          },
+          {
+            "parent_global": 303,
+            "r_supp_kept": 0.18505338078291814,
+            "r_mass_kept": 0.0018030004484631333
+          },
+          {
+            "parent_global": 308,
+            "r_supp_kept": 0.22033898305084745,
+            "r_mass_kept": 0.003434778571523992
+          },
+          {
+            "parent_global": 311,
+            "r_supp_kept": 0.2875536480686695,
+            "r_mass_kept": 0.00662453820943054
+          },
+          {
+            "parent_global": 325,
+            "r_supp_kept": 0.056862745098039215,
+            "r_mass_kept": 0.026590616433576332
+          },
+          {
+            "parent_global": 332,
+            "r_supp_kept": 0.5020449897750511,
+            "r_mass_kept": 0.5270695251398224
+          },
+          {
+            "parent_global": 346,
+            "r_supp_kept": 0.23232323232323232,
+            "r_mass_kept": 0.0011464557862275867
+          },
+          {
+            "parent_global": 352,
+            "r_supp_kept": 0.017049408489909535,
+            "r_mass_kept": 0.0016424637974895035
+          },
+          {
+            "parent_global": 357,
+            "r_supp_kept": 0.025472473294987676,
+            "r_mass_kept": 0.05708958621190037
+          },
+          {
+            "parent_global": 358,
+            "r_supp_kept": 0.016555661274976215,
+            "r_mass_kept": 0.024451806875335397
+          },
+          {
+            "parent_global": 361,
+            "r_supp_kept": 0.8730782255333559,
+            "r_mass_kept": 0.9320200841223453
+          },
+          {
+            "parent_global": 362,
+            "r_supp_kept": 0.2111801242236025,
+            "r_mass_kept": 0.0019305364724869478
+          },
+          {
+            "parent_global": 364,
+            "r_supp_kept": 0.024096385542168676,
+            "r_mass_kept": 0.03045352889244462
+          },
+          {
+            "parent_global": 371,
+            "r_supp_kept": 0.4671280276816609,
+            "r_mass_kept": 0.36119209145943215
+          },
+          {
+            "parent_global": 372,
+            "r_supp_kept": 0.0855614973262032,
+            "r_mass_kept": 0.6743424240122156
+          },
+          {
+            "parent_global": 377,
+            "r_supp_kept": 0.5343915343915344,
+            "r_mass_kept": 0.9804634084142168
+          },
+          {
+            "parent_global": 383,
+            "r_supp_kept": 0.1080773606370876,
+            "r_mass_kept": 0.0027452723154604117
+          },
+          {
+            "parent_global": 384,
+            "r_supp_kept": 0.4671811324026706,
+            "r_mass_kept": 0.6197937247520858
+          },
+          {
+            "parent_global": 385,
+            "r_supp_kept": 0.03793716656787196,
+            "r_mass_kept": 0.05476324554828968
+          },
+          {
+            "parent_global": 386,
+            "r_supp_kept": 0.13382899628252787,
+            "r_mass_kept": 0.1543729905554931
+          },
+          {
+            "parent_global": 389,
+            "r_supp_kept": 0.07754525613044036,
+            "r_mass_kept": 0.09778302107634898
+          },
+          {
+            "parent_global": 391,
+            "r_supp_kept": 0.06717557251908397,
+            "r_mass_kept": 0.41112351911668116
+          },
+          {
+            "parent_global": 400,
+            "r_supp_kept": 0.2904120443740095,
+            "r_mass_kept": 0.6410248089856582
+          },
+          {
+            "parent_global": 403,
+            "r_supp_kept": 0.6842105263157895,
+            "r_mass_kept": 0.44239550340465184
+          },
+          {
+            "parent_global": 407,
+            "r_supp_kept": 0.04243119266055046,
+            "r_mass_kept": 0.11626310024567343
+          },
+          {
+            "parent_global": 410,
+            "r_supp_kept": 0.4,
+            "r_mass_kept": 0.0018649903218546798
+          },
+          {
+            "parent_global": 419,
+            "r_supp_kept": 0.13664596273291926,
+            "r_mass_kept": 0.4500290346705286
+          },
+          {
+            "parent_global": 420,
+            "r_supp_kept": 0.06334125098970704,
+            "r_mass_kept": 0.01237718593319597
+          },
+          {
+            "parent_global": 423,
+            "r_supp_kept": 0.12333965844402277,
+            "r_mass_kept": 0.47870058270654486
+          },
+          {
+            "parent_global": 424,
+            "r_supp_kept": 0.029900332225913623,
+            "r_mass_kept": 0.3262622449115405
+          },
+          {
+            "parent_global": 427,
+            "r_supp_kept": 0.6267881241565452,
+            "r_mass_kept": 0.7193244293371176
+          },
+          {
+            "parent_global": 430,
+            "r_supp_kept": 0.09226932668329177,
+            "r_mass_kept": 0.57620657360906
+          },
+          {
+            "parent_global": 432,
+            "r_supp_kept": 0.3194675540765391,
+            "r_mass_kept": 0.6521027378854412
+          },
+          {
+            "parent_global": 443,
+            "r_supp_kept": 0.2116788321167883,
+            "r_mass_kept": 0.19257725105774237
+          },
+          {
+            "parent_global": 444,
+            "r_supp_kept": 0.056508577194752774,
+            "r_mass_kept": 0.04613563568994086
+          },
+          {
+            "parent_global": 448,
+            "r_supp_kept": 0.09513742071881606,
+            "r_mass_kept": 0.004818758887622869
+          },
+          {
+            "parent_global": 451,
+            "r_supp_kept": 0.14387633769322236,
+            "r_mass_kept": 0.011534198572042652
+          },
+          {
+            "parent_global": 458,
+            "r_supp_kept": 0.029174897432001214,
+            "r_mass_kept": 0.06362350993014758
+          },
+          {
+            "parent_global": 460,
+            "r_supp_kept": 0.1696969696969697,
+            "r_mass_kept": 0.0029628302616307107
+          },
+          {
+            "parent_global": 465,
+            "r_supp_kept": 0.1504424778761062,
+            "r_mass_kept": 0.002475805991954267
+          },
+          {
+            "parent_global": 476,
+            "r_supp_kept": 0.19638242894056848,
+            "r_mass_kept": 0.18786424440567412
+          },
+          {
+            "parent_global": 480,
+            "r_supp_kept": 0.1851106639839034,
+            "r_mass_kept": 0.0018694942084971056
+          },
+          {
+            "parent_global": 486,
+            "r_supp_kept": 0.10056657223796034,
+            "r_mass_kept": 0.1796270851369368
+          },
+          {
+            "parent_global": 489,
+            "r_supp_kept": 0.01729106628242075,
+            "r_mass_kept": 0.004977618076536294
+          },
+          {
+            "parent_global": 493,
+            "r_supp_kept": 0.02104664391353811,
+            "r_mass_kept": 0.18971600035017605
+          },
+          {
+            "parent_global": 494,
+            "r_supp_kept": 0.0743740795287187,
+            "r_mass_kept": 0.2588719142798505
+          },
+          {
+            "parent_global": 499,
+            "r_supp_kept": 0.17257683215130024,
+            "r_mass_kept": 0.004238054137458489
+          },
+          {
+            "parent_global": 501,
+            "r_supp_kept": 0.20137693631669534,
+            "r_mass_kept": 0.006892633746669466
+          },
+          {
+            "parent_global": 503,
+            "r_supp_kept": 0.08568075117370892,
+            "r_mass_kept": 0.005119182149898276
+          },
+          {
+            "parent_global": 507,
+            "r_supp_kept": 0.31802120141342755,
+            "r_mass_kept": 0.0043718909007144195
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 1861,
+        "n_probed_children": 679,
+        "n_untestable_children": 0,
+        "n_edges_scored": 1847,
+        "n_pass": 111,
+        "frac_pass": 0.06009745533297239
+      }
+    },
+    "2->3": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.3268345208635342,
+        "r_mass_kept_mean": 0.14649577323005455,
+        "per_parent": [
+          {
+            "parent_global": 517,
+            "r_supp_kept": 0.6272965879265092,
+            "r_mass_kept": 0.0442030603630857
+          },
+          {
+            "parent_global": 526,
+            "r_supp_kept": 0.5238095238095238,
+            "r_mass_kept": 0.019194054811748983
+          },
+          {
+            "parent_global": 529,
+            "r_supp_kept": 0.17142857142857143,
+            "r_mass_kept": 0.01018430637376055
+          },
+          {
+            "parent_global": 530,
+            "r_supp_kept": 0.2019099590723056,
+            "r_mass_kept": 0.02594526325140284
+          },
+          {
+            "parent_global": 533,
+            "r_supp_kept": 0.8233618233618234,
+            "r_mass_kept": 0.9169338343602701
+          },
+          {
+            "parent_global": 534,
+            "r_supp_kept": 0.21428571428571427,
+            "r_mass_kept": 0.4753465585724145
+          },
+          {
+            "parent_global": 537,
+            "r_supp_kept": 0.3640776699029126,
+            "r_mass_kept": 0.00792832890685993
+          },
+          {
+            "parent_global": 539,
+            "r_supp_kept": 0.5224358974358975,
+            "r_mass_kept": 0.032471662396002875
+          },
+          {
+            "parent_global": 541,
+            "r_supp_kept": 0.26996197718631176,
+            "r_mass_kept": 0.31301632580934746
+          },
+          {
+            "parent_global": 547,
+            "r_supp_kept": 0.1511627906976744,
+            "r_mass_kept": 0.12232948278956188
+          },
+          {
+            "parent_global": 548,
+            "r_supp_kept": 0.33505154639175255,
+            "r_mass_kept": 0.191200720913985
+          },
+          {
+            "parent_global": 559,
+            "r_supp_kept": 0.04788090128755365,
+            "r_mass_kept": 0.05697437329776123
+          },
+          {
+            "parent_global": 561,
+            "r_supp_kept": 0.17385786802030456,
+            "r_mass_kept": 0.27710961717864735
+          },
+          {
+            "parent_global": 562,
+            "r_supp_kept": 0.6808510638297872,
+            "r_mass_kept": 0.01683548906744016
+          },
+          {
+            "parent_global": 567,
+            "r_supp_kept": 0.10046224961479198,
+            "r_mass_kept": 0.1424504218233521
+          },
+          {
+            "parent_global": 572,
+            "r_supp_kept": 0.15817223198594024,
+            "r_mass_kept": 0.34185958774900305
+          },
+          {
+            "parent_global": 581,
+            "r_supp_kept": 0.14587703727610135,
+            "r_mass_kept": 0.1860252981010092
+          },
+          {
+            "parent_global": 582,
+            "r_supp_kept": 0.5434782608695652,
+            "r_mass_kept": 0.03954022115718474
+          },
+          {
+            "parent_global": 592,
+            "r_supp_kept": 0.4417910447761194,
+            "r_mass_kept": 0.008835683506345771
+          },
+          {
+            "parent_global": 595,
+            "r_supp_kept": 0.5824742268041238,
+            "r_mass_kept": 0.20499638017560792
+          },
+          {
+            "parent_global": 598,
+            "r_supp_kept": 0.06463878326996197,
+            "r_mass_kept": 0.23870804215893385
+          },
+          {
+            "parent_global": 600,
+            "r_supp_kept": 0.6159844054580896,
+            "r_mass_kept": 0.041082687500617575
+          },
+          {
+            "parent_global": 614,
+            "r_supp_kept": 0.06707317073170732,
+            "r_mass_kept": 0.00414943048013746
+          },
+          {
+            "parent_global": 615,
+            "r_supp_kept": 0.12037037037037036,
+            "r_mass_kept": 0.00906225492073721
+          },
+          {
+            "parent_global": 619,
+            "r_supp_kept": 0.4896551724137931,
+            "r_mass_kept": 0.05309744040668841
+          },
+          {
+            "parent_global": 632,
+            "r_supp_kept": 0.2765957446808511,
+            "r_mass_kept": 0.07020519054561511
+          },
+          {
+            "parent_global": 646,
+            "r_supp_kept": 0.47101449275362317,
+            "r_mass_kept": 0.0327057115816779
+          },
+          {
+            "parent_global": 647,
+            "r_supp_kept": 0.30067567567567566,
+            "r_mass_kept": 0.013748612801369941
+          },
+          {
+            "parent_global": 666,
+            "r_supp_kept": 0.40331491712707185,
+            "r_mass_kept": 0.008048848850650095
+          },
+          {
+            "parent_global": 668,
+            "r_supp_kept": 0.6071428571428571,
+            "r_mass_kept": 0.009523751903458737
+          },
+          {
+            "parent_global": 669,
+            "r_supp_kept": 0.20574162679425836,
+            "r_mass_kept": 0.24751796552129382
+          },
+          {
+            "parent_global": 670,
+            "r_supp_kept": 0.275,
+            "r_mass_kept": 0.4827274360753336
+          },
+          {
+            "parent_global": 675,
+            "r_supp_kept": 0.040676416819012795,
+            "r_mass_kept": 0.055239850237134396
+          },
+          {
+            "parent_global": 676,
+            "r_supp_kept": 0.6949152542372882,
+            "r_mass_kept": 0.015310638451894199
+          },
+          {
+            "parent_global": 678,
+            "r_supp_kept": 0.8313253012048193,
+            "r_mass_kept": 0.02055466157938331
+          },
+          {
+            "parent_global": 681,
+            "r_supp_kept": 0.19480519480519481,
+            "r_mass_kept": 0.05693945981897881
+          },
+          {
+            "parent_global": 698,
+            "r_supp_kept": 0.5020689655172413,
+            "r_mass_kept": 0.32353973255464435
+          },
+          {
+            "parent_global": 703,
+            "r_supp_kept": 0.17098445595854922,
+            "r_mass_kept": 0.0031508252020919316
+          },
+          {
+            "parent_global": 704,
+            "r_supp_kept": 0.2244418331374853,
+            "r_mass_kept": 0.00977295012489602
+          },
+          {
+            "parent_global": 708,
+            "r_supp_kept": 0.7065217391304348,
+            "r_mass_kept": 0.02078425889919458
+          },
+          {
+            "parent_global": 718,
+            "r_supp_kept": 0.04285714285714286,
+            "r_mass_kept": 0.08307848929483373
+          },
+          {
+            "parent_global": 719,
+            "r_supp_kept": 0.21487603305785125,
+            "r_mass_kept": 0.00458830270807374
+          },
+          {
+            "parent_global": 720,
+            "r_supp_kept": 0.196,
+            "r_mass_kept": 0.011827931956815202
+          },
+          {
+            "parent_global": 724,
+            "r_supp_kept": 0.7682926829268293,
+            "r_mass_kept": 0.3826064077761653
+          },
+          {
+            "parent_global": 725,
+            "r_supp_kept": 0.3135593220338983,
+            "r_mass_kept": 0.0079749178895582
+          },
+          {
+            "parent_global": 729,
+            "r_supp_kept": 0.047039740470397405,
+            "r_mass_kept": 0.06786523662553863
+          },
+          {
+            "parent_global": 731,
+            "r_supp_kept": 0.5158227848101266,
+            "r_mass_kept": 0.02053542902329499
+          },
+          {
+            "parent_global": 737,
+            "r_supp_kept": 0.05502008032128514,
+            "r_mass_kept": 0.09922150813735843
+          },
+          {
+            "parent_global": 742,
+            "r_supp_kept": 0.3602150537634409,
+            "r_mass_kept": 0.003245426207122402
+          },
+          {
+            "parent_global": 743,
+            "r_supp_kept": 0.03150092649783817,
+            "r_mass_kept": 0.04852923102137339
+          },
+          {
+            "parent_global": 744,
+            "r_supp_kept": 0.14950166112956811,
+            "r_mass_kept": 0.6358069309802239
+          },
+          {
+            "parent_global": 745,
+            "r_supp_kept": 0.34146341463414637,
+            "r_mass_kept": 0.02705277495242933
+          },
+          {
+            "parent_global": 746,
+            "r_supp_kept": 0.18012422360248448,
+            "r_mass_kept": 0.6295176826096196
+          },
+          {
+            "parent_global": 749,
+            "r_supp_kept": 0.2980769230769231,
+            "r_mass_kept": 0.0030083205257895314
+          },
+          {
+            "parent_global": 750,
+            "r_supp_kept": 0.16059957173447537,
+            "r_mass_kept": 0.022657911334585744
+          },
+          {
+            "parent_global": 753,
+            "r_supp_kept": 0.34556065027094623,
+            "r_mass_kept": 0.7280494960234586
+          },
+          {
+            "parent_global": 759,
+            "r_supp_kept": 0.09834254143646409,
+            "r_mass_kept": 0.11282172724182496
+          },
+          {
+            "parent_global": 762,
+            "r_supp_kept": 0.46105919003115264,
+            "r_mass_kept": 0.10027160757587102
+          },
+          {
+            "parent_global": 763,
+            "r_supp_kept": 0.22727272727272727,
+            "r_mass_kept": 0.005750708084867562
+          },
+          {
+            "parent_global": 766,
+            "r_supp_kept": 0.8045977011494253,
+            "r_mass_kept": 0.013684550138466409
+          },
+          {
+            "parent_global": 767,
+            "r_supp_kept": 0.30718954248366015,
+            "r_mass_kept": 0.006663866346932382
+          },
+          {
+            "parent_global": 768,
+            "r_supp_kept": 0.22565320665083136,
+            "r_mass_kept": 0.0032052928826790173
+          },
+          {
+            "parent_global": 775,
+            "r_supp_kept": 0.33658536585365856,
+            "r_mass_kept": 0.00326954252937453
+          },
+          {
+            "parent_global": 786,
+            "r_supp_kept": 0.2702373706634206,
+            "r_mass_kept": 0.5301938008779093
+          },
+          {
+            "parent_global": 788,
+            "r_supp_kept": 0.24982666974809337,
+            "r_mass_kept": 0.3236279576359029
+          },
+          {
+            "parent_global": 790,
+            "r_supp_kept": 0.1812933025404157,
+            "r_mass_kept": 0.011561350361625247
+          },
+          {
+            "parent_global": 794,
+            "r_supp_kept": 0.2672672672672673,
+            "r_mass_kept": 0.3119630831224074
+          },
+          {
+            "parent_global": 805,
+            "r_supp_kept": 0.49612403100775193,
+            "r_mass_kept": 0.0025129647739636266
+          },
+          {
+            "parent_global": 811,
+            "r_supp_kept": 0.15865384615384615,
+            "r_mass_kept": 0.8812265044808082
+          },
+          {
+            "parent_global": 822,
+            "r_supp_kept": 0.025373439738080622,
+            "r_mass_kept": 0.07240915420280482
+          },
+          {
+            "parent_global": 835,
+            "r_supp_kept": 0.5905292479108635,
+            "r_mass_kept": 0.023237324336156547
+          },
+          {
+            "parent_global": 840,
+            "r_supp_kept": 0.4806201550387597,
+            "r_mass_kept": 0.02596650486837507
+          },
+          {
+            "parent_global": 849,
+            "r_supp_kept": 0.3348623853211009,
+            "r_mass_kept": 0.010384865572673173
+          },
+          {
+            "parent_global": 854,
+            "r_supp_kept": 0.23867069486404835,
+            "r_mass_kept": 0.046235968378053674
+          },
+          {
+            "parent_global": 862,
+            "r_supp_kept": 0.1681087762669963,
+            "r_mass_kept": 0.442434613815324
+          },
+          {
+            "parent_global": 868,
+            "r_supp_kept": 0.41866175567833025,
+            "r_mass_kept": 0.13825424478029974
+          },
+          {
+            "parent_global": 873,
+            "r_supp_kept": 0.07887700534759358,
+            "r_mass_kept": 0.04424012381313333
+          },
+          {
+            "parent_global": 874,
+            "r_supp_kept": 0.5895522388059702,
+            "r_mass_kept": 0.009786651377407567
+          },
+          {
+            "parent_global": 877,
+            "r_supp_kept": 0.2113564668769716,
+            "r_mass_kept": 0.005535126284685725
+          },
+          {
+            "parent_global": 882,
+            "r_supp_kept": 0.28771384136858474,
+            "r_mass_kept": 0.9192014941617158
+          },
+          {
+            "parent_global": 884,
+            "r_supp_kept": 0.4853801169590643,
+            "r_mass_kept": 0.0055381207489900745
+          },
+          {
+            "parent_global": 886,
+            "r_supp_kept": 0.32793522267206476,
+            "r_mass_kept": 0.0042225988352544005
+          },
+          {
+            "parent_global": 890,
+            "r_supp_kept": 0.1917808219178082,
+            "r_mass_kept": 0.11558985308885988
+          },
+          {
+            "parent_global": 901,
+            "r_supp_kept": 0.5657142857142857,
+            "r_mass_kept": 0.014473793364677887
+          },
+          {
+            "parent_global": 903,
+            "r_supp_kept": 0.06192660550458716,
+            "r_mass_kept": 0.41188182925312566
+          },
+          {
+            "parent_global": 908,
+            "r_supp_kept": 0.22789115646258504,
+            "r_mass_kept": 0.030078146402495495
+          },
+          {
+            "parent_global": 911,
+            "r_supp_kept": 0.043041606886657105,
+            "r_mass_kept": 0.18064230656888422
+          },
+          {
+            "parent_global": 914,
+            "r_supp_kept": 0.2814814814814815,
+            "r_mass_kept": 0.008942515840368951
+          },
+          {
+            "parent_global": 917,
+            "r_supp_kept": 0.38461538461538464,
+            "r_mass_kept": 0.024930840341069904
+          },
+          {
+            "parent_global": 921,
+            "r_supp_kept": 0.2655393053016453,
+            "r_mass_kept": 0.6256765438971784
+          },
+          {
+            "parent_global": 924,
+            "r_supp_kept": 0.41361256544502617,
+            "r_mass_kept": 0.005345945074035231
+          },
+          {
+            "parent_global": 927,
+            "r_supp_kept": 0.3489208633093525,
+            "r_mass_kept": 0.010093839603545715
+          },
+          {
+            "parent_global": 928,
+            "r_supp_kept": 0.47289156626506024,
+            "r_mass_kept": 0.007041994927091836
+          },
+          {
+            "parent_global": 931,
+            "r_supp_kept": 0.5846153846153846,
+            "r_mass_kept": 0.0037768462636119516
+          },
+          {
+            "parent_global": 932,
+            "r_supp_kept": 0.7024793388429752,
+            "r_mass_kept": 0.006549761415995664
+          },
+          {
+            "parent_global": 936,
+            "r_supp_kept": 0.6342592592592593,
+            "r_mass_kept": 0.19255141676481313
+          },
+          {
+            "parent_global": 947,
+            "r_supp_kept": 0.4606413994169096,
+            "r_mass_kept": 0.0746002311235502
+          },
+          {
+            "parent_global": 955,
+            "r_supp_kept": 0.8072289156626506,
+            "r_mass_kept": 0.07411335480332784
+          },
+          {
+            "parent_global": 959,
+            "r_supp_kept": 0.6633986928104575,
+            "r_mass_kept": 0.011763541978308204
+          },
+          {
+            "parent_global": 960,
+            "r_supp_kept": 0.4274193548387097,
+            "r_mass_kept": 0.8173275927917327
+          },
+          {
+            "parent_global": 961,
+            "r_supp_kept": 0.2113564668769716,
+            "r_mass_kept": 0.025482019536058047
+          },
+          {
+            "parent_global": 965,
+            "r_supp_kept": 0.08907823392718822,
+            "r_mass_kept": 0.16269463313024138
+          },
+          {
+            "parent_global": 968,
+            "r_supp_kept": 0.19651741293532338,
+            "r_mass_kept": 0.39359788919531696
+          },
+          {
+            "parent_global": 976,
+            "r_supp_kept": 0.19900497512437812,
+            "r_mass_kept": 0.02061935480886121
+          },
+          {
+            "parent_global": 979,
+            "r_supp_kept": 0.5526315789473685,
+            "r_mass_kept": 0.0235854251063218
+          },
+          {
+            "parent_global": 981,
+            "r_supp_kept": 0.4170403587443946,
+            "r_mass_kept": 0.13266064792509083
+          },
+          {
+            "parent_global": 982,
+            "r_supp_kept": 0.16707616707616707,
+            "r_mass_kept": 0.0076330202937287
+          },
+          {
+            "parent_global": 983,
+            "r_supp_kept": 0.7086956521739131,
+            "r_mass_kept": 0.07671934489810167
+          },
+          {
+            "parent_global": 986,
+            "r_supp_kept": 0.33865814696485624,
+            "r_mass_kept": 0.028430396479217145
+          },
+          {
+            "parent_global": 989,
+            "r_supp_kept": 0.6115702479338843,
+            "r_mass_kept": 0.0052191494838629785
+          },
+          {
+            "parent_global": 1002,
+            "r_supp_kept": 0.10662358642972536,
+            "r_mass_kept": 0.0025682936119641115
+          },
+          {
+            "parent_global": 1005,
+            "r_supp_kept": 0.39704433497536945,
+            "r_mass_kept": 0.016208162862807046
+          },
+          {
+            "parent_global": 1006,
+            "r_supp_kept": 0.41302027748132336,
+            "r_mass_kept": 0.5227297093345186
+          },
+          {
+            "parent_global": 1010,
+            "r_supp_kept": 0.05357142857142857,
+            "r_mass_kept": 0.011166767376423713
+          },
+          {
+            "parent_global": 1013,
+            "r_supp_kept": 0.4535211267605634,
+            "r_mass_kept": 0.0074218944077715085
+          },
+          {
+            "parent_global": 1017,
+            "r_supp_kept": 0.32113821138211385,
+            "r_mass_kept": 0.009271008516991107
+          },
+          {
+            "parent_global": 1023,
+            "r_supp_kept": 0.5529100529100529,
+            "r_mass_kept": 0.10056322805587999
+          },
+          {
+            "parent_global": 1024,
+            "r_supp_kept": 0.08349705304518663,
+            "r_mass_kept": 0.006108167348471227
+          },
+          {
+            "parent_global": 1039,
+            "r_supp_kept": 0.3349282296650718,
+            "r_mass_kept": 0.041870630653709905
+          },
+          {
+            "parent_global": 1044,
+            "r_supp_kept": 0.2308433734939759,
+            "r_mass_kept": 0.47562681085287334
+          },
+          {
+            "parent_global": 1046,
+            "r_supp_kept": 0.11301369863013698,
+            "r_mass_kept": 0.0020070992640754647
+          },
+          {
+            "parent_global": 1051,
+            "r_supp_kept": 0.5085714285714286,
+            "r_mass_kept": 0.004053674533735093
+          },
+          {
+            "parent_global": 1066,
+            "r_supp_kept": 0.2524752475247525,
+            "r_mass_kept": 0.09344980847567141
+          },
+          {
+            "parent_global": 1073,
+            "r_supp_kept": 0.38085539714867617,
+            "r_mass_kept": 0.7565111582784314
+          },
+          {
+            "parent_global": 1074,
+            "r_supp_kept": 0.11536665109761794,
+            "r_mass_kept": 0.20019182103777666
+          },
+          {
+            "parent_global": 1082,
+            "r_supp_kept": 0.5331556147950683,
+            "r_mass_kept": 0.9036365597767698
+          },
+          {
+            "parent_global": 1085,
+            "r_supp_kept": 0.11968449931412894,
+            "r_mass_kept": 0.13540568433561098
+          },
+          {
+            "parent_global": 1088,
+            "r_supp_kept": 0.5136476426799007,
+            "r_mass_kept": 0.5618508212882665
+          },
+          {
+            "parent_global": 1099,
+            "r_supp_kept": 0.10882110469909316,
+            "r_mass_kept": 0.006432648521878345
+          },
+          {
+            "parent_global": 1100,
+            "r_supp_kept": 0.31569817866435385,
+            "r_mass_kept": 0.45883546460645785
+          },
+          {
+            "parent_global": 1103,
+            "r_supp_kept": 0.28613744075829384,
+            "r_mass_kept": 0.5604347420366915
+          },
+          {
+            "parent_global": 1106,
+            "r_supp_kept": 0.38875878220140514,
+            "r_mass_kept": 0.7886996730223889
+          },
+          {
+            "parent_global": 1109,
+            "r_supp_kept": 0.0184660839591284,
+            "r_mass_kept": 0.021100219737125715
+          },
+          {
+            "parent_global": 1111,
+            "r_supp_kept": 0.7,
+            "r_mass_kept": 0.07524615408637979
+          },
+          {
+            "parent_global": 1112,
+            "r_supp_kept": 0.11663807890222985,
+            "r_mass_kept": 0.31736451609112115
+          },
+          {
+            "parent_global": 1114,
+            "r_supp_kept": 0.4187725631768953,
+            "r_mass_kept": 0.01190897009651766
+          },
+          {
+            "parent_global": 1122,
+            "r_supp_kept": 0.08484848484848485,
+            "r_mass_kept": 0.06491609509693742
+          },
+          {
+            "parent_global": 1124,
+            "r_supp_kept": 0.06171983356449376,
+            "r_mass_kept": 0.18662156567547342
+          },
+          {
+            "parent_global": 1126,
+            "r_supp_kept": 0.46683673469387754,
+            "r_mass_kept": 0.006920075974559156
+          },
+          {
+            "parent_global": 1130,
+            "r_supp_kept": 0.5672514619883041,
+            "r_mass_kept": 0.01090524837763037
+          },
+          {
+            "parent_global": 1141,
+            "r_supp_kept": 0.5495049504950495,
+            "r_mass_kept": 0.007552125342512732
+          },
+          {
+            "parent_global": 1144,
+            "r_supp_kept": 0.0286512928022362,
+            "r_mass_kept": 0.08096740779173799
+          },
+          {
+            "parent_global": 1148,
+            "r_supp_kept": 0.44163383786025295,
+            "r_mass_kept": 0.6058197093232265
+          },
+          {
+            "parent_global": 1150,
+            "r_supp_kept": 0.036592505854800936,
+            "r_mass_kept": 0.07374612092891122
+          },
+          {
+            "parent_global": 1155,
+            "r_supp_kept": 0.48892171344165436,
+            "r_mass_kept": 0.02192865129784247
+          },
+          {
+            "parent_global": 1157,
+            "r_supp_kept": 0.1325635103926097,
+            "r_mass_kept": 0.22818102814677887
+          },
+          {
+            "parent_global": 1160,
+            "r_supp_kept": 0.1388888888888889,
+            "r_mass_kept": 0.376581303165485
+          },
+          {
+            "parent_global": 1163,
+            "r_supp_kept": 0.638095238095238,
+            "r_mass_kept": 0.01696527098994676
+          },
+          {
+            "parent_global": 1169,
+            "r_supp_kept": 0.0874751491053678,
+            "r_mass_kept": 0.38960527429040903
+          },
+          {
+            "parent_global": 1171,
+            "r_supp_kept": 0.4927536231884058,
+            "r_mass_kept": 0.08513143427082272
+          },
+          {
+            "parent_global": 1172,
+            "r_supp_kept": 0.07496823379923762,
+            "r_mass_kept": 0.08095757191606241
+          },
+          {
+            "parent_global": 1174,
+            "r_supp_kept": 0.46875,
+            "r_mass_kept": 0.0024896346002907044
+          },
+          {
+            "parent_global": 1175,
+            "r_supp_kept": 0.6046511627906976,
+            "r_mass_kept": 0.019166520795554667
+          },
+          {
+            "parent_global": 1178,
+            "r_supp_kept": 0.4140127388535032,
+            "r_mass_kept": 0.004406410855280298
+          },
+          {
+            "parent_global": 1180,
+            "r_supp_kept": 0.0168828494955734,
+            "r_mass_kept": 0.015364915086131498
+          },
+          {
+            "parent_global": 1194,
+            "r_supp_kept": 0.36971830985915494,
+            "r_mass_kept": 0.08071545430808144
+          },
+          {
+            "parent_global": 1195,
+            "r_supp_kept": 0.6956521739130435,
+            "r_mass_kept": 0.007943956666710538
+          },
+          {
+            "parent_global": 1198,
+            "r_supp_kept": 0.015184381778741865,
+            "r_mass_kept": 0.014893623295767348
+          },
+          {
+            "parent_global": 1201,
+            "r_supp_kept": 0.31985294117647056,
+            "r_mass_kept": 0.023013020958699677
+          },
+          {
+            "parent_global": 1204,
+            "r_supp_kept": 0.5230125523012552,
+            "r_mass_kept": 0.058373664811476954
+          },
+          {
+            "parent_global": 1206,
+            "r_supp_kept": 0.39263803680981596,
+            "r_mass_kept": 0.011367740015663626
+          },
+          {
+            "parent_global": 1207,
+            "r_supp_kept": 0.39080459770114945,
+            "r_mass_kept": 0.005953705057733079
+          },
+          {
+            "parent_global": 1210,
+            "r_supp_kept": 0.21791044776119403,
+            "r_mass_kept": 0.007170689123528421
+          },
+          {
+            "parent_global": 1213,
+            "r_supp_kept": 0.11560693641618497,
+            "r_mass_kept": 0.3145597465186468
+          },
+          {
+            "parent_global": 1224,
+            "r_supp_kept": 0.5466666666666666,
+            "r_mass_kept": 0.01061239610361964
+          },
+          {
+            "parent_global": 1231,
+            "r_supp_kept": 0.09003215434083602,
+            "r_mass_kept": 0.44039242224759556
+          },
+          {
+            "parent_global": 1237,
+            "r_supp_kept": 0.4098573281452659,
+            "r_mass_kept": 0.019108337495497382
+          },
+          {
+            "parent_global": 1251,
+            "r_supp_kept": 0.3367003367003367,
+            "r_mass_kept": 0.010260843553507853
+          },
+          {
+            "parent_global": 1252,
+            "r_supp_kept": 0.06684636118598383,
+            "r_mass_kept": 0.1700743991498937
+          },
+          {
+            "parent_global": 1261,
+            "r_supp_kept": 0.42105263157894735,
+            "r_mass_kept": 0.00395077123814956
+          },
+          {
+            "parent_global": 1265,
+            "r_supp_kept": 0.6042553191489362,
+            "r_mass_kept": 0.2429374734881516
+          },
+          {
+            "parent_global": 1266,
+            "r_supp_kept": 0.10709759188846642,
+            "r_mass_kept": 0.4122960424229103
+          },
+          {
+            "parent_global": 1268,
+            "r_supp_kept": 0.07205857879846897,
+            "r_mass_kept": 0.12026098391093606
+          },
+          {
+            "parent_global": 1269,
+            "r_supp_kept": 0.7073170731707317,
+            "r_mass_kept": 0.030349133182048148
+          },
+          {
+            "parent_global": 1273,
+            "r_supp_kept": 0.6391752577319587,
+            "r_mass_kept": 0.0024459345150686456
+          },
+          {
+            "parent_global": 1277,
+            "r_supp_kept": 0.3192771084337349,
+            "r_mass_kept": 0.03136482292538172
+          },
+          {
+            "parent_global": 1283,
+            "r_supp_kept": 0.29914529914529914,
+            "r_mass_kept": 0.016568672336984246
+          },
+          {
+            "parent_global": 1284,
+            "r_supp_kept": 0.18449197860962566,
+            "r_mass_kept": 0.009064592913393914
+          },
+          {
+            "parent_global": 1287,
+            "r_supp_kept": 0.06048387096774194,
+            "r_mass_kept": 0.0008605333470530622
+          },
+          {
+            "parent_global": 1289,
+            "r_supp_kept": 0.31140350877192985,
+            "r_mass_kept": 0.009708089258945722
+          },
+          {
+            "parent_global": 1292,
+            "r_supp_kept": 0.05526116578349735,
+            "r_mass_kept": 0.06738098560315507
+          },
+          {
+            "parent_global": 1294,
+            "r_supp_kept": 0.12005856515373353,
+            "r_mass_kept": 0.12917496572545184
+          },
+          {
+            "parent_global": 1299,
+            "r_supp_kept": 0.2565217391304348,
+            "r_mass_kept": 0.002687531911495026
+          },
+          {
+            "parent_global": 1302,
+            "r_supp_kept": 0.7040498442367601,
+            "r_mass_kept": 0.019968285509362325
+          },
+          {
+            "parent_global": 1305,
+            "r_supp_kept": 0.029045643153526972,
+            "r_mass_kept": 0.12386721064927149
+          },
+          {
+            "parent_global": 1313,
+            "r_supp_kept": 0.08798283261802575,
+            "r_mass_kept": 0.006554202804475886
+          },
+          {
+            "parent_global": 1327,
+            "r_supp_kept": 0.21300448430493274,
+            "r_mass_kept": 0.010056403255890998
+          },
+          {
+            "parent_global": 1329,
+            "r_supp_kept": 0.1193058568329718,
+            "r_mass_kept": 0.5029829101648702
+          },
+          {
+            "parent_global": 1336,
+            "r_supp_kept": 0.12179487179487179,
+            "r_mass_kept": 0.0025937882389434684
+          },
+          {
+            "parent_global": 1337,
+            "r_supp_kept": 0.3593033913840513,
+            "r_mass_kept": 0.014405791311016625
+          },
+          {
+            "parent_global": 1338,
+            "r_supp_kept": 0.6613545816733067,
+            "r_mass_kept": 0.17900987778063013
+          },
+          {
+            "parent_global": 1356,
+            "r_supp_kept": 0.06845965770171149,
+            "r_mass_kept": 0.0013408215792246232
+          },
+          {
+            "parent_global": 1358,
+            "r_supp_kept": 0.08699059561128526,
+            "r_mass_kept": 0.18920361432695665
+          },
+          {
+            "parent_global": 1362,
+            "r_supp_kept": 0.1511627906976744,
+            "r_mass_kept": 0.20639294667558122
+          },
+          {
+            "parent_global": 1365,
+            "r_supp_kept": 0.6224489795918368,
+            "r_mass_kept": 0.008719169503166166
+          },
+          {
+            "parent_global": 1371,
+            "r_supp_kept": 0.20827105132037868,
+            "r_mass_kept": 0.34951215627469356
+          },
+          {
+            "parent_global": 1374,
+            "r_supp_kept": 0.31797235023041476,
+            "r_mass_kept": 0.10197889376055295
+          },
+          {
+            "parent_global": 1379,
+            "r_supp_kept": 0.6931818181818182,
+            "r_mass_kept": 0.0775053833155849
+          },
+          {
+            "parent_global": 1382,
+            "r_supp_kept": 0.25696969696969696,
+            "r_mass_kept": 0.052230358391327676
+          },
+          {
+            "parent_global": 1389,
+            "r_supp_kept": 0.2833698030634573,
+            "r_mass_kept": 0.3245809018471722
+          },
+          {
+            "parent_global": 1396,
+            "r_supp_kept": 0.34210526315789475,
+            "r_mass_kept": 0.007522261392621333
+          },
+          {
+            "parent_global": 1397,
+            "r_supp_kept": 0.62,
+            "r_mass_kept": 0.05972404845668429
+          },
+          {
+            "parent_global": 1408,
+            "r_supp_kept": 0.21529745042492918,
+            "r_mass_kept": 0.003888174203406571
+          },
+          {
+            "parent_global": 1411,
+            "r_supp_kept": 0.23842917251051893,
+            "r_mass_kept": 0.13464198716471448
+          },
+          {
+            "parent_global": 1412,
+            "r_supp_kept": 0.17607332368547998,
+            "r_mass_kept": 0.2791308979967542
+          },
+          {
+            "parent_global": 1413,
+            "r_supp_kept": 0.3747870528109029,
+            "r_mass_kept": 0.7470150358309945
+          },
+          {
+            "parent_global": 1418,
+            "r_supp_kept": 0.06261288380493679,
+            "r_mass_kept": 0.08883706303104957
+          },
+          {
+            "parent_global": 1420,
+            "r_supp_kept": 0.14545454545454545,
+            "r_mass_kept": 0.0177682589950679
+          },
+          {
+            "parent_global": 1424,
+            "r_supp_kept": 0.2774566473988439,
+            "r_mass_kept": 0.013010184050728187
+          },
+          {
+            "parent_global": 1431,
+            "r_supp_kept": 0.6074766355140186,
+            "r_mass_kept": 0.3172006286347841
+          },
+          {
+            "parent_global": 1432,
+            "r_supp_kept": 0.4012345679012346,
+            "r_mass_kept": 0.005309304526500561
+          },
+          {
+            "parent_global": 1434,
+            "r_supp_kept": 0.13688760806916425,
+            "r_mass_kept": 0.15824049509076873
+          },
+          {
+            "parent_global": 1435,
+            "r_supp_kept": 0.3699421965317919,
+            "r_mass_kept": 0.029044203160332144
+          },
+          {
+            "parent_global": 1451,
+            "r_supp_kept": 0.4588235294117647,
+            "r_mass_kept": 0.021236201474995695
+          },
+          {
+            "parent_global": 1456,
+            "r_supp_kept": 0.25842696629213485,
+            "r_mass_kept": 0.006534393926870533
+          },
+          {
+            "parent_global": 1457,
+            "r_supp_kept": 0.46715328467153283,
+            "r_mass_kept": 0.06251035412737685
+          },
+          {
+            "parent_global": 1460,
+            "r_supp_kept": 0.5779816513761468,
+            "r_mass_kept": 0.003777270157866902
+          },
+          {
+            "parent_global": 1466,
+            "r_supp_kept": 0.4024390243902439,
+            "r_mass_kept": 0.0748565063837202
+          },
+          {
+            "parent_global": 1472,
+            "r_supp_kept": 0.47586206896551725,
+            "r_mass_kept": 0.003982252240523451
+          },
+          {
+            "parent_global": 1474,
+            "r_supp_kept": 0.7029339853300733,
+            "r_mass_kept": 0.04096725401464994
+          },
+          {
+            "parent_global": 1478,
+            "r_supp_kept": 0.5953757225433526,
+            "r_mass_kept": 0.02869044323741935
+          },
+          {
+            "parent_global": 1481,
+            "r_supp_kept": 0.051756885090218425,
+            "r_mass_kept": 0.11540548233070343
+          },
+          {
+            "parent_global": 1482,
+            "r_supp_kept": 0.16319444444444445,
+            "r_mass_kept": 0.0032562555135495753
+          },
+          {
+            "parent_global": 1484,
+            "r_supp_kept": 0.6992753623188406,
+            "r_mass_kept": 0.03014676323117114
+          },
+          {
+            "parent_global": 1497,
+            "r_supp_kept": 0.6407766990291263,
+            "r_mass_kept": 0.009645729989496891
+          },
+          {
+            "parent_global": 1498,
+            "r_supp_kept": 0.011299435028248588,
+            "r_mass_kept": 0.007847857590659913
+          },
+          {
+            "parent_global": 1501,
+            "r_supp_kept": 0.25477707006369427,
+            "r_mass_kept": 0.027243828353543713
+          },
+          {
+            "parent_global": 1503,
+            "r_supp_kept": 0.7679558011049724,
+            "r_mass_kept": 0.16086427910300388
+          },
+          {
+            "parent_global": 1504,
+            "r_supp_kept": 0.13743455497382198,
+            "r_mass_kept": 0.6179631937243201
+          },
+          {
+            "parent_global": 1511,
+            "r_supp_kept": 0.09571788413098237,
+            "r_mass_kept": 0.02074196168703334
+          },
+          {
+            "parent_global": 1514,
+            "r_supp_kept": 0.5684931506849316,
+            "r_mass_kept": 0.0021782579208427847
+          },
+          {
+            "parent_global": 1517,
+            "r_supp_kept": 0.24404761904761904,
+            "r_mass_kept": 0.68518734003586
+          },
+          {
+            "parent_global": 1520,
+            "r_supp_kept": 0.32342007434944237,
+            "r_mass_kept": 0.024466922602718537
+          },
+          {
+            "parent_global": 1531,
+            "r_supp_kept": 0.31466227347611203,
+            "r_mass_kept": 0.3363559088383861
+          },
+          {
+            "parent_global": 1534,
+            "r_supp_kept": 0.6642599277978339,
+            "r_mass_kept": 0.026215229951962134
+          },
+          {
+            "parent_global": 1535,
+            "r_supp_kept": 0.07488986784140969,
+            "r_mass_kept": 0.026062207411665
+          },
+          {
+            "parent_global": 1539,
+            "r_supp_kept": 0.4283727399165508,
+            "r_mass_kept": 0.012000449376660694
+          },
+          {
+            "parent_global": 1544,
+            "r_supp_kept": 0.25830258302583026,
+            "r_mass_kept": 0.0764745263707757
+          },
+          {
+            "parent_global": 1545,
+            "r_supp_kept": 0.014595103578154425,
+            "r_mass_kept": 0.07662586671660032
+          },
+          {
+            "parent_global": 1548,
+            "r_supp_kept": 0.48914858096828046,
+            "r_mass_kept": 0.019017060330562024
+          },
+          {
+            "parent_global": 1557,
+            "r_supp_kept": 0.19056486654252017,
+            "r_mass_kept": 0.5331929339321316
+          },
+          {
+            "parent_global": 1567,
+            "r_supp_kept": 0.40862708719851576,
+            "r_mass_kept": 0.6671913719884922
+          },
+          {
+            "parent_global": 1568,
+            "r_supp_kept": 0.548926014319809,
+            "r_mass_kept": 0.08969469008114145
+          },
+          {
+            "parent_global": 1571,
+            "r_supp_kept": 0.1124949779027722,
+            "r_mass_kept": 0.18930134950774857
+          },
+          {
+            "parent_global": 1572,
+            "r_supp_kept": 0.04231105923548293,
+            "r_mass_kept": 0.13266936365437793
+          },
+          {
+            "parent_global": 1575,
+            "r_supp_kept": 0.14837153196622438,
+            "r_mass_kept": 0.15315659726171424
+          },
+          {
+            "parent_global": 1580,
+            "r_supp_kept": 0.1877772301626417,
+            "r_mass_kept": 0.7201989015310437
+          },
+          {
+            "parent_global": 1592,
+            "r_supp_kept": 0.2674897119341564,
+            "r_mass_kept": 0.002514207764955848
+          },
+          {
+            "parent_global": 1595,
+            "r_supp_kept": 0.08975012748597654,
+            "r_mass_kept": 0.11812190019875828
+          },
+          {
+            "parent_global": 1605,
+            "r_supp_kept": 0.34324324324324323,
+            "r_mass_kept": 0.11777055791564815
+          },
+          {
+            "parent_global": 1607,
+            "r_supp_kept": 0.7191011235955056,
+            "r_mass_kept": 0.008471687009517379
+          },
+          {
+            "parent_global": 1608,
+            "r_supp_kept": 0.37825059101654845,
+            "r_mass_kept": 0.010244490432893919
+          },
+          {
+            "parent_global": 1611,
+            "r_supp_kept": 0.42505133470225875,
+            "r_mass_kept": 0.05988753719367051
+          },
+          {
+            "parent_global": 1617,
+            "r_supp_kept": 0.1557377049180328,
+            "r_mass_kept": 0.010547470259538854
+          },
+          {
+            "parent_global": 1618,
+            "r_supp_kept": 0.43902439024390244,
+            "r_mass_kept": 0.00475113398592237
+          },
+          {
+            "parent_global": 1622,
+            "r_supp_kept": 0.03706896551724138,
+            "r_mass_kept": 0.1406825191070649
+          },
+          {
+            "parent_global": 1623,
+            "r_supp_kept": 0.23273657289002558,
+            "r_mass_kept": 0.5897285523615805
+          },
+          {
+            "parent_global": 1625,
+            "r_supp_kept": 0.5039370078740157,
+            "r_mass_kept": 0.013658315109689444
+          },
+          {
+            "parent_global": 1628,
+            "r_supp_kept": 0.4020100502512563,
+            "r_mass_kept": 0.0041059945596518856
+          },
+          {
+            "parent_global": 1633,
+            "r_supp_kept": 0.17751479289940827,
+            "r_mass_kept": 0.8183643058772041
+          },
+          {
+            "parent_global": 1635,
+            "r_supp_kept": 0.14792899408284024,
+            "r_mass_kept": 0.004708370042936589
+          },
+          {
+            "parent_global": 1637,
+            "r_supp_kept": 0.020491803278688523,
+            "r_mass_kept": 0.055704706449795575
+          },
+          {
+            "parent_global": 1641,
+            "r_supp_kept": 0.0711743772241993,
+            "r_mass_kept": 0.2124473840888396
+          },
+          {
+            "parent_global": 1646,
+            "r_supp_kept": 0.5838926174496645,
+            "r_mass_kept": 0.035202841237820644
+          },
+          {
+            "parent_global": 1647,
+            "r_supp_kept": 0.7386363636363636,
+            "r_mass_kept": 0.05725424787953544
+          },
+          {
+            "parent_global": 1665,
+            "r_supp_kept": 0.4347275031685678,
+            "r_mass_kept": 0.337155158301742
+          },
+          {
+            "parent_global": 1666,
+            "r_supp_kept": 0.7124600638977636,
+            "r_mass_kept": 0.03403516625496528
+          },
+          {
+            "parent_global": 1677,
+            "r_supp_kept": 0.041867546308043645,
+            "r_mass_kept": 0.03590696131974685
+          },
+          {
+            "parent_global": 1678,
+            "r_supp_kept": 0.28072837632776937,
+            "r_mass_kept": 0.010363903591407974
+          },
+          {
+            "parent_global": 1681,
+            "r_supp_kept": 0.1055753262158956,
+            "r_mass_kept": 0.4488087669245197
+          },
+          {
+            "parent_global": 1691,
+            "r_supp_kept": 0.10871174728529122,
+            "r_mass_kept": 0.11184477433194272
+          },
+          {
+            "parent_global": 1696,
+            "r_supp_kept": 0.5011337868480725,
+            "r_mass_kept": 0.014749294580570982
+          },
+          {
+            "parent_global": 1700,
+            "r_supp_kept": 0.09172504378283713,
+            "r_mass_kept": 0.23027552163644494
+          },
+          {
+            "parent_global": 1705,
+            "r_supp_kept": 0.7037037037037037,
+            "r_mass_kept": 0.020695676332388547
+          },
+          {
+            "parent_global": 1707,
+            "r_supp_kept": 0.291220556745182,
+            "r_mass_kept": 0.025593397591271844
+          },
+          {
+            "parent_global": 1708,
+            "r_supp_kept": 0.1717588769611891,
+            "r_mass_kept": 0.3773113559468506
+          },
+          {
+            "parent_global": 1714,
+            "r_supp_kept": 0.07202459376372419,
+            "r_mass_kept": 0.04052994007026213
+          },
+          {
+            "parent_global": 1719,
+            "r_supp_kept": 0.028299585264698706,
+            "r_mass_kept": 0.03821861780072276
+          },
+          {
+            "parent_global": 1723,
+            "r_supp_kept": 0.02203856749311295,
+            "r_mass_kept": 0.033118087068879934
+          },
+          {
+            "parent_global": 1729,
+            "r_supp_kept": 0.12921348314606743,
+            "r_mass_kept": 0.3404910296163069
+          },
+          {
+            "parent_global": 1733,
+            "r_supp_kept": 0.1525096525096525,
+            "r_mass_kept": 0.45165966079368386
+          },
+          {
+            "parent_global": 1739,
+            "r_supp_kept": 0.15035799522673032,
+            "r_mass_kept": 0.599038604436752
+          },
+          {
+            "parent_global": 1744,
+            "r_supp_kept": 0.23333333333333334,
+            "r_mass_kept": 0.008381905069419065
+          },
+          {
+            "parent_global": 1755,
+            "r_supp_kept": 0.5988700564971752,
+            "r_mass_kept": 0.2619982367368942
+          },
+          {
+            "parent_global": 1757,
+            "r_supp_kept": 0.2559366754617414,
+            "r_mass_kept": 0.014412896914892042
+          },
+          {
+            "parent_global": 1761,
+            "r_supp_kept": 0.556420233463035,
+            "r_mass_kept": 0.002284016902735673
+          },
+          {
+            "parent_global": 1762,
+            "r_supp_kept": 0.46355685131195334,
+            "r_mass_kept": 0.011991382001861312
+          },
+          {
+            "parent_global": 1764,
+            "r_supp_kept": 0.16774193548387098,
+            "r_mass_kept": 0.407067386949654
+          },
+          {
+            "parent_global": 1769,
+            "r_supp_kept": 0.2048780487804878,
+            "r_mass_kept": 0.745004551491898
+          },
+          {
+            "parent_global": 1770,
+            "r_supp_kept": 0.5737327188940092,
+            "r_mass_kept": 0.01669226644252525
+          },
+          {
+            "parent_global": 1773,
+            "r_supp_kept": 0.5772357723577236,
+            "r_mass_kept": 0.007747202372471905
+          },
+          {
+            "parent_global": 1774,
+            "r_supp_kept": 0.024875621890547265,
+            "r_mass_kept": 0.055473852498877915
+          },
+          {
+            "parent_global": 1781,
+            "r_supp_kept": 0.23333333333333334,
+            "r_mass_kept": 0.12901275558160205
+          },
+          {
+            "parent_global": 1786,
+            "r_supp_kept": 0.2746268656716418,
+            "r_mass_kept": 0.007678815233847798
+          },
+          {
+            "parent_global": 1791,
+            "r_supp_kept": 0.8468468468468469,
+            "r_mass_kept": 0.7247390884316965
+          },
+          {
+            "parent_global": 1794,
+            "r_supp_kept": 0.19148936170212766,
+            "r_mass_kept": 0.6088436926838328
+          },
+          {
+            "parent_global": 1803,
+            "r_supp_kept": 0.09888059701492537,
+            "r_mass_kept": 0.001360706080983287
+          },
+          {
+            "parent_global": 1811,
+            "r_supp_kept": 0.10074626865671642,
+            "r_mass_kept": 0.0060023899151179
+          },
+          {
+            "parent_global": 1817,
+            "r_supp_kept": 0.04233409610983982,
+            "r_mass_kept": 0.043213311839824735
+          },
+          {
+            "parent_global": 1822,
+            "r_supp_kept": 0.2830707914215221,
+            "r_mass_kept": 0.3818813062100448
+          },
+          {
+            "parent_global": 1824,
+            "r_supp_kept": 0.2230971128608924,
+            "r_mass_kept": 0.02086640555512229
+          },
+          {
+            "parent_global": 1836,
+            "r_supp_kept": 0.5522388059701493,
+            "r_mass_kept": 0.6444271602496454
+          },
+          {
+            "parent_global": 1844,
+            "r_supp_kept": 0.44753086419753085,
+            "r_mass_kept": 0.05145752600785855
+          },
+          {
+            "parent_global": 1845,
+            "r_supp_kept": 0.719626168224299,
+            "r_mass_kept": 0.0044778480352182974
+          },
+          {
+            "parent_global": 1846,
+            "r_supp_kept": 0.918918918918919,
+            "r_mass_kept": 0.17020019283842805
+          },
+          {
+            "parent_global": 1852,
+            "r_supp_kept": 0.5401069518716578,
+            "r_mass_kept": 0.008358377810031365
+          },
+          {
+            "parent_global": 1858,
+            "r_supp_kept": 0.2775330396475771,
+            "r_mass_kept": 0.0023302684118974458
+          },
+          {
+            "parent_global": 1864,
+            "r_supp_kept": 0.20444444444444446,
+            "r_mass_kept": 0.2606705833813261
+          },
+          {
+            "parent_global": 1865,
+            "r_supp_kept": 0.484304932735426,
+            "r_mass_kept": 0.014231068022934777
+          },
+          {
+            "parent_global": 1866,
+            "r_supp_kept": 0.6534653465346535,
+            "r_mass_kept": 0.09726758698782004
+          },
+          {
+            "parent_global": 1869,
+            "r_supp_kept": 0.1953125,
+            "r_mass_kept": 0.007585513546705156
+          },
+          {
+            "parent_global": 1878,
+            "r_supp_kept": 0.38222222222222224,
+            "r_mass_kept": 0.04549937980859062
+          },
+          {
+            "parent_global": 1880,
+            "r_supp_kept": 0.009885696632684585,
+            "r_mass_kept": 0.15573703847195763
+          },
+          {
+            "parent_global": 1884,
+            "r_supp_kept": 0.08891928864569083,
+            "r_mass_kept": 0.12227874107515094
+          },
+          {
+            "parent_global": 1902,
+            "r_supp_kept": 0.42,
+            "r_mass_kept": 0.006809817239651146
+          },
+          {
+            "parent_global": 1906,
+            "r_supp_kept": 0.24362606232294617,
+            "r_mass_kept": 0.027530126717167917
+          },
+          {
+            "parent_global": 1919,
+            "r_supp_kept": 0.1746987951807229,
+            "r_mass_kept": 0.7619297590259454
+          },
+          {
+            "parent_global": 1923,
+            "r_supp_kept": 0.5019455252918288,
+            "r_mass_kept": 0.004549672472031498
+          },
+          {
+            "parent_global": 1939,
+            "r_supp_kept": 0.04824851288830139,
+            "r_mass_kept": 0.06818398334121481
+          },
+          {
+            "parent_global": 1942,
+            "r_supp_kept": 0.3142857142857143,
+            "r_mass_kept": 0.006510865979522387
+          },
+          {
+            "parent_global": 1945,
+            "r_supp_kept": 0.5831202046035806,
+            "r_mass_kept": 0.007389443054648535
+          },
+          {
+            "parent_global": 1948,
+            "r_supp_kept": 0.3922018348623853,
+            "r_mass_kept": 0.7064297871820796
+          },
+          {
+            "parent_global": 1949,
+            "r_supp_kept": 0.2564991334488735,
+            "r_mass_kept": 0.007222036196779386
+          },
+          {
+            "parent_global": 1955,
+            "r_supp_kept": 0.5138121546961326,
+            "r_mass_kept": 0.027146826765410317
+          },
+          {
+            "parent_global": 1965,
+            "r_supp_kept": 0.15388967468175388,
+            "r_mass_kept": 0.32942479136672936
+          },
+          {
+            "parent_global": 1967,
+            "r_supp_kept": 0.36217948717948717,
+            "r_mass_kept": 0.010256155654198662
+          },
+          {
+            "parent_global": 1970,
+            "r_supp_kept": 0.3333333333333333,
+            "r_mass_kept": 0.5593459644597425
+          },
+          {
+            "parent_global": 1977,
+            "r_supp_kept": 0.3511988716502116,
+            "r_mass_kept": 0.5574757188153622
+          },
+          {
+            "parent_global": 1985,
+            "r_supp_kept": 0.06431535269709543,
+            "r_mass_kept": 0.1670343336498146
+          },
+          {
+            "parent_global": 1987,
+            "r_supp_kept": 0.6616541353383458,
+            "r_mass_kept": 0.484729999497092
+          },
+          {
+            "parent_global": 1999,
+            "r_supp_kept": 0.11685552407932011,
+            "r_mass_kept": 0.1813329158815209
+          },
+          {
+            "parent_global": 2000,
+            "r_supp_kept": 0.6504854368932039,
+            "r_mass_kept": 0.004971308468948083
+          },
+          {
+            "parent_global": 2004,
+            "r_supp_kept": 0.7731958762886598,
+            "r_mass_kept": 0.00643657199706679
+          },
+          {
+            "parent_global": 2009,
+            "r_supp_kept": 0.40993788819875776,
+            "r_mass_kept": 0.004970695201253333
+          },
+          {
+            "parent_global": 2012,
+            "r_supp_kept": 0.45715509854327335,
+            "r_mass_kept": 0.592603119414821
+          },
+          {
+            "parent_global": 2020,
+            "r_supp_kept": 0.10427807486631016,
+            "r_mass_kept": 0.026976020181594763
+          },
+          {
+            "parent_global": 2021,
+            "r_supp_kept": 0.16176470588235295,
+            "r_mass_kept": 0.002748521606874282
+          },
+          {
+            "parent_global": 2027,
+            "r_supp_kept": 0.504,
+            "r_mass_kept": 0.02875759804351165
+          },
+          {
+            "parent_global": 2031,
+            "r_supp_kept": 0.08711111111111111,
+            "r_mass_kept": 0.021770558798386526
+          },
+          {
+            "parent_global": 2033,
+            "r_supp_kept": 0.05016008537886873,
+            "r_mass_kept": 0.14757107158761917
+          },
+          {
+            "parent_global": 2036,
+            "r_supp_kept": 0.6526315789473685,
+            "r_mass_kept": 0.003534417092244554
+          },
+          {
+            "parent_global": 2037,
+            "r_supp_kept": 0.4449760765550239,
+            "r_mass_kept": 0.014317344662649159
+          },
+          {
+            "parent_global": 2041,
+            "r_supp_kept": 0.5300546448087432,
+            "r_mass_kept": 0.033963971113134664
+          },
+          {
+            "parent_global": 2045,
+            "r_supp_kept": 0.22981366459627328,
+            "r_mass_kept": 0.008173758420495721
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 16729,
+        "n_probed_children": 457,
+        "n_untestable_children": 0,
+        "n_edges_scored": 16640,
+        "n_pass": 171,
+        "frac_pass": 0.010276442307692308
+      }
+    }
+  }
+}

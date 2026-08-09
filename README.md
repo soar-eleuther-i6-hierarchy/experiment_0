@@ -21,7 +21,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="./outputs/gemma2_2b/">Gemma2_2b</a><a class="" href="./outputs/pcfg/">PCFG</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="./">SOAR I-6 · metrics</a><a class="" href="./outputs/">Results</a><a class="" href="./outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="./outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="./outputs/gemma-2-2b/">gemma-2-2b</a><a class="" href="./outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # experiment_0: Implement Metrics (SOAR I-6)
 
@@ -101,7 +101,7 @@ EXP0_LAYER=12 python3 collect_statistics.py          # any layer 0–24
 EXP0_DEVICE=cuda:1 python3 collect_statistics.py     # device (default: mps on Mac, cuda on server)
 CUDA_VISIBLE_DEVICES=1 python3 collect_statistics.py # pin one GPU on the shared server
 EXP0_OUT=my_run python3 run_metrics.py               # redirect all outputs away from the published outputs/
-EXP0_RUN=pcfg/layer_01 python3 -m reporting.visualize # a layer of another source
+EXP0_RUN=pcfg-matryoshka/layer_01 python3 -m reporting.visualize # a layer of another source
 ```
 
 ### Grading a source that is not gemma
@@ -111,8 +111,8 @@ file, so an SAE with a different shape needs an adapter and no metric code — s
 [`adapters/from_pcfg.py`](../adapters/from_pcfg.py) in the umbrella repo, which also writes
 the `token_cache/` stage 03 reads and the `w_dec.pt` it scores S_res with.
 
-`EXP0_RUN` names the output directory: `EXP0_RUN=pcfg/layer_01` publishes at
-`outputs/pcfg/layer_01/`, the same source/layer shape as gemma. Any depth
+`EXP0_RUN` names the output directory: `EXP0_RUN=pcfg-matryoshka/layer_01` publishes at
+`outputs/pcfg-matryoshka/layer_01/`, the same source/layer shape as gemma. Any depth
 works — every page derives its own distance to the site root and its link to the shared plotly
 bundle from its path — but the LAST component decides how the page reads: a directory named
 `layer_NN` gets the layer nav, anything else gets the site-wide one. Give the directory an index
@@ -120,10 +120,10 @@ with `python3 -m reporting.layer_index --run`, and the source's own index with
 `--source <name>`, or those URLs 404 on GitHub Pages. Register the source in `config.SOURCES` —
 its label, its layers and which of the five page kinds it actually has — and it appears in the nav
 with its own layer row. Pages generated this way mark no layer as current and their headers name the run's
-own model and dictionary. First one published: [`outputs/pcfg/layer_01/`](outputs/pcfg/layer_01/README.md).
+own model and dictionary. First one published: [`outputs/pcfg-matryoshka/layer_01/`](outputs/pcfg-matryoshka/layer_01/README.md).
 
 Each source is one entry in `NAV_GLOBAL` — a place you go, not a row that follows you. The layer
-pills belong to gemma, so they appear only inside `outputs/gemma2_2b/`; before that they sat on
+pills belong to gemma, so they appear only inside `outputs/gemma-2-2b/`; before that they sat on
 every page, offering to "switch layer" from a PCFG dashboard built on a different model entirely.
 
 Listing a source in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
@@ -329,7 +329,7 @@ metrics/                              the repository
     ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
     ├── toy_trained/                  the Tier-2 checkpoint
     ├── README.md
-    ├── gemma2_2b/                    the five gemma layers, grouped by source
+    ├── gemma-2-2b/                    the five gemma layers, grouped by source
     │   └── layer_06/                 identical in layer_03, layer_12, layer_18, layer_24
     │   ├── README.md                 the layer's landing page
     │   ├── metrics_dashboard.html
@@ -339,8 +339,8 @@ metrics/                              the repository
     │   ├── qualitative_check.json    (+ .md)
     │   ├── feature_labels.json
     │   └── npedia_labels_cache.json
-    └── pcfg/                         a second source, same shape as gemma's
-        ├── README.md                 the source index (layer_index --source pcfg)
+    └── pcfg-matryoshka/                         a second source, same shape as gemma's
+        ├── README.md                 the source index (layer_index --source pcfg-matryoshka)
         ├── layer_01/                 a 4-layer base model, so 0-3 exist and
         └── layer_03/                   an SAE was trained on two of them
             ├── README.md

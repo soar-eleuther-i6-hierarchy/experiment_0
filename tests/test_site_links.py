@@ -16,7 +16,7 @@ Two conventions it has to know about, because the site relies on both:
 `metrics_report.html`, and only `metrics_report.md` is in the repo. That link is
 correct; a checker that did not know this would report every report page broken.
 
-**A directory link resolves to its `README.md`.** `outputs/pcfg/` is how the nav
+**A directory link resolves to its `README.md`.** `outputs/pcfg-matryoshka/` is how the nav
 addresses a source, and GitHub Pages serves that directory's README.
 
     python3 -m tests.test_site_links            # fails on the first dead target

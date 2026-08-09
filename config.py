@@ -193,12 +193,12 @@ HERE = Path(__file__).resolve().parent
 OUT_DIR = Path(os.environ.get("EXP0_OUT", HERE / "outputs"))
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Results are grouped by SOURCE first, layer second: outputs/gemma2_2b/layer_NN/.
+# Results are grouped by SOURCE first, layer second: outputs/gemma-2-2b/layer_NN/.
 # They used to sit at outputs/layer_NN/, from when gemma was the only source there
 # could be -- which stopped being true the moment a PCFG run was published beside
 # them, and left the site claiming that "layer 6" is a global fact rather than a
 # fact about one model.
-SOURCE_NAME = "gemma2_2b"
+SOURCE_NAME = "gemma-2-2b"
 LAYER_RUN = f"{SOURCE_NAME}/layer_{LAYER:02d}"
 
 # EXP0_RUN names the directory instead, for a run that is not a gemma layer: the
@@ -274,7 +274,7 @@ def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None
 #
 # It is `sticky`, not `fixed`: sticky occupies layout space, so the bar can
 # never cover the top of a plot the way the old floating back-button did.
-NAV_LAYERS = [3, 6, 12, 18, 24]
+NAV_LAYERS = [1, 3, 6, 12, 18, 24]
 
 # (file, label) for the five pages every layer_NN/ has. `file` doubles as the
 # identity of "which page am I on", so switching layer lands on the same kind.
@@ -313,12 +313,12 @@ NAV_PAGES = [
 # a page a source does not have would put a 404 in its own nav bar.
 SOURCES = {
     SOURCE_NAME: {
-        "label": "Gemma2_2b",
-        "layers": [3, 6, 12, 18, 24],
+        "label": "gemma-2-2b",
+        "layers": [1, 3, 6, 12, 18, 24],
         "pages": NAV_PAGES,
     },
-    "pcfg": {
-        "label": "PCFG",
+    "pcfg-matryoshka": {
+        "label": "pcfg-matryoshka",
         # 1 and 3, because those are the layers an SAE was trained on -- and the
         # PCFG base transformer has four layers in total (0-3), so gemma's
         # 6/12/18/24 do not exist here and never will for this model.
@@ -387,7 +387,7 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     """The site nav bar for one page.
 
     depth    levels from this page's directory up to the site root
-             (1 for outputs/x.html, 3 for outputs/gemma2_2b/layer_NN/x.html);
+             (1 for outputs/x.html, 3 for outputs/gemma-2-2b/layer_NN/x.html);
              `page_depth(path)` computes it, and callers should use that rather
              than count by hand
     layer    the layer this page describes, or None for a site-wide page
@@ -409,7 +409,7 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     top = [f'<a class="brand" href="{root}">SOAR I-6 · metrics</a>']
     for href, label in NAV_GLOBAL:
         # A directory entry owns every page under it, so a run that publishes a
-        # whole directory (outputs/pcfg/) lights up its own nav entry from any of
+        # whole directory (outputs/pcfg-matryoshka/) lights up its own nav entry from any of
         # its pages, not only from the index. `outputs/` itself is excluded --
         # it is the site index and prefixes every page there is, so it would be
         # permanently lit next to the entry that is actually current.
