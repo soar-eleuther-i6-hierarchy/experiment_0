@@ -12,13 +12,20 @@
 % Captions sit below the image, as figures take them, and the mirror of
 % tables.tex where they sit above.
 %
+% \graphicspath below lists several candidates on purpose. It resolves against
+% the directory of the MAIN .tex, not against this file, so a copy of this file
+% \input from a Sections/ subdirectory while the PNGs sit in a folder at the
+% project root needs that folder named -- a bare ./ points at the root and finds
+% nothing, and every figure fails with nothing wrong in the markup. LaTeX takes
+% the first path that hits, so the extra entries cost nothing.
+%
 % Expects the PNGs reachable via \graphicspath below. To compile on its own,
 % prepend
 %     \documentclass{article}\usepackage{graphicx}\begin{document}
 % and append \end{document}.
 % ===========================================================================
 
-\graphicspath{{./}}
+\graphicspath{{./}{paper_figuers/}{figuers/}{figures/}{../paper_figuers/}{../figuers/}{../figures/}{../}}
 
 % -------------------------------------------------------------------------
 % The instrument

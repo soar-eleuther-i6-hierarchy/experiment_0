@@ -83,6 +83,27 @@ def esc(t) -> str:
 TWOCOLUMN = False       # set from --twocolumn; the ICLR template is onecolumn
 
 
+def wrap(text, frac: float) -> str:
+    r"""A table cell that wraps, using only the LaTeX kernel.
+
+    The obvious way to wrap a cell is a `p{}` column, and the obvious way to stop
+    it justifying is `>{\raggedright\arraybackslash}`. Both need the `array`
+    package, and neither fails politely when it is absent: `\arraybackslash`
+    reports "control sequence never \def'ed" while leaving `\\` redefined, so
+    rows stop terminating and the last column runs off the page; `>` reports
+    "Illegal character in array arg". This generator cannot see the preamble it
+    will be pasted into, so it must not depend on a package it cannot check --
+    and a hand-off .tex that needs a preamble edit to compile is a .tex that
+    arrives broken.
+
+    `\parbox` is in the kernel. `[t]` puts the cell's first line on the row's
+    baseline, which is what a `p{}` column does too, and `\raggedright` inside
+    the box is scoped to the box, so it never touches the tabular's `\\`. The
+    trailing `\strut` keeps single-line and multi-line rows the same height.
+    """
+    return rf"\parbox[t]{{{frac}\linewidth}}{{\raggedright {text}\strut}}"
+
+
 def table(label, caption, header, rows, align=None, star=False, note=None):
     r"""One booktabs table, caption ABOVE the rules.
 
@@ -222,43 +243,135 @@ def t_matrix():
 # 4. The tiers.
 # ---------------------------------------------------------------------------
 def t_tiers(toy, tt, align_json, pcfg=None):
+    r"""The ladder, with Tier 3 described as what it is rather than as what it was meant to be.
+
+    Two things this row used to assert and no longer does.
+
+    It claimed Tier 3 "keeps the known tree". It does not: Tier 2's tree is
+    Bussmann's -- 20 features, 9 edges, exclusive siblings, from the team repo's
+    `configs/tree.json` -- and Tier 3's is a PCFG whose hierarchy is
+    document/section/paragraph/sentence over S-V-O roles. Different structures,
+    and the word "tree" doing double duty is what let the claim through.
+
+    It also claimed Tier 3 "isolates base-model dependence". Isolation needs one
+    variable to move. Between Tiers 2 and 3 the grammar, the base model, the
+    corpus and the dictionary size all move together, so the tier BOUNDS the
+    base model's contribution rather than isolating it. Isolating it would mean
+    training a transformer on Bussmann's own tree, which nothing here does.
+
+    And the ground-truth cell promised a measurement the result cell does not
+    deliver: the grammar is known, but nothing maps a latent to a grammar symbol,
+    so Tier 3 reports the same battery outputs as Tier 4. The helper that would
+    close it exists -- `pcfg_bridge.grammar.vocab.role_of` in the PCFG repo,
+    named in its `analysis/README.md` for exactly this -- so the cell says "not
+    yet" rather than implying the tier is inherently blind.
+    """
     n_pass = sum(r["pass"] for r in toy) if toy else None
-    pcfg_result = "---"
+    pcfg_result, pcfg_runs_on, pcfg_detail = "---", "a Matryoshka SAE on a PCFG corpus", None
     if pcfg:
-        parts = []
+        parts, cands = [], []
         for name, r, sp in pcfg:
             p = _pair(r)
             recon = rf"{100 * p['reconstruction']['frac_pass']:.0f}\%"
             sr = sp["0->1"]["sres"] if sp and "0->1" in sp else None
             sres = rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"
-            layer_label = name.replace("layer_", "layer~")
-            parts.append(rf"{layer_label}: {p['n_candidate_edges']:,} candidates, {recon} recon, {sres} $S_\mathrm{{res}}$")
-        pcfg_result = "; ".join(parts)
+            cands.append(p["n_candidate_edges"])
+            parts.append(rf"{name.replace('layer_', 'layer~')}: {p['n_candidate_edges']:,} "
+                         rf"candidates, {recon} recon, {sres} $S_\mathrm{{res}}$")
+        # The cell summarises and the note carries the per-layer detail: four
+        # measurements inline overflowed the text block, and a table that runs
+        # off the page is not a table.
+        pcfg_result = (rf"{len(pcfg)} layers, {min(cands):,}--{max(cands):,} candidates; "
+                       r"\emph{no ground-truth score} --- same battery outputs as Tier~4")
+        pcfg_detail = "Tier~3, per layer: " + "; ".join(parts) + "."
+        nl = ((pcfg[0][1].get("config") or {}).get("base_model") or {}).get("n_layers")
+        pcfg_runs_on = ("a Matryoshka SAE over a "
+                        + (f"{nl}-layer " if nl else "small ")
+                        + "transformer trained on a PCFG corpus")
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
          rf"{n_pass}/{len(toy)} rows, 21/21 functions, seeds 0--7" if toy else "---"),
-        ("2 Trained toy", "an SAE trained on a toy model, Bussmann's tree", "the Bussmann's tree is known",
+        ("2 Trained toy", "an SAE trained on Bussmann's tree", "Bussmann's tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
-        ("3 PCFG SAE", "a Matryoshka SAE trained on a small model built on a PCFG tree", "the PCFG tree is known", pcfg_result),
-        ("4 Real SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
+        ("3 PCFG SAE", pcfg_runs_on,
+         r"the grammar is known; no latent$\leftrightarrow$symbol mapping yet", pcfg_result),
+        # "Released", not "Real": Tier 3 is a real SAE too -- really trained, over
+        # a really trained transformer -- and calling only this rung real reads as
+        # demoting it, which is the confusion the Tier 3 row was just rewritten to
+        # remove. What actually sets this rung apart is that we did not train it.
+        # The release id lives in the note, not the cell. In \texttt it is a single
+        # unbreakable 29-character token, wider than any sensible column, and TeX
+        # does not shrink an overfull box -- it prints it straight across the next
+        # column. Which is what it did.
+        ("4 Released SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
          "40 survivors read against autointerp labels"),
     ]
-    note = None
-    if align_json:
-        note = (rf"Lateral control (not a tier): {align_json['n_respected']}/"
-                rf"{align_json['n_testable']} testable true edges run early block "
-                r"$\rightarrow$ late on the trained toy.")
+    note = " ".join(t for t in [
+        rf"Tier~4's dictionary is the released \texttt{{{esc(C.SAE_RELEASE)}}}.",
+        pcfg_detail,
+        (rf"Lateral control (not a tier): {align_json['n_respected']}/"
+         rf"{align_json['n_testable']} testable true edges run early block "
+         r"$\rightarrow$ late on the trained toy." if align_json else None),
+    ] if t) or None
+    # Tier 2's own size, from its calibration file. The two toys are NOT the same
+    # world in two conditions, which "closes exactly that gap" used to imply:
+    # Tier 1 grades a pathology-injected world and Tier 2 a clean, smaller tree,
+    # so the world changes along with the statistics. Same shape of overclaim as
+    # Tier 3's withdrawn "isolating", one rung down -- softer, because it was
+    # carried by one word rather than asserted.
+    tier2 = ("on a simpler toy"
+             if not tt else
+             rf"on Bussmann's {tt['n_features']}-feature tree with "
+             rf"{len(tt['true_edges'])} edges and no injected pathologies")
     return table(
         "tiers", r"\textbf{Four tiers, trading ground truth against realism.} Each rung "
         "licenses the one above it: Tier~1 proves the arithmetic and nothing about whether "
-        "an SAE would learn such a structure; Tier~2 closes exactly that gap, because only "
-        "what the SAE actually learned reaches the metrics, which is also what lets it "
-        "attribute a miss --- a missed edge counts against a metric only if the SAE learned "
-        "both endpoints. Tier~3 keeps the known tree but swaps the base model for a smaller "
-        "transformer trained on PCFG corpora, isolating base-model dependence from SAE quality. "
-        "Tier~4 is the real SAE: no known answer, named for how it is judged rather than "
-        "what it runs on.",
-        ["Tier", "Runs on", "Ground truth", "Result"], rows, align="llll", star=True, note=note)
+        rf"an SAE would learn such a structure. Tier~2 attacks that gap, but {tier2} rather "
+        "than on the pathology-injected world Tier~1 grades, so it changes the world as well "
+        "as the statistics and does not isolate training as the single moving part either. "
+        "What it does isolate cleanly is blame: only what the SAE actually learned reaches the "
+        "metrics, so a missed edge counts against a metric only if the SAE learned both "
+        "endpoints. Tier~3 inserts a base model between the concepts and the SAE, which "
+        "Tiers~1 and~2 do not have at all. It is \\textbf{not} a controlled swap from Tier~2: "
+        "the grammar, the base model, the corpus and the dictionary size all change together, "
+        "so it \\emph{bounds} the base model's contribution rather than isolating it --- "
+        "isolating it would mean training a transformer on Bussmann's own tree. Its grammar is "
+        "known but nothing yet maps a latent to a grammar symbol, so its result column reports "
+        "the same battery outputs as Tier~4 rather than a recovery score; the helper that would "
+        r"close the gap (\texttt{role\_of} in the PCFG repo) already exists. Tier~4 is named "
+        r"\emph{released} rather than \emph{real} --- Tier~3 is a real SAE too, really trained "
+        "over a really trained transformer, and the distinction that matters is that Tier~4 is a "
+        "published checkpoint we did not train. That is also a constraint and not only a label: "
+        "we do not control its dictionary, which is why the "
+        r"$S_\mathrm{res}$ column of Table~\ref{tab:gemma} exists for one layer only. It has no "
+        "known answer at all.",
+        ["Tier", "Runs on", "Ground truth", "Result"], rows,
+        # p{} rather than l: Tier 3's cells are sentences, and in an l column a
+        # sentence does not wrap -- it runs off the page edge, and LaTeX only
+        # warns about the overfull box, so nobody notices until the PDF.
+        # Fractions of \linewidth rather than centimetres, because the widths
+        # have to hold under whatever \textwidth the class sets and under
+        # --twocolumn, where the float becomes table* and \linewidth changes.
+        # 0.70 for the three, leaving the l column and eight \tabcolsep gaps
+        # inside the remaining 0.30.
+        # \raggedright on every p column: a justified 0.18\linewidth column with
+        # "latent<->symbol mapping yet" in it stretches interword space across
+        # half the cell. Ragged right is the normal setting for narrow table text.
+        #
+        # `\let\\\tabularnewline` and NOT `\arraybackslash`, which is the usual
+        # incantation: \arraybackslash lives in tabularx, not in array, so a
+        # preamble that loads array alone -- enough for the >{} syntax itself --
+        # hits "control sequence never \def'ed". The failure is worse than a
+        # missing package message, because \raggedright has already redefined \\
+        # and nothing restores it: rows stop terminating, run together, and the
+        # last column vanishes off the page. \let\\\tabularnewline IS what
+        # \arraybackslash expands to, so this needs array and nothing else.
+        # It must follow \raggedright, which is what redefines \\.
+        align=(r"l "
+               r">{\raggedright\let\\\tabularnewline}p{0.22\linewidth} "
+               r">{\raggedright\let\\\tabularnewline}p{0.18\linewidth} "
+               r">{\raggedright\let\\\tabularnewline}p{0.25\linewidth}"),
+        star=True, note=note)
 
 
 # ---------------------------------------------------------------------------
@@ -616,13 +729,18 @@ HEAD = r"""% ===================================================================
 % Ordered as the paper reads: the instrument is defined before any number it
 % produces is quoted. MAIN 1-6 are the main text, APP 1-3 the appendix.
 %
-% Requires: booktabs. Emitted for a ONECOLUMN class, which is what the ICLR
+% Requires: booktabs AND array -- the tier table uses >{...}p{} columns.
+% Nothing else: it deliberately writes \let\\\tabularnewline rather than
+% \arraybackslash, which looks equivalent but lives in tabularx, and whose
+% absence does not merely warn -- \raggedright has already redefined \\, so
+% rows stop terminating and the last column runs off the page.
+% Emitted for a ONECOLUMN class, which is what the ICLR
 % template uses; pass --twocolumn for full-width table* floats.
 % Captions sit above the rules, as tables take them and as the ICLR template's
 % own example does.
 %
 % To compile on its own, prepend
-%     \documentclass{article}\usepackage{booktabs}\begin{document}
+%     \documentclass{article}\usepackage{booktabs,array}\begin{document}
 % and append \end{document}.
 % ===========================================================================
 """

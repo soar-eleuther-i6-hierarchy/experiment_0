@@ -7,13 +7,18 @@
 % Ordered as the paper reads: the instrument is defined before any number it
 % produces is quoted. MAIN 1-6 are the main text, APP 1-3 the appendix.
 %
-% Requires: booktabs. Emitted for a ONECOLUMN class, which is what the ICLR
+% Requires: booktabs AND array -- the tier table uses >{...}p{} columns.
+% Nothing else: it deliberately writes \let\\\tabularnewline rather than
+% \arraybackslash, which looks equivalent but lives in tabularx, and whose
+% absence does not merely warn -- \raggedright has already redefined \\, so
+% rows stop terminating and the last column runs off the page.
+% Emitted for a ONECOLUMN class, which is what the ICLR
 % template uses; pass --twocolumn for full-width table* floats.
 % Captions sit above the rules, as tables take them and as the ICLR template's
 % own example does.
 %
 % To compile on its own, prepend
-%     \documentclass{article}\usepackage{booktabs}\begin{document}
+%     \documentclass{article}\usepackage{booktabs,array}\begin{document}
 % and append \end{document}.
 % ===========================================================================
 
@@ -105,19 +110,19 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{Four tiers, trading ground truth against realism.} Each rung licenses the one above it: Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure; Tier~2 closes exactly that gap, because only what the SAE actually learned reaches the metrics, which is also what lets it attribute a miss --- a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 keeps the known tree but swaps the base model for a smaller transformer trained on PCFG corpora, isolating base-model dependence from SAE quality. Tier~4 is the real SAE: no known answer, named for how it is judged rather than what it runs on.}
+  \caption{\textbf{Four tiers, trading ground truth against realism.} Each rung licenses the one above it: Tier~1 proves the arithmetic and nothing about whether an SAE would learn such a structure. Tier~2 attacks that gap, but on Bussmann's 20-feature tree with 9 edges and no injected pathologies rather than on the pathology-injected world Tier~1 grades, so it changes the world as well as the statistics and does not isolate training as the single moving part either. What it does isolate cleanly is blame: only what the SAE actually learned reaches the metrics, so a missed edge counts against a metric only if the SAE learned both endpoints. Tier~3 inserts a base model between the concepts and the SAE, which Tiers~1 and~2 do not have at all. It is \textbf{not} a controlled swap from Tier~2: the grammar, the base model, the corpus and the dictionary size all change together, so it \emph{bounds} the base model's contribution rather than isolating it --- isolating it would mean training a transformer on Bussmann's own tree. Its grammar is known but nothing yet maps a latent to a grammar symbol, so its result column reports the same battery outputs as Tier~4 rather than a recovery score; the helper that would close the gap (\texttt{role\_of} in the PCFG repo) already exists. Tier~4 is named \emph{released} rather than \emph{real} --- Tier~3 is a real SAE too, really trained over a really trained transformer, and the distinction that matters is that Tier~4 is a published checkpoint we did not train. That is also a constraint and not only a label: we do not control its dictionary, which is why the $S_\mathrm{res}$ column of Table~\ref{tab:gemma} exists for one layer only. It has no known answer at all.}
   \label{tab:tiers}
-  \begin{tabular}{llll}
+  \begin{tabular}{l >{\raggedright\let\\\tabularnewline}p{0.22\linewidth} >{\raggedright\let\\\tabularnewline}p{0.18\linewidth} >{\raggedright\let\\\tabularnewline}p{0.25\linewidth}}
     \toprule
     Tier & Runs on & Ground truth & Result \\
     \midrule
     1 Synthetic toy & hand-built statistics & by construction & 14/14 rows, 21/21 functions, seeds 0--7 \\
-    2 Trained toy & an SAE trained on a toy model, Bussmann's tree & the Bussmann's tree is known & precision 1.00, recall 0.67 \\
-    3 PCFG SAE & a Matryoshka SAE trained on a small model built on a PCFG tree & the PCFG tree is known & layer~01: 327 candidates, 100\% recon, 0/327 $S_\mathrm{res}$; layer~03: 781 candidates, 95\% recon, 4/772 $S_\mathrm{res}$ \\
-    4 Real SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
+    2 Trained toy & an SAE trained on Bussmann's tree & Bussmann's tree is known & precision 1.00, recall 0.67 \\
+    3 PCFG SAE & a Matryoshka SAE over a 4-layer transformer trained on a PCFG corpus & the grammar is known; no latent$\leftrightarrow$symbol mapping yet & 2 layers, 327--781 candidates; \emph{no ground-truth score} --- same battery outputs as Tier~4 \\
+    4 Released SAE & \texttt{google/gemma-2-2b} & none --- human reading & 40 survivors read against autointerp labels \\
     \bottomrule
   \end{tabular}
-  \\[2pt] \footnotesize Lateral control (not a tier): 6/6 testable true edges run early block $\rightarrow$ late on the trained toy.
+  \\[2pt] \footnotesize Tier~4's dictionary is the released \texttt{gemma-2-2b-res-matryoshka-dc}. Tier~3, per layer: layer~01: 327 candidates, 100\% recon, 0/327 $S_\mathrm{res}$; layer~03: 781 candidates, 95\% recon, 4/772 $S_\mathrm{res}$. Lateral control (not a tier): 6/6 testable true edges run early block $\rightarrow$ late on the trained toy.
 \end{table}
 
 % [MAIN 5]

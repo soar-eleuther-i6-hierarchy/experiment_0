@@ -29,12 +29,23 @@ This is **calibration**, not a unit-test suite: how a metric gets *scored* rathe
 (The directory was called `tests/`, which promised coverage of `metrics/` and delivered a toy-world
 generator. [`tests/`](../tests/) now holds real unit tests.)
 
-All four tiers live here. Tiers 1–2 have a ground-truth tree and run offline; **Tier 3 is the odd
-one** — it needs the real `exp0_stats.pt`, needs the network for labels, is judged by human reading
-rather than against a known answer, and writes a published artifact into `RUN_DIR`. **Tier 4** is the
-PCFG run, which uses the same battery on a grammar-generated SAE whose tree structure is known
-through the grammar even though each instance is sampled at runtime. All four sit here because they
-are one argument, not because they share dependencies.
+Tiers 1–2 live here. They have a ground-truth tree and run offline.
+
+**Tier 3 — the PCFG SAE — does not live here.** It has no calibration script, because it is not
+scored against a known answer: it runs the ordinary pipeline over statistics built by
+`adapters/from_pcfg.py` in the umbrella repo (outside this one) and reports the same
+battery outputs as Tier 4. Its grammar *is* known, and the PCFG repo ships
+`pcfg_bridge.grammar.vocab.role_of(token_id)` for building a latent→symbol mapping from it, but
+nothing consumes that yet. A `calibrate_on_pcfg.py` beside the other two is what closing that would
+look like.
+
+**Tier 4 is the odd one that does live here** — [`qualitative_check.py`](qualitative_check.py)
+needs the real `exp0_stats.pt`, needs the network for labels, is judged by human reading rather
+than against a known answer, and writes a published artifact into `RUN_DIR`.
+
+This numbering matches [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-four-tiers)
+and the paper's tier table. It used to be the other way round here — 3 for the qualitative pass and
+4 for PCFG — which is worth stating because a reader who saw the old order has the two swapped.
 
 Full results and the four-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-four-tiers)
 
@@ -43,24 +54,32 @@ Full results and the four-tier table: [outputs/README.md](../outputs/README.md#h
 | [`synthetic_toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass across seeds 0–7**, covering **21/21 metric functions** |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
-| [`from_pcfg.py`](from_pcfg.py) | 3 | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **PCFG grammar known** | same battery on a non-toy source; layer~01: 327 candidates, 100% recon, 0/327 S_res; layer~03: 781 candidates, 95% recon, 4/772 S_res |
-| [`qualitative_check.py`](qualitative_check.py) | 4 | the real `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+| `adapters/from_pcfg.py` *(umbrella repo, not this one)* | 3 | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **nothing yet** — the grammar is known but no latent→symbol mapping exists | same battery as Tier 4, on a source that has a base model; layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
+| [`qualitative_check.py`](qualitative_check.py) | 4 | the released `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
 
-**Why Tier 3 is not named `calibrate_*`.** The first two score metrics against an answer we know.
-Tier 3 has no such answer: it is judged by reading labels that are themselves model-generated
+**Why Tier 4 is not named `calibrate_*`.** The first two score metrics against an answer we know.
+Tier 4 has no such answer: it is judged by reading labels that are themselves model-generated
 (Neuronpedia's autointerp). Calling it a calibration would claim a ground truth that does not exist,
-so the verb differs on purpose. Its name says *how* it is judged rather than *what it runs on*,
-which is the honest emphasis for the one tier where the method of judgement is the caveat.
+so the verb differs on purpose. Tier 3 is not a `calibrate_*` either, for a different reason — it
+*has* an answer available and does not use it yet.
 
 ```bash
 python3 validation/calibrate_on_synthetic_toy.py               # Tier 1
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py  # Tier 2, needs outputs/toy_trained/
-python3 -m validation.qualitative_check                        # Tier 3, needs exp0_stats.pt + labels
+python3 -m validation.qualitative_check                        # Tier 4, needs exp0_stats.pt + labels
 ```
 
-**Both tiers use the same toy** — Bussmann's tree, from `sae-training/configs/tree.json`. What
-differs is where the statistics come from: Tier 1 builds them by hand so the tree is exactly right,
-Tier 2 reads them off a Matryoshka SAE that had to learn that tree first. The filenames say which.
+**The two tiers do not use the same toy.** This page said they did — "both tiers use the same toy,
+Bussmann's tree" — and that is wrong, as its own table two rows above shows. Tier 1's world is built
+by [`synthetic_toy_world.py`](synthetic_toy_world.py): a 5-parent tree over **42 features**
+(`P = 10` parents, `C = 32` children) with six pathologies injected on purpose, and it never reads
+`tree.json`. Tier 2's world is Bussmann's tree from `sae-training/configs/tree.json`: **20
+features, 9 edges, no injected pathologies**.
+
+So the step from Tier 1 to Tier 2 changes the world as well as where the statistics come from, and
+does not isolate "the SAE had to learn it" as a single moving part. What it does isolate cleanly is
+**blame** — a missed edge counts against a metric only if the SAE learned both endpoints, and all
+three of Tier 2's misses trace to the three features it never learned.
 
 Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`
 from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo. It
@@ -166,8 +185,10 @@ would silently break.
 The naming follows that split: everything here is `calibrate_*` or a named control, and a `test_`
 prefix means a unit test in `../tests/`. Tier 1 used to be `test_metric_calibration.py` — a
 calibration wearing a unit-test name, which also invited pytest to collect a file that is not a
-pytest test. It is now `calibrate_on_synthetic_toy.py`, parallel to `calibrate_on_trained_toy.py`:
-same toy, `synthetic` vs `trained` statistics, ladder legible from the filenames alone.
+pytest test. It is now `calibrate_on_synthetic_toy.py`, parallel to `calibrate_on_trained_toy.py`, so the
+ladder is legible from the filenames alone. The names say `synthetic` and `trained` because that
+is what differs about the *statistics* — they are not two conditions on one toy, as this page
+once claimed; the two worlds differ as well (see above).
 
 ## Adding a calibration for a new metric
 

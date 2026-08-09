@@ -1351,6 +1351,13 @@ TEX_HEAD = r"""% ===============================================================
 % Captions sit below the image, as figures take them, and the mirror of
 % tables.tex where they sit above.
 %
+% \graphicspath below lists several candidates on purpose. It resolves against
+% the directory of the MAIN .tex, not against this file, so a copy of this file
+% \input from a Sections/ subdirectory while the PNGs sit in a folder at the
+% project root needs that folder named -- a bare ./ points at the root and finds
+% nothing, and every figure fails with nothing wrong in the markup. LaTeX takes
+% the first path that hits, so the extra entries cost nothing.
+%
 % Expects the PNGs reachable via \graphicspath below. To compile on its own,
 % prepend
 %     \documentclass{article}\usepackage{graphicx}\begin{document}
@@ -1362,7 +1369,31 @@ TEX_HEAD = r"""% ===============================================================
 def write_tex(out_dir: Path, graphics: str):
     """figures.tex beside the PNGs, or wherever --out points."""
     caps = _captions()
-    paths = [graphics] if graphics.strip("/.") == "" else [graphics, "./"]
+    # \graphicspath resolves against the COMPILATION root -- the directory of the
+    # main .tex -- not against the file doing the \input. On Overleaf the images
+    # sit in a folder at the project root while this file is \input from a
+    # Sections/ subdirectory, so a bare "./" points at the root, finds no PNGs,
+    # and every figure comes back "file not found" with nothing wrong in the
+    # markup. Emitting one path was the bug; a graphicspath is a LIST precisely
+    # so a document can move without its images being re-found by hand.
+    #
+    # Order: the named folder from the project root, the same folder one level up
+    # (compiling this file standalone from inside Sections/), then the two
+    # directories a reader is most likely to have dropped the PNGs into. LaTeX
+    # takes the first hit, so listing more costs nothing at compile time.
+    # PAPER_DIR.name is in the list because that is what the folder is called
+    # here, and a reader who drags this directory into Overleaf keeps the name.
+    # "figuers" (sic) is the name it has in the paper project, kept because
+    # renaming a folder someone else's main.tex already points at is worse than
+    # carrying the typo. "figures" is the spelling anyone else would pick.
+    extra = ["./", PAPER_DIR.name + "/", "figuers/", "figures/"]
+    cands = [graphics] + [f"../{graphics}"] if graphics.strip("/.") else []
+    cands += extra + [f"../{e}" for e in extra if e != "./"] + ["../"]
+    seen, paths = set(), []
+    for g in cands:
+        if g not in seen:
+            seen.add(g)
+            paths.append(g)
     L = [TEX_HEAD, r"\graphicspath{" + "".join(f"{{{g}}}" for g in paths) + "}", ""]
     seen, n = set(), 0
     for slot, name, wide, lead, section in TEX_ORDER:
@@ -1441,8 +1472,9 @@ def main() -> int:
                     help=f"write figures.tex here instead of {PAPER_DIR.name}/ "
                          "(the PNGs are always written beside the code)")
     ap.add_argument("--graphicspath", default=None, metavar="PATH",
-                    help="what \\graphicspath should point at; defaults to ./ when "
-                         "figures.tex sits with the PNGs and figures/ when it does not")
+                    help="an EXTRA \\graphicspath entry, tried first; the common layouts "
+                         "(./, the PNG folder's name, figuers/, figures/, and each one "
+                         "level up) are always emitted after it")
     ap.add_argument("--twocolumn", action="store_true",
                     help="emit figure* full-width floats (needs a twocolumn class)")
     args = ap.parse_args()

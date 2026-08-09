@@ -166,12 +166,28 @@ to avoid confusion with the model's residual-stream layers.)
 | ---- | ---------- | ------------- | -------------- |
 | **1. Synthetic toy** | [`validation/synthetic_toy_world.py`](../validation/synthetic_toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows across seeds 0–7**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
 | **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) — and the probe functions now run here too: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy catches a conflation the SAE itself introduced (0.958 against 0.000 for the other parents) |
-| **3. PCFG SAE** | [`validation/from_pcfg.py`](../validation/from_pcfg.py) on a PCFG base transformer (zipf 1.5, 1792 latents in 8 blocks) | the PCFG grammar is known | the battery runs on a non-trivial source — layer~01: 327 candidates, 100% recon, 0/327 S_res; layer~03: 781 candidates, 95% recon, 4/772 S_res |
-| **4. Real SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a production SAE |
+| **3. PCFG SAE** | `adapters/from_pcfg.py` in the umbrella repo (an adapter joins two repos and belongs to neither, so it is not in this one) on a 4-layer PCFG base transformer, zipf 1.5, 1792 latents in 8 blocks | grammar known, **not yet used** — nothing maps a latent to a grammar symbol | the battery runs on a source that has a base model — layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
+| **4. Released SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a checkpoint we did not train |
 
-Tier 1 is certain but artificial; Tier 4 is real but has no ground truth; Tier 2 is the bridge that
-has both a trained SAE and a known answer; Tier 3 bridges the toy to a production-scale model using
-a grammar whose structure is known even though each generated tree is sampled at runtime.
+Tier 1 is certain but artificial; Tier 4 is realistic but has no ground truth and is a published
+checkpoint we did not train — which is what *released* names, since Tier 3 is a real SAE too, really
+trained over a really trained transformer. Tier 2 is the only rung with both a trained SAE and a
+known answer.
+
+**Neither middle rung isolates the variable it is named for.** Tier 2 runs on Bussmann's 20-feature
+tree while Tier 1 grades a larger pathology-injected world, so the toy changes along with the
+statistics. Tier 3 changes the grammar, the base model, the corpus and the dictionary size together,
+so it *bounds* base-model dependence rather than isolating it — isolating it would mean training a
+transformer on Bussmann's own tree, which nothing here does. What Tier 2 does isolate cleanly is
+**blame**: a missed edge counts against a metric only if the SAE learned both endpoints.
+
+Tier 3's ground truth is available but unconsumed. The PCFG repo's
+`pcfg_bridge.grammar.vocab.role_of(token_id)` returns the grammar role of any token id
+(subject/verb/object/connector/eos/section/paragraph/document) and its `analysis/README.md` names it
+for exactly this purpose, but no latent→symbol mapping is built yet, so Tier 3 reports the same
+battery outputs as Tier 4 rather than a recovery score. Note also that both published PCFG layers
+are a **single grammar configuration** (zipf 1.5, EOS the only delimiter) — one point of the
+three-axis sweep Exp 2 specifies, not a sweep.
 
 **What the tiers do and do not cover.** Tier 1 scores **14/14 rows across seeds 0–7**, covering
 **21/21 metric functions**. Until 7 August this paragraph said `S_res` was "calibrated in Tier 2,
@@ -222,8 +238,8 @@ python3 -m reporting.visualize --calibration                # Tier 1 dashboard
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)
 python3 -m reporting.visualize --trained-calibration        # Tier 2 dashboard
 
-python3 -m validation.qualitative_check                     # Tier 3
-python3 -m reporting.visualize --qualitative                # Tier 3 dashboard
+python3 -m validation.qualitative_check                     # Tier 4
+python3 -m reporting.visualize --qualitative                # Tier 4 dashboard
 ```
 
 ## The finding these outputs support
