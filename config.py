@@ -39,6 +39,20 @@ WARMUP_GRAPH = WARMUP_DIR / "outputs" / "parent_child_graph.pt"     # stage 02 w
 MODEL_NAME = "google/gemma-2-2b"
 SAE_RELEASE = "gemma-2-2b-res-matryoshka-dc"
 
+# Depth of the base transformer, read off `google/gemma-2-2b`'s own
+# `config.json` (`num_hidden_layers: 26`). A literal because nothing this repo
+# caches carries it: `metrics_report.json`'s config block records which layer was
+# graded, never how many the model has. The PCFG runs DO carry theirs, under
+# `config.base_model.n_layers`, so that side is read from the report and only
+# gemma needs a constant here.
+#
+# Needed by exactly one thing: putting two models of very different depth on one
+# axis. A graded layer's position in its own network is (LAYER + 1) / N -- the
+# SAE reads `hook_resid_post`, the output of block LAYER, so LAYER + 1 of the N
+# blocks have run. That definition, not LAYER / N, is what makes PCFG's layer 1
+# of 4 land on gemma's layer 12 of 26: both sit at exactly half depth.
+BASE_N_LAYERS = 26
+
 # Which transformer layer's residual-stream Matryoshka SAE to analyse.
 # Override per run with the EXP0_LAYER env var, e.g. `EXP0_LAYER=12 python3 ...`.
 # The matryoshka SAE is released for layers 0-24; the SAE id, hook name, the

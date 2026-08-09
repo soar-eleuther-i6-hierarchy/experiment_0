@@ -252,6 +252,62 @@
 % [APP 5]
 \begin{figure}[tbp]
   \centering
+  \includegraphics[width=\linewidth]{cross_source_layer_response}
+  \caption{%
+    \textbf{The shape of the B0$\rightarrow$B1 relation is the same on both base models; its strength is not.}
+    Six measurements of block pair B0$\rightarrow$B1, on the released Matryoshka SAE over
+    \texttt{google/gemma-2-2b} and on Matryoshka SAEs trained over a 4-block transformer
+    fitted to a PCFG corpus. Both sources have an SAE at layers 1 and 3, so the grey
+    connectors are drawn between runs at the same block index and need no matching argument;
+    their length is the disagreement. Every panel is a share and every panel is on the same
+    axis anchored at zero, so lengths compare across panels. edges carried by frequent tokens,
+    children with $\geq$ 2 parents, sibling redundancy (mean Jaccard) agree to within 1.0
+    points, while edges at chance for the base rate differs by 35 and edges improving
+    reconstruction by 10. \textbf{That agreement is worth less than it looks}: all 3 of the
+    close measures sit against a floor or a ceiling on both sources, so scaled by the range
+    each one varies over across every graded run (Table~\ref{tab:align}) only children with
+    $\geq$ 2 parents stands out, and the reconstruction filter moves from nearly the worst to
+    among the best. The reading we would take, carrying that caveat, is that the many-to-many
+    fan-out B0$\rightarrow$B1 is a property of the Matryoshka nesting rather than of
+    \texttt{gemma-2-2b}: what the base model changes is how much of it there is---6.0\%
+    against 0.7\% of all B0$\times$B1 feature pairs become candidate edges---and not its
+    character. \textbf{Both PCFG runs are a single grammar configuration} (zipf exponent 1.5,
+    delimiters: eos)---one point of the three-axis sweep Exp 2 specifies (terminal
+    distribution, formatting density, grammar depth), so this compares gemma against one PCFG
+    corpus and not against PCFG. In particular the formatting axis, which the project now
+    treats as the mechanism behind bottleneck hijacking, is at its second-lowest rung here.
+    \textbf{Two shared layers cannot establish a trend}, and the deeperblock pairs are
+    excluded because the PCFG runs hold 0--3 candidate edges in each of them. The token
+    budgets also differ by 21$\times$, which cuts against the density gap rather than
+    explaining it: the joint-support guard is an absolute count, so more tokens make it easier
+    to clear, and the source with more tokens is the sparser one.
+  }
+  \label{fig:cross-source-layer-response}
+\end{figure}
+
+% [APP 6]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{cross_source_alignment_check}
+  \caption{%
+    \textbf{Which alignment the comparison rests on, measured rather than assumed.}
+    Comparing two base models of different depth requires an alignment, and the two defensible
+    ones disagree here about which runs to pair: by block index the PCFG layers pair with
+    gemma's L1 and L3, and by relative depth $(L{+}1)/N$---the fraction of the network that
+    has run when the SAE reads \texttt{hook\_resid\_post}---they pair with gemma's L12 and
+    L24, at opposite ends of the network. The choice is therefore not presentational, so it is
+    measured here rather than made in an axis label: the mean gap over the six measures is 8.8
+    points under block index against 13.8 under relative depth. \textbf{On 2 shared layers
+    this is suggestive, not a result.} It is reported because an unstated alignment does the
+    same work invisibly, and because the two rules would support different claims about which
+    part of gemma a four-block transformer stands in for.
+  }
+  \label{fig:cross-source-alignment-check}
+\end{figure}
+
+% [APP 7]
+\begin{figure}[tbp]
+  \centering
   \includegraphics[width=\linewidth]{depth_profile_across_layers}
   \caption{%
     \textbf{No measure is monotonic in depth.}

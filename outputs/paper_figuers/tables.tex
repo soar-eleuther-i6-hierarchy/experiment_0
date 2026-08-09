@@ -197,6 +197,50 @@
 \begin{table}[tbp]
   \centering
   \small
+  \caption{\textbf{The same battery on two base models, layer by layer.} Rows are ordered by position in their own network, $(L{+}1)/N$, so the sources interleave; layers 1 and 3 carry an SAE on both, which is where the comparison needs no matching argument at all. The token budgets differ by 21$\times$; that cuts \emph{against} the density gap rather than explaining it, because the joint-support guard is an absolute count and more tokens make it easier to clear, yet the source with more tokens is the sparser one. What the two agree on is the \emph{shape} of the relation---multi-parenting, sibling redundancy and the frequency control---and what they do not is its \emph{strength}: density, the reconstruction filter and the base-rate null. That split should be read with Table~\ref{tab:align}, which shows the three agreeing measures are also the three sitting against a boundary on both sources, where agreement is close to free.}
+  \label{tab:layers}
+  \begin{tabular}{lrrrrrrrrrr}
+    \toprule
+    Run & $L/N$ & $\frac{L+1}{N}$ & Tokens & Cand. & Density & $\geq 2$ par. & Sib. & Gini & Recon. & At chance \\
+    \midrule
+    \texttt{gemma-2-2b} L1 & 1/26 & 0.08 & 48,571 & 2,929 & 5.96\% & 100\% & 0.046 & 0.907 & 86\% & 75\% \\
+    \texttt{gemma-2-2b} L3 & 3/26 & 0.15 & 48,571 & 1,971 & 4.01\% & 99\% & 0.059 & 0.917 & 90\% & 69\% \\
+    \texttt{gemma-2-2b} L6 & 6/26 & 0.27 & 48,571 & 2,428 & 4.94\% & 100\% & 0.054 & 0.919 & 86\% & 86\% \\
+    \texttt{gemma-2-2b} L12 & 12/26 & 0.50 & 48,571 & 1,473 & 3.00\% & 100\% & 0.033 & 0.906 & 54\% & 76\% \\
+    \texttt{gemma-2-2b} L18 & 18/26 & 0.73 & 48,571 & 1,129 & 2.30\% & 89\% & 0.042 & 0.919 & 75\% & 71\% \\
+    \texttt{gemma-2-2b} L24 & 24/26 & 0.96 & 48,571 & 2,273 & 4.62\% & 100\% & 0.060 & 0.915 & 74\% & 80\% \\
+    PCFG L1 & 1/4 & 0.50 & 1,016,600 & 327 & 0.65\% & 99\% & 0.030 & 0.985 & 100\% & 95\% \\
+    PCFG L3 & 3/4 & 1.00 & 1,016,600 & 781 & 1.56\% & 99\% & 0.056 & 0.954 & 95\% & 18\% \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt] \footnotesize Restricted to block pair B0$\rightarrow$B1. Candidate edges in \emph{all} deeper pairs combined, on the PCFG runs: PCFG SAE L1 5; PCFG SAE L3 6---so no deeper pair supports a comparison. Both PCFG rows are one grammar configuration (zipf exponent 1.5, delimiters: eos), a single point of the three-axis sweep Exp 2 specifies, so this is gemma against one PCFG corpus rather than against PCFG. Density is a share of every ordered B0$\times$B1 feature pair, 49,152 on one source and 50,176 on the other (2\% apart), which is coincidence and not design: it is what makes the two densities directly comparable rather than merely each normalised by itself.
+\end{table}
+
+% [APP 3]
+\begin{table}[tbp]
+  \centering
+  \small
+  \caption{\textbf{What the cross-source comparison rests on, and how far to trust it.} Two questions, both of which are usually settled silently. \emph{First}, comparing base models of different depth needs a rule for pairing their layers, and the two defensible rules pick opposite ends of gemma: by block index PCFG's layers pair with gemma's L1 and L3, by relative depth $(L{+}1)/N$ with gemma's L12 and L24. Block index wins on the mean (8.8 points against 13.8), which is why it is what Figure~\ref{fig:cross-source-layer-response} draws---though the margin rests largely on one measure, and the reconstruction filter is inert on PCFG in any case. \emph{Second}, a small gap is only impressive if the measure could have been far apart. The last two columns ask that: \emph{range} is how far each measure moves across all 8 graded runs, and the ratio is the gap against it. The two readings do not agree---edges improving reconstruction is near the bottom on raw points and near the top on the ratio---so both are printed and neither is called correct. The honest summary is that the three measures with the smallest raw gaps are also the three pinned against a boundary ($\geq 2$ parents at 89--100\%, sibling redundancy at 3--6\%, the frequency control at 0--2\%), where agreement costs the two sources nothing. \textbf{On 2 shared layers none of this is a result.}}
+  \label{tab:align}
+  \begin{tabular}{lrrrr}
+    \toprule
+    Measure & Gap by layer index & Gap by rel.\ depth & Range over all runs & Gap / range \\
+    \midrule
+    edges carried by frequent tokens & 0.5 & 1.5 & 2.2 & 0.22 \\
+    children with $\geq$ 2 parents & 0.6 & 0.6 & 11.2 & 0.05 \\
+    sibling redundancy (mean Jaccard) & 1.0 & 0.4 & 3.0 & 0.33 \\
+    fan-out concentration (Gini) & 5.8 & 5.9 & 7.9 & 0.73 \\
+    edges improving reconstruction & 9.6 & 33.8 & 46.1 & 0.21 \\
+    edges at chance for the base rate & 35.4 & 40.4 & 77.0 & 0.46 \\
+    \textbf{mean} & \textbf{8.8} & \textbf{13.8} &  &  \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% [APP 4]
+\begin{table}[tbp]
+  \centering
+  \small
   \caption{\textbf{The rank rule's null depends on dictionary size.} $S_\mathrm{res}$ passes an edge when both decoders fall in the top $k = 5$ of the probe's correlations over the whole dictionary. It is a geometry test, so an unrelated parent passes whenever chance puts it there, at a rate of $k/D$. The same $k$ is therefore two orders of magnitude stricter on gemma than on a 42-feature toy, and a measured pass rate is only interpretable against its own null: two runs on the \emph{same} 1{,}792-latent dictionary land on opposite sides of theirs. Reporting $S_\mathrm{res}$ shares across sources without this correction compares nothing.}
   \label{tab:null}
   \begin{tabular}{lrrrr}

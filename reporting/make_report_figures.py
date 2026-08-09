@@ -18,6 +18,8 @@ stale when the order changes.
     calibration_synthetic_toy_scorecard     every metric against a known tree
     calibration_trained_toy_recovery        the same tree, through a real training run
     cross_source_funnel_shares              the same battery on gemma and on PCFG
+    cross_source_layer_response             gemma vs PCFG at the layers both graded
+    cross_source_alignment_check            block index or relative depth — which to pair on
     in_block_relations                      same-level edges and duplicates
     shared_input_moved_every_metric         the battery's own failure mode
     base_rate_vs_frequency_capture          the hypothesis's premise, tested
@@ -53,6 +55,11 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 import config as C  # noqa: E402
+
+# The gemma/PCFG comparison's pairing rules and its six measures. Shared with
+# `make_report_tables`, which prints the same claim: two copies of the alignment
+# logic would eventually disagree about the same numbers.
+from reporting import cross_source as X  # noqa: E402
 
 PAPER_DIR = C.OUT_DIR / "paper_figuers"
 
@@ -496,6 +503,159 @@ def cross_source_funnel_shares(runs):
 
 
 # ---------------------------------------------------------------------------
+# 8a/8b. The same battery on both sources at once, layer by layer. gemma's base
+#     model has 26 blocks and the PCFG SAE's base model has 4, so "layer 3" does
+#     not mean
+#     the same thing on both -- and which alignment to use is itself measurable,
+#     which is what 8b answers rather than assumes.
+# ---------------------------------------------------------------------------
+def cross_source_layer_response(rows):
+    """Which metrics give the same answer on a 2.6B LM and on a 4-block transformer.
+
+    The question is whether anything the battery reports is a property of
+    Matryoshka nesting rather than of gemma. Both sources have an SAE trained on
+    layers 1 and 3, so the comparison needs no matching argument: the grey
+    dumbbells stand at the two block indices where both were graded, and their
+    LENGTH is the disagreement. Restricted to block pair B0->B1, because the
+    PCFG runs' deeper pairs hold 0-3 candidate edges each and every number
+    computed from them is one or two edges wide.
+
+    Panel ORDER is derived, not chosen: the six are sorted by their own mean gap,
+    so the layout is a result rather than an arrangement that flatters one. All
+    six share a 0-100 axis because all six are shares, which is what lets a
+    dumbbell in one panel be compared with a dumbbell in another; anchoring at
+    zero keeps its length proportional to the disagreement in the metric's own
+    units rather than to whatever range the data happened to span.
+    """
+    pairs = X.matched(rows, "layer")
+    gem = [r for r in rows if r["is_ref"]]
+    oth = [r for r in rows if not r["is_ref"]]
+    panels = [(t, k) for t, k, _ in X.ranked(pairs)]
+    gaps = [g for _, _, g in X.ranked(pairs)]
+    shared = sorted({o["layer"] for o, _, _ in pairs})
+
+    fig, axes = plt.subplots(2, 3, figsize=(12.6, 6.8), sharex=True, sharey=True)
+    for ax, (title, key), gp in zip(np.ravel(axes), panels, gaps):
+        ax.axvspan(min(shared) - 0.9, max(shared) + 0.9, color="#F2F4F7", zorder=0)
+        for o, g, _ in pairs:
+            ax.plot([g["layer"], o["layer"]], [100 * g[key], 100 * o[key]],
+                    lw=2.2, color=MUTED, zorder=2, solid_capstyle="round", alpha=0.55)
+        ax.plot([r["layer"] for r in gem], [100 * r[key] for r in gem], "-o",
+                color=CAT[0], lw=1.8, ms=5, zorder=3)
+        ax.plot([r["layer"] for r in oth], [100 * r[key] for r in oth], "s",
+                color=CAT[1], ms=7, zorder=4, mec="white", mew=1.0)
+        # Both readings in the panel title, because they rank the six differently
+        # and quoting only the first would make three saturated measures look
+        # like the strongest agreement in the figure.
+        ax.set_title(f"{title}\nsame-layer gap {gp:.1f} pts  —  "
+                     f"{X.gap_ratio(rows, pairs, key):.2f} of its own range",
+                     fontsize=9.5, loc="left")
+        ax.set_ylim(0, 105)
+        ax.set_xlim(-1.2, max(r["layer"] for r in gem) + 1.8)
+        ax.set_xticks([r["layer"] for r in gem])
+        ax.grid(True, axis="y", alpha=0.12)
+        ax.set_axisbelow(True)
+    for ax in axes[1]:
+        ax.set_xlabel("layer of the base model (block index)")
+    for ax in axes[:, 0]:
+        ax.set_ylabel("% — every panel, same scale")
+
+    # The shaded band is named once, in the first panel, and the layers are not
+    # named at all: the x axis is shared and already ticked with them, so a label
+    # per point would be 48 marks for 8 facts.
+    ax = np.ravel(axes)[0]
+    ax.annotate(f"both sources\ngraded here\n(L{', L'.join(str(s) for s in shared)})",
+                (max(shared) + 0.6, 6), fontsize=7.5, color=MUTED, ha="left", va="bottom")
+
+    # The legend goes INSIDE the panel with the most headroom, not under the
+    # figure: `_finish` runs tight_layout, which does not know a figure-level
+    # legend exists and lets it land on the x labels. Which panel has room is a
+    # fact about the data -- every panel shares one 0-100 axis -- so it is
+    # computed rather than picked, and stays right if a metric moves.
+    n_agree = X.agree_split(gaps)
+    roomiest = min(range(len(panels)),
+                   key=lambda i: max(100 * r[panels[i][1]] for r in rows))
+    np.ravel(axes)[roomiest].legend(handles=[
+        plt.Line2D([], [], color=CAT[0], marker="o", lw=1.8, ms=5,
+                   label=f"gemma-2-2b — {len(gem)} of {gem[0]['n_layers']} layers graded,\n"
+                         f"D = {gem[0]['d_sae']:,} in {gem[0]['n_blocks']} blocks"),
+        plt.Line2D([], [], color=CAT[1], marker="s", lw=0, ms=7, mec="white",
+                   label=f"PCFG SAE — {len(oth)} of {oth[0]['n_layers']} layers graded,\n"
+                         f"D = {oth[0]['d_sae']:,} in {oth[0]['n_blocks']} blocks"),
+        plt.Line2D([], [], color=MUTED, lw=2.2, alpha=0.55,
+                   label="the two sources at the same layer index"),
+    ], fontsize=8, frameon=False, loc="upper left", bbox_to_anchor=(0.02, 0.99),
+        labelspacing=0.9)
+    _title(fig, "Two base models, one battery: the shape of B0→B1 agrees, its strength does not",
+           f"{n_agree} of {len(panels)} measures agree to within {gaps[n_agree - 1]:.1f} points "
+           f"at the same layer index — across a 2.6B-parameter language model and a "
+           f"{oth[0]['n_layers']}-block transformer on synthetic grammar, with dictionaries "
+           f"{max(r['d_sae'] for r in rows) / min(r['d_sae'] for r in rows):.0f}× apart in size. "
+           f"The remaining {len(panels) - n_agree} differ by {gaps[n_agree]:.0f}–{gaps[-1]:.0f}. "
+           f"Read the second number in each panel title against the first: all "
+           f"{n_agree} of the close measures sit against a floor or ceiling on both sources, so "
+           f"relative to the range each one varies over at all, only "
+           f"{min(panels, key=lambda p: X.gap_ratio(rows, pairs, p[1]))[0]} is clearly closer "
+           "than the rest. B0→B1 only — the PCFG runs' deeper block pairs hold 0–3 candidate "
+           "edges each, and two shared layers cannot establish a trend. Both PCFG runs are one "
+           f"grammar config ({X.grammar_line(rows)}), one point of Exp 2's three-axis sweep, "
+           "not PCFG in general", width=126)
+    fig.subplots_adjust(top=0.82, hspace=0.42)
+    return _finish(fig, axes, "cross_source_layer_response")
+
+
+def cross_source_alignment_check(rows):
+    """Same block index, or same fraction of the network? The data can answer.
+
+    Comparing across two base models of different depth needs an alignment, and
+    the choice is usually made silently in the axis label. The two candidates
+    disagree completely here: by block index PCFG's layers 1 and 3 pair with
+    gemma's 1 and 3, and by relative depth (L+1)/N they pair with gemma's 12 and
+    24 -- opposite ends of the network. So the alignment is not a presentational
+    detail, and this figure measures it instead of asserting it: for each metric,
+    the mean gap between the paired runs under each rule.
+
+    It is a weak test on two PCFG layers and says so in the title. It is included
+    because the alternative is an unstated assumption doing the same work.
+    """
+    by_layer, by_depth = X.matched(rows, "layer"), X.matched(rows, "depth")
+    order = [(t, k) for t, k, _ in X.ranked(by_layer)]
+    lg = [g for _, _, g in X.ranked(by_layer)]
+    dg = [X.gap(by_depth, k) for _, k in order]
+
+    fig, ax = plt.subplots(figsize=(9.6, 4.8))
+    y = np.arange(len(order))
+    h = 0.36
+    ax.barh(y - h / 2, lg, h, color=CAT[0], label="paired by layer index")
+    ax.barh(y + h / 2, dg, h, color=CAT[3], label="paired by relative depth (L+1)/N")
+    for yy, v in list(zip(y - h / 2, lg)) + list(zip(y + h / 2, dg)):
+        ax.text(v + max(lg + dg) * 0.015, yy, f"{v:.1f}", va="center", fontsize=8, color=MUTED)
+    ax.set_yticks(y)
+    ax.set_yticklabels([t for t, _ in order], fontsize=9)
+    ax.invert_yaxis()
+    ax.set_xlabel("mean gap between the two sources, points of a 0–100 share   "
+                  "(shorter = the two runs agree)")
+    ax.set_xlim(0, max(lg + dg) * 1.16)
+    # Sorted ascending with the y axis inverted, so the short bars are at the top
+    # and the free space is there. Anchored, not "best": matplotlib's best would
+    # move the legend the day a metric changes rank.
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right", bbox_to_anchor=(0.995, 0.99))
+    ml, md = sum(lg) / len(lg), sum(dg) / len(dg)
+    win, lose = ("index", "relative depth") if ml <= md else ("relative depth", "index")
+    named = " and ".join(f"PCFG L{o['layer']}→gemma L{q['layer']}" for o, q, _ in by_depth)
+    _title(fig, f"Aligning the two models by layer {win} makes them agree more than by {lose}",
+           f"mean over the {len(order)} measures: {ml:.1f} points paired by layer index against "
+           f"{md:.1f} paired by relative depth. The two rules pair different runs — by depth, "
+           f"{named} — so the choice is not cosmetic. On {len(by_layer)} shared layers this is "
+           "suggestive and not a result; it is drawn because the alternative is the same choice "
+           "made silently in an axis label", width=104)
+    ax.grid(True, axis="x", alpha=0.12)
+    ax.set_axisbelow(True)
+    fig.subplots_adjust(top=0.80)
+    return _finish(fig, ax, "cross_source_alignment_check")
+
+
+# ---------------------------------------------------------------------------
 # 9. Within-block relations.
 # ---------------------------------------------------------------------------
 def in_block_relations(runs):
@@ -809,6 +969,26 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"{len(runs)} sources" if len(runs) >= 2 else "needs a gemma report and a PCFG report",
         lambda: cross_source_funnel_shares(runs))
 
+    # The two cross-source depth figures. Both need at least one layer index that
+    # BOTH sources graded; the alignment check additionally needs the two rules to
+    # actually disagree, which they only do once gemma has layers the toy cannot
+    # reach. Each condition is reported rather than silently producing a figure
+    # whose dumbbells are all zero length.
+    dr = X.rows()
+    shared = sorted({o["layer"] for o, _, _ in X.matched(dr, "layer")})
+    run("cross_source_layer_response", bool(shared),
+        f"{len(dr)} graded runs across {len({r['src'] for r in dr})} sources, "
+        f"layer{'s' if len(shared) > 1 else ''} {', '.join(str(s) for s in shared)} on both"
+        if shared else "needs one layer index graded on both gemma and PCFG",
+        lambda: cross_source_layer_response(dr))
+    same = X.alignment_gaps(dr) is None
+    run("cross_source_alignment_check", bool(shared) and not same,
+        f"the same {len(dr)} runs under both alignment rules"
+        if shared and not same else
+        "the two alignments pair the same runs here, so the comparison is empty"
+        if shared else "needs one layer index graded on both gemma and PCFG",
+        lambda: cross_source_alignment_check(dr))
+
     ib = []
     for base, label in [(G, "gemma"), (C.OUT_DIR / "pcfg-matryoshka", "PCFG")]:
         for lay in sorted(base.glob("layer_*")):
@@ -1030,6 +1210,74 @@ def _captions():
         "The reconstruction filter should be read with care on PCFG, where the weakest candidate "
         r"edge sits $3.5\times$ above the threshold---the filter is inert there, and the "
         "surviving edges have passed coverage alone.")
+    dr = X.rows()
+    by_layer = X.matched(dr, "layer")
+    if by_layer:
+        by_depth = X.matched(dr, "depth")
+        order = [(t, k) for t, k, _ in X.ranked(by_layer)]
+        g = [v for _, _, v in X.ranked(by_layer)]
+        n_ag = X.agree_split(g)
+        agree = list(zip([t for t, _ in order], g))[:n_ag]
+        shared = sorted({o["layer"] for o, _, _ in by_layer})
+        gem = [r for r in dr if r["is_ref"]]
+        oth = [r for r in dr if not r["is_ref"]]
+        dens = {r["label"]: X.density(r) for r in dr}
+        d["cross_source_layer_response"] = (
+            "Six measurements of block pair B0$\\rightarrow$B1, on the released Matryoshka SAE "
+            rf"over \texttt{{{C.MODEL_NAME}}} and on Matryoshka SAEs trained over a "
+            rf"{oth[0]['n_layers']}-block transformer fitted to a PCFG corpus. Both sources have "
+            "an SAE at layer" + ("s " if len(shared) > 1 else " ")
+            + " and ".join(str(s) for s in shared) + ", so the grey connectors are drawn between "
+            "runs at the same block index and need no matching argument; their length is the "
+            "disagreement. Every panel is a share and every panel is on the same axis anchored at "
+            "zero, so lengths compare across panels. "
+            + ", ".join(X.tex(t) for t, _ in agree)
+            + rf" agree to within {max(v for _, v in agree):.1f} "
+            rf"points, while {X.tex(order[-1][0])} differs by {g[-1]:.0f} and "
+            rf"{X.tex(order[-2][0])} by "
+            rf"{g[-2]:.0f}. \textbf{{That agreement is worth less than it looks}}: all {n_ag} "
+            "of the close measures sit against a floor or a ceiling on both sources, so scaled "
+            r"by the range each one varies over across every graded run "
+            r"(Table~\ref{tab:align}) only "
+            + X.tex(min(X.PANELS, key=lambda p: X.gap_ratio(dr, by_layer, p[1]))[0])
+            + " stands out, and the reconstruction filter moves from nearly the worst to among "
+            "the best. The reading we would take, carrying that caveat, is that the "
+            "many-to-many fan-out "
+            "B0$\\rightarrow$B1 is a property of the Matryoshka nesting rather than of "
+            r"\texttt{gemma-2-2b}: what the base model changes is how much of it there is---"
+            + " against ".join(rf"{dens[r['label']]:.1f}\%" for r in (gem[0], oth[0]))
+            + " of all B0$\\times$B1 feature pairs become candidate edges---and not its "
+            r"character. \textbf{Both PCFG runs are a single grammar configuration} ("
+            + X.grammar_line(dr) + r")---one point of the three-axis sweep Exp 2 specifies "
+            "(terminal distribution, formatting density, grammar depth), so this compares gemma "
+            "against one PCFG corpus and not against PCFG. In particular the formatting axis, "
+            "which the project now treats as the mechanism behind bottleneck hijacking, is at "
+            r"its second-lowest rung here. \textbf{Two shared layers cannot establish a trend}, "
+            r"and the deeper"
+            "block pairs are excluded because the PCFG runs hold 0--3 candidate edges in each of "
+            "them. The token budgets also differ by "
+            rf"{max(r['tokens'] for r in dr) / min(r['tokens'] for r in dr):.0f}$\times$, which "
+            "cuts against the density gap rather than explaining it: the joint-support guard is "
+            "an absolute count, so more tokens make it easier to clear, and the source with more "
+            "tokens is the sparser one.")
+        if by_depth and not all(o["layer"] == q["layer"] for o, q, _ in by_depth):
+            dgap = [X.gap(by_depth, k) for _, k in order]
+            ml, md = sum(g) / len(g), sum(dgap) / len(dgap)
+            d["cross_source_alignment_check"] = (
+                "Comparing two base models of different depth requires an alignment, and the two "
+                "defensible ones disagree here about which runs to pair: by block index the PCFG "
+                "layers pair with gemma's "
+                + " and ".join(f"L{q['layer']}" for _, q, _ in by_layer) + ", and by relative "
+                r"depth $(L{+}1)/N$---the fraction of the network that has run when the SAE reads "
+                r"\texttt{hook\_resid\_post}---they pair with gemma's "
+                + " and ".join(f"L{q['layer']}" for _, q, _ in by_depth) + ", at opposite ends of "
+                "the network. The choice is therefore not presentational, so it is measured here "
+                "rather than made in an axis label: the mean gap over the six measures is "
+                rf"{ml:.1f} points under block index against {md:.1f} under relative depth. "
+                rf"\textbf{{On {len(by_layer)} shared layers this is suggestive, not a result.}} "
+                "It is reported because an unstated alignment does the same work invisibly, and "
+                "because the two rules would support different claims about which part of gemma "
+                "a four-block transformer stands in for.")
     d["sres_null_rate_vs_dictionary_size"] = (
         r"The $S_\mathrm{res}$ test passes an edge when both decoders fall within the top "
         rf"$k = {C.SRES_RANK_TOP_K}$ of the probe's correlations over the whole dictionary. It "
@@ -1075,7 +1323,17 @@ TEX_ORDER = [
      "What each filter removes, by block pair and by depth.", None),
     ("APP 4", "cross_source_funnel_shares", False,
      "One unchanged battery across SAE sources.", None),
-    ("APP 5", "depth_profile_across_layers", True,
+    # The two cross-source depth figures sit together and immediately after the
+    # funnel that establishes the sources are comparable at all. The alignment
+    # check follows the result it qualifies rather than preceding it: it is a
+    # caveat on how the layers were paired, and a reader who has not yet seen the
+    # pairing has nothing to apply it to.
+    ("APP 5", "cross_source_layer_response", True,
+     "The shape of the B0$\\rightarrow$B1 relation is the same on both base models; "
+     "its strength is not.", None),
+    ("APP 6", "cross_source_alignment_check", False,
+     "Which alignment the comparison rests on, measured rather than assumed.", None),
+    ("APP 7", "depth_profile_across_layers", True,
      "No measure is monotonic in depth.", None),
 ]
 
@@ -1143,6 +1401,8 @@ CLAIMS = {
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
+    "cross_source_layer_response": "the shape of B0→B1 is the same on both base models at the layers both graded; its strength is not",
+    "cross_source_alignment_check": "which alignment across two models of different depth the data prefers — block index or relative depth",
 }
 
 

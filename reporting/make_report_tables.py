@@ -37,6 +37,10 @@ import sys
 from pathlib import Path
 
 import config as C
+# The gemma/PCFG comparison's pairing rules and its six measures. Shared with
+# `make_report_figures`, which draws the same claim: two copies of the alignment
+# logic would eventually print different numbers for it.
+from reporting import cross_source as X
 
 DEFAULT_OUT = C.OUT_DIR / "paper_figuers"
 
@@ -349,6 +353,124 @@ def t_sources(layers, second6, pcfg):
 
 
 # ---------------------------------------------------------------------------
+# 7a. gemma against PCFG, layer by layer (appendix). The companion to
+#     `cross_source_layer_response`; both read `reporting/cross_source.py`, so
+#     the figure's gaps and this table's rows cannot disagree.
+# ---------------------------------------------------------------------------
+def t_layers(rs):
+    """Every graded run of both sources on one axis, ordered by relative depth.
+
+    Sorted by (L+1)/N rather than grouped by source, so the two interleave and a
+    reader can see for themselves that the alignment is a choice: PCFG's layer 1
+    is the toy's half-way point and lands beside gemma's layer 12, while it is
+    also literally layer 1 and gemma has one of those too. Both keys are printed
+    for that reason.
+
+    Nothing here is a mean over layers. The figure reduces this table to six gap
+    numbers, and a table whose job is to let someone check that reduction has to
+    carry the rows it was computed from.
+    """
+    by_layer = X.matched(rs, "layer")
+    shared = sorted({o["layer"] for o, _, _ in by_layer})
+    rows = []
+    for r in rs:
+        rows.append([
+            ("PCFG" if not r["is_ref"] else r"\texttt{gemma-2-2b}") + f" L{r['layer']}",
+            f"{r['layer']}/{r['n_layers']}",
+            f"{r['depth']:.2f}",
+            f"{r['tokens']:,}",
+            f"{r['n_cand']:,}",
+            rf"{X.density(r):.2f}\%",
+            rf"{100 * r['poly']:.0f}\%",
+            f"{r['sib']:.3f}",
+            f"{r['gini']:.3f}",
+            rf"{100 * r['recon']:.0f}\%",
+            rf"{100 * r['chance']:.0f}\%",
+        ])
+    # Both facts a reader needs to audit the restriction and the denominator,
+    # computed rather than asserted.
+    beyond = "; ".join(f"{r['label']} {r['beyond_b0b1']:,}" for r in rs if not r["is_ref"])
+    dens_pairs = sorted({r["n_pairs"] for r in rs})
+    note = (rf"Restricted to block pair B0$\rightarrow$B1. Candidate edges in \emph{{all}} "
+            rf"deeper pairs combined, on the PCFG runs: {beyond}---so no deeper pair supports "
+            rf"a comparison. Both PCFG rows are one grammar configuration "
+            rf"({X.grammar_line(rs)}), a single point of the three-axis sweep Exp 2 specifies, "
+            rf"so this is gemma against one PCFG corpus rather than against PCFG. "
+            rf"Density is a share of every ordered B0$\times$B1 feature pair, "
+            rf"{dens_pairs[0]:,} on one source and {dens_pairs[-1]:,} on the other "
+            rf"({100 * (dens_pairs[-1] / dens_pairs[0] - 1):.0f}\% apart), which is coincidence "
+            r"and not design: it is what makes the two densities directly comparable rather "
+            r"than merely each normalised by itself.")
+    return table(
+        "layers", r"\textbf{The same battery on two base models, layer by layer.} Rows are "
+        r"ordered by position in their own network, $(L{+}1)/N$, so the sources interleave; "
+        rf"layer{'s' if len(shared) > 1 else ''} "
+        + " and ".join(str(s) for s in shared) + " carry an SAE on both, which is where the "
+        "comparison needs no matching argument at all. The token budgets differ by "
+        rf"{max(r['tokens'] for r in rs) / min(r['tokens'] for r in rs):.0f}$\times$; that cuts "
+        r"\emph{against} the density gap rather than explaining it, because the joint-support "
+        r"guard is an absolute count and more tokens make it easier to clear, yet the source "
+        r"with more tokens is the sparser one. What the two agree on is the \emph{shape} of the "
+        r"relation---multi-parenting, sibling redundancy and the frequency control---and what "
+        r"they do not is its \emph{strength}: density, the reconstruction filter and the "
+        r"base-rate null. That split should be read with Table~\ref{tab:align}, which shows the "
+        r"three agreeing measures are also the three sitting against a boundary on both sources, "
+        r"where agreement is close to free.",
+        ["Run", "$L/N$", r"$\frac{L+1}{N}$", "Tokens", "Cand.", "Density",
+         r"$\geq 2$ par.", "Sib.", "Gini", "Recon.", "At chance"],
+        rows, align="lrrrrrrrrrr", star=True, note=note)
+
+
+# ---------------------------------------------------------------------------
+# 7b. What the pairing in 7a rests on (appendix).
+# ---------------------------------------------------------------------------
+def t_align(rs):
+    """Same block index or same fraction of the network -- measured, not assumed.
+
+    The two rules pair PCFG's layers with opposite ends of gemma, so the choice
+    changes what the comparison says and is worth a table of its own rather than
+    a sentence in someone else's caption.
+    """
+    by_layer, by_depth = X.matched(rs, "layer"), X.matched(rs, "depth")
+    rows = []
+    for title, key, g_layer in X.ranked(by_layer):
+        rows.append([X.tex(title), f"{g_layer:.1f}", f"{X.gap(by_depth, key):.1f}",
+                     f"{X.spread(rs, key):.1f}", f"{X.gap_ratio(rs, by_layer, key):.2f}"])
+    ml = sum(g for _, _, g in X.ranked(by_layer)) / len(X.PANELS)
+    md = sum(X.gap(by_depth, k) for _, k in X.PANELS) / len(X.PANELS)
+    rows.append([r"\textbf{mean}", rf"\textbf{{{ml:.1f}}}", rf"\textbf{{{md:.1f}}}", "", ""])
+    # The measure the two readings disagree about most sharply, named from the
+    # data rather than from what the last run happened to show.
+    by_pts = [t for t, _, _ in X.ranked(by_layer)]
+    by_ratio = sorted(X.PANELS, key=lambda p: X.gap_ratio(rs, by_layer, p[1]))
+    flip = X.tex(max(X.PANELS, key=lambda p: by_pts.index(p[0]) - by_ratio.index(p))[0])
+    return table(
+        "align", r"\textbf{What the cross-source comparison rests on, and how far to trust it.} "
+        "Two questions, both of which are usually settled silently. \\emph{First}, comparing base "
+        "models of different depth needs a rule for pairing their layers, and the two defensible "
+        "rules pick opposite ends of gemma: by block index PCFG's layers pair with gemma's "
+        + " and ".join(f"L{q['layer']}" for _, q, _ in by_layer) + ", by relative depth "
+        r"$(L{+}1)/N$ with gemma's "
+        + " and ".join(f"L{q['layer']}" for _, q, _ in by_depth) + rf". Block index wins on the "
+        rf"mean ({ml:.1f} points against {md:.1f}), which is why it is what "
+        r"Figure~\ref{fig:cross-source-layer-response} draws---though the margin rests largely "
+        r"on one measure, and the reconstruction filter is inert on PCFG in any case. "
+        r"\emph{Second}, a small gap is only impressive if the measure could have been far "
+        r"apart. The last two columns ask that: \emph{range} is how far each measure moves "
+        "across all "
+        rf"{len(rs)} graded runs, and the ratio is the gap against it. The two readings do not "
+        rf"agree---{flip} is near the bottom on raw points and near the top on the ratio---so "
+        "both are printed and neither is called correct. The honest summary is that the three "
+        r"measures with the smallest raw gaps are also the three pinned against a boundary "
+        r"($\geq 2$ parents at 89--100\%, sibling redundancy at 3--6\%, the frequency control at "
+        r"0--2\%), where agreement costs the two sources nothing. \textbf{On "
+        rf"{len(by_layer)} shared layers none of this is a result." + "}",
+        ["Measure", "Gap by layer index", "Gap by rel.\\ depth", "Range over all runs",
+         "Gap / range"],
+        rows, align="lrrrr", star=True)
+
+
+# ---------------------------------------------------------------------------
 # 8. The k/D null (appendix).
 # ---------------------------------------------------------------------------
 def t_null(layers, second6, pcfg):
@@ -459,10 +581,26 @@ def build(dry: bool):
     add("APP 1", "sources", bool(layers and pcfg), f"gemma + {len(pcfg)} PCFG runs"
         if (layers and pcfg) else "needs a gemma report and a PCFG report",
         lambda: t_sources(layers, second6, pcfg), "Appendix")
-    add("APP 2", "null", bool(second6 or pcfg), "measured pass rates + config"
+    # The layer-by-layer cross-source pair. `t_layers` needs one layer index
+    # graded on both sources; `t_align` additionally needs the two pairing rules
+    # to actually disagree, which they only do once the reference source has
+    # layers the toy cannot reach — otherwise the table would be two identical
+    # columns.
+    xs = X.rows()
+    x_shared = sorted({o["layer"] for o, _, _ in X.matched(xs, "layer")})
+    add("APP 2", "layers", bool(x_shared),
+        f"{len(xs)} graded runs, layer{'s' if len(x_shared) > 1 else ''} "
+        f"{', '.join(str(s) for s in x_shared)} on both sources"
+        if x_shared else "needs one layer index graded on both gemma and PCFG",
+        lambda: t_layers(xs))
+    add("APP 3", "align", X.alignment_gaps(xs) is not None,
+        "the same runs under both pairing rules" if X.alignment_gaps(xs) is not None
+        else "the two pairing rules select the same runs here, so the table is empty",
+        lambda: t_align(xs))
+    add("APP 4", "null", bool(second6 or pcfg), "measured pass rates + config"
         if (second6 or pcfg) else "needs at least one second_pass.json",
         lambda: t_null(layers, second6, pcfg))
-    add("APP 3", "bos", bool(arch and layers) and len(arch) == len(layers),
+    add("APP 5", "bos", bool(arch and layers) and len(arch) == len(layers),
         f"{len(arch)} archived v1 reports vs {len(layers)} current"
         if arch else "needs the pre-BOS reports in outputs_archive/",
         lambda: t_bos(layers, arch))
