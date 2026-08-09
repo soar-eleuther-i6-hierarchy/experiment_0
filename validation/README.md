@@ -51,7 +51,7 @@ Full results and the four-tier table: [outputs/README.md](../outputs/README.md#h
 
 | File | Tier | Runs on | Scored against | What it does |
 | ---- | ---- | ------- | -------------- | ------------ |
-| [`synthetic_toy_world.py`](toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
+| [`synthetic_toy_world.py`](synthetic_toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass**, covering **21/21 metric functions**. One seed: `calibrate(seed=0)`, called once. `build_world` takes a seed so the run can be varied, but nothing loops over one, and this page claimed a 0–7 sweep that has never existed |
 | [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
 | `adapters/from_pcfg.py` *(umbrella repo, not this one)* | 3 | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **nothing yet** — the grammar is known but no latent→symbol mapping exists | same battery as Tier 4, on a source that has a base model; layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
@@ -84,7 +84,7 @@ three of Tier 2's misses trace to the three features it never learned.
 Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`
 from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo. It
 also reads that repo's `configs/tree.json` for the ground-truth tree, and expects the clone **beside**
-`experiment_0/` (`../sae-training/`); set `EXP0_SAE_TRAINING` if yours lives elsewhere.
+`metrics/` (`../sae-training/`); set `EXP0_SAE_TRAINING` if yours lives elsewhere.
 
 Both tiers write into [`outputs/`](../outputs/) (`synthetic_toy_calibration.json`,
 `trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`

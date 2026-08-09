@@ -62,7 +62,7 @@ def stages() -> list[Stage]:
               "grade every block pair -> metrics_report.{json,md}",
               needs=(C.EXP0_STATS_PATH,), produces=(C.METRICS_JSON_PATH,)),
         Stage("02b", [sys.executable, "-m", "validation.qualitative_check"],
-              "Tier 3: survivor vs rejected edges against Neuronpedia labels",
+              "Tier 4: survivor vs rejected edges against Neuronpedia labels",
               needs=(C.EXP0_STATS_PATH, C.METRICS_JSON_PATH),
               produces=(run / "qualitative_check.json",)),
         Stage("03", [sys.executable, "run_token_metrics.py"],

@@ -52,7 +52,7 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
   Same shape as gemma: a source directory of layers, with its own entry in the nav and its own layer
   row. Two pills, **1 and 3** — the base transformer has four layers in total (0–3), so gemma's
   6/12/18/24 do not exist for this model and never will; of those four, an SAE has been trained on
-  two. Its Page row is three wide rather than five: the two qualitative pages read Neuronpedia
+  two. Its Page row is five wide rather than seven: the two qualitative pages read Neuronpedia
   labels, which exist for gemma's dictionary and no other.
 
 ## Moved pages
@@ -108,13 +108,14 @@ the answer; the answer is here.
 
 ## Per layer
 
-Every layer has the same five pages: three interactive dashboards, then the two rendered text
+Every layer has the same seven pages: four interactive dashboards, then the three rendered text
 reports behind them. Each layer also has its own landing page — `gemma-2-2b/layer_NN/`, written by
 `python3 -m reporting.layer_index` — which is where the nav bar's layer buttons go, and the source
 itself has one at [`gemma-2-2b/`](gemma-2-2b/) from `--source`.
 
 | Layer | Metrics dashboard | Superparent fan-out | Qualitative dashboard | metrics report | qualitative report |
 | ----- | ----------------- | ------------------- | --------------------- | -------------- | ------------------ |
+| **L1**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_01/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_01/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_01/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_01/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_01/qualitative_check.html) |
 | **L3**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_03/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_03/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_03/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_03/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_03/qualitative_check.html) |
 | **L6**  | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_06/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_06/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_06/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_06/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_06/qualitative_check.html) |
 | **L12** | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_12/metrics_dashboard.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_12/superparent_sankey.html) | [open](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_12/qualitative_dashboard.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_12/metrics_report.html) | [report](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/gemma-2-2b/layer_12/qualitative_check.html) |
@@ -133,7 +134,7 @@ itself has one at [`gemma-2-2b/`](gemma-2-2b/) from `--source`.
 | `in_block_edges.{json,md}` | `in_block_edges.py` | same-level directed edges and co-extensive duplicates per block. |
 | `qualitative_check.{json,md}` | `validation/qualitative_check.py` | survivor vs rejected edges with both endpoint labels, for human reading. |
 | `metrics_dashboard.html`, `superparent_sankey.html`, `qualitative_dashboard.html`, `in_block_dashboard.html` | `reporting/visualize.py` (`--qualitative`, `--in-block`) | the interactive pages linked above. |
-| `figures/*.png` | `reporting/make_report_figures.py` | the five static proof-figures, written into each run dir; not tracked in git. |
+| `paper_figuers/*.png` | `reporting/make_report_figures.py` | the static proof-figures for the write-up, written once into `outputs/paper_figuers/` (not per run) and tracked in git. |
 | `npedia_labels_cache.json` | `validation/qualitative_check.py` | per-feature Neuronpedia API fallback for the handful missing from the bulk export. |
 
 `python3 -m utils.organize_outputs` sorts a run directory into `dashboards/` and `reports/` for browsing;
@@ -259,7 +260,8 @@ What the regenerated outputs support:
 
 - **The cheap filters barely bite; the refinement test does.** At layer 6, B0→B1 proposes 2,428
   candidates and 85.9% of them improve reconstruction — but only **10 of 1,700 (0.6%)** pass probe
-  `S_res`. Stage 03 has run on layer 6 alone, so that ratio has one layer behind it.
+  `S_res`. Stage 03 has run on four of the eight runs, and gemma layers 3, 12, 18 and 24 are not
+  among them, so that ratio has one gemma layer behind it.
 - **The graph is not a tree.** Multi-parenting in B0→B1 is 99 / 100 / 100 / 89 / 100% across L3–L24.
   The one claim that did not move, because it is a ratio over children that already have a parent.
 - **About half the survivors read as genuine refinement**, and the commonest way the rest are wrong

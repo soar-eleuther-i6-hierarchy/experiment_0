@@ -38,17 +38,16 @@
   \caption{%
     \textbf{Every metric scored against a known tree.}
     All 14 scorecard rows on a hand-built world with a known five-parent tree and six injected
-    structures; 14 pass, across seeds 0--7, covering 21 of 21 metric functions. \emph{Left:}
-    rows whose two classes separate by a ratio, on a log axis. \emph{Right:} rows scored
-    categorically, where the recovered answer is either right or not. The two are kept apart
-    because a categorical margin of $1.0$ means \emph{correct}, and on a ratio axis that would
-    read as \emph{no separation at all}. The two hatched rows are negative controls, which
-    pass when the battery does \emph{not} act: an absorbed child, whose true edge coverage can
-    never propose because the child fires exactly where its parent is silent, and a
-    shared-topic pair that clears coverage, reconstruction, the frequency control and the
-    independence null. They turn the two open columns of the properties matrix into
-    demonstrated limitations rather than asserted ones, and a regression makes them fail
-    visibly.
+    structures; 14 pass, covering 21 of 21 metric functions. \emph{Left:} rows whose two
+    classes separate by a ratio, on a log axis. \emph{Right:} rows scored categorically, where
+    the recovered answer is either right or not. The two are kept apart because a categorical
+    margin of $1.0$ means \emph{correct}, and on a ratio axis that would read as \emph{no
+    separation at all}. The two hatched rows are negative controls, which pass when the
+    battery does \emph{not} act: an absorbed child, whose true edge coverage can never propose
+    because the child fires exactly where its parent is silent, and a shared-topic pair that
+    clears coverage, reconstruction, the frequency control and the independence null. They
+    turn the two open columns of the properties matrix into demonstrated limitations rather
+    than asserted ones, and a regression makes them fail visibly.
   }
   \label{fig:calibration-synthetic-toy-scorecard}
 \end{figure}

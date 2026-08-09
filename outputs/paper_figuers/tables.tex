@@ -116,10 +116,10 @@
     \toprule
     Tier & Runs on & Ground truth & Result \\
     \midrule
-    1 Synthetic toy & \parbox[t]{0.22\linewidth}{\raggedright hand-built statistics\strut} & \parbox[t]{0.18\linewidth}{\raggedright by construction\strut} & \parbox[t]{0.25\linewidth}{\raggedright 14/14 rows, 21/21 functions, seeds 0--7\strut} \\
+    1 Synthetic toy & \parbox[t]{0.22\linewidth}{\raggedright hand-built statistics\strut} & \parbox[t]{0.18\linewidth}{\raggedright by construction\strut} & \parbox[t]{0.25\linewidth}{\raggedright 14/14 rows, 21/21 functions\strut} \\
     2 Trained toy & \parbox[t]{0.22\linewidth}{\raggedright an SAE trained on Bussmann's tree\strut} & \parbox[t]{0.18\linewidth}{\raggedright Bussmann's tree is known\strut} & \parbox[t]{0.25\linewidth}{\raggedright precision 1.00, recall 0.67\strut} \\
     3 PCFG SAE & \parbox[t]{0.22\linewidth}{\raggedright a Matryoshka SAE over a 4-layer transformer trained on a PCFG corpus\strut} & \parbox[t]{0.18\linewidth}{\raggedright the grammar is known; no latent$\leftrightarrow$symbol mapping yet\strut} & \parbox[t]{0.25\linewidth}{\raggedright 2 layers, 327--781 candidates; \emph{no ground-truth score} --- same battery outputs as Tier~4\strut} \\
-    4 Released SAE & \parbox[t]{0.22\linewidth}{\raggedright \texttt{google/gemma-2-2b}\strut} & \parbox[t]{0.18\linewidth}{\raggedright none --- human reading\strut} & \parbox[t]{0.25\linewidth}{\raggedright 40 survivors read against autointerp labels\strut} \\
+    4 Released SAE & \parbox[t]{0.22\linewidth}{\raggedright \texttt{google/gemma-2-2b}\strut} & \parbox[t]{0.18\linewidth}{\raggedright none --- human reading\strut} & \parbox[t]{0.25\linewidth}{\raggedright 48 survivors read against autointerp labels\strut} \\
     \bottomrule
   \end{tabular}
   \\[2pt] \footnotesize Tier~4's dictionary is the released \texttt{gemma-2-2b-res-matryoshka-dc}. Tier~3, per layer: layer~01: 327 candidates, 100\% recon, 0/327 $S_\mathrm{res}$; layer~03: 781 candidates, 95\% recon, 4/772 $S_\mathrm{res}$. Lateral control (not a tier): 6/6 testable true edges run early block $\rightarrow$ late on the trained toy.
@@ -129,7 +129,7 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{Tier 1: every metric against a known tree.} 14 of 14 rows pass, on every seed from 0 to 7. Margin is how decisively the metric separated the class it must keep from the class it must reject; rows scored categorically have no margin, because their answer is right or it is not and a value of $1.0$ on a ratio scale would read as no separation. The last two rows are negative controls that pass when the battery does \emph{not} act.}
+  \caption{\textbf{Tier 1: every metric against a known tree.} 14 of 14 rows pass. Margin is how decisively the metric separated the class it must keep from the class it must reject; rows scored categorically have no margin, because their answer is right or it is not and a value of $1.0$ on a ratio scale would read as no separation. The last two rows are negative controls that pass when the battery does \emph{not} act.}
   \label{tab:tier1}
   \begin{tabular}{llcr}
     \toprule
@@ -161,7 +161,7 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, all five graded layers.} Read left to right: coverage proposes thousands of edges, the reconstruction filter keeps most of them, and the independence null rejects most of them --- the over-connection is what the parent's own firing rate already forces, not capture of frequent tokens, which the frequency control puts at 1--2\%. Multi-parenting is the measure that does not depend on the candidate set and the only one of the project's original four claims to survive BOS exclusion. The $S_\mathrm{res}$ column exists for layer 6 alone: stage~03 needs a cached token stream that the released statistics do not carry.}
+  \caption{\textbf{Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, all five graded layers.} Read left to right: coverage proposes thousands of edges, the reconstruction filter keeps most of them, and the independence null rejects most of them --- the over-connection is what the parent's own firing rate already forces, not capture of frequent tokens, which the frequency control puts at 1--2\%. Multi-parenting is the measure that does not depend on the candidate set and the only one of the project's original four claims to survive BOS exclusion. The $S_\mathrm{res}$ column is filled for layers~1 and~6 alone: stage~03 needs a cached token stream that the released statistics do not carry, so a blank cell means the pass has not been run there, not that nothing passed.}
   \label{tab:gemma}
   \begin{tabular}{lrrrrrr}
     \toprule

@@ -15,12 +15,15 @@ and the real gemma-2-2b caches". This package IS that toy:
 
 Two more tiers of the same argument live here: `calibrate_on_trained_toy.py`
 (Tier 2, the toy passed through a real training run) and `qualitative_check.py`
-(Tier 3, the real gemma-2-2b SAE read against Neuronpedia labels — the one tier
+(Tier 4, the released gemma-2-2b SAE read against Neuronpedia labels — the one tier
 with no ground truth, and the only one that needs the cache and the network).
+Tier 3 is the PCFG SAE and has no script here: it is not scored against a known
+answer, so it runs the ordinary pipeline over statistics built by
+`adapters/from_pcfg.py` in the umbrella repo.
 
 Run:
-    cd experiment_0
+    cd metrics
     python3 validation/calibrate_on_synthetic_toy.py   # prints scorecard, writes report
     pytest validation/                              # if pytest is installed
-    python3 -m validation.qualitative_check         # Tier 3
+    python3 -m validation.qualitative_check         # Tier 4
 """

@@ -267,6 +267,13 @@ def t_tiers(toy, tt, align_json, pcfg=None):
     yet" rather than implying the tier is inherently blind.
     """
     n_pass = sum(r["pass"] for r in toy) if toy else None
+    # Counted from the qualitative reports, not written down: it was "40" from
+    # when five layers had been read, and a sixth was published under it.
+    n_surv = 0
+    for q in sorted((C.OUT_DIR / C.SOURCE_NAME).glob("layer_*/qualitative_check.json")):
+        rep = _json(q) or {}
+        n_surv += sum(1 for rows in rep.values() for r in rows
+                      if r.get("category") == "survivor")
     pcfg_result, pcfg_runs_on, pcfg_detail = "---", "a Matryoshka SAE on a PCFG corpus", None
     if pcfg:
         parts, cands = [], []
@@ -308,7 +315,7 @@ def t_tiers(toy, tt, align_json, pcfg=None):
         # does not shrink an overfull box -- it prints it straight across the next
         # column. Which is what it did.
         ("4 Released SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
-         "40 survivors read against autointerp labels"),
+         f"{n_surv} survivors read against autointerp labels" if n_surv else "---"),
     ]
     rows = [[r[0]] + [wrap(c, w) for c, w in zip(r[1:], W)] for r in rows]
     note = " ".join(t for t in [
@@ -392,6 +399,14 @@ def t_tier1(toy):
 # 6. The gemma result, per layer.
 # ---------------------------------------------------------------------------
 def t_gemma(layers, second6, has_bos=True):
+    # Which layers carry the strict column is read off the run directories. The
+    # caption used to say "layer 6 alone"; layer 1 has had a second pass for some
+    # time, and a hand-written scope note is the part that goes stale first.
+    _sp = [L for L, _ in layers
+           if (C.OUT_DIR / C.SOURCE_NAME / f"layer_{L:02d}" / "second_pass.json").exists()]
+    sres_layers = ("layer~" + str(_sp[0]) if len(_sp) == 1 else
+                   "layers~" + ", ".join(str(L) for L in _sp[:-1]) + f" and~{_sp[-1]}"
+                   if _sp else "no layer")
     rows = []
     for L, r in layers:
         p = _pair(r)
@@ -414,8 +429,9 @@ def t_gemma(layers, second6, has_bos=True):
         "measure that does not depend on the candidate set and the only one of the project's "
         r"original four claims to survive BOS exclusion"
         + (r" (Table~\ref{tab:bos})" if has_bos else "") + ". The "
-        r"$S_\mathrm{res}$ column exists for layer 6 alone: stage~03 needs a cached token stream "
-        "that the released statistics do not carry.",
+        r"$S_\mathrm{res}$ column is filled for " + sres_layers + " alone: stage~03 needs a "
+        "cached token stream that the released statistics do not carry, so a blank cell means "
+        "the pass has not been run there, not that nothing passed.",
         ["Layer", "Candidates", "Recon.", "At chance", "Freq.-driven",
          r"$\geq 2$ parents", r"$S_\mathrm{res}$"],
         rows, star=True)

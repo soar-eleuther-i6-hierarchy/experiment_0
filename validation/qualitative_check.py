@@ -26,7 +26,8 @@ For the ~26 features missing from that export we fall back to Neuronpedia's
 public API (cached to outputs/npedia_labels_cache.json). Pass --no-fetch to skip
 the API fallback and emit URLs for anything the bulk file doesn't cover.
 
-This is Tier 3 of the validation ladder (Tiers 1-2 are the toys next door). It is
+This is Tier 4 of the validation ladder (Tiers 1-2 are the toys next door; Tier 3
+is the PCFG SAE, which has no script here). It is
 also pipeline stage 02b: unlike the toys it needs the real cache and writes a
 published artifact into RUN_DIR, so it is the one tier that is not self-contained.
 

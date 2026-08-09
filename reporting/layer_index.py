@@ -157,10 +157,19 @@ def render_source(source: str | None = None) -> str:
             "published beside them: with only gemma here, `layer_06` read as a global fact rather "
             f"than a fact about one model.",
             "",
-            f"Stage 03 (`run_token_metrics.py`) has run on layer 6 only — see "
-            f"[outputs/README.md]({to_outputs}README.md#the-second-pass-has-run-on-layer-6-only) "
-            "before reading the sibling-redundancy figure on the other four.",
         ]
+        # Which layers carry a second pass is a fact on disk, so it is read, not
+        # written down. It said "layer 6 only" for as long as that was true and
+        # for a while after it stopped being, which is the whole argument for
+        # deriving it: the sentence cannot outlive the files it describes.
+        sp = sorted(d.name.split("_")[1] for d in sorted((C.OUT_DIR / source).glob("layer_*"))
+                    if (d / "second_pass.json").exists())
+        if sp:
+            L.append(
+                f"Stage 03 (`run_token_metrics.py`) has run on "
+                f"layer{'s' if len(sp) > 1 else ''} {', '.join(str(int(x)) for x in sp)} — see "
+                f"[outputs/README.md]({to_outputs}README.md#the-second-pass-has-run-on-four-runs-not-on-all-of-them) "
+                "before reading the sibling-redundancy figure on the others.")
     L.append("")
     return "\n".join(L)
 

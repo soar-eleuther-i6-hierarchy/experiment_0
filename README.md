@@ -26,7 +26,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 # experiment_0: Implement Metrics (SOAR I-6)
 
 Grades candidate parent→child edges between the nested blocks of a **Matryoshka SAE** on
-`google/gemma-2-2b` (residual stream, layers 3–24). A family of competing metrics decides which
+`google/gemma-2-2b` (residual stream, layers 1–24). A family of competing metrics decides which
 "edges" are real hierarchy and which are frequency, splitting or co-occurrence artifacts.
 
 **Live site:** [soar-eleuther-i6-hierarchy.github.io/metrics](https://soar-eleuther-i6-hierarchy.github.io/metrics/)
@@ -39,7 +39,7 @@ Grades candidate parent→child edges between the nested blocks of a **Matryoshk
 
 ## Install and run
 
-Run everything from the `experiment_0/` directory.
+Run everything from the `metrics/` directory.
 
 ```bash
 pip install torch sae_lens datasets plotly numpy matplotlib
@@ -122,7 +122,7 @@ bundle from its path — but the LAST component decides how the page reads: a di
 `layer_NN` gets the layer nav, anything else gets the site-wide one. Give the directory an index
 with `python3 -m reporting.layer_index --run`, and the source's own index with
 `--source <name>`, or those URLs 404 on GitHub Pages. Register the source in `config.SOURCES` —
-its label, its layers and which of the five page kinds it actually has — and it appears in the nav
+its label, its layers and which of the seven page kinds it actually has — and it appears in the nav
 with its own layer row. Pages generated this way mark no layer as current and their headers name the run's
 own model and dictionary. First one published: [`outputs/pcfg-matryoshka/layer_01/`](outputs/pcfg-matryoshka/layer_01/README.md).
 
@@ -131,7 +131,7 @@ pills belong to gemma, so they appear only inside `outputs/gemma-2-2b/`; before 
 every page, offering to "switch layer" from a PCFG dashboard built on a different model entirely.
 
 Listing a source in `NAV_GLOBAL` makes it reachable from anywhere — and makes every already-generated
-page's bar wrong, including ten dashboards whose generator needs that layer's ~700 MB cache.
+page's bar wrong, including every dashboard whose generator needs that layer's ~700 MB cache.
 `python3 -m reporting.refresh_nav` re-renders the bar in place instead, deriving each page's
 identity from its own path; `--check` reports without writing. It changes navigation and nothing
 else, so it is not a way to freshen stale numbers.
@@ -190,11 +190,11 @@ into a visible failure.
   shared concept and asks whether the residuals `a = enzyme − biology`, `b = CT − biology` are still
   dependent. Not implemented in this tranche.
 
-  **It is not hypothetical, and it is the commonest way a survivor is wrong.** Reading all 40
-  surviving edges at B0→B1 against Neuronpedia labels (8 per layer, five layers), eight are a
+  **It is not hypothetical, and it is the commonest way a survivor is wrong.** Reading all 48
+  surviving edges at B0→B1 against Neuronpedia labels (8 per layer, six layers), eight are a
   semantic parent with a function-word or formatting child — *"formal legal terminology"* → the word
   **"the"**, *"code, formulas and citations"* → **blank lines**. Every one clears the whole battery.
-  So this column costs roughly **20% of what survives**.
+  So this column costs roughly **one sixth of what survives**.
 - **Absorption** is only reachable through decoder geometry (`S_res`), and even there the edge never
   arrives: coverage gates the candidate set, and an absorbed child has low `R` by construction, so
   the pair is dropped before any later metric sees it.
@@ -221,7 +221,7 @@ all four. ("Tier", not "layer", to avoid confusion with the model's residual-str
 | **1. Synthetic toy** | a known 5-parent tree plus six injected structures, reduced to cached stats *and* to the per-token view the probes need | yes, by construction | the maths is right — **14/14 rows**, covering all 21 metric functions, each pathology caught by its intended metric |
 | **2. Trained toy** | a Matryoshka SAE actually trained on Bussmann's tree; metrics run on the *learned* features | yes, the tree is known | the metrics survive real training — precision 1.00, recall 0.67, 0 false positives |
 | **3. PCFG SAE** | a Matryoshka SAE over a 4-layer transformer trained on a PCFG corpus | grammar known, **not yet used** — nothing maps a latent to a grammar symbol | the battery runs on a source with a base model — layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
-| **4. Released SAE** | the published `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | none — human reading | 40 survivors read against autointerp labels |
+| **4. Released SAE** | the published `gemma-2-2b` Matryoshka SAE, read against Neuronpedia labels | none — human reading | 48 survivors read against autointerp labels |
 
 Tier 1 is certain but artificial; Tier 4 is realistic but has no ground truth and is a checkpoint we
 did not train, which is what *released* names — Tier 3 is a real SAE too. Tier 2 is the only rung
@@ -278,9 +278,9 @@ result that vanishes is indistinguishable from one that was never made. See
 > 99.4% of what reaches it.
 >
 > Caveats: the metrics cover the SAE/MLP slice only; B3→B4 is off by default (memory; enable with
-> `EXP0_B3B4=1`); stage 03 has run on layer 6 only, so the `S_res` column exists for one layer; and
-> the Tier-3 semantic reading has not been redone since regeneration, so no claim here rests on
-> reading survivor labels.
+> `EXP0_B3B4=1`); stage 03 has run on four of the eight runs, so the `S_res` column is blank on
+> gemma layers 3, 12, 18 and 24 by absence rather than by result; and the Tier-4 semantic reading
+> has not been redone since regeneration, so no claim here rests on reading survivor labels.
 
 Full numbers, dashboards and per-layer pages: **[outputs/](outputs/)**.
 
@@ -328,7 +328,7 @@ metrics/                              the repository
 │   └── test_dashboards_generic.py    stages 02-04 grade and render one too
 │
 ├── validation/                       Tiers 1, 2 and 4 + a lateral control (Tier 3 needs no script)
-│   ├── toy_world.py                  the synthetic ground-truth world
+│   ├── synthetic_toy_world.py        the synthetic ground-truth world
 │   ├── calibrate_on_synthetic_toy.py    Tier 1 — synthetic toy
 │   ├── calibrate_on_trained_toy.py   Tier 2 — trained toy
 │   ├── qualitative_check.py          Tier 4 — released SAE (also pipeline stage 02b)
@@ -347,8 +347,8 @@ metrics/                              the repository
     ├── trained_toy_calibration.html  Tier-2 scorecard (+ .json)
     ├── toy_trained/                  the Tier-2 checkpoint
     ├── README.md
-    ├── gemma-2-2b/                    the five gemma layers, grouped by source
-    │   └── layer_06/                 identical in layer_03, layer_12, layer_18, layer_24
+    ├── gemma-2-2b/                    the six gemma layers, grouped by source
+    │   └── layer_06/                 identical in layer_01, layer_03, layer_12, layer_18, layer_24
     │   ├── README.md                 the layer's landing page
     │   ├── metrics_dashboard.html
     │   ├── superparent_sankey.html

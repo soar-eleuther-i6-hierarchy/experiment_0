@@ -25,7 +25,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 
 # `gemma-2-2b/` — gemma-2-2b
 
-**Layer 3**　·　gemma-2-2b / 3-res-matryoshka-dc　·　blocks.3.hook_resid_post　·　48,571 tokens over 400 docs　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
+**Layer 1**　·　gemma-2-2b / 1-res-matryoshka-dc　·　blocks.1.hook_resid_post　·　48,571 tokens over 400 docs　·　edge: reverse coverage ≥ 0.5, both endpoints fire ≥ 20
 
 One directory per layer, graded by the same battery as every other source in [outputs/](../README.md). The bar above moves between the layers; nothing in `metrics/` differs between them.
 
@@ -40,4 +40,4 @@ One directory per layer, graded by the same battery as every other source in [ou
 
 These sat at `outputs/layer_NN/` until 7 August. They moved when a second source was published beside them: with only gemma here, `layer_06` read as a global fact rather than a fact about one model.
 
-Stage 03 (`run_token_metrics.py`) has run on layer 6 only — see [outputs/README.md](../README.md#the-second-pass-has-run-on-layer-6-only) before reading the sibling-redundancy figure on the other four.
+Stage 03 (`run_token_metrics.py`) has run on layers 1, 6 — see [outputs/README.md](../README.md#the-second-pass-has-run-on-four-runs-not-on-all-of-them) before reading the sibling-redundancy figure on the others.
