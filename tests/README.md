@@ -60,3 +60,24 @@ The second test runs a PCFG-shaped file (8 blocks) through 02 → 03 → 04 and 
 describe the file they were built from: all seven pairs graded, the header naming that run's model
 and dictionary rather than gemma's, S_res computed from the run's own `w_dec.pt`, and no layer pill
 lit on a run that is not a gemma layer.
+
+## The captions guard
+
+`test_captions_match_panels.py` + `panel_fingerprint.py` cover the one part of the generated site
+that cannot check itself. In `reporting/visualize.py` every **number** in a dashboard caption is
+read from JSON when the page is written, so it cannot disagree with the data. The **sentences**
+around those numbers are hand-written, and they can: change what a panel plots and the numbers
+update themselves while the prose keeps describing the old panel.
+
+The test does **not** verify that a caption is correct — nothing can. It extracts each dashboard's
+`subplot_titles` statically with `ast` (no data, no cache, so it runs in a bare clone) and pins a
+hash. When a panel changes the hash changes, the test fails, and the message names the
+`captions_*()` function to re-read.
+
+**When it fails, do not re-pin first.** Open the builder, see what moved, check every sentence in
+its caption function still describes the panel it names, and only then update the hash. Re-pinning
+without reading is the same as deleting the test, and it is much easier to do by accident.
+
+A second check, `test_every_caption_builder_is_wired`, catches the opposite mistake: a caption
+function that exists but was never passed to `write_page()`, which publishes a page with no
+captions and no error.

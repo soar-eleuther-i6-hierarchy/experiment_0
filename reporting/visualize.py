@@ -146,6 +146,24 @@ def caption_block(items) -> str:
 
     Any number inside a description must be passed in by the caller from the data
     or from `config`, never typed here.
+
+    **The one thing here that can go stale, and what stops it.** Numbers cannot:
+    they are read at generation time, so a number that disagrees with the data is
+    not reachable. Sentences can. Change what a panel plots -- swap an axis, add
+    a sixth filter, reorder the grid -- and the numbers follow the new data while
+    the prose goes on describing the panel that used to be there. Nothing about
+    deriving a number fixes that, because what went wrong is a claim about
+    meaning, and no generator holds one.
+
+    This repo has had exactly that failure twice already in prose no test could
+    reach: figure titles quoting withdrawn layer-6 results, and "14/14 across
+    seeds 0-7" surviving in seven files after the seed sweep it described had
+    stopped existing. Both were found by a person reading, long after.
+
+    So `tests/test_captions_match_panels.py` pins each dashboard's panel
+    structure. It does not check that a caption is true -- nothing can -- it
+    fails when the panels move, which sends whoever moved them back here. Treat a
+    failure as a request to re-read, not as a hash to refresh.
     """
     items = [(t, d) for t, d in items if d]
     if not items:
