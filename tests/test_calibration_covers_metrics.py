@@ -59,7 +59,7 @@ def called_names(paths) -> set[str]:
     return out
 
 
-def test_calibration_covers_every_metric_function():
+def _covered_universe() -> int:
     universe = set(M.__all__) | EXTRA
     missing = sorted(universe - called_names(SOURCES))
     assert not missing, (
@@ -73,8 +73,14 @@ def test_calibration_covers_every_metric_function():
     return len(universe)
 
 
+def test_calibration_covers_every_metric_function():
+    # A pytest test must not return a value (PytestReturnNotNoneWarning); the
+    # count is surfaced through the helper for main()'s report instead.
+    _covered_universe()
+
+
 def main() -> int:
-    n = test_calibration_covers_every_metric_function()
+    n = _covered_universe()
     print(f"[test] all {n} metric functions are exercised by the Tier-1 calibration")
     return 0
 
