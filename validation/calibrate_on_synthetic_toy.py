@@ -74,6 +74,12 @@ from validation.synthetic_toy_world import (  # noqa: E402
 # (matches run_metrics.py's n_share_energy_ge_09 gate).
 SPLIT_SHARE_MIN = 0.9
 
+# Deleting the superparent's out-edges must drop both the out-degree Gini and the
+# top-1 edge share by at least this much; otherwise degree_stats is not
+# registering the concentration the superparent causes (the Metric 4
+# counterfactual). Observed collapse on the toy is ~0.21 (Gini) and ~0.39 (top-1).
+DEGREE_COLLAPSE_MARGIN = 0.10
+
 
 def _run_metrics(stats):
     """Mirror run_metrics.analyse_pair's calls, on the toy's single block pair."""
@@ -171,17 +177,32 @@ def _score(stats, labels, m) -> list[dict]:
     })
 
     # --- Metric 4: out-degree finds the superparent -------------------------
+    # find_superparents names the culprit; degree_stats (and the gini it calls)
+    # must independently register the concentration that culprit causes. Grade
+    # both: deleting the superparent's out-edges has to collapse the out-degree
+    # Gini and the top-1 edge share, or degree_stats is not measuring what it
+    # claims (a broken gini that returns 0 makes the two blocks equal and fails).
     found = {sp["parent_local"] for sp in m["superparents"]}
+    sp_local = next(iter(labels.superparent_parents))
+    deg_all = m["deg"]
+    mask_no_sp = edge_mask.clone()
+    mask_no_sp[sp_local] = False
+    deg_no_sp = degree_stats(mask_no_sp)
+    gini_collapses = deg_all["outdeg_gini"] > deg_no_sp["outdeg_gini"] + DEGREE_COLLAPSE_MARGIN
+    top1_collapses = deg_all["top1_edge_share"] > deg_no_sp["top1_edge_share"] + DEGREE_COLLAPSE_MARGIN
     rows.append({
         "metric": "4. out-degree / superparent",
         "job": "identify superparent, spare genuine parents",
-        "pass": found == labels.superparent_parents,
+        "pass": (found == labels.superparent_parents
+                 and gini_collapses and top1_collapses),
         "detail": f"detected superparents {sorted(found)} "
-                  f"(truth {sorted(labels.superparent_parents)}); "
-                  f"Gini={m['deg']['outdeg_gini']:.3f}, "
-                  f"top-1 share={100 * m['deg']['top1_edge_share']:.0f}%",
-        "margin": 1.0 if found == labels.superparent_parents else 0.0,
-        "margin_kind": "categorical",
+                  f"(truth {sorted(labels.superparent_parents)}); removing the "
+                  f"superparent collapses Gini {deg_all['outdeg_gini']:.3f}->"
+                  f"{deg_no_sp['outdeg_gini']:.3f} and top-1 share "
+                  f"{100 * deg_all['top1_edge_share']:.0f}%->"
+                  f"{100 * deg_no_sp['top1_edge_share']:.0f}% "
+                  f"(covers degree_stats, gini)",
+        "margin": deg_all["outdeg_gini"] / max(deg_no_sp["outdeg_gini"], 1e-9),
     })
 
     # --- Metric 5: frequency control rejects the coincidence edge -----------
@@ -236,9 +257,12 @@ def _score(stats, labels, m) -> list[dict]:
         "job": "children cover a genuine parent's firing, not a superparent's",
         "pass": bool(gen_rs) and min(gen_rs) > sp_rs and exact_eq and upper_ok,
         "detail": f"genuine R_supp>={min(gen_rs, default=float('nan')):.2f} vs "
-                  f"superparent={sp_rs:.2f}; r_supp==joint_child_coverage_exact: {exact_eq}; "
-                  f"upper>=exact for all parents: {upper_ok} "
-                  f"(covers r_supp, joint_child_coverage_exact, joint_child_coverage_upper)",
+                  f"superparent={sp_rs:.2f}; r_supp and joint_child_coverage_exact "
+                  f"agree ({exact_eq}) - a same-formula drift guard, not independent "
+                  f"grading; upper>=exact for all parents: {upper_ok} "
+                  f"(covers r_supp, joint_child_coverage_upper; "
+                  f"joint_child_coverage_exact is proved numerically in "
+                  f"tests/test_metric_math.py)",
         "margin": min(gen_rs, default=0.0) / max(sp_rs, 1e-9),
     })
 
@@ -328,7 +352,12 @@ def _score_per_token(stats, labels, m, kept) -> list[dict]:
     rows.append({
         "metric": "2b. probe S_res (rank rule)",
         "job": "accept every true parent; carry no signal against an unrelated one",
-        "pass": gen_total > 0 and gen_pass == gen_total and sp_pass <= tol,
+        # neg_share is graded, not just printed: the rank rule's blindness to the
+        # superparent is explained by the superparent saturating the negative
+        # class, so a broken negative_parent_composition (e.g. returning 0) must
+        # break this row rather than pass silently.
+        "pass": (gen_total > 0 and gen_pass == gen_total and sp_pass <= tol
+                 and neg_share > 0.5),
         "detail": f"{gen_pass}/{gen_total} genuine edges pass the top-{C.SRES_RANK_TOP_K} "
                   f"rank rule (median true-parent rank "
                   f"{sorted(gen_ranks)[len(gen_ranks) // 2] if gen_ranks else float('nan')}); "
@@ -479,10 +508,15 @@ def _render(rows) -> str:
                 "injected pathology on this toy." if n_pass == len(rows)
                 else "Some metrics did not separate cleanly - see FAIL rows."))
     L.append("")
-    L.append("These rows cover **21/21 metric functions**, including the four that read "
-             "per-token residuals and masks (`train_probe`, `sres_rank_check`, "
-             "`negative_parent_composition`, `parent_conditioned_redundancy`) and the two "
-             "within-block ones (`directed_coverage`, `duplicate_pairs`).")
+    L.append("These rows grade every metric function on the pathology it targets, "
+             "including the four that read per-token residuals and masks "
+             "(`train_probe`, `sres_rank_check`, `negative_parent_composition`, "
+             "`parent_conditioned_redundancy`) and the two within-block ones "
+             "(`directed_coverage`, `duplicate_pairs`). Two pure-formula helpers are "
+             "proved against their definitions in `tests/test_metric_math.py` rather "
+             "than by class separation here: `joint_child_coverage_exact` (identical to "
+             "`r_supp`, kept as a drift guard) and `per_token_ablation_gain` (the "
+             "closed-form ablation identity).")
     L.append("")
     L.append("Until 7 August this page claimed the four per-token functions were "
              "*calibrated in Tier 2*. They were not: Tier 2 imports coverage, "

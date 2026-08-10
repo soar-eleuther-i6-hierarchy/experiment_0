@@ -228,7 +228,12 @@ def test_joint_child_and_energy_definitions():
     mask = torch.ones(3, 4, dtype=torch.bool)
     up = joint_child_coverage_upper(F, mask)
     assert close(up, (F * mask).sum(1).clamp(max=1.0))
-    assert bool((up >= (union_c / fire_p) - 1e-9).all()) or True   # bound checked in Tier 1
+    # The upper >= exact bound is a property of one coherent world, so it is
+    # checked in tests/test_tier1_calibration.py::test_joint_upper_bounds_exact
+    # where `up` and `exact` come from the same build_world stats. Comparing the
+    # random `up` here against the unrelated (union_c, fire_p) fixture proved
+    # nothing, which is why the old line carried an `or True` that could never
+    # fail; it is removed rather than left as dead weight.
     ok("1c / 8 / 9. joint-child and energy",
        "R_supp = union/fire, R_mass = union energy/total, share = cofire energy/total; "
        "the closed-form bound is min(1, ΣF)")
