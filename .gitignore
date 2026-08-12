@@ -38,7 +38,6 @@ figures/
 # to keep a scratch run from touching the published outputs/.
 tests_local/
 outputs_local/
-toygen/
 scoring/
 # Sibling repos (MEETING_NOTES/, PCFG/, sae-training/) live BESIDE experiment_0,
 # not inside it — nothing to ignore here. Tier-2 calibration finds the
