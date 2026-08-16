@@ -107,8 +107,8 @@
         {
           "parent": 44,
           "child": 111,
-          "R": 0.9985401459854014,
-          "pmi": 0.011031602426692275,
+          "R": 0.998539952216618,
+          "pmi": 0.011031408374602335,
           "parent_label": "technical terminology related to programming and coding concepts",
           "child_label": "scientific terminology related to genetic analysis and molecular biology techniques"
         },
@@ -221,7 +221,12 @@
           "b_label": "terms related to health and healthcare research, particularly focusing on studies and findings associated with health-related behaviors and conditions"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 302,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
     },
     {
       "block": 1,
@@ -356,7 +361,40 @@
         }
       ],
       "duplicate_examples": [],
-      "sres": null
+      "sres": {
+        "n_scored": 77,
+        "n_pass": 3,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 419,
+            "child": 329,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.19418740272521973,
+            "child_corr": 0.3594043254852295,
+            "s_res": 0.19418740272521973
+          },
+          {
+            "parent": 188,
+            "child": 431,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2883913516998291,
+            "child_corr": 0.5514367818832397,
+            "s_res": 0.2883913516998291
+          },
+          {
+            "parent": 346,
+            "child": 466,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.32650214433670044,
+            "child_corr": 0.5224969387054443,
+            "s_res": 0.32650214433670044
+          }
+        ]
+      }
     },
     {
       "block": 2,
@@ -552,7 +590,94 @@
           "b_label": "references to citations or legal documentation"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 268,
+        "n_pass": 9,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 660,
+            "child": 677,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.4169957935810089,
+            "child_corr": 0.44611263275146484,
+            "s_res": 0.4169957935810089
+          },
+          {
+            "parent": 1938,
+            "child": 775,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.11338641494512558,
+            "child_corr": 0.2643853724002838,
+            "s_res": 0.11338641494512558
+          },
+          {
+            "parent": 1080,
+            "child": 907,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17642371356487274,
+            "child_corr": 0.5815870761871338,
+            "s_res": 0.17642371356487274
+          },
+          {
+            "parent": 1636,
+            "child": 910,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.22760890424251556,
+            "child_corr": 0.38841086626052856,
+            "s_res": 0.22760890424251556
+          },
+          {
+            "parent": 1030,
+            "child": 1040,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.27514177560806274,
+            "child_corr": 0.5209841132164001,
+            "s_res": 0.27514177560806274
+          },
+          {
+            "parent": 1087,
+            "child": 1166,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.22389662265777588,
+            "child_corr": 0.37699511647224426,
+            "s_res": 0.22389662265777588
+          },
+          {
+            "parent": 645,
+            "child": 1444,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.16626667976379395,
+            "child_corr": 0.2733626365661621,
+            "s_res": 0.16626667976379395
+          },
+          {
+            "parent": 1588,
+            "child": 1774,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.19835339486598969,
+            "child_corr": 0.3614403307437897,
+            "s_res": 0.19835339486598969
+          },
+          {
+            "parent": 1747,
+            "child": 2021,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.19828751683235168,
+            "child_corr": 0.5420243740081787,
+            "s_res": 0.19828751683235168
+          }
+        ]
+      }
     },
     {
       "block": 3,
@@ -778,7 +903,992 @@
           "b_label": "terms related to harnesses and dog racing"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 1839,
+        "n_pass": 28,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 2574,
+            "child": 2147,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.1471131145954132,
+            "child_corr": 0.391937792301178,
+            "s_res": 0.1471131145954132
+          },
+          {
+            "parent": 5000,
+            "child": 2525,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.23869770765304565,
+            "child_corr": 0.4291517436504364,
+            "s_res": 0.23869770765304565
+          },
+          {
+            "parent": 5566,
+            "child": 3288,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.24389494955539703,
+            "child_corr": 0.31903940439224243,
+            "s_res": 0.24389494955539703
+          },
+          {
+            "parent": 2287,
+            "child": 3400,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.18857823312282562,
+            "child_corr": 0.46290746331214905,
+            "s_res": 0.18857823312282562
+          },
+          {
+            "parent": 6073,
+            "child": 3426,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.30907005071640015,
+            "child_corr": 0.5488095283508301,
+            "s_res": 0.30907005071640015
+          },
+          {
+            "parent": 6579,
+            "child": 4634,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.3218953609466553,
+            "child_corr": 0.4801676869392395,
+            "s_res": 0.3218953609466553
+          },
+          {
+            "parent": 3403,
+            "child": 4757,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.16822195053100586,
+            "child_corr": 0.3599228262901306,
+            "s_res": 0.16822195053100586
+          },
+          {
+            "parent": 6510,
+            "child": 4798,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.13152307271957397,
+            "child_corr": 0.20465394854545593,
+            "s_res": 0.13152307271957397
+          },
+          {
+            "parent": 5070,
+            "child": 4899,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.15088032186031342,
+            "child_corr": 0.3425239324569702,
+            "s_res": 0.15088032186031342
+          },
+          {
+            "parent": 3765,
+            "child": 4919,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.23658961057662964,
+            "child_corr": 0.2559472322463989,
+            "s_res": 0.23658961057662964
+          },
+          {
+            "parent": 5240,
+            "child": 4953,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.22804996371269226,
+            "child_corr": 0.5230789184570312,
+            "s_res": 0.22804996371269226
+          },
+          {
+            "parent": 4082,
+            "child": 5022,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.37432974576950073,
+            "child_corr": 0.4755212664604187,
+            "s_res": 0.37432974576950073
+          },
+          {
+            "parent": 7154,
+            "child": 5022,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.20331868529319763,
+            "child_corr": 0.4755212664604187,
+            "s_res": 0.20331868529319763
+          },
+          {
+            "parent": 3263,
+            "child": 5075,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.18189692497253418,
+            "child_corr": 0.3687029480934143,
+            "s_res": 0.18189692497253418
+          },
+          {
+            "parent": 6832,
+            "child": 5118,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.28086933493614197,
+            "child_corr": 0.506285548210144,
+            "s_res": 0.28086933493614197
+          },
+          {
+            "parent": 3916,
+            "child": 5153,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.1875898241996765,
+            "child_corr": 0.47029003500938416,
+            "s_res": 0.1875898241996765
+          },
+          {
+            "parent": 2076,
+            "child": 5244,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.24378535151481628,
+            "child_corr": 0.3704431354999542,
+            "s_res": 0.24378535151481628
+          },
+          {
+            "parent": 6411,
+            "child": 5244,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.20892834663391113,
+            "child_corr": 0.3704431354999542,
+            "s_res": 0.20892834663391113
+          },
+          {
+            "parent": 7517,
+            "child": 5589,
+            "parent_rank": 1,
+            "child_rank": 4,
+            "parent_corr": 0.20335541665554047,
+            "child_corr": 0.1602809727191925,
+            "s_res": 0.1602809727191925
+          },
+          {
+            "parent": 6541,
+            "child": 5805,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.23801977932453156,
+            "child_corr": 0.3353574573993683,
+            "s_res": 0.23801977932453156
+          },
+          {
+            "parent": 5070,
+            "child": 5997,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.16601383686065674,
+            "child_corr": 0.46232426166534424,
+            "s_res": 0.16601383686065674
+          },
+          {
+            "parent": 6510,
+            "child": 6867,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.21568861603736877,
+            "child_corr": 0.20551753044128418,
+            "s_res": 0.20551753044128418
+          },
+          {
+            "parent": 4215,
+            "child": 7135,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.25642460584640503,
+            "child_corr": 0.44334012269973755,
+            "s_res": 0.25642460584640503
+          },
+          {
+            "parent": 4372,
+            "child": 7392,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.3298003375530243,
+            "child_corr": 0.4899972379207611,
+            "s_res": 0.3298003375530243
+          },
+          {
+            "parent": 2271,
+            "child": 7578,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.20516197383403778,
+            "child_corr": 0.3150416612625122,
+            "s_res": 0.20516197383403778
+          },
+          {
+            "parent": 3916,
+            "child": 7578,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3271981179714203,
+            "child_corr": 0.3150416612625122,
+            "s_res": 0.3150416612625122
+          },
+          {
+            "parent": 3562,
+            "child": 7780,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.19741883873939514,
+            "child_corr": 0.3166508078575134,
+            "s_res": 0.19741883873939514
+          },
+          {
+            "parent": 3873,
+            "child": 8067,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2891218960285187,
+            "child_corr": 0.27470964193344116,
+            "s_res": 0.27470964193344116
+          }
+        ]
+      }
+    },
+    {
+      "block": 4,
+      "n_features": 24576,
+      "n_edges": 1737,
+      "n_duplicates": 328,
+      "n_after_pmi": 1737,
+      "poly_frac": 0.10055096418732783,
+      "outdeg_gini": 0.9985825460489228,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 12427,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 5.878127038232639,
+          "parent_label": "questions formatted in a specific way",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 10480,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 4.215706083369071,
+          "parent_label": "elements related to health and wellness services",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 25244,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 4.079041528912511,
+          "parent_label": "keywords and names related to science and gene-related work",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 19815,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.834954866367431,
+          "parent_label": "references to personal relationships and emotional struggles",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 18833,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.401710194152191,
+          "parent_label": "behaviors that indicate defiance or non-compliance in individuals",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 18833,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 5.401710194152191,
+          "parent_label": "behaviors that indicate defiance or non-compliance in individuals",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 18200,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.878127038232639,
+          "parent_label": "phrases related to forensic evidence and physical characteristics",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 18200,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 5.878127038232639,
+          "parent_label": "phrases related to forensic evidence and physical characteristics",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 17801,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 4.212920566247645,
+          "parent_label": "keywords related to innovative technological solutions in medical treatments",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 10143,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 5.938751660049074,
+          "parent_label": "references to official documents or legal proceedings",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 17801,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 4.212920566247645,
+          "parent_label": "keywords related to innovative technological solutions in medical treatments",
+          "child_label": "references to monetary values or financial figures"
+        },
+        {
+          "parent": 10143,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.938751660049074,
+          "parent_label": "references to official documents or legal proceedings",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 17721,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.4924645574206545,
+          "parent_label": "numerical values and counts",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 12427,
+          "child": 24367,
+          "R": 1.0,
+          "pmi": 5.878127038232639,
+          "parent_label": "questions formatted in a specific way",
+          "child_label": "status and sequencing information"
+        },
+        {
+          "parent": 30189,
+          "child": 20071,
+          "R": 1.0,
+          "pmi": 5.060682140995117,
+          "parent_label": "HTML and JavaScript elements related to user input structures",
+          "child_label": "references to monetary values or financial figures"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 8474,
+          "b": 11385,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "numerical data and values in scientific contexts"
+        },
+        {
+          "a": 8474,
+          "b": 11445,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "structured data identifiers and status codes"
+        },
+        {
+          "a": 8474,
+          "b": 14389,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "mathematical symbols and variables related to statistical or probabilistic models"
+        },
+        {
+          "a": 8474,
+          "b": 15823,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "references to physical activity and exercise intensity"
+        },
+        {
+          "a": 8474,
+          "b": 16734,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "expressions of writing style and language use"
+        },
+        {
+          "a": 8474,
+          "b": 16923,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "repeated instances of the word \"that.\""
+        },
+        {
+          "a": 8474,
+          "b": 17768,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "references to the collective perspective or shared experience"
+        },
+        {
+          "a": 8474,
+          "b": 17822,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "characteristics and features that distinguish unique items or phenomena"
+        },
+        {
+          "a": 8474,
+          "b": 20071,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "references to monetary values or financial figures"
+        },
+        {
+          "a": 8474,
+          "b": 20171,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "code comments or documentation style elements"
+        },
+        {
+          "a": 8474,
+          "b": 21864,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "terms related to encryption and cryptography"
+        },
+        {
+          "a": 8474,
+          "b": 22631,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "code structure and variable declarations in programming contexts"
+        },
+        {
+          "a": 8474,
+          "b": 24367,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "status and sequencing information"
+        },
+        {
+          "a": 8474,
+          "b": 25631,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "references or citations in academic writing"
+        },
+        {
+          "a": 8474,
+          "b": 25891,
+          "a_label": "terms related to general applicability and effectiveness",
+          "b_label": "phrases that indicate comparison or contrast between different entities"
+        }
+      ],
+      "sres": {
+        "n_scored": 1677,
+        "n_pass": 55,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 18412,
+            "child": 8233,
+            "parent_rank": 3,
+            "child_rank": 4,
+            "parent_corr": 0.22635748982429504,
+            "child_corr": 0.19272573292255402,
+            "s_res": 0.19272573292255402
+          },
+          {
+            "parent": 28286,
+            "child": 8285,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.23219174146652222,
+            "child_corr": 0.3292004466056824,
+            "s_res": 0.23219174146652222
+          },
+          {
+            "parent": 12427,
+            "child": 8474,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.38859808444976807,
+            "child_corr": 0.19770675897598267,
+            "s_res": 0.19770675897598267
+          },
+          {
+            "parent": 26738,
+            "child": 8674,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.12326356023550034,
+            "child_corr": 0.24011507630348206,
+            "s_res": 0.12326356023550034
+          },
+          {
+            "parent": 29359,
+            "child": 8780,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17870309948921204,
+            "child_corr": 0.31325167417526245,
+            "s_res": 0.17870309948921204
+          },
+          {
+            "parent": 28591,
+            "child": 10000,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.17217451333999634,
+            "child_corr": 0.2707298696041107,
+            "s_res": 0.17217451333999634
+          },
+          {
+            "parent": 25485,
+            "child": 10377,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2922506332397461,
+            "child_corr": 0.30254697799682617,
+            "s_res": 0.2922506332397461
+          },
+          {
+            "parent": 12427,
+            "child": 10405,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.1733485907316208,
+            "child_corr": 0.16676148772239685,
+            "s_res": 0.16676148772239685
+          },
+          {
+            "parent": 13527,
+            "child": 11099,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.22224707901477814,
+            "child_corr": 0.36753588914871216,
+            "s_res": 0.22224707901477814
+          },
+          {
+            "parent": 27658,
+            "child": 11168,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.28448519110679626,
+            "child_corr": 0.331229567527771,
+            "s_res": 0.28448519110679626
+          },
+          {
+            "parent": 12427,
+            "child": 11371,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.23938387632369995,
+            "child_corr": 0.19264110922813416,
+            "s_res": 0.19264110922813416
+          },
+          {
+            "parent": 12427,
+            "child": 11385,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.4307582676410675,
+            "child_corr": 0.18248938024044037,
+            "s_res": 0.18248938024044037
+          },
+          {
+            "parent": 12427,
+            "child": 11445,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.4379306435585022,
+            "child_corr": 0.2284269630908966,
+            "s_res": 0.2284269630908966
+          },
+          {
+            "parent": 15343,
+            "child": 11767,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.1773131787776947,
+            "child_corr": 0.41964471340179443,
+            "s_res": 0.1773131787776947
+          },
+          {
+            "parent": 16686,
+            "child": 11845,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.16882365942001343,
+            "child_corr": 0.27935338020324707,
+            "s_res": 0.16882365942001343
+          },
+          {
+            "parent": 30647,
+            "child": 11904,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.34736430644989014,
+            "child_corr": 0.35939639806747437,
+            "s_res": 0.34736430644989014
+          },
+          {
+            "parent": 8674,
+            "child": 12427,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.17487536370754242,
+            "child_corr": 0.6810176372528076,
+            "s_res": 0.17487536370754242
+          },
+          {
+            "parent": 26738,
+            "child": 12427,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.13385078310966492,
+            "child_corr": 0.6810176372528076,
+            "s_res": 0.13385078310966492
+          },
+          {
+            "parent": 28591,
+            "child": 12737,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.24876731634140015,
+            "child_corr": 0.20753130316734314,
+            "s_res": 0.20753130316734314
+          },
+          {
+            "parent": 12427,
+            "child": 13170,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.18919894099235535,
+            "child_corr": 0.23566246032714844,
+            "s_res": 0.18919894099235535
+          },
+          {
+            "parent": 26738,
+            "child": 14540,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.1820223331451416,
+            "child_corr": 0.22480949759483337,
+            "s_res": 0.1820223331451416
+          },
+          {
+            "parent": 12427,
+            "child": 15823,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.3880728781223297,
+            "child_corr": 0.2571548819541931,
+            "s_res": 0.2571548819541931
+          },
+          {
+            "parent": 12427,
+            "child": 16734,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.37527066469192505,
+            "child_corr": 0.29164624214172363,
+            "s_res": 0.29164624214172363
+          },
+          {
+            "parent": 12427,
+            "child": 17822,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.38170623779296875,
+            "child_corr": 0.37306851148605347,
+            "s_res": 0.37306851148605347
+          },
+          {
+            "parent": 23794,
+            "child": 17989,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3118034303188324,
+            "child_corr": 0.26521992683410645,
+            "s_res": 0.26521992683410645
+          },
+          {
+            "parent": 26931,
+            "child": 18271,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17083533108234406,
+            "child_corr": 0.34976816177368164,
+            "s_res": 0.17083533108234406
+          },
+          {
+            "parent": 15343,
+            "child": 18960,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2297307550907135,
+            "child_corr": 0.3913772404193878,
+            "s_res": 0.2297307550907135
+          },
+          {
+            "parent": 13726,
+            "child": 19046,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.16887831687927246,
+            "child_corr": 0.15899895131587982,
+            "s_res": 0.15899895131587982
+          },
+          {
+            "parent": 28591,
+            "child": 19110,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.1393709033727646,
+            "child_corr": 0.2362917959690094,
+            "s_res": 0.1393709033727646
+          },
+          {
+            "parent": 12427,
+            "child": 20171,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.4883105158805847,
+            "child_corr": 0.18680645525455475,
+            "s_res": 0.18680645525455475
+          },
+          {
+            "parent": 11736,
+            "child": 20260,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.3416379988193512,
+            "child_corr": 0.3571098744869232,
+            "s_res": 0.3416379988193512
+          },
+          {
+            "parent": 22310,
+            "child": 21673,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.21655815839767456,
+            "child_corr": 0.21028771996498108,
+            "s_res": 0.21028771996498108
+          },
+          {
+            "parent": 12427,
+            "child": 21864,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.27878400683403015,
+            "child_corr": 0.18624329566955566,
+            "s_res": 0.18624329566955566
+          },
+          {
+            "parent": 13726,
+            "child": 21864,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.1285909116268158,
+            "child_corr": 0.18624329566955566,
+            "s_res": 0.1285909116268158
+          },
+          {
+            "parent": 12427,
+            "child": 22631,
+            "parent_rank": 0,
+            "child_rank": 4,
+            "parent_corr": 0.456498384475708,
+            "child_corr": 0.14690853655338287,
+            "s_res": 0.14690853655338287
+          },
+          {
+            "parent": 24147,
+            "child": 24030,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.26900938153266907,
+            "child_corr": 0.33048099279403687,
+            "s_res": 0.26900938153266907
+          },
+          {
+            "parent": 12427,
+            "child": 24302,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.1729067862033844,
+            "child_corr": 0.14855939149856567,
+            "s_res": 0.14855939149856567
+          },
+          {
+            "parent": 16693,
+            "child": 24504,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.26693814992904663,
+            "child_corr": 0.30161598324775696,
+            "s_res": 0.26693814992904663
+          },
+          {
+            "parent": 16686,
+            "child": 25216,
+            "parent_rank": 0,
+            "child_rank": 3,
+            "parent_corr": 0.27210280299186707,
+            "child_corr": 0.1885986626148224,
+            "s_res": 0.1885986626148224
+          },
+          {
+            "parent": 12427,
+            "child": 25891,
+            "parent_rank": 0,
+            "child_rank": 3,
+            "parent_corr": 0.4476443827152252,
+            "child_corr": 0.1905667781829834,
+            "s_res": 0.1905667781829834
+          },
+          {
+            "parent": 12427,
+            "child": 26421,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.187608540058136,
+            "child_corr": 0.25061190128326416,
+            "s_res": 0.187608540058136
+          },
+          {
+            "parent": 32236,
+            "child": 27161,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.21434229612350464,
+            "child_corr": 0.3252910375595093,
+            "s_res": 0.21434229612350464
+          },
+          {
+            "parent": 12427,
+            "child": 28593,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3570573925971985,
+            "child_corr": 0.20301419496536255,
+            "s_res": 0.20301419496536255
+          },
+          {
+            "parent": 12427,
+            "child": 28666,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.45216941833496094,
+            "child_corr": 0.30742329359054565,
+            "s_res": 0.30742329359054565
+          },
+          {
+            "parent": 29171,
+            "child": 28762,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.1732349544763565,
+            "child_corr": 0.2862723767757416,
+            "s_res": 0.1732349544763565
+          },
+          {
+            "parent": 12427,
+            "child": 28921,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.3721851706504822,
+            "child_corr": 0.15935589373111725,
+            "s_res": 0.15935589373111725
+          },
+          {
+            "parent": 12427,
+            "child": 29885,
+            "parent_rank": 0,
+            "child_rank": 4,
+            "parent_corr": 0.4320829510688782,
+            "child_corr": 0.14195987582206726,
+            "s_res": 0.14195987582206726
+          },
+          {
+            "parent": 12427,
+            "child": 29910,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.4289131164550781,
+            "child_corr": 0.2662946879863739,
+            "s_res": 0.2662946879863739
+          },
+          {
+            "parent": 12427,
+            "child": 29954,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.39350271224975586,
+            "child_corr": 0.20655480027198792,
+            "s_res": 0.20655480027198792
+          },
+          {
+            "parent": 14882,
+            "child": 30198,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.23391194641590118,
+            "child_corr": 0.3103213906288147,
+            "s_res": 0.23391194641590118
+          },
+          {
+            "parent": 12427,
+            "child": 31157,
+            "parent_rank": 0,
+            "child_rank": 4,
+            "parent_corr": 0.4853981137275696,
+            "child_corr": 0.1255728006362915,
+            "s_res": 0.1255728006362915
+          },
+          {
+            "parent": 12427,
+            "child": 31436,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3599947690963745,
+            "child_corr": 0.22834548354148865,
+            "s_res": 0.22834548354148865
+          },
+          {
+            "parent": 8810,
+            "child": 31870,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.24246443808078766,
+            "child_corr": 0.2854110598564148,
+            "s_res": 0.24246443808078766
+          },
+          {
+            "parent": 28591,
+            "child": 31920,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.3193310499191284,
+            "child_corr": 0.33568239212036133,
+            "s_res": 0.3193310499191284
+          },
+          {
+            "parent": 14882,
+            "child": 32299,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.19643208384513855,
+            "child_corr": 0.3003603518009186,
+            "s_res": 0.19643208384513855
+          }
+        ]
+      }
     }
   ]
 }

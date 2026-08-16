@@ -29,7 +29,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}
 .x0nav details.dens summary:hover{color:#C79BF2;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../../../">SOAR I-6 · metrics</a><a class="" href="../../../outputs/">Results</a><a class="" href="../../../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../../../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../../../outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="on" href="../../../outputs/gemma-2-2b/">gemma-2-2b</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../../../outputs/gemma-2-2b/layer_01/in_block_edges.html">1</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_03/in_block_edges.html">3</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_06/in_block_edges.html">6</a><a class="pill on" href="../../../outputs/gemma-2-2b/layer_12/in_block_edges.html">12</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_18/in_block_edges.html">18</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_24/in_block_edges.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../../outputs/gemma-2-2b/layer_12/metrics_dashboard.html">Dashboard</a><a class="" href="../../../outputs/gemma-2-2b/layer_12/superparent_sankey.html">Superparents</a><a class="" href="../../../outputs/gemma-2-2b/layer_12/in_block_dashboard.html">In-block</a><a class="" href="../../../outputs/gemma-2-2b/layer_12/qualitative_dashboard.html">Qualitative</a><a class="" href="../../../outputs/gemma-2-2b/layer_12/metrics_report.html">Metrics report</a><a class="on" href="../../../outputs/gemma-2-2b/layer_12/in_block_edges.html">In-block report</a><a class="" href="../../../outputs/gemma-2-2b/layer_12/qualitative_check.html">Qualitative report</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../../outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="" href="../../outputs/gemma-2-2b/">gemma-2-2b</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # In-block (same-level) directed edges
 
@@ -39,7 +39,6 @@ Parent→child *within* a block (asymmetric containment); co-extensive pairs are
 
 ## Block B0  (128 features)
 - **417** directed edges, **3** duplicate pairs, 302 survive PMI>0; PolyFrac 99%, Gini 0.951.
-- **S_res: 0/302** edges are genuine refinements (0 children untestable).
 - In-block superparents: 2 (e.g. F44 _technical terminology related to programming …_: 125 children, fires 99%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -57,7 +56,6 @@ _Duplicate pairs (rename/split candidates):_ 27≈75 (mathematical expression…
 
 ## Block B1  (384 features)
 - **77** directed edges, **0** duplicate pairs, 77 survive PMI>0; PolyFrac 9%, Gini 0.995.
-- **S_res: 3/77** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -72,7 +70,6 @@ _Duplicate pairs (rename/split candidates):_ 27≈75 (mathematical expression…
 
 ## Block B2  (1536 features)
 - **268** directed edges, **10** duplicate pairs, 268 survive PMI>0; PolyFrac 21%, Gini 0.963.
-- **S_res: 9/268** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -89,7 +86,6 @@ _Duplicate pairs (rename/split candidates):_ 1001≈1052 (mathematical expressio
 
 ## Block B3  (6144 features)
 - **1844** directed edges, **258** duplicate pairs, 1844 survive PMI>0; PolyFrac 37%, Gini 0.986.
-- **S_res: 28/1839** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -103,20 +99,3 @@ _Duplicate pairs (rename/split candidates):_ 1001≈1052 (mathematical expressio
 | 4609 → 6486 | 0.98 | 2.98 | terms related to magnetic properties and perm… | mathematical symbols and expressions, particu… |
 
 _Duplicate pairs (rename/split candidates):_ 2168≈2209 (structured programming …); 2168≈3519 (structured programming …); 2168≈3541 (structured programming …); 2168≈3661 (structured programming …); 2168≈3671 (structured programming …); 2168≈3788 (structured programming …)
-
-## Block B4  (24576 features)
-- **1737** directed edges, **328** duplicate pairs, 1737 survive PMI>0; PolyFrac 10%, Gini 0.999.
-- **S_res: 55/1677** edges are genuine refinements (0 children untestable).
-
-| parent → child | R | PMI | parent label | child label |
-|---|---|---|---|---|
-| 12427 → 20071 | 1.00 | 5.88 | questions formatted in a specific way | references to monetary values or financial fi… |
-| 10480 → 20071 | 1.00 | 4.22 | elements related to health and wellness servi… | references to monetary values or financial fi… |
-| 25244 → 20071 | 1.00 | 4.08 | keywords and names related to science and gen… | references to monetary values or financial fi… |
-| 19815 → 24367 | 1.00 | 5.83 | references to personal relationships and emot… | status and sequencing information |
-| 18833 → 24367 | 1.00 | 5.40 | behaviors that indicate defiance or non-compl… | status and sequencing information |
-| 18833 → 20071 | 1.00 | 5.40 | behaviors that indicate defiance or non-compl… | references to monetary values or financial fi… |
-| 18200 → 24367 | 1.00 | 5.88 | phrases related to forensic evidence and phys… | status and sequencing information |
-| 18200 → 20071 | 1.00 | 5.88 | phrases related to forensic evidence and phys… | references to monetary values or financial fi… |
-
-_Duplicate pairs (rename/split candidates):_ 8474≈11385 (terms related to genera…); 8474≈11445 (terms related to genera…); 8474≈14389 (terms related to genera…); 8474≈15823 (terms related to genera…); 8474≈16734 (terms related to genera…); 8474≈16923 (terms related to genera…)
