@@ -13,12 +13,13 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
 .x0nav .gh{display:inline-flex;align-items:center;gap:5px;margin-left:auto;}
 .x0nav .gh svg{width:15px;height:15px;fill:currentColor;display:block;}
-.x0nav details.dens{display:flex;flex-wrap:wrap;align-items:center;gap:13px;}
-.x0nav details.dens summary{cursor:pointer;list-style:none;user-select:none;}
+.x0nav details.dens{flex:1 1 100%;}
+.x0nav details.dens summary{cursor:pointer;list-style:none;user-select:none;display:inline-block;}
 .x0nav details.dens summary::-webkit-details-marker{display:none;}
 .x0nav details.dens summary::after{content:"▸";margin-left:4px;}
 .x0nav details.dens[open] summary::after{content:"▾";}
 .x0nav details.dens summary:hover{color:#7C22CE;}
+.x0nav .drow{display:flex;flex-wrap:wrap;align-items:center;gap:13px;padding-top:9px;}
 @media (prefers-color-scheme:dark){
 .x0nav{background:#141414;border-bottom-color:#2E2E2E;}
 .x0nav .row+.row{border-top-color:#242424;}

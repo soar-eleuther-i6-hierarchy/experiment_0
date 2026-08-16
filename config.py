@@ -394,12 +394,13 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
 .x0nav .gh{display:inline-flex;align-items:center;gap:5px;margin-left:auto;}
 .x0nav .gh svg{width:15px;height:15px;fill:currentColor;display:block;}
-.x0nav details.dens{display:flex;flex-wrap:wrap;align-items:center;gap:13px;}
-.x0nav details.dens summary{cursor:pointer;list-style:none;user-select:none;}
+.x0nav details.dens{flex:1 1 100%;}
+.x0nav details.dens summary{cursor:pointer;list-style:none;user-select:none;display:inline-block;}
 .x0nav details.dens summary::-webkit-details-marker{display:none;}
 .x0nav details.dens summary::after{content:"▸";margin-left:4px;}
 .x0nav details.dens[open] summary::after{content:"▾";}
 .x0nav details.dens summary:hover{color:#7C22CE;}
+.x0nav .drow{display:flex;flex-wrap:wrap;align-items:center;gap:13px;padding-top:9px;}
 @media (prefers-color-scheme:dark){
 .x0nav{background:#141414;border-bottom-color:#2E2E2E;}
 .x0nav .row+.row{border-top-color:#242424;}
@@ -506,8 +507,12 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     # and it starts open exactly when the reader is inside a sweep run, so the
     # lit pill that answers "where am I" is never hidden.
     if runs:
+        # The flex row is an inner <div>, never <details> itself: Safari does
+        # not lay out details' slotted content as flex children, and the pills
+        # end up overlapping the Page group. A plain block child avoids the
+        # slot entirely and renders identically everywhere.
         third = [f'<details class="dens"{" open" if in_run else ""}>',
-                 '<summary class="lbl">Density</summary>']
+                 '<summary class="lbl">Density</summary>', '<div class="drow">']
         for dirname, label in runs:
             on = " on" if dirname == here else ""
             third.append(
@@ -520,7 +525,7 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
                 third.append(
                     f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
                 )
-        third.append('</details>')
+        third.append('</div></details>')
         rows.append('<div class="row">' + "".join(third) + "</div>")
 
     return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
