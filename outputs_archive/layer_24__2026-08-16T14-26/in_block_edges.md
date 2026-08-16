@@ -39,7 +39,6 @@ Parent→child *within* a block (asymmetric containment); co-extensive pairs are
 
 ## Block B0  (128 features)
 - **640** directed edges, **13** duplicate pairs, 411 survive PMI>0; PolyFrac 100%, Gini 0.944.
-- **S_res: 4/411** edges are genuine refinements (0 children untestable).
 - In-block superparents: 6 (e.g. F32 _numbers within a document_: 123 children, fires 99%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -57,7 +56,6 @@ _Duplicate pairs (rename/split candidates):_ 19≈32 (Japanese names or media…
 
 ## Block B1  (384 features)
 - **26** directed edges, **0** duplicate pairs, 26 survive PMI>0; PolyFrac 14%, Gini 0.980.
-- **S_res: 2/26** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -72,7 +70,6 @@ _Duplicate pairs (rename/split candidates):_ 19≈32 (Japanese names or media…
 
 ## Block B2  (1536 features)
 - **1155** directed edges, **6** duplicate pairs, 859 survive PMI>0; PolyFrac 7%, Gini 0.990.
-- **S_res: 24/856** edges are genuine refinements (0 children untestable).
 - In-block superparents: 1 (e.g. F2042 _words related to court cases, delays in proje…_: 934 children, fires 59%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -90,7 +87,6 @@ _Duplicate pairs (rename/split candidates):_ 582≈1831 (punctuation and discour
 
 ## Block B3  (6144 features)
 - **969** directed edges, **54** duplicate pairs, 969 survive PMI>0; PolyFrac 28%, Gini 0.980.
-- **S_res: 113/946** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -104,20 +100,3 @@ _Duplicate pairs (rename/split candidates):_ 582≈1831 (punctuation and discour
 | 6882 → 3200 | 0.92 | 4.99 | hexadecimal color codes and date formats | sentences that describe the authors of a study |
 
 _Duplicate pairs (rename/split candidates):_ 2481≈2758 (text related to car spe…); 2481≈6767 (text related to car spe…); 2572≈5553 (words related to softwa…); 2597≈3113 (the description of base…); 2597≈3308 (the description of base…); 2597≈3411 (the description of base…)
-
-## Block B4  (24576 features)
-- **1089** directed edges, **720** duplicate pairs, 1089 survive PMI>0; PolyFrac 34%, Gini 0.998.
-- **S_res: 30/1026** edges are genuine refinements (0 children untestable).
-
-| parent → child | R | PMI | parent label | child label |
-|---|---|---|---|---|
-| 24968 → 17391 | 1.00 | 5.81 | words with the character sequences "wir", "wi… | numbers inside parenthesis |
-| 26474 → 17391 | 1.00 | 5.92 | legal jargon related to court and legal proce… | numbers inside parenthesis |
-| 11705 → 17414 | 1.00 | 2.54 | words and abbreviations used in scientific or… | words and phrases related to the Mormon and Q… |
-| 18618 → 17391 | 1.00 | 5.51 | academic writing, especially regarding bioche… | numbers inside parenthesis |
-| 18618 → 17414 | 1.00 | 5.51 | academic writing, especially regarding bioche… | words and phrases related to the Mormon and Q… |
-| 29037 → 17391 | 1.00 | 5.94 | capital letters and abbreviations, often rela… | numbers inside parenthesis |
-| 29037 → 17414 | 1.00 | 5.94 | capital letters and abbreviations, often rela… | words and phrases related to the Mormon and Q… |
-| 19278 → 17391 | 1.00 | 5.95 | the keyword "in" at the beginning of a senten… | numbers inside parenthesis |
-
-_Duplicate pairs (rename/split candidates):_ 8275≈8485 (references to figures a…); 8275≈13049 (references to figures a…); 8275≈14226 (references to figures a…); 8275≈14854 (references to figures a…); 8275≈15402 (references to figures a…); 8275≈15510 (references to figures a…)
