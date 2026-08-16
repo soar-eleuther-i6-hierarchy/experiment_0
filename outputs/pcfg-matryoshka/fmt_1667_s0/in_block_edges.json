@@ -1,0 +1,505 @@
+{
+  "total_tokens": 598000,
+  "n_docs": 2000,
+  "config": {
+    "layer": 2,
+    "sae_release": "pcfg-matryoshka",
+    "sae_source": "pcfg",
+    "sae_id": "matryoshka_hook_resid_post_L2",
+    "matryoshka_steps": [
+      224,
+      448,
+      672,
+      896,
+      1120,
+      1344,
+      1568,
+      1792
+    ],
+    "block_ranges": [
+      [
+        0,
+        224
+      ],
+      [
+        224,
+        448
+      ],
+      [
+        448,
+        672
+      ],
+      [
+        672,
+        896
+      ],
+      [
+        896,
+        1120
+      ],
+      [
+        1120,
+        1344
+      ],
+      [
+        1344,
+        1568
+      ],
+      [
+        1568,
+        1792
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 512,
+    "sibling_blocks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "source": "pcfg",
+    "run_dir": "data/fmt/3915659d6f6c",
+    "n_docs": 2000,
+    "grammar": {
+      "assertion_prob": 0.5,
+      "document_repetitions": 5,
+      "formatting": {
+        "document_delim": false,
+        "eos": true,
+        "paragraph_delim": false,
+        "section_delim": false
+      },
+      "max_connectors": 2,
+      "num_documents": 104167,
+      "paragraphs_per_section": 8,
+      "sections": 4,
+      "seed": 0,
+      "sentences_per_paragraph": 2,
+      "zipf_exponent": 1.0
+    },
+    "base_model": {
+      "n_layers": 4,
+      "d_model": 448,
+      "n_heads": 4,
+      "d_mlp": 1792,
+      "d_head": null,
+      "context_window": 512,
+      "vocab_size": 1004,
+      "act_fn": "gelu",
+      "normalization_type": "LNPre",
+      "seed": 0
+    },
+    "sae_cfg": {
+      "d_in": 448,
+      "d_sae": 1792,
+      "lr": 0.0003,
+      "l1_coefficient": 0.001,
+      "activation_function": "batch_topk",
+      "k": 32,
+      "threshold_beta": 0.999,
+      "threshold_start_step": 1000,
+      "device": "cuda",
+      "dtype": "float32",
+      "wandb_project": "pcfg-sae-sweep",
+      "wandb_run_id": "sae-formatting_sweep-3915659d6f6c-L2-matryoshka",
+      "target_l0": null,
+      "adaptive_l1_lr": 0.01,
+      "use_auxk": true,
+      "auxk_weight": 0.03125,
+      "k_aux": 512,
+      "latent_sizes": [
+        224,
+        448,
+        672,
+        896,
+        1120,
+        1344,
+        1568,
+        1792
+      ],
+      "pareto_sampling": false,
+      "num_sampled_prefixes": 10,
+      "pareto_alpha": 0.5,
+      "permute_latents": false,
+      "adaptive_sparsity": false,
+      "sparsity_type": "l1",
+      "starting_sparsity_loss_scale": 1.2,
+      "min_prefix_length": 1,
+      "architecture": "MatryoshkaSAE"
+    }
+  },
+  "blocks": [
+    {
+      "block": 0,
+      "n_features": 224,
+      "n_edges": 148,
+      "n_duplicates": 5,
+      "n_after_pmi": 148,
+      "poly_frac": 0.18,
+      "outdeg_gini": 0.9672417953667953,
+      "n_superparents": 1,
+      "superparents": [
+        {
+          "parent_local": 13,
+          "outdeg": 82,
+          "outdeg_frac": 0.36607142857142855,
+          "fire_frac": 0.38870234113712376,
+          "strict": true,
+          "global": 13,
+          "label": "feature 13"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 135,
+          "child": 57,
+          "R": 1.0,
+          "pmi": 1.3676465744397153,
+          "parent_label": "feature 135",
+          "child_label": "feature 57"
+        },
+        {
+          "parent": 68,
+          "child": 222,
+          "R": 0.9975776325005837,
+          "pmi": 1.5014781926756826,
+          "parent_label": "feature 68",
+          "child_label": "feature 222"
+        },
+        {
+          "parent": 29,
+          "child": 176,
+          "R": 0.9950267862286142,
+          "pmi": 1.4536564920143435,
+          "parent_label": "feature 29",
+          "child_label": "feature 176"
+        },
+        {
+          "parent": 29,
+          "child": 164,
+          "R": 0.993658994833255,
+          "pmi": 1.4522809186341115,
+          "parent_label": "feature 29",
+          "child_label": "feature 164"
+        },
+        {
+          "parent": 80,
+          "child": 222,
+          "R": 0.9934625262666356,
+          "pmi": 1.409395034510055,
+          "parent_label": "feature 80",
+          "child_label": "feature 222"
+        },
+        {
+          "parent": 135,
+          "child": 12,
+          "R": 0.992264522978917,
+          "pmi": 1.359881023424745,
+          "parent_label": "feature 135",
+          "child_label": "feature 12"
+        },
+        {
+          "parent": 176,
+          "child": 164,
+          "R": 0.9899013621418506,
+          "pmi": 2.4306789824460737,
+          "parent_label": "feature 176",
+          "child_label": "feature 164"
+        },
+        {
+          "parent": 13,
+          "child": 220,
+          "R": 0.9845424171435155,
+          "pmi": 0.9293631212790694,
+          "parent_label": "feature 13",
+          "child_label": "feature 220"
+        },
+        {
+          "parent": 80,
+          "child": 176,
+          "R": 0.9834674244897176,
+          "pmi": 1.3992832073927088,
+          "parent_label": "feature 80",
+          "child_label": "feature 176"
+        },
+        {
+          "parent": 80,
+          "child": 164,
+          "R": 0.9814466885861907,
+          "pmi": 1.397226388112442,
+          "parent_label": "feature 80",
+          "child_label": "feature 164"
+        },
+        {
+          "parent": 68,
+          "child": 206,
+          "R": 0.9793266951161688,
+          "pmi": 1.483013509612445,
+          "parent_label": "feature 68",
+          "child_label": "feature 206"
+        },
+        {
+          "parent": 135,
+          "child": 156,
+          "R": 0.9640069384215091,
+          "pmi": 1.3309897875749075,
+          "parent_label": "feature 135",
+          "child_label": "feature 156"
+        },
+        {
+          "parent": 135,
+          "child": 162,
+          "R": 0.9584733723710197,
+          "pmi": 1.325233077036807,
+          "parent_label": "feature 135",
+          "child_label": "feature 162"
+        },
+        {
+          "parent": 138,
+          "child": 57,
+          "R": 0.9583333333333334,
+          "pmi": 1.0536191827435395,
+          "parent_label": "feature 138",
+          "child_label": "feature 57"
+        },
+        {
+          "parent": 80,
+          "child": 21,
+          "R": 0.9575288087254789,
+          "pmi": 1.3725545001797508,
+          "parent_label": "feature 80",
+          "child_label": "feature 21"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 13,
+          "b": 50,
+          "a_label": "feature 13",
+          "b_label": "feature 50"
+        },
+        {
+          "a": 29,
+          "b": 68,
+          "a_label": "feature 29",
+          "b_label": "feature 68"
+        },
+        {
+          "a": 29,
+          "b": 80,
+          "a_label": "feature 29",
+          "b_label": "feature 80"
+        },
+        {
+          "a": 50,
+          "b": 220,
+          "a_label": "feature 50",
+          "b_label": "feature 220"
+        },
+        {
+          "a": 68,
+          "b": 80,
+          "a_label": "feature 68",
+          "b_label": "feature 80"
+        }
+      ],
+      "sres": {
+        "n_scored": 139,
+        "n_pass": 3,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 165,
+            "child": 105,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.3488391935825348,
+            "child_corr": 0.9653711318969727,
+            "s_res": 0.3488391935825348
+          },
+          {
+            "parent": 206,
+            "child": 105,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.2868138551712036,
+            "child_corr": 0.9653711318969727,
+            "s_res": 0.2868138551712036
+          },
+          {
+            "parent": 222,
+            "child": 206,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.4304467737674713,
+            "child_corr": 1.1262224912643433,
+            "s_res": 0.4304467737674713
+          }
+        ]
+      }
+    },
+    {
+      "block": 1,
+      "n_features": 224,
+      "n_edges": 2,
+      "n_duplicates": 0,
+      "n_after_pmi": 2,
+      "poly_frac": 1.0,
+      "outdeg_gini": 0.9910714285714284,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 422,
+          "child": 342,
+          "R": 0.6305418719211823,
+          "pmi": 1.8112013725043388,
+          "parent_label": "feature 422",
+          "child_label": "feature 342"
+        },
+        {
+          "parent": 306,
+          "child": 342,
+          "R": 0.562807881773399,
+          "pmi": 1.814098694458642,
+          "parent_label": "feature 306",
+          "child_label": "feature 342"
+        }
+      ],
+      "duplicate_examples": [],
+      "sres": {
+        "n_scored": 2,
+        "n_pass": 1,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 306,
+            "child": 342,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2136286497116089,
+            "child_corr": 0.528268039226532,
+            "s_res": 0.2136286497116089
+          }
+        ]
+      }
+    },
+    {
+      "block": 2,
+      "n_features": 224,
+      "n_edges": 1,
+      "n_duplicates": 0,
+      "n_after_pmi": 1,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.9955357142857142,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 509,
+          "child": 600,
+          "R": 0.6762589928057554,
+          "pmi": 2.3166118865029306,
+          "parent_label": "feature 509",
+          "child_label": "feature 600"
+        }
+      ],
+      "duplicate_examples": [],
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 1,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 509,
+            "child": 600,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.23928138613700867,
+            "child_corr": 0.42321494221687317,
+            "s_res": 0.23928138613700867
+          }
+        ]
+      }
+    },
+    {
+      "block": 3,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 4,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 5,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 6,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 7,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    }
+  ]
+}

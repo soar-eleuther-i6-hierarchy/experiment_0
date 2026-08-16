@@ -150,6 +150,26 @@ def render_source(source: str | None = None) -> str:
                           for f, label in cfg["pages"] if (d / f).exists()
                           or (d / f.replace(".html", ".md")).exists())
         L.append(f"| [**{layer}**](layer_{layer:02d}/) | {pages or '_not graded yet_'} |")
+
+    runs = cfg.get("runs", ())
+    if runs:
+        L += [
+            "",
+            "## Formatting sweep",
+            "",
+            "Exp 2, axis (b): four formatting densities × three seeds, each its own run "
+            "— a separate base model and SAE, all trained and graded at layer 2. The "
+            "density is the fraction of delimiter tokens the grammar emits; the seed row "
+            "with the bare hash on the compute node is s0.",
+            "",
+            "| Run | Pages |", "| --- | --- |",
+        ]
+        for dirname, label in runs:
+            d = src_dir / dirname
+            pages = ", ".join(f"[{p_label.lower()}]({dirname}/{f})"
+                              for f, p_label in cfg["pages"] if (d / f).exists()
+                              or (d / f.replace(".html", ".md")).exists())
+            L.append(f"| [**{label}**]({dirname}/) | {pages or '_not graded yet_'} |")
     if source == C.SOURCE_NAME:
         L += [
             "",

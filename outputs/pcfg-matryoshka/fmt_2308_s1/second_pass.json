@@ -1,0 +1,614 @@
+{
+  "0->1": {
+    "kept_union": {
+      "r_supp_kept_mean": 0.07421066201197649,
+      "r_mass_kept_mean": 0.1142512901758725,
+      "per_parent": [
+        {
+          "parent_global": 5,
+          "r_supp_kept": 0.09924433249370278,
+          "r_mass_kept": 0.1057107403853288
+        },
+        {
+          "parent_global": 11,
+          "r_supp_kept": 0.1408170727653492,
+          "r_mass_kept": 0.14964817646184014
+        },
+        {
+          "parent_global": 14,
+          "r_supp_kept": 0.01629836617148071,
+          "r_mass_kept": 0.08020392230874923
+        },
+        {
+          "parent_global": 29,
+          "r_supp_kept": 0.08190705457534568,
+          "r_mass_kept": 0.10445436511899747
+        },
+        {
+          "parent_global": 46,
+          "r_supp_kept": 0.11309451033133634,
+          "r_mass_kept": 0.5427507632120548
+        },
+        {
+          "parent_global": 48,
+          "r_supp_kept": 0.10083041151503967,
+          "r_mass_kept": 0.33192817229768284
+        },
+        {
+          "parent_global": 59,
+          "r_supp_kept": 0.010181967148124166,
+          "r_mass_kept": 0.01578230014630139
+        },
+        {
+          "parent_global": 68,
+          "r_supp_kept": 0.14266756483664533,
+          "r_mass_kept": 0.15340454343521148
+        },
+        {
+          "parent_global": 70,
+          "r_supp_kept": 0.0748587570621469,
+          "r_mass_kept": 0.09742552587504773
+        },
+        {
+          "parent_global": 74,
+          "r_supp_kept": 0.06053749281302743,
+          "r_mass_kept": 0.061706667345779447
+        },
+        {
+          "parent_global": 89,
+          "r_supp_kept": 0.18943092606335196,
+          "r_mass_kept": 0.19845788993618765
+        },
+        {
+          "parent_global": 107,
+          "r_supp_kept": 0.004632485596228831,
+          "r_mass_kept": 0.009199555545566757
+        },
+        {
+          "parent_global": 111,
+          "r_supp_kept": 0.0035421327367636092,
+          "r_mass_kept": 0.0046274740851758285
+        },
+        {
+          "parent_global": 112,
+          "r_supp_kept": 0.12327799364182268,
+          "r_mass_kept": 0.09263680562879625
+        },
+        {
+          "parent_global": 124,
+          "r_supp_kept": 0.1061483674432574,
+          "r_mass_kept": 0.069499421691933
+        },
+        {
+          "parent_global": 135,
+          "r_supp_kept": 0.003867685812804007,
+          "r_mass_kept": 0.005376914397106552
+        },
+        {
+          "parent_global": 187,
+          "r_supp_kept": 0.0295556163883566,
+          "r_mass_kept": 0.004320309849509959
+        },
+        {
+          "parent_global": 192,
+          "r_supp_kept": 0.07784340777787359,
+          "r_mass_kept": 0.13752100625927524
+        },
+        {
+          "parent_global": 200,
+          "r_supp_kept": 0.10190256485328192,
+          "r_mass_kept": 0.1155253400788878
+        },
+        {
+          "parent_global": 208,
+          "r_supp_kept": 0.003574530213590767,
+          "r_mass_kept": 0.004845909458017355
+        }
+      ]
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 27,
+      "n_probed_children": 5,
+      "n_untestable_children": 0,
+      "n_edges_scored": 27,
+      "n_pass": 4,
+      "frac_pass": 0.14814814814814814,
+      "edges": [
+        {
+          "parent": 5,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 599,
+          "child_rank": 0,
+          "parent_corr": 0.02014242112636566,
+          "child_corr": 1.099661111831665,
+          "s_res": 0.02014242112636566
+        },
+        {
+          "parent": 11,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 142,
+          "child_rank": 0,
+          "parent_corr": 0.07838071882724762,
+          "child_corr": 1.099661111831665,
+          "s_res": 0.07838071882724762
+        },
+        {
+          "parent": 68,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 1388,
+          "child_rank": 0,
+          "parent_corr": -0.04201159626245499,
+          "child_corr": 1.099661111831665,
+          "s_res": -0.04201159626245499
+        },
+        {
+          "parent": 89,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 519,
+          "child_rank": 0,
+          "parent_corr": 0.02623595856130123,
+          "child_corr": 1.099661111831665,
+          "s_res": 0.02623595856130123
+        },
+        {
+          "parent": 112,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 789,
+          "child_rank": 0,
+          "parent_corr": 0.0054933540523052216,
+          "child_corr": 1.099661111831665,
+          "s_res": 0.0054933540523052216
+        },
+        {
+          "parent": 200,
+          "child": 235,
+          "pass": false,
+          "parent_rank": 616,
+          "child_rank": 0,
+          "parent_corr": 0.018924377858638763,
+          "child_corr": 1.099661111831665,
+          "s_res": 0.018924377858638763
+        },
+        {
+          "parent": 14,
+          "child": 253,
+          "pass": false,
+          "parent_rank": 1784,
+          "child_rank": 0,
+          "parent_corr": -0.1694328933954239,
+          "child_corr": 0.8000107407569885,
+          "s_res": -0.1694328933954239
+        },
+        {
+          "parent": 46,
+          "child": 253,
+          "pass": true,
+          "parent_rank": 1,
+          "child_rank": 0,
+          "parent_corr": 0.43106141686439514,
+          "child_corr": 0.8000107407569885,
+          "s_res": 0.43106141686439514
+        },
+        {
+          "parent": 48,
+          "child": 253,
+          "pass": true,
+          "parent_rank": 3,
+          "child_rank": 0,
+          "parent_corr": 0.25789666175842285,
+          "child_corr": 0.8000107407569885,
+          "s_res": 0.25789666175842285
+        },
+        {
+          "parent": 59,
+          "child": 253,
+          "pass": false,
+          "parent_rank": 1305,
+          "child_rank": 0,
+          "parent_corr": -0.03737947344779968,
+          "child_corr": 0.8000107407569885,
+          "s_res": -0.03737947344779968
+        },
+        {
+          "parent": 124,
+          "child": 253,
+          "pass": false,
+          "parent_rank": 484,
+          "child_rank": 0,
+          "parent_corr": 0.034254103899002075,
+          "child_corr": 0.8000107407569885,
+          "s_res": 0.034254103899002075
+        },
+        {
+          "parent": 107,
+          "child": 288,
+          "pass": true,
+          "parent_rank": 3,
+          "child_rank": 0,
+          "parent_corr": 0.23869383335113525,
+          "child_corr": 0.5825716257095337,
+          "s_res": 0.23869383335113525
+        },
+        {
+          "parent": 111,
+          "child": 288,
+          "pass": false,
+          "parent_rank": 49,
+          "child_rank": 0,
+          "parent_corr": 0.12189085781574249,
+          "child_corr": 0.5825716257095337,
+          "s_res": 0.12189085781574249
+        },
+        {
+          "parent": 135,
+          "child": 288,
+          "pass": false,
+          "parent_rank": 10,
+          "child_rank": 0,
+          "parent_corr": 0.17153720557689667,
+          "child_corr": 0.5825716257095337,
+          "s_res": 0.17153720557689667
+        },
+        {
+          "parent": 208,
+          "child": 288,
+          "pass": false,
+          "parent_rank": 283,
+          "child_rank": 0,
+          "parent_corr": 0.06728509068489075,
+          "child_corr": 0.5825716257095337,
+          "s_res": 0.06728509068489075
+        },
+        {
+          "parent": 11,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 1448,
+          "child_rank": 0,
+          "parent_corr": -0.048314012587070465,
+          "child_corr": 1.0328549146652222,
+          "s_res": -0.048314012587070465
+        },
+        {
+          "parent": 29,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 99,
+          "child_rank": 0,
+          "parent_corr": 0.09008442610502243,
+          "child_corr": 1.0328549146652222,
+          "s_res": 0.09008442610502243
+        },
+        {
+          "parent": 68,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 178,
+          "child_rank": 0,
+          "parent_corr": 0.07037435472011566,
+          "child_corr": 1.0328549146652222,
+          "s_res": 0.07037435472011566
+        },
+        {
+          "parent": 70,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 232,
+          "child_rank": 0,
+          "parent_corr": 0.06214607134461403,
+          "child_corr": 1.0328549146652222,
+          "s_res": 0.06214607134461403
+        },
+        {
+          "parent": 74,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 223,
+          "child_rank": 0,
+          "parent_corr": 0.06285209953784943,
+          "child_corr": 1.0328549146652222,
+          "s_res": 0.06285209953784943
+        },
+        {
+          "parent": 187,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 1716,
+          "child_rank": 0,
+          "parent_corr": -0.10773265361785889,
+          "child_corr": 1.0328549146652222,
+          "s_res": -0.10773265361785889
+        },
+        {
+          "parent": 200,
+          "child": 307,
+          "pass": false,
+          "parent_rank": 1127,
+          "child_rank": 0,
+          "parent_corr": -0.01608523167669773,
+          "child_corr": 1.0328549146652222,
+          "s_res": -0.01608523167669773
+        },
+        {
+          "parent": 11,
+          "child": 337,
+          "pass": false,
+          "parent_rank": 836,
+          "child_rank": 0,
+          "parent_corr": -0.0002283696085214615,
+          "child_corr": 0.9335553646087646,
+          "s_res": -0.0002283696085214615
+        },
+        {
+          "parent": 68,
+          "child": 337,
+          "pass": false,
+          "parent_rank": 1776,
+          "child_rank": 0,
+          "parent_corr": -0.18580898642539978,
+          "child_corr": 0.9335553646087646,
+          "s_res": -0.18580898642539978
+        },
+        {
+          "parent": 89,
+          "child": 337,
+          "pass": false,
+          "parent_rank": 373,
+          "child_rank": 0,
+          "parent_corr": 0.03462143987417221,
+          "child_corr": 0.9335553646087646,
+          "s_res": 0.03462143987417221
+        },
+        {
+          "parent": 192,
+          "child": 337,
+          "pass": true,
+          "parent_rank": 4,
+          "child_rank": 0,
+          "parent_corr": 0.19404542446136475,
+          "child_corr": 0.9335553646087646,
+          "s_res": 0.19404542446136475
+        },
+        {
+          "parent": 200,
+          "child": 337,
+          "pass": false,
+          "parent_rank": 39,
+          "child_rank": 0,
+          "parent_corr": 0.10804511606693268,
+          "child_corr": 0.9335553646087646,
+          "s_res": 0.10804511606693268
+        }
+      ]
+    }
+  },
+  "1->2": {
+    "kept_union": {
+      "r_supp_kept_mean": 0.009314813363350011,
+      "r_mass_kept_mean": 0.013688276886858053,
+      "per_parent": [
+        {
+          "parent_global": 239,
+          "r_supp_kept": 0.01078488131668183,
+          "r_mass_kept": 0.013182109407251829
+        },
+        {
+          "parent_global": 342,
+          "r_supp_kept": 0.007584934750289081,
+          "r_mass_kept": 0.009174486162214519
+        },
+        {
+          "parent_global": 375,
+          "r_supp_kept": 0.009552757273122015,
+          "r_mass_kept": 0.022612132089199453
+        },
+        {
+          "parent_global": 397,
+          "r_supp_kept": 0.009023440370343156,
+          "r_mass_kept": 0.00959740765609952
+        },
+        {
+          "parent_global": 405,
+          "r_supp_kept": 0.009628053106313976,
+          "r_mass_kept": 0.01387524911952495
+        }
+      ]
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 5,
+      "n_probed_children": 1,
+      "n_untestable_children": 0,
+      "n_edges_scored": 5,
+      "n_pass": 1,
+      "frac_pass": 0.2,
+      "edges": [
+        {
+          "parent": 239,
+          "child": 522,
+          "pass": false,
+          "parent_rank": 6,
+          "child_rank": 1,
+          "parent_corr": 0.17064061760902405,
+          "child_corr": 0.723910391330719,
+          "s_res": 0.17064061760902405
+        },
+        {
+          "parent": 342,
+          "child": 522,
+          "pass": false,
+          "parent_rank": 9,
+          "child_rank": 1,
+          "parent_corr": 0.16449281573295593,
+          "child_corr": 0.723910391330719,
+          "s_res": 0.16449281573295593
+        },
+        {
+          "parent": 375,
+          "child": 522,
+          "pass": true,
+          "parent_rank": 3,
+          "child_rank": 1,
+          "parent_corr": 0.21783623099327087,
+          "child_corr": 0.723910391330719,
+          "s_res": 0.21783623099327087
+        },
+        {
+          "parent": 397,
+          "child": 522,
+          "pass": false,
+          "parent_rank": 8,
+          "child_rank": 1,
+          "parent_corr": 0.16494625806808472,
+          "child_corr": 0.723910391330719,
+          "s_res": 0.16494625806808472
+        },
+        {
+          "parent": 405,
+          "child": 522,
+          "pass": false,
+          "parent_rank": 113,
+          "child_rank": 1,
+          "parent_corr": 0.09052258729934692,
+          "child_corr": 0.723910391330719,
+          "s_res": 0.09052258729934692
+        }
+      ]
+    }
+  },
+  "2->3": {
+    "kept_union": {
+      "r_supp_kept_mean": 0.3003964623360781,
+      "r_mass_kept_mean": 0.3797447828527922,
+      "per_parent": [
+        {
+          "parent_global": 578,
+          "r_supp_kept": 0.3003964623360781,
+          "r_mass_kept": 0.3797447828527922
+        }
+      ]
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 1,
+      "n_probed_children": 1,
+      "n_untestable_children": 0,
+      "n_edges_scored": 1,
+      "n_pass": 1,
+      "frac_pass": 1.0,
+      "edges": [
+        {
+          "parent": 578,
+          "child": 881,
+          "pass": true,
+          "parent_rank": 3,
+          "child_rank": 0,
+          "parent_corr": 0.42634904384613037,
+          "child_corr": 0.6550430059432983,
+          "s_res": 0.42634904384613037
+        }
+      ]
+    }
+  },
+  "3->4": {
+    "kept_union": {
+      "r_supp_kept_mean": null,
+      "r_mass_kept_mean": null,
+      "per_parent": []
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 0,
+      "n_probed_children": 0,
+      "n_untestable_children": 0,
+      "n_edges_scored": 0,
+      "n_pass": 0,
+      "frac_pass": 0.0,
+      "edges": []
+    }
+  },
+  "4->5": {
+    "kept_union": {
+      "r_supp_kept_mean": 0.4012924480486569,
+      "r_mass_kept_mean": 0.6215995931136429,
+      "per_parent": [
+        {
+          "parent_global": 1031,
+          "r_supp_kept": 0.4012924480486569,
+          "r_mass_kept": 0.6215995931136429
+        }
+      ]
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 2,
+      "n_probed_children": 2,
+      "n_untestable_children": 0,
+      "n_edges_scored": 2,
+      "n_pass": 0,
+      "frac_pass": 0.0,
+      "edges": [
+        {
+          "parent": 1031,
+          "child": 1252,
+          "pass": false,
+          "parent_rank": 7,
+          "child_rank": 0,
+          "parent_corr": 0.161405548453331,
+          "child_corr": 0.8066062927246094,
+          "s_res": 0.161405548453331
+        },
+        {
+          "parent": 1031,
+          "child": 1292,
+          "pass": false,
+          "parent_rank": 17,
+          "child_rank": 4,
+          "parent_corr": 0.15052315592765808,
+          "child_corr": 0.3179720342159271,
+          "s_res": 0.15052315592765808
+        }
+      ]
+    }
+  },
+  "5->6": {
+    "kept_union": {
+      "r_supp_kept_mean": null,
+      "r_mass_kept_mean": null,
+      "per_parent": []
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 0,
+      "n_probed_children": 0,
+      "n_untestable_children": 0,
+      "n_edges_scored": 0,
+      "n_pass": 0,
+      "frac_pass": 0.0,
+      "edges": []
+    }
+  },
+  "6->7": {
+    "kept_union": {
+      "r_supp_kept_mean": null,
+      "r_mass_kept_mean": null,
+      "per_parent": []
+    },
+    "superparent_conditioned_redundancy": [],
+    "sres": {
+      "n_shortlist_edges": 0,
+      "n_probed_children": 0,
+      "n_untestable_children": 0,
+      "n_edges_scored": 0,
+      "n_pass": 0,
+      "frac_pass": 0.0,
+      "edges": []
+    }
+  }
+}

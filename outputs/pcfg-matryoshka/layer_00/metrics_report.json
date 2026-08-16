@@ -1,0 +1,1581 @@
+{
+  "config": {
+    "layer": 0,
+    "sae_release": "pcfg-matryoshka",
+    "sae_source": "pcfg",
+    "sae_id": "matryoshka_hook_resid_post_L0",
+    "matryoshka_steps": [
+      224,
+      448,
+      672,
+      896,
+      1120,
+      1344,
+      1568,
+      1792
+    ],
+    "block_ranges": [
+      [
+        0,
+        224
+      ],
+      [
+        224,
+        448
+      ],
+      [
+        448,
+        672
+      ],
+      [
+        672,
+        896
+      ],
+      [
+        896,
+        1120
+      ],
+      [
+        1120,
+        1344
+      ],
+      [
+        1344,
+        1568
+      ],
+      [
+        1568,
+        1792
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 512,
+    "sibling_blocks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "source": "pcfg",
+    "run_dir": "data/pcfg-run",
+    "n_docs": 3400,
+    "grammar": {
+      "assertion_prob": 0.5,
+      "document_repetitions": 5,
+      "formatting": {
+        "document_delim": false,
+        "eos": true,
+        "paragraph_delim": false,
+        "section_delim": false
+      },
+      "max_connectors": 2,
+      "num_documents": 104167,
+      "paragraphs_per_section": 8,
+      "sections": 4,
+      "seed": 0,
+      "sentences_per_paragraph": 2,
+      "zipf_exponent": 1.5
+    },
+    "base_model": {
+      "n_layers": 4,
+      "d_model": 448,
+      "n_heads": 4,
+      "d_mlp": 1792,
+      "d_head": null,
+      "context_window": 512,
+      "vocab_size": 1004,
+      "act_fn": "gelu",
+      "normalization_type": "LNPre",
+      "seed": 1
+    },
+    "sae_cfg": {
+      "d_in": 448,
+      "d_sae": 1792,
+      "lr": 0.0003,
+      "l1_coefficient": 0.001,
+      "activation_function": "batch_topk",
+      "k": 32,
+      "threshold_beta": 0.999,
+      "threshold_start_step": 1000,
+      "device": "cuda",
+      "dtype": "float32",
+      "wandb_project": "pcfg-sae-sweep",
+      "wandb_run_id": "sae-zipf_sweep-13df3dd54c16-s1-L0-matryoshka",
+      "target_l0": null,
+      "adaptive_l1_lr": 0.01,
+      "use_auxk": true,
+      "auxk_weight": 0.03125,
+      "k_aux": 512,
+      "latent_sizes": [
+        224,
+        448,
+        672,
+        896,
+        1120,
+        1344,
+        1568,
+        1792
+      ],
+      "pareto_sampling": false,
+      "num_sampled_prefixes": 10,
+      "pareto_alpha": 0.5,
+      "permute_latents": false,
+      "adaptive_sparsity": false,
+      "sparsity_type": "l1",
+      "starting_sparsity_loss_scale": 1.2,
+      "min_prefix_length": 1,
+      "architecture": "MatryoshkaSAE"
+    }
+  },
+  "total_tokens": 1016600,
+  "pairs": [
+    {
+      "pair": "0->1",
+      "n_candidate_edges": 749,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 29435,
+      "independence_null": {
+        "mean_edge_pmi": 0.3978676167854466,
+        "n_chance_level": 674,
+        "frac_chance_level": 0.8998664886515354
+      },
+      "joint_child": {
+        "r_supp_mean": 0.7563282702093334,
+        "r_mass_mean": 0.7803089828809797,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 49,
+        "n_children_with_parent": 137,
+        "n_multi_parented": 137,
+        "poly_frac": 1.0,
+        "top1_edge_share": 0.1829105473965287,
+        "outdeg_gini": 0.9618598607667366,
+        "max_outdeg": 137
+      },
+      "joint_child_cov_mean": 0.18737376609607978,
+      "reconstruction": {
+        "n_pass": 724,
+        "frac_pass": 0.9666221628838452
+      },
+      "freq_control": {
+        "n_testable": 749,
+        "mean_survival": 1.0002328844067905,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": {
+        "method": "global_jaccard_confounded",
+        "n_parents_scored": 19,
+        "mean_redundancy": 0.013705257993122853,
+        "n_over_global_threshold": 0
+      },
+      "n_superparents": 5,
+      "n_superparents_strict": 5,
+      "superparents": [
+        {
+          "parent_local": 129,
+          "outdeg": 137,
+          "outdeg_frac": 0.6116071428571429,
+          "fire_frac": 0.9999370450521345,
+          "strict": true,
+          "parent_global": 129,
+          "label": "feature 129"
+        },
+        {
+          "parent_local": 26,
+          "outdeg": 136,
+          "outdeg_frac": 0.6071428571428571,
+          "fire_frac": 0.7344393074955735,
+          "strict": true,
+          "parent_global": 26,
+          "label": "feature 26"
+        },
+        {
+          "parent_local": 46,
+          "outdeg": 135,
+          "outdeg_frac": 0.6026785714285714,
+          "fire_frac": 0.5782274247491639,
+          "strict": true,
+          "parent_global": 46,
+          "label": "feature 46"
+        },
+        {
+          "parent_local": 213,
+          "outdeg": 135,
+          "outdeg_frac": 0.6026785714285714,
+          "fire_frac": 0.7538087743458587,
+          "strict": true,
+          "parent_global": 213,
+          "label": "feature 213"
+        },
+        {
+          "parent_local": 38,
+          "outdeg": 77,
+          "outdeg_frac": 0.34375,
+          "fire_frac": 0.37946586661420423,
+          "strict": true,
+          "parent_global": 38,
+          "label": "feature 38"
+        }
+      ],
+      "top_edges": [
+        {
+          "parent": 46,
+          "child": 259,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.00012418640890331491,
+          "pmi": 0.5477880192740018,
+          "recon_parent_gain": 1.0157723232120803,
+          "recon_child_gain": 0.015463212570712818,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.028465288670955942,
+          "parent_label": "feature 46",
+          "child_label": "feature 259",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/46",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/259"
+        },
+        {
+          "parent": 129,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0001819906033824675,
+          "pmi": 6.29569296113977e-05,
+          "recon_parent_gain": 2.394740786403992,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.027716414064742078,
+          "parent_label": "feature 129",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 129,
+          "child": 368,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.02433165180574028,
+          "pmi": 6.295692961117567e-05,
+          "recon_parent_gain": 2.1979773428150673,
+          "recon_child_gain": 0.48531356166731343,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.027716414064742078,
+          "parent_label": "feature 129",
+          "child_label": "feature 368",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/368"
+        },
+        {
+          "parent": 149,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0019813432436195395,
+          "pmi": 2.3876382004961365,
+          "recon_parent_gain": 0.34467114382944275,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 149",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/149",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 129,
+          "child": 405,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.022720297166061998,
+          "pmi": 6.295692961117567e-05,
+          "recon_parent_gain": 2.5450609791765455,
+          "recon_child_gain": 0.4357773826140864,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.027716414064742078,
+          "parent_label": "feature 129",
+          "child_label": "feature 405",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/405"
+        },
+        {
+          "parent": 19,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.001164576723573551,
+          "pmi": 1.8562208735280707,
+          "recon_parent_gain": 0.5574037511200275,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 19",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/19",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 213,
+          "child": 259,
+          "reverse_cov": 1.0,
+          "forward_cov": 9.526021698450521e-05,
+          "pmi": 0.2826165580658016,
+          "recon_parent_gain": 0.39733490044486847,
+          "recon_child_gain": 0.015463212570712818,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.028465288670955942,
+          "parent_label": "feature 213",
+          "child_label": "feature 259",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/213",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/259"
+        },
+        {
+          "parent": 186,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0016809929670888837,
+          "pmi": 2.223247850585924,
+          "recon_parent_gain": 0.5812954911306832,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 186",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/186",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 129,
+          "child": 408,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.007191088166085609,
+          "pmi": 6.29569296113977e-05,
+          "recon_parent_gain": 2.7195250836984517,
+          "recon_child_gain": 0.25307830890421135,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.027716414064742078,
+          "parent_label": "feature 129",
+          "child_label": "feature 408",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/408"
+        },
+        {
+          "parent": 93,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0016890658096559783,
+          "pmi": 2.2280387806813473,
+          "recon_parent_gain": 0.18837374149884828,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 93",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/93",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 85,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0009429730666503558,
+          "pmi": 1.6451456218315264,
+          "recon_parent_gain": 0.5487462897139118,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 85",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/85",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 84,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.001882127923656822,
+          "pmi": 2.3362661909751328,
+          "recon_parent_gain": 1.047132926345149,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 84",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/84",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 183,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0019220379836263142,
+          "pmi": 2.357249252840014,
+          "recon_parent_gain": 0.2919939724996205,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": null,
+          "parent_label": "feature 183",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/183",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        },
+        {
+          "parent": 129,
+          "child": 259,
+          "reverse_cov": 1.0,
+          "forward_cov": 7.181250836173042e-05,
+          "pmi": 6.295692961117567e-05,
+          "recon_parent_gain": 1.4088713189502382,
+          "recon_child_gain": 0.015463212570712818,
+          "recon_pass": true,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.027716414064742078,
+          "parent_label": "feature 129",
+          "child_label": "feature 259",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/129",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/259"
+        },
+        {
+          "parent": 213,
+          "child": 401,
+          "reverse_cov": 1.0,
+          "forward_cov": 0.0002414128786593625,
+          "pmi": 0.2826165580658016,
+          "recon_parent_gain": 1.3138059468343126,
+          "recon_child_gain": 0.006974873996700824,
+          "recon_pass": false,
+          "freq_survival": 1.0,
+          "parent_redundancy": 0.028465288670955942,
+          "parent_label": "feature 213",
+          "child_label": "feature 401",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/213",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/401"
+        }
+      ]
+    },
+    {
+      "pair": "1->2",
+      "n_candidate_edges": 8,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 35003,
+      "independence_null": {
+        "mean_edge_pmi": 2.2792738770869807,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.9346267302419364,
+        "r_mass_mean": 0.9374359625748753,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 8,
+        "n_children_with_parent": 3,
+        "n_multi_parented": 2,
+        "poly_frac": 0.6666666666666666,
+        "top1_edge_share": 0.125,
+        "outdeg_gini": 0.9642857142857142,
+        "max_outdeg": 1
+      },
+      "joint_child_cov_mean": 0.021778591699238938,
+      "reconstruction": {
+        "n_pass": 8,
+        "frac_pass": 1.0
+      },
+      "freq_control": {
+        "n_testable": 8,
+        "mean_survival": 0.9814194054472456,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 399,
+          "child": 530,
+          "reverse_cov": 0.6664080682699767,
+          "forward_cov": 0.030492350289304603,
+          "pmi": 2.486925663482166,
+          "recon_parent_gain": 0.4255238155620032,
+          "recon_child_gain": 0.9717766352176741,
+          "recon_pass": true,
+          "freq_survival": 0.9340927865524425,
+          "parent_redundancy": null,
+          "parent_label": "feature 399",
+          "child_label": "feature 530",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/399",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/530"
+        },
+        {
+          "parent": 427,
+          "child": 530,
+          "reverse_cov": 0.6501163692785105,
+          "forward_cov": 0.028531544720983282,
+          "pmi": 2.4204601290162007,
+          "recon_parent_gain": 0.15674629707123308,
+          "recon_child_gain": 0.9717766352176741,
+          "recon_pass": true,
+          "freq_survival": 0.9345941210235341,
+          "parent_redundancy": null,
+          "parent_label": "feature 427",
+          "child_label": "feature 530",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/427",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/530"
+        },
+        {
+          "parent": 373,
+          "child": 530,
+          "reverse_cov": 0.647788983708301,
+          "forward_cov": 0.02820183734125912,
+          "pmi": 2.40883695128067,
+          "recon_parent_gain": 0.11490172354371704,
+          "recon_child_gain": 0.9717766352176741,
+          "recon_pass": true,
+          "freq_survival": 0.9448486496849935,
+          "parent_redundancy": null,
+          "parent_label": "feature 373",
+          "child_label": "feature 530",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/373",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/530"
+        },
+        {
+          "parent": 332,
+          "child": 617,
+          "reverse_cov": 0.5582428430404739,
+          "forward_cov": 0.014268592695388885,
+          "pmi": 1.9684611270251027,
+          "recon_parent_gain": 0.11696458949974815,
+          "recon_child_gain": 0.812690630961066,
+          "recon_pass": true,
+          "freq_survival": 1.023302951517283,
+          "parent_redundancy": null,
+          "parent_label": "feature 332",
+          "child_label": "feature 617",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/332",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/617"
+        },
+        {
+          "parent": 438,
+          "child": 617,
+          "reverse_cov": 0.5498519249753209,
+          "forward_cov": 0.021880892520427405,
+          "pmi": 2.396014088536026,
+          "recon_parent_gain": 0.14550527951572725,
+          "recon_child_gain": 0.812690630961066,
+          "recon_pass": true,
+          "freq_survival": 0.9983537227001615,
+          "parent_redundancy": null,
+          "parent_label": "feature 438",
+          "child_label": "feature 617",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/438",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/617"
+        },
+        {
+          "parent": 353,
+          "child": 637,
+          "reverse_cov": 0.5347501435956347,
+          "forward_cov": 0.016311870346035918,
+          "pmi": 2.253897150105821,
+          "recon_parent_gain": 0.1453574648320889,
+          "recon_child_gain": 2.335436990172846,
+          "recon_pass": true,
+          "freq_survival": 1.0020766934901657,
+          "parent_redundancy": null,
+          "parent_label": "feature 353",
+          "child_label": "feature 637",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/353",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/637"
+        },
+        {
+          "parent": 261,
+          "child": 617,
+          "reverse_cov": 0.5236920039486673,
+          "forward_cov": 0.019655063818751043,
+          "pmi": 2.2887353260201206,
+          "recon_parent_gain": 0.15133276790196037,
+          "recon_child_gain": 0.812690630961066,
+          "recon_pass": true,
+          "freq_survival": 0.9938018773059014,
+          "parent_redundancy": null,
+          "parent_label": "feature 261",
+          "child_label": "feature 617",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/261",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/617"
+        },
+        {
+          "parent": 394,
+          "child": 617,
+          "reverse_cov": 0.5088845014807503,
+          "forward_cov": 0.014886581861761266,
+          "pmi": 2.01086058122974,
+          "recon_parent_gain": 0.07910513377796594,
+          "recon_child_gain": 0.812690630961066,
+          "recon_pass": true,
+          "freq_survival": 1.0202844413034828,
+          "parent_redundancy": null,
+          "parent_label": "feature 394",
+          "child_label": "feature 617",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/394",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/617"
+        }
+      ]
+    },
+    {
+      "pair": "2->3",
+      "n_candidate_edges": 2,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 40348,
+      "independence_null": {
+        "mean_edge_pmi": 3.0788085710584356,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.7515327380065158,
+        "r_mass_mean": 0.6986166981832213,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 2,
+        "n_children_with_parent": 2,
+        "n_multi_parented": 0,
+        "poly_frac": 0.0,
+        "top1_edge_share": 0.5,
+        "outdeg_gini": 0.9910714285714284,
+        "max_outdeg": 1
+      },
+      "joint_child_cov_mean": 0.030352177883146016,
+      "reconstruction": {
+        "n_pass": 2,
+        "frac_pass": 1.0
+      },
+      "freq_control": {
+        "n_testable": 2,
+        "mean_survival": 1.0151875032077076,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 453,
+          "child": 798,
+          "reverse_cov": 0.8409728718428437,
+          "forward_cov": 0.03447218068177461,
+          "pmi": 3.4898927356943403,
+          "recon_parent_gain": 0.21877896260077948,
+          "recon_child_gain": 0.7469697314848284,
+          "recon_pass": true,
+          "freq_survival": 1.0033621182240422,
+          "parent_redundancy": null,
+          "parent_label": "feature 453",
+          "child_label": "feature 798",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/453",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/798"
+        },
+        {
+          "parent": 660,
+          "child": 802,
+          "reverse_cov": 0.5575364667747164,
+          "forward_cov": 0.026232175084517424,
+          "pmi": 2.6677244064225305,
+          "recon_parent_gain": 0.27696102923843835,
+          "recon_child_gain": 1.391738100991599,
+          "recon_pass": true,
+          "freq_survival": 1.027012888191373,
+          "parent_redundancy": null,
+          "parent_label": "feature 660",
+          "child_label": "feature 802",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/660",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/802"
+        }
+      ]
+    },
+    {
+      "pair": "3->4",
+      "n_candidate_edges": 1,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 47260,
+      "independence_null": {
+        "mean_edge_pmi": 4.646436703777381,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.6286729092670326,
+        "r_mass_mean": 0.733339299538134,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 1,
+        "n_children_with_parent": 1,
+        "n_multi_parented": 0,
+        "poly_frac": 0.0,
+        "top1_edge_share": 1.0,
+        "outdeg_gini": 0.9955357142857142,
+        "max_outdeg": 1
+      },
+      "joint_child_cov_mean": 0.09482294693789689,
+      "reconstruction": {
+        "n_pass": 1,
+        "frac_pass": 1.0
+      },
+      "freq_control": {
+        "n_testable": 1,
+        "mean_survival": 0.9935903602095718,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 819,
+          "child": 924,
+          "reverse_cov": 0.9524324324324325,
+          "forward_cov": 0.09482294693789689,
+          "pmi": 4.646436703777381,
+          "recon_parent_gain": 0.9873949658407046,
+          "recon_child_gain": 0.5868699001057558,
+          "recon_pass": true,
+          "freq_survival": 0.9935903602095718,
+          "parent_redundancy": null,
+          "parent_label": "feature 819",
+          "child_label": "feature 924",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/819",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/924"
+        }
+      ]
+    },
+    {
+      "pair": "4->5",
+      "n_candidate_edges": 0,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 49607,
+      "independence_null": {
+        "mean_edge_pmi": null,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": null,
+        "r_mass_mean": null,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 0,
+        "n_children_with_parent": 0,
+        "n_multi_parented": 0,
+        "poly_frac": 0.0,
+        "top1_edge_share": 0.0,
+        "outdeg_gini": 0.0,
+        "max_outdeg": 0
+      },
+      "joint_child_cov_mean": null,
+      "reconstruction": {
+        "n_pass": 0,
+        "frac_pass": 0.0
+      },
+      "freq_control": {
+        "n_testable": 0,
+        "mean_survival": null,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": []
+    },
+    {
+      "pair": "5->6",
+      "n_candidate_edges": 2,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 49942,
+      "independence_null": {
+        "mean_edge_pmi": 5.083188053374994,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.5549236306020191,
+        "r_mass_mean": 0.27323655708312966,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 2,
+        "n_children_with_parent": 2,
+        "n_multi_parented": 0,
+        "poly_frac": 0.0,
+        "top1_edge_share": 0.5,
+        "outdeg_gini": 0.9910714285714284,
+        "max_outdeg": 1
+      },
+      "joint_child_cov_mean": 0.23090380476508124,
+      "reconstruction": {
+        "n_pass": 2,
+        "frac_pass": 1.0
+      },
+      "freq_control": {
+        "n_testable": 2,
+        "mean_survival": 0.9642753543319305,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 1281,
+          "child": 1544,
+          "reverse_cov": 0.6881188118811881,
+          "forward_cov": 0.1988555078683834,
+          "pmi": 5.116770308262561,
+          "recon_parent_gain": 0.08928704840831748,
+          "recon_child_gain": 0.6068266513037273,
+          "recon_pass": true,
+          "freq_survival": 0.9981832715645665,
+          "parent_redundancy": null,
+          "parent_label": "feature 1281",
+          "child_label": "feature 1544",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1281",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1544"
+        },
+        {
+          "parent": 1126,
+          "child": 1457,
+          "reverse_cov": 0.6277712952158693,
+          "forward_cov": 0.26295210166177907,
+          "pmi": 5.049605798487427,
+          "recon_parent_gain": 0.0748250062945295,
+          "recon_child_gain": 0.4441318285651496,
+          "recon_pass": true,
+          "freq_survival": 0.9303674370992943,
+          "parent_redundancy": null,
+          "parent_label": "feature 1126",
+          "child_label": "feature 1457",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1126",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1457"
+        }
+      ]
+    },
+    {
+      "pair": "6->7",
+      "n_candidate_edges": 6,
+      "n_dropped_min_joint": 0,
+      "n_pairs_below_min_joint": 50004,
+      "independence_null": {
+        "mean_edge_pmi": 5.532974314325834,
+        "n_chance_level": 0,
+        "frac_chance_level": 0.0
+      },
+      "joint_child": {
+        "r_supp_mean": 0.38898840721256384,
+        "r_mass_mean": 0.17924980518939818,
+        "n_share_energy_ge_09": 0
+      },
+      "degree": {
+        "n_parents_with_children": 6,
+        "n_children_with_parent": 5,
+        "n_multi_parented": 1,
+        "poly_frac": 0.2,
+        "top1_edge_share": 0.16666666666666666,
+        "outdeg_gini": 0.9732142857142856,
+        "max_outdeg": 1
+      },
+      "joint_child_cov_mean": 0.2751064788888803,
+      "reconstruction": {
+        "n_pass": 6,
+        "frac_pass": 1.0
+      },
+      "freq_control": {
+        "n_testable": 6,
+        "mean_survival": 0.9943081855957017,
+        "n_freq_driven": 0,
+        "frac_freq_driven": 0.0
+      },
+      "freq_control_local": null,
+      "sibling_redundancy": null,
+      "n_superparents": 0,
+      "n_superparents_strict": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 1349,
+          "child": 1663,
+          "reverse_cov": 0.9354838709677419,
+          "forward_cov": 0.24022780222624904,
+          "pmi": 5.506083546829986,
+          "recon_parent_gain": 0.14475103521733532,
+          "recon_child_gain": 0.5358962428019516,
+          "recon_pass": true,
+          "freq_survival": 1.011133176867064,
+          "parent_redundancy": null,
+          "parent_label": "feature 1349",
+          "child_label": "feature 1663",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1349",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1663"
+        },
+        {
+          "parent": 1441,
+          "child": 1663,
+          "reverse_cov": 0.9183467741935484,
+          "forward_cov": 0.27799816905706437,
+          "pmi": 5.65211042527121,
+          "recon_parent_gain": 0.11881705933437244,
+          "recon_child_gain": 0.5358962428019516,
+          "recon_pass": true,
+          "freq_survival": 1.007197276644004,
+          "parent_redundancy": null,
+          "parent_label": "feature 1441",
+          "child_label": "feature 1663",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1441",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1663"
+        },
+        {
+          "parent": 1386,
+          "child": 1669,
+          "reverse_cov": 0.876629889669007,
+          "forward_cov": 0.27269890795631824,
+          "pmi": 5.627836520333866,
+          "recon_parent_gain": 0.05661940979697782,
+          "recon_child_gain": 0.4506393845879975,
+          "recon_pass": true,
+          "freq_survival": 1.0115584363446581,
+          "parent_redundancy": null,
+          "parent_label": "feature 1386",
+          "child_label": "feature 1669",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1386",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1669"
+        },
+        {
+          "parent": 1450,
+          "child": 1640,
+          "reverse_cov": 0.85,
+          "forward_cov": 0.17574741547918413,
+          "pmi": 5.486616643731138,
+          "recon_parent_gain": 0.04838243125775483,
+          "recon_child_gain": 0.20070438341301497,
+          "recon_pass": true,
+          "freq_survival": 0.9333622747992186,
+          "parent_redundancy": null,
+          "parent_label": "feature 1450",
+          "child_label": "feature 1640",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1450",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1640"
+        },
+        {
+          "parent": 1383,
+          "child": 1715,
+          "reverse_cov": 0.672428694900605,
+          "forward_cov": 0.31434343434343437,
+          "pmi": 5.621119405976864,
+          "recon_parent_gain": 0.0591212441874415,
+          "recon_child_gain": 0.26125464542225735,
+          "recon_pass": true,
+          "freq_survival": 1.00200064678444,
+          "parent_redundancy": null,
+          "parent_label": "feature 1383",
+          "child_label": "feature 1715",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1383",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1715"
+        },
+        {
+          "parent": 1442,
+          "child": 1729,
+          "reverse_cov": 0.5198072805139187,
+          "forward_cov": 0.3696231442710316,
+          "pmi": 5.304079343811936,
+          "recon_parent_gain": 0.0739012676204576,
+          "recon_child_gain": 0.24863720497755837,
+          "recon_pass": true,
+          "freq_survival": 1.0005973021348245,
+          "parent_redundancy": null,
+          "parent_label": "feature 1442",
+          "child_label": "feature 1729",
+          "parent_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1442",
+          "child_url": "https://www.neuronpedia.org/gemma-2-2b/6-res-matryoshka-dc/1729"
+        }
+      ]
+    }
+  ],
+  "block_ranges": [
+    [
+      0,
+      224
+    ],
+    [
+      224,
+      448
+    ],
+    [
+      448,
+      672
+    ],
+    [
+      672,
+      896
+    ],
+    [
+      896,
+      1120
+    ],
+    [
+      1120,
+      1344
+    ],
+    [
+      1344,
+      1568
+    ],
+    [
+      1568,
+      1792
+    ]
+  ],
+  "second_pass": {
+    "0->1": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.17880103057333346,
+        "r_mass_kept_mean": 0.22193526037650468,
+        "per_parent": [
+          {
+            "parent_global": 2,
+            "r_supp_kept": 0.22518586297609516,
+            "r_mass_kept": 0.5883264958317596
+          },
+          {
+            "parent_global": 6,
+            "r_supp_kept": 0.0011873130784140064,
+            "r_mass_kept": 0.0017398358027502067
+          },
+          {
+            "parent_global": 14,
+            "r_supp_kept": 0.024284791164894553,
+            "r_mass_kept": 0.031689888024382044
+          },
+          {
+            "parent_global": 15,
+            "r_supp_kept": 0.01474136796384855,
+            "r_mass_kept": 0.01734742907071567
+          },
+          {
+            "parent_global": 19,
+            "r_supp_kept": 0.001164576723573551,
+            "r_mass_kept": 0.002177399123272896
+          },
+          {
+            "parent_global": 20,
+            "r_supp_kept": 0.00132440745431518,
+            "r_mass_kept": 0.000777683073774362
+          },
+          {
+            "parent_global": 22,
+            "r_supp_kept": 0.1087182128761997,
+            "r_mass_kept": 0.11390226061397515
+          },
+          {
+            "parent_global": 25,
+            "r_supp_kept": 0.008099106222893154,
+            "r_mass_kept": 0.000963487322423408
+          },
+          {
+            "parent_global": 26,
+            "r_supp_kept": 0.9982454519032828,
+            "r_mass_kept": 0.9991815930547217
+          },
+          {
+            "parent_global": 34,
+            "r_supp_kept": 0.009120070947201062,
+            "r_mass_kept": 0.0009476792768079589
+          },
+          {
+            "parent_global": 36,
+            "r_supp_kept": 0.04000933904996392,
+            "r_mass_kept": 0.05471411887903449
+          },
+          {
+            "parent_global": 38,
+            "r_supp_kept": 0.9905538345884152,
+            "r_mass_kept": 0.9911700274710895
+          },
+          {
+            "parent_global": 40,
+            "r_supp_kept": 0.971417829237747,
+            "r_mass_kept": 0.9777385945604918
+          },
+          {
+            "parent_global": 41,
+            "r_supp_kept": 0.0012516566043292592,
+            "r_mass_kept": 0.0003746192558076998
+          },
+          {
+            "parent_global": 43,
+            "r_supp_kept": 0.0021774696625510527,
+            "r_mass_kept": 0.004188192480859004
+          },
+          {
+            "parent_global": 45,
+            "r_supp_kept": 0.0006814511947617143,
+            "r_mass_kept": 0.0005831768197698117
+          },
+          {
+            "parent_global": 46,
+            "r_supp_kept": 0.9958320999751628,
+            "r_mass_kept": 0.9990757881027906
+          },
+          {
+            "parent_global": 66,
+            "r_supp_kept": 0.4155956683351693,
+            "r_mass_kept": 0.4312244485235634
+          },
+          {
+            "parent_global": 71,
+            "r_supp_kept": 0.3953023488255872,
+            "r_mass_kept": 0.6252761066503925
+          },
+          {
+            "parent_global": 72,
+            "r_supp_kept": 0.014884398755366497,
+            "r_mass_kept": 0.008232949942102205
+          },
+          {
+            "parent_global": 73,
+            "r_supp_kept": 0.001189475725644838,
+            "r_mass_kept": 0.001167056033882748
+          },
+          {
+            "parent_global": 78,
+            "r_supp_kept": 0.05434098971043297,
+            "r_mass_kept": 0.11490430167337372
+          },
+          {
+            "parent_global": 83,
+            "r_supp_kept": 0.0011560492163264359,
+            "r_mass_kept": 0.0009808943759774238
+          },
+          {
+            "parent_global": 84,
+            "r_supp_kept": 0.001882127923656822,
+            "r_mass_kept": 0.00706341118677543
+          },
+          {
+            "parent_global": 85,
+            "r_supp_kept": 0.0009429730666503558,
+            "r_mass_kept": 0.002615809407821904
+          },
+          {
+            "parent_global": 88,
+            "r_supp_kept": 0.15213836477987422,
+            "r_mass_kept": 0.28840301130728013
+          },
+          {
+            "parent_global": 93,
+            "r_supp_kept": 0.0016890658096559783,
+            "r_mass_kept": 0.0011327167889927038
+          },
+          {
+            "parent_global": 98,
+            "r_supp_kept": 0.014909179857023372,
+            "r_mass_kept": 0.019651999919866676
+          },
+          {
+            "parent_global": 109,
+            "r_supp_kept": 0.02756765323200971,
+            "r_mass_kept": 0.011422320877161657
+          },
+          {
+            "parent_global": 120,
+            "r_supp_kept": 0.014962781121317707,
+            "r_mass_kept": 0.0088698589671266
+          },
+          {
+            "parent_global": 122,
+            "r_supp_kept": 0.0013549232580351391,
+            "r_mass_kept": 0.0005517822407693182
+          },
+          {
+            "parent_global": 126,
+            "r_supp_kept": 0.0012735644409611912,
+            "r_mass_kept": 0.0005089105300117449
+          },
+          {
+            "parent_global": 129,
+            "r_supp_kept": 0.7603350988061417,
+            "r_mass_kept": 0.9128708359905728
+          },
+          {
+            "parent_global": 140,
+            "r_supp_kept": 0.0017557679349321895,
+            "r_mass_kept": 0.0011307838012248452
+          },
+          {
+            "parent_global": 142,
+            "r_supp_kept": 0.09291893623838514,
+            "r_mass_kept": 0.2114959042877132
+          },
+          {
+            "parent_global": 145,
+            "r_supp_kept": 0.0011961100421238754,
+            "r_mass_kept": 0.000983113115479699
+          },
+          {
+            "parent_global": 149,
+            "r_supp_kept": 0.0019813432436195395,
+            "r_mass_kept": 0.0027814152502526543
+          },
+          {
+            "parent_global": 157,
+            "r_supp_kept": 0.0014912019087384432,
+            "r_mass_kept": 0.004422273171482912
+          },
+          {
+            "parent_global": 168,
+            "r_supp_kept": 0.11158198778351247,
+            "r_mass_kept": 0.5051170570444812
+          },
+          {
+            "parent_global": 171,
+            "r_supp_kept": 0.4493312757201646,
+            "r_mass_kept": 0.5789683164529464
+          },
+          {
+            "parent_global": 183,
+            "r_supp_kept": 0.0019220379836263142,
+            "r_mass_kept": 0.002825222104388218
+          },
+          {
+            "parent_global": 184,
+            "r_supp_kept": 0.5677584733694104,
+            "r_mass_kept": 0.5196869849773835
+          },
+          {
+            "parent_global": 186,
+            "r_supp_kept": 0.0016809929670888837,
+            "r_mass_kept": 0.00344615632862728
+          },
+          {
+            "parent_global": 192,
+            "r_supp_kept": 0.18864512070456868,
+            "r_mass_kept": 0.6354686011035483
+          },
+          {
+            "parent_global": 201,
+            "r_supp_kept": 0.028741775339081687,
+            "r_mass_kept": 0.03257387280889238
+          },
+          {
+            "parent_global": 205,
+            "r_supp_kept": 0.0003580845730655295,
+            "r_mass_kept": 9.341554661166911e-05
+          },
+          {
+            "parent_global": 213,
+            "r_supp_kept": 0.9961047705794692,
+            "r_mass_kept": 0.9988430755725476
+          },
+          {
+            "parent_global": 215,
+            "r_supp_kept": 0.06122764459665145,
+            "r_mass_kept": 0.15672131824481841
+          },
+          {
+            "parent_global": 223,
+            "r_supp_kept": 0.0010354706213974252,
+            "r_mass_kept": 0.0004955654582346287
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [
+        {
+          "parent_local": 129,
+          "outdeg": 137,
+          "outdeg_frac": 0.6116071428571429,
+          "fire_frac": 0.9999370450521345,
+          "strict": true,
+          "parent_global": 129,
+          "n_kids_scored": 137,
+          "conditioned_redundancy": 0.02771394507198705
+        },
+        {
+          "parent_local": 26,
+          "outdeg": 136,
+          "outdeg_frac": 0.6071428571428571,
+          "fire_frac": 0.7344393074955735,
+          "strict": true,
+          "parent_global": 26,
+          "n_kids_scored": 136,
+          "conditioned_redundancy": 0.028185181991859157
+        },
+        {
+          "parent_local": 46,
+          "outdeg": 135,
+          "outdeg_frac": 0.6026785714285714,
+          "fire_frac": 0.5782274247491639,
+          "strict": true,
+          "parent_global": 46,
+          "n_kids_scored": 135,
+          "conditioned_redundancy": 0.0285426905572388
+        },
+        {
+          "parent_local": 213,
+          "outdeg": 135,
+          "outdeg_frac": 0.6026785714285714,
+          "fire_frac": 0.7538087743458587,
+          "strict": true,
+          "parent_global": 213,
+          "n_kids_scored": 135,
+          "conditioned_redundancy": 0.028450600008285167
+        },
+        {
+          "parent_local": 38,
+          "outdeg": 77,
+          "outdeg_frac": 0.34375,
+          "fire_frac": 0.37946586661420423,
+          "strict": true,
+          "parent_global": 38,
+          "n_kids_scored": 77,
+          "conditioned_redundancy": 0.03149510828189414
+        }
+      ],
+      "sres": {
+        "n_shortlist_edges": 643,
+        "n_probed_children": 137,
+        "n_untestable_children": 0,
+        "n_edges_scored": 643,
+        "n_pass": 4,
+        "frac_pass": 0.006220839813374806
+      }
+    },
+    "1->2": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.021778591699238938,
+        "r_mass_kept_mean": 0.024059227936865043,
+        "per_parent": [
+          {
+            "parent_global": 261,
+            "r_supp_kept": 0.019655063818751043,
+            "r_mass_kept": 0.019597516264129557
+          },
+          {
+            "parent_global": 332,
+            "r_supp_kept": 0.014268592695388885,
+            "r_mass_kept": 0.013210939788465409
+          },
+          {
+            "parent_global": 353,
+            "r_supp_kept": 0.016311870346035918,
+            "r_mass_kept": 0.01587853089328184
+          },
+          {
+            "parent_global": 373,
+            "r_supp_kept": 0.02820183734125912,
+            "r_mass_kept": 0.021159300694536986
+          },
+          {
+            "parent_global": 394,
+            "r_supp_kept": 0.014886581861761266,
+            "r_mass_kept": 0.008734586502077337
+          },
+          {
+            "parent_global": 399,
+            "r_supp_kept": 0.030492350289304603,
+            "r_mass_kept": 0.06660658454756252
+          },
+          {
+            "parent_global": 427,
+            "r_supp_kept": 0.028531544720983282,
+            "r_mass_kept": 0.025297797259750492
+          },
+          {
+            "parent_global": 438,
+            "r_supp_kept": 0.021880892520427405,
+            "r_mass_kept": 0.021988567545116192
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 8,
+        "n_probed_children": 3,
+        "n_untestable_children": 0,
+        "n_edges_scored": 8,
+        "n_pass": 2,
+        "frac_pass": 0.25
+      }
+    },
+    "2->3": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.030352177883146016,
+        "r_mass_kept_mean": 0.04467732367457998,
+        "per_parent": [
+          {
+            "parent_global": 453,
+            "r_supp_kept": 0.03447218068177461,
+            "r_mass_kept": 0.028867526240009538
+          },
+          {
+            "parent_global": 660,
+            "r_supp_kept": 0.026232175084517424,
+            "r_mass_kept": 0.060487121109150416
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 2,
+        "n_probed_children": 2,
+        "n_untestable_children": 0,
+        "n_edges_scored": 2,
+        "n_pass": 1,
+        "frac_pass": 0.5
+      }
+    },
+    "3->4": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.09482294693789689,
+        "r_mass_kept_mean": 0.2539424770853397,
+        "per_parent": [
+          {
+            "parent_global": 819,
+            "r_supp_kept": 0.09482294693789689,
+            "r_mass_kept": 0.2539424770853397
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 1,
+        "n_probed_children": 1,
+        "n_untestable_children": 0,
+        "n_edges_scored": 1,
+        "n_pass": 1,
+        "frac_pass": 1.0
+      }
+    },
+    "4->5": {
+      "kept_union": {
+        "r_supp_kept_mean": null,
+        "r_mass_kept_mean": null,
+        "per_parent": []
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 0,
+        "n_probed_children": 0,
+        "n_untestable_children": 0,
+        "n_edges_scored": 0,
+        "n_pass": 0,
+        "frac_pass": 0.0
+      }
+    },
+    "5->6": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.23090380476508124,
+        "r_mass_kept_mean": 0.09184735777607875,
+        "per_parent": [
+          {
+            "parent_global": 1126,
+            "r_supp_kept": 0.26295210166177907,
+            "r_mass_kept": 0.12921235702482345
+          },
+          {
+            "parent_global": 1281,
+            "r_supp_kept": 0.1988555078683834,
+            "r_mass_kept": 0.05448235852733405
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 2,
+        "n_probed_children": 2,
+        "n_untestable_children": 0,
+        "n_edges_scored": 2,
+        "n_pass": 0,
+        "frac_pass": 0.0
+      }
+    },
+    "6->7": {
+      "kept_union": {
+        "r_supp_kept_mean": 0.2751064788888803,
+        "r_mass_kept_mean": 0.10819700624020939,
+        "per_parent": [
+          {
+            "parent_global": 1349,
+            "r_supp_kept": 0.24022780222624904,
+            "r_mass_kept": 0.14656325137907453
+          },
+          {
+            "parent_global": 1383,
+            "r_supp_kept": 0.31434343434343437,
+            "r_mass_kept": 0.07967644616423494
+          },
+          {
+            "parent_global": 1386,
+            "r_supp_kept": 0.27269890795631824,
+            "r_mass_kept": 0.08277191665049353
+          },
+          {
+            "parent_global": 1441,
+            "r_supp_kept": 0.27799816905706437,
+            "r_mass_kept": 0.10570490204076743
+          },
+          {
+            "parent_global": 1442,
+            "r_supp_kept": 0.3696231442710316,
+            "r_mass_kept": 0.1824864424711868
+          },
+          {
+            "parent_global": 1450,
+            "r_supp_kept": 0.17574741547918413,
+            "r_mass_kept": 0.05197907873549915
+          }
+        ]
+      },
+      "superparent_conditioned_redundancy": [],
+      "sres": {
+        "n_shortlist_edges": 6,
+        "n_probed_children": 5,
+        "n_untestable_children": 0,
+        "n_edges_scored": 6,
+        "n_pass": 1,
+        "frac_pass": 0.16666666666666666
+      }
+    }
+  }
+}

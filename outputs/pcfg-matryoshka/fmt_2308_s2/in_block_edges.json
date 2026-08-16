@@ -1,0 +1,453 @@
+{
+  "total_tokens": 646000,
+  "n_docs": 2000,
+  "config": {
+    "layer": 2,
+    "sae_release": "pcfg-matryoshka",
+    "sae_source": "pcfg",
+    "sae_id": "matryoshka_hook_resid_post_L2",
+    "matryoshka_steps": [
+      224,
+      448,
+      672,
+      896,
+      1120,
+      1344,
+      1568,
+      1792
+    ],
+    "block_ranges": [
+      [
+        0,
+        224
+      ],
+      [
+        224,
+        448
+      ],
+      [
+        448,
+        672
+      ],
+      [
+        672,
+        896
+      ],
+      [
+        896,
+        1120
+      ],
+      [
+        1120,
+        1344
+      ],
+      [
+        1344,
+        1568
+      ],
+      [
+        1568,
+        1792
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 512,
+    "sibling_blocks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "source": "pcfg",
+    "run_dir": "data/fmt/f98ccd6c7355-s2",
+    "n_docs": 2000,
+    "grammar": {
+      "assertion_prob": 0.5,
+      "document_repetitions": 5,
+      "formatting": {
+        "document_delim": false,
+        "eos": true,
+        "paragraph_delim": true,
+        "section_delim": false
+      },
+      "max_connectors": 2,
+      "num_documents": 96154,
+      "paragraphs_per_section": 8,
+      "sections": 4,
+      "seed": 0,
+      "sentences_per_paragraph": 2,
+      "zipf_exponent": 1.0
+    },
+    "base_model": {
+      "n_layers": 4,
+      "d_model": 448,
+      "n_heads": 4,
+      "d_mlp": 1792,
+      "d_head": null,
+      "context_window": 512,
+      "vocab_size": 1004,
+      "act_fn": "gelu",
+      "normalization_type": "LNPre",
+      "seed": 2
+    },
+    "sae_cfg": {
+      "d_in": 448,
+      "d_sae": 1792,
+      "lr": 0.0003,
+      "l1_coefficient": 0.001,
+      "activation_function": "batch_topk",
+      "k": 32,
+      "threshold_beta": 0.999,
+      "threshold_start_step": 1000,
+      "device": "cuda",
+      "dtype": "float32",
+      "wandb_project": "pcfg-sae-sweep",
+      "wandb_run_id": "sae-formatting_sweep-f98ccd6c7355-s2-L2-matryoshka",
+      "target_l0": null,
+      "adaptive_l1_lr": 0.01,
+      "use_auxk": true,
+      "auxk_weight": 0.03125,
+      "k_aux": 512,
+      "latent_sizes": [
+        224,
+        448,
+        672,
+        896,
+        1120,
+        1344,
+        1568,
+        1792
+      ],
+      "pareto_sampling": false,
+      "num_sampled_prefixes": 10,
+      "pareto_alpha": 0.5,
+      "permute_latents": false,
+      "adaptive_sparsity": false,
+      "sparsity_type": "l1",
+      "starting_sparsity_loss_scale": 1.2,
+      "min_prefix_length": 1,
+      "architecture": "MatryoshkaSAE"
+    }
+  },
+  "blocks": [
+    {
+      "block": 0,
+      "n_features": 224,
+      "n_edges": 66,
+      "n_duplicates": 4,
+      "n_after_pmi": 66,
+      "poly_frac": 0.19607843137254902,
+      "outdeg_gini": 0.9774080086580086,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 167,
+          "child": 221,
+          "R": 0.997989046722574,
+          "pmi": 2.0209253352283905,
+          "parent_label": "feature 167",
+          "child_label": "feature 221"
+        },
+        {
+          "parent": 167,
+          "child": 188,
+          "R": 0.9827001835898884,
+          "pmi": 2.0054871063953077,
+          "parent_label": "feature 167",
+          "child_label": "feature 188"
+        },
+        {
+          "parent": 99,
+          "child": 217,
+          "R": 0.9777212085175964,
+          "pmi": 1.4166681474702825,
+          "parent_label": "feature 99",
+          "child_label": "feature 217"
+        },
+        {
+          "parent": 57,
+          "child": 144,
+          "R": 0.9767414634146342,
+          "pmi": 1.7985960274781343,
+          "parent_label": "feature 57",
+          "child_label": "feature 144"
+        },
+        {
+          "parent": 167,
+          "child": 40,
+          "R": 0.8966399518380554,
+          "pmi": 1.9138374241998193,
+          "parent_label": "feature 167",
+          "child_label": "feature 40"
+        },
+        {
+          "parent": 167,
+          "child": 120,
+          "R": 0.8904663212435233,
+          "pmi": 1.9069283161673651,
+          "parent_label": "feature 167",
+          "child_label": "feature 120"
+        },
+        {
+          "parent": 223,
+          "child": 51,
+          "R": 0.8768368647634623,
+          "pmi": 0.8524460234775795,
+          "parent_label": "feature 223",
+          "child_label": "feature 51"
+        },
+        {
+          "parent": 167,
+          "child": 173,
+          "R": 0.8392121811855587,
+          "pmi": 1.8476466064171921,
+          "parent_label": "feature 167",
+          "child_label": "feature 173"
+        },
+        {
+          "parent": 223,
+          "child": 126,
+          "R": 0.8030095759233926,
+          "pmi": 0.7644917025617781,
+          "parent_label": "feature 223",
+          "child_label": "feature 126"
+        },
+        {
+          "parent": 167,
+          "child": 185,
+          "R": 0.7721381435966334,
+          "pmi": 1.7643465107042018,
+          "parent_label": "feature 167",
+          "child_label": "feature 185"
+        },
+        {
+          "parent": 118,
+          "child": 126,
+          "R": 0.7712722298221614,
+          "pmi": 1.812300204223999,
+          "parent_label": "feature 118",
+          "child_label": "feature 126"
+        },
+        {
+          "parent": 223,
+          "child": 89,
+          "R": 0.7495119387295389,
+          "pmi": 0.6955473098424468,
+          "parent_label": "feature 223",
+          "child_label": "feature 89"
+        },
+        {
+          "parent": 55,
+          "child": 126,
+          "R": 0.740766073871409,
+          "pmi": 3.267441127311158,
+          "parent_label": "feature 55",
+          "child_label": "feature 126"
+        },
+        {
+          "parent": 100,
+          "child": 184,
+          "R": 0.730052047974655,
+          "pmi": 1.8816351155593052,
+          "parent_label": "feature 100",
+          "child_label": "feature 184"
+        },
+        {
+          "parent": 25,
+          "child": 145,
+          "R": 0.7299736895365311,
+          "pmi": 2.0199266203255477,
+          "parent_label": "feature 25",
+          "child_label": "feature 145"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 13,
+          "b": 100,
+          "a_label": "feature 13",
+          "b_label": "feature 100"
+        },
+        {
+          "a": 13,
+          "b": 184,
+          "a_label": "feature 13",
+          "b_label": "feature 184"
+        },
+        {
+          "a": 25,
+          "b": 100,
+          "a_label": "feature 25",
+          "b_label": "feature 100"
+        },
+        {
+          "a": 173,
+          "b": 188,
+          "a_label": "feature 173",
+          "b_label": "feature 188"
+        }
+      ],
+      "sres": {
+        "n_scored": 66,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
+    },
+    {
+      "block": 1,
+      "n_features": 224,
+      "n_edges": 1,
+      "n_duplicates": 0,
+      "n_after_pmi": 1,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.9955357142857142,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 318,
+          "child": 247,
+          "R": 0.8177458033573142,
+          "pmi": 3.095131697769929,
+          "parent_label": "feature 318",
+          "child_label": "feature 247"
+        }
+      ],
+      "duplicate_examples": [],
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 1,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 318,
+            "child": 247,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17603854835033417,
+            "child_corr": 1.1187636852264404,
+            "s_res": 0.17603854835033417
+          }
+        ]
+      }
+    },
+    {
+      "block": 2,
+      "n_features": 224,
+      "n_edges": 1,
+      "n_duplicates": 0,
+      "n_after_pmi": 1,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.9955357142857142,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 590,
+          "child": 553,
+          "R": 0.5726550079491256,
+          "pmi": 1.8531088323312923,
+          "parent_label": "feature 590",
+          "child_label": "feature 553"
+        }
+      ],
+      "duplicate_examples": [],
+      "sres": {
+        "n_scored": 1,
+        "n_pass": 1,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 590,
+            "child": 553,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.20337143540382385,
+            "child_corr": 1.012892484664917,
+            "s_res": 0.20337143540382385
+          }
+        ]
+      }
+    },
+    {
+      "block": 3,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 4,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 5,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 6,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    },
+    {
+      "block": 7,
+      "n_features": 224,
+      "n_edges": 0,
+      "n_duplicates": 0,
+      "n_after_pmi": 0,
+      "poly_frac": 0.0,
+      "outdeg_gini": 0.0,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [],
+      "duplicate_examples": [],
+      "sres": null
+    }
+  ]
+}

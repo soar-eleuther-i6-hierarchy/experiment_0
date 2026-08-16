@@ -328,10 +328,19 @@ NAV_PAGES = [
 SOURCES = {
     "pcfg-matryoshka": {
         "label": "pcfg-matryoshka",
-        # 1 and 3, because those are the layers an SAE was trained on -- and the
-        # PCFG base transformer has four layers in total (0-3), so gemma's
-        # 6/12/18/24 do not exist here and never will for this model.
-        "layers": [1, 3],
+        # All four residual streams of the base transformer (it has four layers,
+        # 0-3, so gemma's 6/12/18/24 do not exist here and never will) -- the
+        # zipf run's SAEs on every one of them.
+        "layers": [0, 1, 2, 3],
+        # The formatting sweep (Exp 2, axis b): four densities x three seeds,
+        # every one trained and graded at layer 2 of its own base model. Same
+        # density + different seed is a different run, not a different layer,
+        # so they get their own pill group rather than rows in "layers".
+        # (dirname under outputs/pcfg-matryoshka/, pill label)
+        "runs": [(f"fmt_{code}_s{seed}", f"{label}·s{seed}")
+                 for code, label in [("0000", "0.00"), ("1667", "0.17"),
+                                     ("2308", "0.23"), ("2400", "0.24")]
+                 for seed in (0, 1, 2)],
         "pages": [p for p in NAV_PAGES if not p[0].startswith("qualitative")],
     },
     SOURCE_NAME: {
@@ -461,12 +470,31 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
         second.append(
             f'<a class="pill{on}" href="{root}outputs/{source}/layer_{L:02d}/{page or ""}">{L}</a>'
         )
-    if layer is not None:
+
+    # Which directory under the source this page is inside, read off `current`
+    # exactly as source_of reads the source: for layer pages it repeats `layer`,
+    # for a sweep run it is the run's dirname, and on the source index it is "".
+    runs = cfg.get("runs", ())
+    here = (current or "")[len(f"outputs/{source}/"):].split("/")[0] \
+        if (current or "").startswith(f"outputs/{source}/") else ""
+    if runs:
+        second.append('<span class="sep"></span><span class="lbl">Density</span>')
+        for dirname, label in runs:
+            on = " on" if dirname == here else ""
+            second.append(
+                f'<a class="pill{on}" href="{root}outputs/{source}/{dirname}/{page or ""}">{label}</a>'
+            )
+
+    # The Page group needs a directory to stay within: a layer page's layer_NN,
+    # or a sweep run's own dirname.
+    in_dir = f"layer_{layer:02d}" if layer is not None else \
+        (here if any(d == here for d, _ in runs) else None)
+    if in_dir:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in cfg["pages"]:
             on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
             second.append(
-                f'<a class="{on.strip()}" href="{root}outputs/{source}/layer_{layer:02d}/{f}">{label}</a>'
+                f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
             )
     rows.append('<div class="row">' + "".join(second) + "</div>")
 
