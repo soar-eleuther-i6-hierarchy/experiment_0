@@ -218,7 +218,12 @@
           "b_label": "technical or scientific language related to data processing, analysis, or modeling"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 270,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
     },
     {
       "block": 1,
@@ -363,7 +368,12 @@
         }
       ],
       "duplicate_examples": [],
-      "sres": null
+      "sres": {
+        "n_scored": 163,
+        "n_pass": 0,
+        "n_untestable_children": 0,
+        "edges": []
+      }
     },
     {
       "block": 2,
@@ -529,7 +539,85 @@
           "b_label": "mathematical code, in particular the keyword \"Let\""
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 385,
+        "n_pass": 8,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 1683,
+            "child": 900,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3415870666503906,
+            "child_corr": 0.1861315369606018,
+            "s_res": 0.1861315369606018
+          },
+          {
+            "parent": 1683,
+            "child": 1129,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.29438212513923645,
+            "child_corr": 0.15903306007385254,
+            "s_res": 0.15903306007385254
+          },
+          {
+            "parent": 2009,
+            "child": 1300,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2644669711589813,
+            "child_corr": 0.4034298062324524,
+            "s_res": 0.2644669711589813
+          },
+          {
+            "parent": 1174,
+            "child": 1385,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.24807173013687134,
+            "child_corr": 0.43264102935791016,
+            "s_res": 0.24807173013687134
+          },
+          {
+            "parent": 600,
+            "child": 1424,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.14962059259414673,
+            "child_corr": 0.39392590522766113,
+            "s_res": 0.14962059259414673
+          },
+          {
+            "parent": 753,
+            "child": 1543,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.24678531289100647,
+            "child_corr": 0.5262434482574463,
+            "s_res": 0.24678531289100647
+          },
+          {
+            "parent": 640,
+            "child": 1839,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.24705547094345093,
+            "child_corr": 0.4303698241710663,
+            "s_res": 0.24705547094345093
+          },
+          {
+            "parent": 1100,
+            "child": 1895,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.31285184621810913,
+            "child_corr": 0.5153668522834778,
+            "s_res": 0.31285184621810913
+          }
+        ]
+      }
     },
     {
       "block": 3,
@@ -755,7 +843,1244 @@
           "b_label": "numbered lists or references to figures/applications within a patent"
         }
       ],
-      "sres": null
+      "sres": {
+        "n_scored": 6064,
+        "n_pass": 68,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 7183,
+            "child": 2251,
+            "parent_rank": 1,
+            "child_rank": 4,
+            "parent_corr": 0.3203231692314148,
+            "child_corr": 0.17947573959827423,
+            "s_res": 0.17947573959827423
+          },
+          {
+            "parent": 7379,
+            "child": 2300,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.20100270211696625,
+            "child_corr": 0.24488133192062378,
+            "s_res": 0.20100270211696625
+          },
+          {
+            "parent": 3520,
+            "child": 2325,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2899477481842041,
+            "child_corr": 0.23939631879329681,
+            "s_res": 0.23939631879329681
+          },
+          {
+            "parent": 7047,
+            "child": 2400,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.16991320252418518,
+            "child_corr": 0.4377813935279846,
+            "s_res": 0.16991320252418518
+          },
+          {
+            "parent": 4705,
+            "child": 2427,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17519930005073547,
+            "child_corr": 0.2816891372203827,
+            "s_res": 0.17519930005073547
+          },
+          {
+            "parent": 8134,
+            "child": 2486,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.1491762101650238,
+            "child_corr": 0.2640801668167114,
+            "s_res": 0.1491762101650238
+          },
+          {
+            "parent": 7710,
+            "child": 2609,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.43139082193374634,
+            "child_corr": 0.2849780321121216,
+            "s_res": 0.2849780321121216
+          },
+          {
+            "parent": 5691,
+            "child": 2630,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.3707149028778076,
+            "child_corr": 0.4282335042953491,
+            "s_res": 0.3707149028778076
+          },
+          {
+            "parent": 7927,
+            "child": 2630,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.267184317111969,
+            "child_corr": 0.4282335042953491,
+            "s_res": 0.267184317111969
+          },
+          {
+            "parent": 4896,
+            "child": 3067,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.12749314308166504,
+            "child_corr": 0.1665014773607254,
+            "s_res": 0.12749314308166504
+          },
+          {
+            "parent": 5734,
+            "child": 3073,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.18042217195034027,
+            "child_corr": 0.26992377638816833,
+            "s_res": 0.18042217195034027
+          },
+          {
+            "parent": 7701,
+            "child": 3076,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.30403172969818115,
+            "child_corr": 0.40370774269104004,
+            "s_res": 0.30403172969818115
+          },
+          {
+            "parent": 2751,
+            "child": 3297,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.2257319986820221,
+            "child_corr": 0.2674977481365204,
+            "s_res": 0.2257319986820221
+          },
+          {
+            "parent": 7119,
+            "child": 3315,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3040042817592621,
+            "child_corr": 0.24188610911369324,
+            "s_res": 0.24188610911369324
+          },
+          {
+            "parent": 7710,
+            "child": 3374,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.41274064779281616,
+            "child_corr": 0.19759224355220795,
+            "s_res": 0.19759224355220795
+          },
+          {
+            "parent": 4249,
+            "child": 3443,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2089654803276062,
+            "child_corr": 0.3315432071685791,
+            "s_res": 0.2089654803276062
+          },
+          {
+            "parent": 6741,
+            "child": 3626,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2051354944705963,
+            "child_corr": 0.29212263226509094,
+            "s_res": 0.2051354944705963
+          },
+          {
+            "parent": 6839,
+            "child": 3729,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.13921895623207092,
+            "child_corr": 0.28042152523994446,
+            "s_res": 0.13921895623207092
+          },
+          {
+            "parent": 4397,
+            "child": 3753,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.25084710121154785,
+            "child_corr": 0.4264889061450958,
+            "s_res": 0.25084710121154785
+          },
+          {
+            "parent": 4705,
+            "child": 3767,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.12075088173151016,
+            "child_corr": 0.28238409757614136,
+            "s_res": 0.12075088173151016
+          },
+          {
+            "parent": 6558,
+            "child": 3835,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.3507610261440277,
+            "child_corr": 0.2948184609413147,
+            "s_res": 0.2948184609413147
+          },
+          {
+            "parent": 7480,
+            "child": 4179,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.19074901938438416,
+            "child_corr": 0.38409727811813354,
+            "s_res": 0.19074901938438416
+          },
+          {
+            "parent": 2954,
+            "child": 4374,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.310924232006073,
+            "child_corr": 0.2525315284729004,
+            "s_res": 0.2525315284729004
+          },
+          {
+            "parent": 2757,
+            "child": 4388,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.33192747831344604,
+            "child_corr": 0.49496641755104065,
+            "s_res": 0.33192747831344604
+          },
+          {
+            "parent": 4842,
+            "child": 4388,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.17796725034713745,
+            "child_corr": 0.49496641755104065,
+            "s_res": 0.17796725034713745
+          },
+          {
+            "parent": 6180,
+            "child": 4561,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.22110795974731445,
+            "child_corr": 0.2609173059463501,
+            "s_res": 0.22110795974731445
+          },
+          {
+            "parent": 4705,
+            "child": 4617,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.14372575283050537,
+            "child_corr": 0.22513839602470398,
+            "s_res": 0.14372575283050537
+          },
+          {
+            "parent": 6505,
+            "child": 4630,
+            "parent_rank": 0,
+            "child_rank": 4,
+            "parent_corr": 0.3984178900718689,
+            "child_corr": 0.2386179119348526,
+            "s_res": 0.2386179119348526
+          },
+          {
+            "parent": 4286,
+            "child": 4663,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.17144763469696045,
+            "child_corr": 0.2740730047225952,
+            "s_res": 0.17144763469696045
+          },
+          {
+            "parent": 2507,
+            "child": 4778,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.15269961953163147,
+            "child_corr": 0.28350383043289185,
+            "s_res": 0.15269961953163147
+          },
+          {
+            "parent": 6505,
+            "child": 4808,
+            "parent_rank": 0,
+            "child_rank": 3,
+            "parent_corr": 0.3521696627140045,
+            "child_corr": 0.3001197576522827,
+            "s_res": 0.3001197576522827
+          },
+          {
+            "parent": 5738,
+            "child": 4882,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.15618014335632324,
+            "child_corr": 0.24452029168605804,
+            "s_res": 0.15618014335632324
+          },
+          {
+            "parent": 5175,
+            "child": 4957,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.27552735805511475,
+            "child_corr": 0.2517946660518646,
+            "s_res": 0.2517946660518646
+          },
+          {
+            "parent": 7050,
+            "child": 5341,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.27354690432548523,
+            "child_corr": 0.3025836646556854,
+            "s_res": 0.27354690432548523
+          },
+          {
+            "parent": 6748,
+            "child": 5355,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.27608025074005127,
+            "child_corr": 0.382943332195282,
+            "s_res": 0.27608025074005127
+          },
+          {
+            "parent": 4891,
+            "child": 5410,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.24438270926475525,
+            "child_corr": 0.3846597671508789,
+            "s_res": 0.24438270926475525
+          },
+          {
+            "parent": 7084,
+            "child": 5427,
+            "parent_rank": 4,
+            "child_rank": 3,
+            "parent_corr": 0.20942513644695282,
+            "child_corr": 0.21607741713523865,
+            "s_res": 0.20942513644695282
+          },
+          {
+            "parent": 7614,
+            "child": 5427,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.23842108249664307,
+            "child_corr": 0.21607741713523865,
+            "s_res": 0.21607741713523865
+          },
+          {
+            "parent": 3676,
+            "child": 5532,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.18836241960525513,
+            "child_corr": 0.2919831871986389,
+            "s_res": 0.18836241960525513
+          },
+          {
+            "parent": 7667,
+            "child": 5584,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.236082062125206,
+            "child_corr": 0.6219078302383423,
+            "s_res": 0.236082062125206
+          },
+          {
+            "parent": 3019,
+            "child": 5733,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.3234215974807739,
+            "child_corr": 0.45786070823669434,
+            "s_res": 0.3234215974807739
+          },
+          {
+            "parent": 3820,
+            "child": 5733,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.2096673846244812,
+            "child_corr": 0.45786070823669434,
+            "s_res": 0.2096673846244812
+          },
+          {
+            "parent": 4397,
+            "child": 5782,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.19120654463768005,
+            "child_corr": 0.4447566270828247,
+            "s_res": 0.19120654463768005
+          },
+          {
+            "parent": 7512,
+            "child": 5783,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.21544796228408813,
+            "child_corr": 0.41633206605911255,
+            "s_res": 0.21544796228408813
+          },
+          {
+            "parent": 7050,
+            "child": 5920,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.25100940465927124,
+            "child_corr": 0.413726270198822,
+            "s_res": 0.25100940465927124
+          },
+          {
+            "parent": 3503,
+            "child": 5932,
+            "parent_rank": 4,
+            "child_rank": 2,
+            "parent_corr": 0.23465397953987122,
+            "child_corr": 0.24475644528865814,
+            "s_res": 0.23465397953987122
+          },
+          {
+            "parent": 3898,
+            "child": 5932,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.31200045347213745,
+            "child_corr": 0.24475644528865814,
+            "s_res": 0.24475644528865814
+          },
+          {
+            "parent": 6012,
+            "child": 6143,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3730180263519287,
+            "child_corr": 0.3475973606109619,
+            "s_res": 0.3475973606109619
+          },
+          {
+            "parent": 4896,
+            "child": 6146,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.11732853204011917,
+            "child_corr": 0.2004380226135254,
+            "s_res": 0.11732853204011917
+          },
+          {
+            "parent": 4541,
+            "child": 6174,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.17917510867118835,
+            "child_corr": 0.3052971661090851,
+            "s_res": 0.17917510867118835
+          },
+          {
+            "parent": 7155,
+            "child": 6261,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2166358232498169,
+            "child_corr": 0.4215707778930664,
+            "s_res": 0.2166358232498169
+          },
+          {
+            "parent": 6505,
+            "child": 6297,
+            "parent_rank": 1,
+            "child_rank": 3,
+            "parent_corr": 0.3500668406486511,
+            "child_corr": 0.274520605802536,
+            "s_res": 0.274520605802536
+          },
+          {
+            "parent": 5090,
+            "child": 6630,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.25856971740722656,
+            "child_corr": 0.3033020794391632,
+            "s_res": 0.25856971740722656
+          },
+          {
+            "parent": 4705,
+            "child": 6667,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.21631747484207153,
+            "child_corr": 0.3685377240180969,
+            "s_res": 0.21631747484207153
+          },
+          {
+            "parent": 5284,
+            "child": 6717,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.293079137802124,
+            "child_corr": 0.4505349099636078,
+            "s_res": 0.293079137802124
+          },
+          {
+            "parent": 3136,
+            "child": 6997,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.1998279094696045,
+            "child_corr": 0.37065425515174866,
+            "s_res": 0.1998279094696045
+          },
+          {
+            "parent": 4286,
+            "child": 7153,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.28303036093711853,
+            "child_corr": 0.35032856464385986,
+            "s_res": 0.28303036093711853
+          },
+          {
+            "parent": 8113,
+            "child": 7193,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.13188791275024414,
+            "child_corr": 0.26897674798965454,
+            "s_res": 0.13188791275024414
+          },
+          {
+            "parent": 8174,
+            "child": 7348,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.40939784049987793,
+            "child_corr": 0.2641091048717499,
+            "s_res": 0.2641091048717499
+          },
+          {
+            "parent": 6349,
+            "child": 7532,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.20092573761940002,
+            "child_corr": 0.36097896099090576,
+            "s_res": 0.20092573761940002
+          },
+          {
+            "parent": 7084,
+            "child": 7614,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.11198766529560089,
+            "child_corr": 0.222782701253891,
+            "s_res": 0.11198766529560089
+          },
+          {
+            "parent": 4082,
+            "child": 7616,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.1558731496334076,
+            "child_corr": 0.26099443435668945,
+            "s_res": 0.1558731496334076
+          },
+          {
+            "parent": 5721,
+            "child": 7668,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.1851646602153778,
+            "child_corr": 0.3269635736942291,
+            "s_res": 0.1851646602153778
+          },
+          {
+            "parent": 3520,
+            "child": 7683,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.25143957138061523,
+            "child_corr": 0.20869219303131104,
+            "s_res": 0.20869219303131104
+          },
+          {
+            "parent": 3824,
+            "child": 7731,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.23337885737419128,
+            "child_corr": 0.3114108443260193,
+            "s_res": 0.23337885737419128
+          },
+          {
+            "parent": 7084,
+            "child": 7758,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.37685704231262207,
+            "child_corr": 0.21563270688056946,
+            "s_res": 0.21563270688056946
+          },
+          {
+            "parent": 5175,
+            "child": 7762,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.29749172925949097,
+            "child_corr": 0.28669750690460205,
+            "s_res": 0.28669750690460205
+          },
+          {
+            "parent": 5561,
+            "child": 8180,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.15156289935112,
+            "child_corr": 0.3051111400127411,
+            "s_res": 0.15156289935112
+          }
+        ]
+      }
+    },
+    {
+      "block": 4,
+      "n_features": 24576,
+      "n_edges": 6986,
+      "n_duplicates": 8866,
+      "n_after_pmi": 6986,
+      "poly_frac": 0.6198083067092651,
+      "outdeg_gini": 0.9975878910909617,
+      "n_superparents": 0,
+      "superparents": [],
+      "top_edges": [
+        {
+          "parent": 11342,
+          "child": 14048,
+          "R": 1.0,
+          "pmi": 5.148874853030578,
+          "parent_label": "capitalized letters followed by lowercase letters",
+          "child_label": "math problems asking about the relative sizes of numbers."
+        },
+        {
+          "parent": 27764,
+          "child": 20907,
+          "R": 1.0,
+          "pmi": 5.559673307114105,
+          "parent_label": "text about how the need to pay bills causes people to seek business opportunities to meet demand to continue their lifestyle",
+          "child_label": "references to legal cases"
+        },
+        {
+          "parent": 29875,
+          "child": 31591,
+          "R": 1.0,
+          "pmi": 4.967736028485673,
+          "parent_label": "words in comparative contexts, especially of measurement, number or degree, including time",
+          "child_label": "database configuration settings in XML"
+        },
+        {
+          "parent": 16651,
+          "child": 14048,
+          "R": 1.0,
+          "pmi": 5.697031723161929,
+          "parent_label": "words surrounding expressions of physical or mental health",
+          "child_label": "math problems asking about the relative sizes of numbers."
+        },
+        {
+          "parent": 18707,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.734536118620383,
+          "parent_label": "text depicting homoerotic or sexual acts",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "parent": 20286,
+          "child": 31591,
+          "R": 1.0,
+          "pmi": 5.856307990837999,
+          "parent_label": "words associated with concert halls and opera",
+          "child_label": "database configuration settings in XML"
+        },
+        {
+          "parent": 17760,
+          "child": 31591,
+          "R": 1.0,
+          "pmi": 5.3101430006267005,
+          "parent_label": "a variety of separators between content, such as horizontal rules, ellipses, and bullets",
+          "child_label": "database configuration settings in XML"
+        },
+        {
+          "parent": 23772,
+          "child": 20907,
+          "R": 1.0,
+          "pmi": 5.331196409824533,
+          "parent_label": "this neuron finds documents discussing childhood obesity and the civil rights movement",
+          "child_label": "references to legal cases"
+        },
+        {
+          "parent": 18707,
+          "child": 14048,
+          "R": 1.0,
+          "pmi": 5.734536118620383,
+          "parent_label": "text depicting homoerotic or sexual acts",
+          "child_label": "math problems asking about the relative sizes of numbers."
+        },
+        {
+          "parent": 15134,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.2456044794891294,
+          "parent_label": "plural nouns within scientific or medical texts",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "parent": 29707,
+          "child": 14048,
+          "R": 1.0,
+          "pmi": 5.978597568596274,
+          "parent_label": "descriptive language within a narrative",
+          "child_label": "math problems asking about the relative sizes of numbers."
+        },
+        {
+          "parent": 20293,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.318511250297217,
+          "parent_label": "words that relate to organization and categorization",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "parent": 21745,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.923247473513109,
+          "parent_label": "seemingly random, insignificant words.",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "parent": 21464,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.938751660049074,
+          "parent_label": "organization names, particularly related to government and institutes in Kerala, India",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "parent": 9090,
+          "child": 9651,
+          "R": 1.0,
+          "pmi": 5.1038065676288715,
+          "parent_label": "prepositions and other grammatical function words.",
+          "child_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        }
+      ],
+      "duplicate_examples": [
+        {
+          "a": 8560,
+          "b": 8771,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "end quotes after papers, especially in the context of econometrics"
+        },
+        {
+          "a": 8560,
+          "b": 8899,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "computer usernames"
+        },
+        {
+          "a": 8560,
+          "b": 8900,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "Tikz code format for nodes labeled A, B, C, and D."
+        },
+        {
+          "a": 8560,
+          "b": 8933,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "the word \"over\", as well as phrases containing the word \"over\" followed by \"the\"."
+        },
+        {
+          "a": 8560,
+          "b": 8971,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "references to legal cases involving defendants and their representation"
+        },
+        {
+          "a": 8560,
+          "b": 9047,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "the word \"cognitive\" and words associated with it."
+        },
+        {
+          "a": 8560,
+          "b": 9543,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "court filings"
+        },
+        {
+          "a": 8560,
+          "b": 9632,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "things and actions that are in the air"
+        },
+        {
+          "a": 8560,
+          "b": 9651,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "horizontal lines made of hyphens and other characters, likely representing a table border"
+        },
+        {
+          "a": 8560,
+          "b": 10097,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "words and phrases related to the function and location of cells within the body"
+        },
+        {
+          "a": 8560,
+          "b": 10511,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "the word \"high\" and some words that are close to it"
+        },
+        {
+          "a": 8560,
+          "b": 11010,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "newline characters that are part of code blocks"
+        },
+        {
+          "a": 8560,
+          "b": 11022,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "words related to crimes involving illegal drugs and money."
+        },
+        {
+          "a": 8560,
+          "b": 11048,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "passages that compare the qualities of people or groups"
+        },
+        {
+          "a": 8560,
+          "b": 11239,
+          "a_label": "Java code snippets, especially related to method signatures and object properties",
+          "b_label": "the word \"with\"."
+        }
+      ],
+      "sres": {
+        "n_scored": 6961,
+        "n_pass": 43,
+        "n_untestable_children": 0,
+        "edges": [
+          {
+            "parent": 22359,
+            "child": 9235,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2587771415710449,
+            "child_corr": 0.2935190796852112,
+            "s_res": 0.2587771415710449
+          },
+          {
+            "parent": 18367,
+            "child": 10243,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2872362732887268,
+            "child_corr": 0.3352597951889038,
+            "s_res": 0.2872362732887268
+          },
+          {
+            "parent": 18107,
+            "child": 11318,
+            "parent_rank": 3,
+            "child_rank": 1,
+            "parent_corr": 0.14971837401390076,
+            "child_corr": 0.2233721911907196,
+            "s_res": 0.14971837401390076
+          },
+          {
+            "parent": 15031,
+            "child": 12506,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.26433372497558594,
+            "child_corr": 0.24523991346359253,
+            "s_res": 0.24523991346359253
+          },
+          {
+            "parent": 10243,
+            "child": 12851,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.23109281063079834,
+            "child_corr": 0.4069305658340454,
+            "s_res": 0.23109281063079834
+          },
+          {
+            "parent": 18367,
+            "child": 12851,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.2951658070087433,
+            "child_corr": 0.4069305658340454,
+            "s_res": 0.2951658070087433
+          },
+          {
+            "parent": 20602,
+            "child": 13024,
+            "parent_rank": 0,
+            "child_rank": 2,
+            "parent_corr": 0.29988136887550354,
+            "child_corr": 0.26411154866218567,
+            "s_res": 0.26411154866218567
+          },
+          {
+            "parent": 32572,
+            "child": 13658,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.2586524486541748,
+            "child_corr": 0.2526192367076874,
+            "s_res": 0.2526192367076874
+          },
+          {
+            "parent": 22150,
+            "child": 13771,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.2217647284269333,
+            "child_corr": 0.28095558285713196,
+            "s_res": 0.2217647284269333
+          },
+          {
+            "parent": 23966,
+            "child": 14434,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.21644169092178345,
+            "child_corr": 0.2855842709541321,
+            "s_res": 0.21644169092178345
+          },
+          {
+            "parent": 23437,
+            "child": 15769,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.1554499715566635,
+            "child_corr": 0.22833530604839325,
+            "s_res": 0.1554499715566635
+          },
+          {
+            "parent": 30285,
+            "child": 16468,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.2521405518054962,
+            "child_corr": 0.326740562915802,
+            "s_res": 0.2521405518054962
+          },
+          {
+            "parent": 26712,
+            "child": 16977,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.26142460107803345,
+            "child_corr": 0.3357921838760376,
+            "s_res": 0.26142460107803345
+          },
+          {
+            "parent": 23067,
+            "child": 18401,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.24443669617176056,
+            "child_corr": 0.3353242874145508,
+            "s_res": 0.24443669617176056
+          },
+          {
+            "parent": 25841,
+            "child": 19802,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.22877992689609528,
+            "child_corr": 0.21879160404205322,
+            "s_res": 0.21879160404205322
+          },
+          {
+            "parent": 28730,
+            "child": 20438,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2773030400276184,
+            "child_corr": 0.24651269614696503,
+            "s_res": 0.24651269614696503
+          },
+          {
+            "parent": 31561,
+            "child": 20438,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.22198225557804108,
+            "child_corr": 0.24651269614696503,
+            "s_res": 0.22198225557804108
+          },
+          {
+            "parent": 28071,
+            "child": 20548,
+            "parent_rank": 2,
+            "child_rank": 1,
+            "parent_corr": 0.30082958936691284,
+            "child_corr": 0.3166975975036621,
+            "s_res": 0.30082958936691284
+          },
+          {
+            "parent": 17020,
+            "child": 23100,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.18849840760231018,
+            "child_corr": 0.3231683373451233,
+            "s_res": 0.18849840760231018
+          },
+          {
+            "parent": 24586,
+            "child": 23455,
+            "parent_rank": 1,
+            "child_rank": 3,
+            "parent_corr": 0.23766925930976868,
+            "child_corr": 0.17710891366004944,
+            "s_res": 0.17710891366004944
+          },
+          {
+            "parent": 11482,
+            "child": 23735,
+            "parent_rank": 2,
+            "child_rank": 4,
+            "parent_corr": 0.23555994033813477,
+            "child_corr": 0.19480419158935547,
+            "s_res": 0.19480419158935547
+          },
+          {
+            "parent": 25841,
+            "child": 24141,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.28270405530929565,
+            "child_corr": 0.28073692321777344,
+            "s_res": 0.28073692321777344
+          },
+          {
+            "parent": 15942,
+            "child": 24974,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.15185952186584473,
+            "child_corr": 0.20379485189914703,
+            "s_res": 0.15185952186584473
+          },
+          {
+            "parent": 23116,
+            "child": 25140,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.2088116705417633,
+            "child_corr": 0.32780301570892334,
+            "s_res": 0.2088116705417633
+          },
+          {
+            "parent": 25841,
+            "child": 25147,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.22085823118686676,
+            "child_corr": 0.2575071454048157,
+            "s_res": 0.22085823118686676
+          },
+          {
+            "parent": 20548,
+            "child": 25628,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.24585941433906555,
+            "child_corr": 0.2701915502548218,
+            "s_res": 0.24585941433906555
+          },
+          {
+            "parent": 28071,
+            "child": 25628,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2718384861946106,
+            "child_corr": 0.2701915502548218,
+            "s_res": 0.2701915502548218
+          },
+          {
+            "parent": 19099,
+            "child": 26038,
+            "parent_rank": 3,
+            "child_rank": 4,
+            "parent_corr": 0.23909175395965576,
+            "child_corr": 0.22701717913150787,
+            "s_res": 0.22701717913150787
+          },
+          {
+            "parent": 15489,
+            "child": 26047,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.1302546262741089,
+            "child_corr": 0.16668379306793213,
+            "s_res": 0.1302546262741089
+          },
+          {
+            "parent": 29968,
+            "child": 26135,
+            "parent_rank": 3,
+            "child_rank": 0,
+            "parent_corr": 0.19544191658496857,
+            "child_corr": 0.32270100712776184,
+            "s_res": 0.19544191658496857
+          },
+          {
+            "parent": 18187,
+            "child": 27363,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.23558828234672546,
+            "child_corr": 0.412356972694397,
+            "s_res": 0.23558828234672546
+          },
+          {
+            "parent": 15132,
+            "child": 29104,
+            "parent_rank": 4,
+            "child_rank": 1,
+            "parent_corr": 0.1930696815252304,
+            "child_corr": 0.28788578510284424,
+            "s_res": 0.1930696815252304
+          },
+          {
+            "parent": 9509,
+            "child": 29524,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2171417474746704,
+            "child_corr": 0.20761068165302277,
+            "s_res": 0.20761068165302277
+          },
+          {
+            "parent": 13764,
+            "child": 30083,
+            "parent_rank": 3,
+            "child_rank": 2,
+            "parent_corr": 0.24417947232723236,
+            "child_corr": 0.291015625,
+            "s_res": 0.24417947232723236
+          },
+          {
+            "parent": 22757,
+            "child": 30159,
+            "parent_rank": 2,
+            "child_rank": 3,
+            "parent_corr": 0.17978571355342865,
+            "child_corr": 0.14122945070266724,
+            "s_res": 0.14122945070266724
+          },
+          {
+            "parent": 25439,
+            "child": 30239,
+            "parent_rank": 0,
+            "child_rank": 1,
+            "parent_corr": 0.3812054991722107,
+            "child_corr": 0.34421998262405396,
+            "s_res": 0.34421998262405396
+          },
+          {
+            "parent": 27061,
+            "child": 30695,
+            "parent_rank": 4,
+            "child_rank": 0,
+            "parent_corr": 0.16707098484039307,
+            "child_corr": 0.3215107321739197,
+            "s_res": 0.16707098484039307
+          },
+          {
+            "parent": 27224,
+            "child": 30713,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.22501102089881897,
+            "child_corr": 0.3128328025341034,
+            "s_res": 0.22501102089881897
+          },
+          {
+            "parent": 13326,
+            "child": 30879,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.2580433785915375,
+            "child_corr": 0.20014089345932007,
+            "s_res": 0.20014089345932007
+          },
+          {
+            "parent": 26166,
+            "child": 31046,
+            "parent_rank": 2,
+            "child_rank": 0,
+            "parent_corr": 0.1586439311504364,
+            "child_corr": 0.21533551812171936,
+            "s_res": 0.1586439311504364
+          },
+          {
+            "parent": 22757,
+            "child": 31779,
+            "parent_rank": 0,
+            "child_rank": 4,
+            "parent_corr": 0.3273165225982666,
+            "child_corr": 0.14149892330169678,
+            "s_res": 0.14149892330169678
+          },
+          {
+            "parent": 24160,
+            "child": 31810,
+            "parent_rank": 1,
+            "child_rank": 0,
+            "parent_corr": 0.16231922805309296,
+            "child_corr": 0.27800196409225464,
+            "s_res": 0.16231922805309296
+          },
+          {
+            "parent": 25841,
+            "child": 32456,
+            "parent_rank": 1,
+            "child_rank": 2,
+            "parent_corr": 0.25733131170272827,
+            "child_corr": 0.25085532665252686,
+            "s_res": 0.25085532665252686
+          }
+        ]
+      }
     }
   ]
 }

@@ -63,7 +63,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 - **Superparents** (out-degree flag): 1 (1 also pass the old fire-rate AND-gate) — e.g. feature 304 _words or phrases related to technical manuals, components, …_: 1420 children, fires on 80.9% of tokens
 - **Independence null**: mean edge PMI 0.49; 1420 edges (81.2%) at chance level (PMI < 0.5). 54 edges dropped by the joint-support guard (n_joint < 30).
 - **Recon-ablation contribution filter** (Tree-SAE-inspired baseline): 648/1748 edges pass (37.1%).
-- **Frequency control**: mean survival 0.916 over 1745 testable edges; 193 (11.1%) are frequency-driven (survival < 0.5).
+- **Frequency control**: mean survival 0.916 over 1745 testable edges; 194 (11.1%) are frequency-driven (survival < 0.5).
 - **Sibling redundancy** (global Jaccard — confounded proxy, not the splitting verdict; the parent-conditioned version is in the stage-03 second pass): mean 0.283 over 65 parents; 0 over the 0.5 global threshold.
 - **Joint-child (exact union, parents with edges)**: R_supp mean 1.000, R_mass mean 1.000; 0 parents with one child holding >=90% of their energy (rename candidates).
 - **Joint-child coverage** (min(1, ΣF) upper bound — saturates when children co-fire, kept only for contrast with the exact union): 0.254.
@@ -85,7 +85,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 - **Superparents** (out-degree flag): 0 (0 also pass the old fire-rate AND-gate)
 - **Independence null**: mean edge PMI 4.04; 0 edges (0.0%) at chance level (PMI < 0.5). 529 edges dropped by the joint-support guard (n_joint < 30).
 - **Recon-ablation contribution filter** (Tree-SAE-inspired baseline): 408/4195 edges pass (9.7%).
-- **Frequency control**: mean survival 0.199 over 3457 testable edges; 2847 (82.4%) are frequency-driven (survival < 0.5).
+- **Frequency control**: mean survival 0.199 over 3457 testable edges; 2849 (82.4%) are frequency-driven (survival < 0.5).
 - **Sibling redundancy** (global Jaccard — confounded proxy, not the splitting verdict; the parent-conditioned version is in the stage-03 second pass): mean 0.278 over 230 parents; 37 over the 0.5 global threshold.
 - **Joint-child (exact union, parents with edges)**: R_supp mean 1.000, R_mass mean 1.000; 5 parents with one child holding >=90% of their energy (rename candidates).
 - **Joint-child coverage** (min(1, ΣF) upper bound — saturates when children co-fire, kept only for contrast with the exact union): 0.430.
@@ -97,6 +97,6 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 | 2009 -> 5678 | 0.98 | 0.08 | 4.21 | 0.09/0.02 | Y | 1.02 | 0.07 | text from a song about prejudice | elements of poems, such as question wor… |
 | 1781 -> 3090 | 0.98 | 0.31 | 4.85 | 0.21/0.10 | Y | 0.98 | - | words relating to fighting and weight | mentions of a particular Mixed Martial … |
 | 880 -> 8103 | 0.97 | 0.06 | 4.31 | 0.11/0.13 | Y | 1.03 | 0.13 | CSS or other code related to colors | HTML color codes |
-| 1112 -> 5454 | 0.97 | 0.29 | 5.38 | -0.00/-0.00 | n | - | 0.53 | the string "org" in code or data files | substrings that match the format "[@B##… |
-| 1072 -> 8087 | 0.97 | 0.15 | 4.75 | -0.00/-0.00 | n | - | 0.48 | abbreviations and labels for values in … | HTML document class declarations |
-| 1526 -> 5490 | 0.97 | 0.09 | 4.21 | -0.00/-0.00 | n | - | 0.47 | words and phrases related to space miss… | LaTeX commands |
+| 1603 -> 5454 | 0.97 | 0.12 | 4.54 | -0.00/-0.00 | n | - | 0.49 | instances of the word "can" | substrings that match the format "[@B##… |
+| 1256 -> 8087 | 0.97 | 0.07 | 3.97 | -0.00/-0.00 | n | - | 0.48 | words related to a crime scene with a f… | HTML document class declarations |
+| 806 -> 8087 | 0.97 | 0.05 | 3.59 | -0.00/-0.00 | n | - | 0.36 | text about inventions, patents, and inv… | HTML document class declarations |

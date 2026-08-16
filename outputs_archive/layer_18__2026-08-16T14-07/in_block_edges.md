@@ -39,7 +39,6 @@ Parent→child *within* a block (asymmetric containment); co-extensive pairs are
 
 ## Block B0  (128 features)
 - **345** directed edges, **1** duplicate pairs, 270 survive PMI>0; PolyFrac 86%, Gini 0.949.
-- **S_res: 0/270** edges are genuine refinements (0 children untestable).
 - In-block superparents: 3 (e.g. F89 _technical or scientific language related to d…_: 126 children, fires 99%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -57,7 +56,6 @@ _Duplicate pairs (rename/split candidates):_ 9≈89 (mentions of political, …)
 
 ## Block B1  (384 features)
 - **375** directed edges, **0** duplicate pairs, 163 survive PMI>0; PolyFrac 1%, Gini 0.997.
-- **S_res: 0/163** edges are genuine refinements (0 children untestable).
 - In-block superparents: 1 (e.g. F304 _words or phrases related to technical manuals…_: 369 children, fires 81%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -73,7 +71,6 @@ _Duplicate pairs (rename/split candidates):_ 9≈89 (mentions of political, …)
 
 ## Block B2  (1536 features)
 - **385** directed edges, **5** duplicate pairs, 385 survive PMI>0; PolyFrac 32%, Gini 0.937.
-- **S_res: 8/385** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -90,7 +87,6 @@ _Duplicate pairs (rename/split candidates):_ 592≈964 (references to figures); 
 
 ## Block B3  (6144 features)
 - **6091** directed edges, **833** duplicate pairs, 6091 survive PMI>0; PolyFrac 9%, Gini 0.981.
-- **S_res: 68/6064** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -104,20 +100,3 @@ _Duplicate pairs (rename/split candidates):_ 592≈964 (references to figures); 
 | 3637 → 5454 | 0.97 | 3.89 | source code syntax | substrings that match the format "[@B##-#ijer… |
 
 _Duplicate pairs (rename/split candidates):_ 2103≈2288 (the phrase "Challenge M…); 2103≈2291 (the phrase "Challenge M…); 2103≈2658 (the phrase "Challenge M…); 2103≈3067 (the phrase "Challenge M…); 2103≈3421 (the phrase "Challenge M…); 2103≈3712 (the phrase "Challenge M…)
-
-## Block B4  (24576 features)
-- **6986** directed edges, **8866** duplicate pairs, 6986 survive PMI>0; PolyFrac 62%, Gini 0.998.
-- **S_res: 43/6961** edges are genuine refinements (0 children untestable).
-
-| parent → child | R | PMI | parent label | child label |
-|---|---|---|---|---|
-| 11342 → 14048 | 1.00 | 5.15 | capitalized letters followed by lowercase let… | math problems asking about the relative sizes… |
-| 27764 → 20907 | 1.00 | 5.56 | text about how the need to pay bills causes p… | references to legal cases |
-| 29875 → 31591 | 1.00 | 4.97 | words in comparative contexts, especially of … | database configuration settings in XML |
-| 16651 → 14048 | 1.00 | 5.70 | words surrounding expressions of physical or … | math problems asking about the relative sizes… |
-| 18707 → 9651 | 1.00 | 5.73 | text depicting homoerotic or sexual acts | horizontal lines made of hyphens and other ch… |
-| 20286 → 31591 | 1.00 | 5.86 | words associated with concert halls and opera | database configuration settings in XML |
-| 17760 → 31591 | 1.00 | 5.31 | a variety of separators between content, such… | database configuration settings in XML |
-| 23772 → 20907 | 1.00 | 5.33 | this neuron finds documents discussing childh… | references to legal cases |
-
-_Duplicate pairs (rename/split candidates):_ 8560≈8771 (Java code snippets, esp…); 8560≈8899 (Java code snippets, esp…); 8560≈8900 (Java code snippets, esp…); 8560≈8933 (Java code snippets, esp…); 8560≈8971 (Java code snippets, esp…); 8560≈9047 (Java code snippets, esp…)
