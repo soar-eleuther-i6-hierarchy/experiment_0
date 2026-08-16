@@ -472,11 +472,24 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
         return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
     cfg = SOURCES[source]
 
+    def has_page(dirname: str, f: str) -> bool:
+        d = OUT_DIR / source / dirname
+        return (d / f).exists() or (d / f.replace(".html", ".md")).exists()
+
+    def pill_href(dirname: str) -> str:
+        """Keep the page kind when the target directory has that page; land on
+        its index when it does not. Not every run produced every page (a Sankey
+        needs a superparent to exist), and a 404 in the site's own chrome is
+        worse than arriving at the directory."""
+        if page and has_page(dirname, page):
+            return f"{root}outputs/{source}/{dirname}/{page}"
+        return f"{root}outputs/{source}/{dirname}/"
+
     second = ['<span class="lbl">Layer</span>']
     for L in cfg["layers"]:
         on = " on" if L == layer else ""
         second.append(
-            f'<a class="pill{on}" href="{root}outputs/{source}/layer_{L:02d}/{page or ""}">{L}</a>'
+            f'<a class="pill{on}" href="{pill_href(f"layer_{L:02d}")}">{L}</a>'
         )
 
     # Which directory under the source this page is inside, read off `current`
@@ -494,6 +507,8 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     if in_dir and not in_run:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in cfg["pages"]:
+            if not has_page(in_dir, f):     # pages-on-disk only, like the indexes
+                continue
             on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
             second.append(
                 f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
@@ -516,11 +531,13 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
         for dirname, label in runs:
             on = " on" if dirname == here else ""
             third.append(
-                f'<a class="pill{on}" href="{root}outputs/{source}/{dirname}/{page or ""}">{label}</a>'
+                f'<a class="pill{on}" href="{pill_href(dirname)}">{label}</a>'
             )
         if in_run:
             third.append('<span class="sep"></span><span class="lbl">Page</span>')
             for f, label in cfg["pages"]:
+                if not has_page(in_dir, f):
+                    continue
                 on = " on" if f == page else ""
                 third.append(
                     f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
