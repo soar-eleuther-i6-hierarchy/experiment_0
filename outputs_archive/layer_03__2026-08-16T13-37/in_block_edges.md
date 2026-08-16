@@ -28,7 +28,7 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
 .x0nav .sep{background:#2E2E2E;}
 .x0nav details.dens summary:hover{color:#C79BF2;}}
-</style><nav class="x0nav"><div class="row"><a class="brand" href="../../../">SOAR I-6 · metrics</a><a class="" href="../../../outputs/">Results</a><a class="" href="../../../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../../../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../../../outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="on" href="../../../outputs/gemma-2-2b/">gemma-2-2b</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div><div class="row"><span class="lbl">Layer</span><a class="pill" href="../../../outputs/gemma-2-2b/layer_01/in_block_edges.html">1</a><a class="pill on" href="../../../outputs/gemma-2-2b/layer_03/in_block_edges.html">3</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_06/in_block_edges.html">6</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_12/in_block_edges.html">12</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_18/in_block_edges.html">18</a><a class="pill" href="../../../outputs/gemma-2-2b/layer_24/in_block_edges.html">24</a><span class="sep"></span><span class="lbl">Page</span><a class="" href="../../../outputs/gemma-2-2b/layer_03/metrics_dashboard.html">Dashboard</a><a class="" href="../../../outputs/gemma-2-2b/layer_03/superparent_sankey.html">Superparents</a><a class="" href="../../../outputs/gemma-2-2b/layer_03/in_block_dashboard.html">In-block</a><a class="" href="../../../outputs/gemma-2-2b/layer_03/qualitative_dashboard.html">Qualitative</a><a class="" href="../../../outputs/gemma-2-2b/layer_03/metrics_report.html">Metrics report</a><a class="on" href="../../../outputs/gemma-2-2b/layer_03/in_block_edges.html">In-block report</a><a class="" href="../../../outputs/gemma-2-2b/layer_03/qualitative_check.html">Qualitative report</a></div></nav>
+</style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../../outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="" href="../../outputs/gemma-2-2b/">gemma-2-2b</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
 # In-block (same-level) directed edges
 
@@ -38,7 +38,6 @@ Parent→child *within* a block (asymmetric containment); co-extensive pairs are
 
 ## Block B0  (128 features)
 - **557** directed edges, **16** duplicate pairs, 411 survive PMI>0; PolyFrac 98%, Gini 0.946.
-- **S_res: 0/411** edges are genuine refinements (0 children untestable).
 - In-block superparents: 4 (e.g. F70 _proper nouns that have mixed upper and lowerc…_: 124 children, fires 99%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -56,7 +55,6 @@ _Duplicate pairs (rename/split candidates):_ 1≈17 (words related to groups…)
 
 ## Block B1  (384 features)
 - **275** directed edges, **1** duplicate pairs, 275 survive PMI>0; PolyFrac 12%, Gini 0.997.
-- **S_res: 0/275** edges are genuine refinements (0 children untestable).
 - In-block superparents: 1 (e.g. F448 _a grab bag of proper nouns including names, p…_: 244 children, fires 48%).
 
 | parent → child | R | PMI | parent label | child label |
@@ -74,15 +72,14 @@ _Duplicate pairs (rename/split candidates):_ 276≈342 (strings of numbers)
 
 ## Block B2  (1536 features)
 - **1707** directed edges, **7** duplicate pairs, 858 survive PMI>0; PolyFrac 3%, Gini 0.991.
-- **S_res: 7/835** edges are genuine refinements (0 children untestable).
 - In-block superparents: 1 (e.g. F1457 _words used in official documents and scientif…_: 1403 children, fires 88%).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
 | 1457 → 1281 | 1.00 | 0.13 | words used in official documents and scientif… | the word "indicated" and related terms like "… |
 | 1457 → 1259 | 0.99 | 0.12 | words used in official documents and scientif… | uses of the word "whether" |
-| 1457 → 1837 | 0.98 | 0.11 | words used in official documents and scientif… | medical articles talking about probabilities … |
 | 1457 → 1032 | 0.98 | 0.11 | words used in official documents and scientif… | the `aligned` environment tag in LaTeX. |
+| 1457 → 1837 | 0.98 | 0.11 | words used in official documents and scientif… | medical articles talking about probabilities … |
 | 1457 → 1265 | 0.98 | 0.11 | words used in official documents and scientif… | mathematical symbols, especially gamma |
 | 1457 → 1816 | 0.98 | 0.11 | words used in official documents and scientif… | the digit 5 |
 | 1457 → 1274 | 0.98 | 0.11 | words used in official documents and scientif… | the word "stress" |
@@ -92,7 +89,6 @@ _Duplicate pairs (rename/split candidates):_ 655≈1032 (mathematical or physics
 
 ## Block B3  (6144 features)
 - **1640** directed edges, **142** duplicate pairs, 1640 survive PMI>0; PolyFrac 42%, Gini 0.980.
-- **S_res: 35/1632** edges are genuine refinements (0 children untestable).
 
 | parent → child | R | PMI | parent label | child label |
 |---|---|---|---|---|
@@ -106,20 +102,3 @@ _Duplicate pairs (rename/split candidates):_ 655≈1032 (mathematical or physics
 | 4300 → 6997 | 1.00 | 3.46 | technical details in product descriptions, me… | the word "spatial" |
 
 _Duplicate pairs (rename/split candidates):_ 2334≈4691 (the character "t" at th…); 2346≈2358 (sequences of numbers, e…); 2346≈2556 (sequences of numbers, e…); 2346≈2915 (sequences of numbers, e…); 2346≈3948 (sequences of numbers, e…); 2346≈4532 (sequences of numbers, e…)
-
-## Block B4  (24576 features)
-- **1529** directed edges, **285** duplicate pairs, 1529 survive PMI>0; PolyFrac 38%, Gini 0.996.
-- **S_res: 43/1508** edges are genuine refinements (0 children untestable).
-
-| parent → child | R | PMI | parent label | child label |
-|---|---|---|---|---|
-| 19137 → 22548 | 1.00 | 4.71 | words related to either medical contexts or g… | square brackets |
-| 20705 → 22548 | 1.00 | 5.01 | mentions of fatty acids, especially omegas | square brackets |
-| 26727 → 8809 | 1.00 | 5.01 | words and phrases that suggest changes and tr… | the letter 'Q' |
-| 24644 → 20350 | 1.00 | 5.74 | the term "amazonaws" as well as mentions of "… | format specifiers in code |
-| 24577 → 20350 | 1.00 | 5.72 | words associated with singular outcomes, cond… | format specifiers in code |
-| 13510 → 26858 | 1.00 | 3.18 | periods ending scientific statements that are… | indented paragraphs |
-| 22117 → 20350 | 1.00 | 5.65 | terms related to aircraft and flight | format specifiers in code |
-| 8400 → 22548 | 1.00 | 5.23 | words referencing a legal inquiry into a death | square brackets |
-
-_Duplicate pairs (rename/split candidates):_ 8361≈14703 (mentions of the numbers…); 8470≈24531 (the first person singul…); 8680≈8809 (LaTeX math symbols); 8680≈10054 (LaTeX math symbols); 8680≈11623 (LaTeX math symbols); 8680≈14728 (LaTeX math symbols)
