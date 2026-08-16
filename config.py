@@ -337,7 +337,7 @@ SOURCES = {
         # density + different seed is a different run, not a different layer,
         # so they get their own pill group rather than rows in "layers".
         # (dirname under outputs/pcfg-matryoshka/, pill label)
-        "runs": [(f"fmt_{code}_s{seed}", f"{label}·s{seed}")
+        "runs": [(f"fmt_{code}_s{seed}", f"{label}-s{seed}")
                  for code, label in [("0000", "0.00"), ("1667", "0.17"),
                                      ("2308", "0.23"), ("2400", "0.24")]
                  for seed in (0, 1, 2)],
@@ -394,6 +394,12 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .sep{width:1px;height:17px;background:#E3DAFB;}
 .x0nav .gh{display:inline-flex;align-items:center;gap:5px;margin-left:auto;}
 .x0nav .gh svg{width:15px;height:15px;fill:currentColor;display:block;}
+.x0nav details.dens{display:flex;flex-wrap:wrap;align-items:center;gap:13px;}
+.x0nav details.dens summary{cursor:pointer;list-style:none;user-select:none;}
+.x0nav details.dens summary::-webkit-details-marker{display:none;}
+.x0nav details.dens summary::after{content:"▸";margin-left:4px;}
+.x0nav details.dens[open] summary::after{content:"▾";}
+.x0nav details.dens summary:hover{color:#7C22CE;}
 @media (prefers-color-scheme:dark){
 .x0nav{background:#141414;border-bottom-color:#2E2E2E;}
 .x0nav .row+.row{border-top-color:#242424;}
@@ -401,7 +407,8 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav .brand,.x0nav a:hover,.x0nav .on{color:#C79BF2;}
 .x0nav .pill{background:#1E1830;border-color:#3A2B57;}
 .x0nav .pill.on{background:#7C22CE;color:#fff;border-color:#7C22CE;}
-.x0nav .sep{background:#2E2E2E;}}
+.x0nav .sep{background:#2E2E2E;}
+.x0nav details.dens summary:hover{color:#C79BF2;}}
 </style>"""
 
 
@@ -477,19 +484,13 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
     runs = cfg.get("runs", ())
     here = (current or "")[len(f"outputs/{source}/"):].split("/")[0] \
         if (current or "").startswith(f"outputs/{source}/") else ""
-    if runs:
-        second.append('<span class="sep"></span><span class="lbl">Density</span>')
-        for dirname, label in runs:
-            on = " on" if dirname == here else ""
-            second.append(
-                f'<a class="pill{on}" href="{root}outputs/{source}/{dirname}/{page or ""}">{label}</a>'
-            )
+    in_run = any(d == here for d, _ in runs)
 
     # The Page group needs a directory to stay within: a layer page's layer_NN,
-    # or a sweep run's own dirname.
-    in_dir = f"layer_{layer:02d}" if layer is not None else \
-        (here if any(d == here for d, _ in runs) else None)
-    if in_dir:
+    # or a sweep run's own dirname. On a run page it lives in the sweep row
+    # below, next to the pills that place the run.
+    in_dir = f"layer_{layer:02d}" if layer is not None else (here if in_run else None)
+    if in_dir and not in_run:
         second.append('<span class="sep"></span><span class="lbl">Page</span>')
         for f, label in cfg["pages"]:
             on = " on" if f == page else ""     # page=None -> the layer index, nothing marked
@@ -497,6 +498,30 @@ def nav_html(depth: int = 2, layer: int | None = None, page: str | None = None,
                 f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
             )
     rows.append('<div class="row">' + "".join(second) + "</div>")
+
+    # The formatting sweep gets a row of its own, folded behind the word
+    # "Density": twelve pills on every page of the source would drown the four
+    # layer pills that place the zipf run. <details> keeps it dependency-free --
+    # it renders identically on Pages, on github.com and straight off disk --
+    # and it starts open exactly when the reader is inside a sweep run, so the
+    # lit pill that answers "where am I" is never hidden.
+    if runs:
+        third = [f'<details class="dens"{" open" if in_run else ""}>',
+                 '<summary class="lbl">Density</summary>']
+        for dirname, label in runs:
+            on = " on" if dirname == here else ""
+            third.append(
+                f'<a class="pill{on}" href="{root}outputs/{source}/{dirname}/{page or ""}">{label}</a>'
+            )
+        if in_run:
+            third.append('<span class="sep"></span><span class="lbl">Page</span>')
+            for f, label in cfg["pages"]:
+                on = " on" if f == page else ""
+                third.append(
+                    f'<a class="{on.strip()}" href="{root}outputs/{source}/{in_dir}/{f}">{label}</a>'
+                )
+        third.append('</details>')
+        rows.append('<div class="row">' + "".join(third) + "</div>")
 
     return NAV_CSS + '<nav class="x0nav">' + "".join(rows) + "</nav>"
 
