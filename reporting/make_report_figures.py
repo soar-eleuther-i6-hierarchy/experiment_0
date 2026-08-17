@@ -110,13 +110,25 @@ def _pair(report, name):
     return next((p for p in report["pairs"] if p["pair"] == name), None)
 
 
+# Figure-level titles are OFF by default (--titles turns them on). The paper
+# carries every figure's message in its LaTeX caption, and a second copy baked
+# into the PNG reads as a machine-written caption above the human one -- the
+# exact habit the 2026-08-16 feedback asked us to drop. Panel-level titles and
+# axis labels stay: they are part of the plot, not a caption.
+TITLES = False
+
+
 def _title(ax_or_fig, head: str, sub: str = "", width: int = 96):
     """Left-aligned title, wrapped to the figure rather than trusting it to fit.
 
     Every overflowing title in the previous version was a long second line that
     matplotlib silently let run past the canvas edge, so the caption lost its
     qualifier -- the half a sentence that says what the number does NOT mean.
+    Returns the number of lines drawn; 0 when titles are disabled, so a layout
+    that reserves headroom for the title can reclaim it.
     """
+    if not TITLES:
+        return 0
     import textwrap
     lines = textwrap.wrap(head, width)
     if sub:
@@ -141,11 +153,14 @@ def _label_extremes(ax, xs, vals, fmt, color):
                     xytext=(0, 9), ha="center", fontsize=8, color=color)
 
 
-def _finish(fig, ax_or_axes, name: str) -> str:
+def _finish(fig, ax_or_axes, name: str, tight: bool = True) -> str:
     axes = ax_or_axes if isinstance(ax_or_axes, (list, np.ndarray)) else [ax_or_axes]
     for ax in np.ravel(axes):
         ax.spines[["top", "right"]].set_visible(False)
-    fig.tight_layout()
+    if tight:
+        # tight_layout ignores ax.text placed above the axes, so a figure that
+        # hangs panel headings there manages its own margins and passes False
+        fig.tight_layout()
     path = PAPER_DIR / f"{name}.png"
     fig.savefig(path, dpi=200)
     plt.close(fig)
@@ -437,23 +452,25 @@ def calibration_trained_toy_recovery(tt, align):
         ax.text(i, v + 0.15, str(v), ha="center", fontsize=10, color=INK)
     ax.set_ylabel("true edges")
     ax.set_ylim(0, max(tp, fn, fp) * 1.35 + 0.5)
-    _title(ax, f"Edge recovery — precision {tt['precision']:.2f}, recall {tt['recall']:.2f}",
-           f"the SAE learned {tt['n_recovered_features']}/{tt['n_features']} true features; every "
-           f"miss is an edge whose child it never learned", width=52)
+    # Panel identifiers, not captions: with two panels sharing a y-label the
+    # plot is ambiguous without them, so they stay even with --titles off.
+    ax.set_title("edge recovery", fontsize=10, loc="left", color=INK)
 
     ax = axes[1]
     if align:
-        ax.bar(["respected", "untestable"],
-               [align["n_respected"], len(align.get("untestable", []))],
-               color=[GOOD, NEUTRAL], width=0.5)
-        ax.text(0, align["n_respected"] + 0.12, str(align["n_respected"]),
-                ha="center", fontsize=10, color=INK)
+        # "violated" is the bar the test is ABOUT -- its zero must be visible,
+        # or the grey untestable bar next to the green one reads as a failure.
+        n_viol = align["n_testable"] - align["n_respected"]
+        bars = [("respected", align["n_respected"], GOOD),
+                ("violated", n_viol, CAT[3]),
+                ("untestable", len(align.get("untestable", [])), NEUTRAL)]
+        ax.bar([b[0] for b in bars], [b[1] for b in bars],
+               color=[b[2] for b in bars], width=0.55)
+        for i, (_, v, _) in enumerate(bars):
+            ax.text(i, v + 0.12, str(v), ha="center", fontsize=10, color=INK)
         ax.set_ylim(0, max(align["n_testable"], 1) * 1.4)
         ax.set_ylabel("true edges")
-        _title(ax, f"Nesting control — {align['n_respected']}/{align['n_testable']} testable edges "
-                   f"run early block → late",
-               f"mean block {align['mean_parent_block']:.1f} for parents, "
-               f"{align['mean_child_block']:.1f} for children", width=46)
+        ax.set_title("nesting control (early block → late)", fontsize=10, loc="left", color=INK)
     else:
         ax.axis("off")
         ax.text(0.5, 0.5, "block_tree_alignment.json absent\nrun validation.block_tree_alignment",
@@ -999,12 +1016,18 @@ def battery_questions_gemma(layers, second):
                 fontweight="bold", color=INK, va="top")
         ax.text(0, 1.19, "\n".join(textwrap.wrap(q, 38)), transform=ax.transAxes,
                 fontsize=7.3, color=MUTED, va="top", style="italic")
-    _title(fig, "The battery, question by question — gemma-2-2b, block pair B0→B1, "
-                "every graded layer",
-           "each panel is the question one metric asks and its measured answer; the questions "
-           "the edges pass are about quality, the ones they fail are about structure", width=120)
-    fig.subplots_adjust(top=0.82, hspace=0.85, wspace=0.34)
-    return _finish(fig, axes, "battery_questions_gemma")
+    lines = _title(fig, "The battery, question by question — gemma-2-2b, block pair B0→B1, "
+                   "every graded layer",
+                   "each panel is the question one metric asks and its measured answer; the "
+                   "questions the edges pass are about quality, the ones they fail are about "
+                   "structure", width=120)
+    # the per-panel question texts sit above each axes, so the top margin is
+    # for them; only shave extra room when a figure title is actually drawn.
+    # This figure owns its margins (tight=False): tight_layout cannot see the
+    # hanging texts and clips the first row's headings.
+    fig.subplots_adjust(top=0.84 if lines else 0.90, bottom=0.06, left=0.05,
+                        right=0.99, hspace=0.95, wspace=0.34)
+    return _finish(fig, axes, "battery_questions_gemma", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1829,8 +1852,12 @@ def main() -> int:
                          "level up) are always emitted after it")
     ap.add_argument("--twocolumn", action="store_true",
                     help="emit figure* full-width floats (needs a twocolumn class)")
+    ap.add_argument("--titles", action="store_true",
+                    help="bake the figure-level title/subtitle into each PNG; off by "
+                         "default because the paper's LaTeX captions carry that text")
     args = ap.parse_args()
     globals()["TWOCOLUMN"] = args.twocolumn
+    globals()["TITLES"] = args.titles
 
     if not args.list:
         PAPER_DIR.mkdir(parents=True, exist_ok=True)
