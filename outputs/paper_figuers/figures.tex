@@ -84,16 +84,13 @@
   \centering
   \includegraphics[width=\linewidth]{recovered_graph_toy_vs_gemma}
   \caption{%
-    \textbf{The recovered graph, drawn.}
-    The two recovered graphs, drawn edge by edge rather than summarized. \emph{Left:} the
-    trained toy --- 6 of 9 true edges recovered, 0 false positives; dashed edges are misses,
-    and every miss is a child feature the SAE never learned. \emph{Right:} the 1,700 candidate
-    edges of block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b} layer 6 that reached the
-    probe, with the 10 probe-confirmed edges in green. The layout gives a tree its best
-    chance: every child is placed beneath the parent whose decoder best matches its probe, so
-    a clean hierarchy would render as near-vertical lines and every crossing that remains is
-    multi-parenting, not plotting. The same battery draws a tree where the world is a tree,
-    and a tangle on the released SAE.
+    \textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially recovered, but
+    not as a clean tree --- especially at scale. \emph{Left:} the trained toy recovers 6/9
+    true edges with no false positives, while \emph{Right:} Gemma-2-2B (layer 12,
+    B0$\rightarrow$B1) shows substantial multi-parenting among the 1,111 candidate edges that
+    reached the probe --- 63 parents $\times$ 355 children, with only the 22 probe-confirmed
+    edges in green. Each child is placed beneath its best-matching parent, so a clean
+    hierarchy would appear as near-vertical lines.
   }
   \label{fig:recovered-graph-toy-vs-gemma}
 \end{figure}
@@ -103,16 +100,12 @@
   \centering
   \includegraphics[width=\linewidth]{multiparenting_by_layer}
   \caption{%
-    \textbf{The recovered graph is not a tree.}
-    Percentage of child features with two or more parents, per block pair, across the five
-    graded layers. In the top pair B0$\rightarrow$B1 the value is 100\% / 99\% / 100\% / 100\%
-    / 89\% / 100\%---nearly every child in the second block is claimed by several first-block
-    features, which no reading as a hierarchy survives. This is the only one of the project's
-    four original claims that BOS exclusion left unchanged, because it is a ratio over
-    children that already have a parent rather than a count of candidate edges, and so does
-    not depend on the contaminated candidate set. Deeper pairs are far less multi-parented ---
-    and their candidate sets are comparable or larger, because the blocks widen with depth, so
-    the drop is not a small-sample artifact.
+    \textbf{The recovered graph is not a tree.} Child features are often associated with
+    multiple parents rather than a single parent --- in the top block pair B0$\rightarrow$B1,
+    89--100\% of children with any parent have two or more, at every graded layer ---
+    revealing pervasive multi-parenting in the recovered structure. Deeper block pairs appear
+    cleaner (8--57\%) on candidate sets of comparable or larger size, so the drop reflects
+    genuinely looser structure rather than a smaller sample.
   }
   \label{fig:multiparenting-by-layer}
 \end{figure}
@@ -140,14 +133,12 @@
   \centering
   \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
   \caption{%
-    \textbf{Coverage proposes; the strict test disposes.}
-    Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, every layer with the full three-stage
-    pass (6 of 6). Reverse coverage $R \geq 0.5$ with a joint-support guard admits
-    1,129--2,929 candidate edges per layer; the independence null keeps the majority; the
-    probe-based $S_\mathrm{res}$ rank test confirms 8--55 edges (0.6--4.0\% of those it
-    scores). The reconstruction-ablation filter is applied to all candidates in parallel and
-    does not nest, so it is reported in the subtitle rather than drawn as a stage. The y-axis
-    is logarithmic: the collapse from thousands to tens is the result.
+    \textbf{Broad coverage does not translate into confirmed structure.} Coverage proposes
+    many candidate relationships (1,129--2,929 per layer), but successive independence and
+    probe tests eliminate most of them --- the independence null rejects 69--86\%, and the
+    probe confirms only 8--55 edges per layer ($0.6$--$4.0\%$ of those scored) --- leaving
+    only a small subset of supported parent--child relationships. The reconstruction filter
+    (passing 54--90\%) is evaluated separately because it does not form a nested stage.
   }
   \label{fig:funnel-coverage-to-sres}
 \end{figure}

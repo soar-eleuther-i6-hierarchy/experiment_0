@@ -63,6 +63,14 @@ from reporting import cross_source as X  # noqa: E402
 
 PAPER_DIR = C.OUT_DIR / "paper_figuers"
 
+# Which single gemma layer the recovered-graph figure draws. An editorial
+# choice, so it is one explicit constant rather than an accident of which run
+# had the probe first (that accident chose layer 6 for months). Layer 12 is
+# mid-network AND the layer where the released priors-in-time and temporal
+# SAEs exist, so the drawn graph stays directly comparable when the
+# cross-architecture results land.
+GRAPH_LAYER = 12
+
 # --- palette ---------------------------------------------------------------
 # Categorical slots are Okabe-Ito, assigned in fixed order and never cycled. The
 # repo's screen palette (#2E9E5B green beside #D98A3D orange) separates by only
@@ -1412,11 +1420,13 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         if layers else "needs gemma metrics_report.json",
         lambda: battery_questions_gemma(layers, second))
 
-    # the recovered graph itself, from the largest edge list that has the probe
-    run("recovered_graph_toy_vs_gemma", bool(tt and s6),
-        "trained_toy_calibration.json + gemma layer_06 second_pass.json"
-        if (tt and s6) else "needs the trained-toy calibration and a gemma second_pass.json",
-        lambda: recovered_graph_toy_vs_gemma(tt, s6, "gemma-2-2b layer 6, B0→B1"))
+    # the recovered graph itself, drawn at GRAPH_LAYER (see the constant)
+    s_gl = second.get(GRAPH_LAYER)
+    run("recovered_graph_toy_vs_gemma", bool(tt and s_gl),
+        f"trained_toy_calibration.json + gemma layer_{GRAPH_LAYER:02d} second_pass.json"
+        if (tt and s_gl) else "needs the trained-toy calibration and a gemma second_pass.json",
+        lambda: recovered_graph_toy_vs_gemma(tt, s_gl,
+                                             f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1"))
 
     # the formatting-density sweep runs, named fmt_<density*1e4>_s<seed>
     fmt_runs = []
@@ -1476,34 +1486,36 @@ def _captions():
                  for x in q.get("superparents", [])]
         free = sum(1 for f in fires if f >= C.EDGE_TAU)
 
+        deep = [100 * (_pair(r, p) or {}).get("degree", {}).get("poly_frac", np.nan)
+                for _, r in lay for p in ("1->2", "2->3")]
+        deep = [v for v in deep if not np.isnan(v)]
         d["multiparenting_by_layer"] = (
-            "Percentage of child features with two or more parents, per block pair, across the "
-            r"five graded layers. In the top pair B0$\rightarrow$B1 the value is "
-            + " / ".join(rf"{v:.0f}\%" for v in poly) + "---nearly every child in the second "
-            "block is claimed by several first-block features, which no reading as a hierarchy "
-            "survives. This is the only one of the project's four original claims that BOS "
-            "exclusion left unchanged, because it is a ratio over children that already have a "
-            "parent rather than a count of candidate edges, and so does not depend on the "
-            "contaminated candidate set. Deeper pairs are far less multi-parented --- and their "
-            "candidate sets are comparable or larger, because the blocks widen with depth, so "
-            "the drop is not a small-sample artifact.")
+            r"\textbf{The recovered graph is not a tree.} Child features are often "
+            "associated with multiple parents rather than a single parent --- in the "
+            rf"top block pair B0$\rightarrow$B1, {min(poly):.0f}--{max(poly):.0f}\% of "
+            "children with any parent have two or more, at every graded layer --- "
+            "revealing pervasive multi-parenting in the recovered structure. Deeper "
+            rf"block pairs appear cleaner ({min(deep):.0f}--{max(deep):.0f}\%) on "
+            "candidate sets of comparable or larger size, so the drop reflects "
+            "genuinely looser structure rather than a smaller sample.")
         sps = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in lay}
         sps = {L: v for L, v in sps.items() if v and "0->1" in v}
         if sps:
             cands = [rp(L)["n_candidate_edges"] for L in sps]
             passes = [sps[L]["0->1"]["sres"]["n_pass"] for L in sps]
             shares = [100 * sps[L]["0->1"]["sres"]["frac_pass"] for L in sps]
+            recs = [100 * rp(L)["reconstruction"]["frac_pass"] for L in sps]
             d["funnel_coverage_to_sres"] = (
-                rf"Block pair B0$\rightarrow$B1 on \texttt{{gemma-2-2b}}, every layer with the "
-                rf"full three-stage pass ({len(sps)} of {len(lay)}). Reverse coverage "
-                rf"$R \geq {C.EDGE_TAU}$ with a joint-support guard admits "
-                f"{min(cands):,}--{max(cands):,} candidate edges per layer; the independence "
-                "null keeps the majority; the probe-based $S_\\mathrm{res}$ rank test confirms "
-                f"{min(passes)}--{max(passes)} edges "
-                rf"({min(shares):.1f}--{max(shares):.1f}\% of those it scores). The "
-                "reconstruction-ablation filter is applied to all candidates in parallel and "
-                "does not nest, so it is reported in the subtitle rather than drawn as a stage. "
-                "The y-axis is logarithmic: the collapse from thousands to tens is the result.")
+                r"\textbf{Broad coverage does not translate into confirmed structure.} "
+                "Coverage proposes many candidate relationships "
+                f"({min(cands):,}--{max(cands):,} per layer), but successive independence "
+                "and probe tests eliminate most of them --- the independence null rejects "
+                rf"{min(ch):.0f}--{max(ch):.0f}\%, and the probe confirms only "
+                f"{min(passes)}--{max(passes)} edges per layer "
+                rf"(${min(shares):.1f}$--${max(shares):.1f}\%$ of those scored) --- leaving "
+                "only a small subset of supported parent--child relationships. The "
+                rf"reconstruction filter (passing {min(recs):.0f}--{max(recs):.0f}\%) is "
+                "evaluated separately because it does not form a nested stage.")
         d["base_rate_vs_frequency_capture"] = (
             r"Two per-edge diagnostics on the same candidate sets, B0$\rightarrow$B1. The "
             "independence null asks whether co-firing exceeds what the parent's own firing rate "
@@ -1718,23 +1730,26 @@ def _captions():
             "healthy, while the questions about the graph's \\emph{structure} (base-rate "
             "co-firing, the probe, fan-out) come back failing, at every depth.")
 
-    sp6 = _json(G / "layer_06" / "second_pass.json")
+    sp_gl = _json(G / f"layer_{GRAPH_LAYER:02d}" / "second_pass.json")
     tt2 = _json(C.OUT_DIR / "trained_toy_calibration.json")
-    if tt2 and sp6:
-        s = sp6["0->1"]["sres"]
+    if tt2 and sp_gl:
+        s = sp_gl["0->1"]["sres"]
+        n_par = len({e["parent"] for e in s["edges"]})
+        n_chi = len({e["child"] for e in s["edges"]})
         d["recovered_graph_toy_vs_gemma"] = (
-            r"The two recovered graphs, drawn edge by edge rather than summarized. "
-            r"\emph{Left:} the trained toy --- "
-            f"{len(tt2['found_edges'])} of {len(tt2['true_edges'])} true edges recovered, "
-            f"{tt2['false_positives']} false positives; dashed edges are misses, and every miss "
-            r"is a child feature the SAE never learned. \emph{Right:} the "
-            f"{s['n_edges_scored']:,} candidate edges of block pair B0$\\rightarrow$B1 on "
-            r"\texttt{gemma-2-2b} layer 6 that reached the probe, with the "
-            f"{s['n_pass']} probe-confirmed edges in green. The layout gives a tree its best "
-            "chance: every child is placed beneath the parent whose decoder best matches its "
-            "probe, so a clean hierarchy would render as near-vertical lines and every crossing "
-            "that remains is multi-parenting, not plotting. The same battery draws a tree where "
-            "the world is a tree, and a tangle on the released SAE.")
+            r"\textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially "
+            r"recovered, but not as a clean tree --- especially at scale. \emph{Left:} "
+            f"the trained toy recovers "
+            f"{len(tt2['found_edges'])}/{len(tt2['true_edges'])} true edges with "
+            # "no false positives" reads as prose while the count is zero, and
+            # falls back to the number the moment a regeneration makes it real
+            f"{tt2['false_positives'] or 'no'} false positives, while "
+            rf"\emph{{Right:}} Gemma-2-2B (layer {GRAPH_LAYER}, B0$\rightarrow$B1) shows "
+            f"substantial multi-parenting among the {s['n_edges_scored']:,} candidate edges "
+            f"that reached the probe --- {n_par} parents $\\times$ {n_chi} children, with "
+            f"only the {s['n_pass']} probe-confirmed edges in green. Each child is placed "
+            "beneath its best-matching parent, so a clean hierarchy would appear as "
+            "near-vertical lines.")
 
     fmt_dirs = sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*"))
     if fmt_dirs:
@@ -1891,7 +1906,12 @@ def write_tex(out_dir: Path, graphics: str):
         body = caps.get(name)
         L += [f"% [{slot}]", rf"\begin{{{env}}}[tbp]", r"  \centering",
               rf"  \includegraphics[width={width}]{{{name}}}",
-              r"  \caption{%", rf"    \textbf{{{lead}}}"]
+              r"  \caption{%"]
+        # a caption body that opens with its own \textbf lead carries the
+        # whole caption; prepending the TEX_ORDER lead would print two bold
+        # openers back to back
+        if not (body and body.lstrip().startswith(r"\textbf")):
+            L.append(rf"    \textbf{{{lead}}}")
         if body:
             L.append(_wrap(body))
         else:
