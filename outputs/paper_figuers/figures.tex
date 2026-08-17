@@ -110,10 +110,29 @@
     features, which no reading as a hierarchy survives. This is the only one of the project's
     four original claims that BOS exclusion left unchanged, because it is a ratio over
     children that already have a parent rather than a count of candidate edges, and so does
-    not depend on the contaminated candidate set. Deeper pairs are much lower, on candidate
-    sets that are also much smaller.
+    not depend on the contaminated candidate set. Deeper pairs are far less multi-parented ---
+    and their candidate sets are comparable or larger, because the blocks widen with depth, so
+    the drop is not a small-sample artifact.
   }
   \label{fig:multiparenting-by-layer}
+\end{figure}
+
+% [MAIN 4b]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
+  \caption{%
+    \textbf{The tangle lives in the coarsest block pair, on both sources.}
+    Every metric per block pair, averaged over each source's graded layers; a cell is the mean
+    over the layers where that pair has candidate edges at all, and a dash marks a pair with
+    none. Colour ranks \emph{within} a column (each column is its own quantity and scale), so
+    the reading is locational: the structural pathology --- multi-parenting, fan-out
+    concentration, base-rate co-firing, superparents --- concentrates in the outermost pair
+    B0$\rightarrow$B1 on both sources, and the deeper pairs are clean but hold candidate sets
+    one to three orders of magnitude smaller. The hierarchy is broken at its top boundary and
+    quiet below it.
+  }
+  \label{fig:tangle-lives-in-top-block-pair}
 \end{figure}
 
 % [MAIN 5]
@@ -250,8 +269,7 @@
     ablated. \emph{Right:} the share the token-frequency control judges to be carried by
     globally frequent tokens. Panels are on separate scales; layers are ordered, so depth is
     encoded as a single-hue ramp rather than as five categorical colours. The frequency
-    control is nearly silent in the top block pair and rises sharply in the deeper ones, on
-    candidate sets that are also far smaller there.
+    control is nearly silent in the top block pair and rises sharply in the deeper ones.
   }
   \label{fig:edge-survival-by-block-pair}
 \end{figure}

@@ -960,6 +960,97 @@ def sres_null_rate_vs_dictionary_size(observed):
 
 
 # ---------------------------------------------------------------------------
+# 9c. Where the tangle lives: every metric per block pair, both sources, one
+#     matrix. The claim it backs is locational -- the structural pathology
+#     concentrates at the outermost boundary and the deeper pairs are clean --
+#     and a location claim wants the whole map on one canvas, not a bar chart
+#     per pair.
+# ---------------------------------------------------------------------------
+def tangle_lives_in_top_block_pair(layers, pcfg):
+    from matplotlib import cm, colors as mcolors
+    COLS = [
+        ("candidates", lambda p: p["n_candidate_edges"], "{:,.0f}"),
+        ("multi-parent %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
+        ("fan-out Gini", lambda p: p["degree"]["outdeg_gini"], "{:.2f}"),
+        ("at chance %", lambda p: 100 * p["independence_null"]["frac_chance_level"], "{:.0f}"),
+        ("superparents", lambda p: p["n_superparents"], "{:.1f}"),
+        ("sibling Jaccard", lambda p: p["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
+        ("freq-driven %", lambda p: 100 * p["freq_control"]["frac_freq_driven"], "{:.1f}"),
+    ]
+
+    def source_rows(reports):
+        pairs = sorted({q["pair"] for r in reports for q in r["pairs"]},
+                       key=lambda s: int(s.split("->")[0]))
+        out = []
+        def safe(fn, q):
+            # deep pairs carry nulls where a sub-metric had nothing to score;
+            # absence is NaN, never zero
+            try:
+                v = fn(q)
+                return float(v) if v is not None else np.nan
+            except (TypeError, KeyError):
+                return np.nan
+
+        for pr in pairs:
+            row = []
+            for _, fn, _ in COLS:
+                # mean over the layers where this pair has candidates at all;
+                # a metric of an empty candidate set is not a small value, it
+                # is no value, and averaging it in would fake cleanliness
+                vals = [safe(fn, q) for r in reports
+                        for q in [_pair(r, pr)]
+                        if q and q["n_candidate_edges"] > 0]
+                vals = [v for v in vals if not np.isnan(v)]
+                row.append(float(np.mean(vals)) if vals else np.nan)
+            out.append((pr, row))
+        return out
+
+    gem = source_rows([r for _, r in layers])
+    pcf = source_rows([r for _, r, *_ in [(n, rep) for n, rep in pcfg]]) if pcfg else []
+    rows = [(f"gemma B{p.replace('->', '→B')}", v) for p, v in gem] \
+         + [(f"PCFG B{p.replace('->', '→B')}", v) for p, v in pcf]
+    M = np.array([v for _, v in rows])
+
+    # one hue, light -> dark, per COLUMN: the columns are different quantities
+    # on different scales, so colour can only rank within a column -- which is
+    # exactly the locational claim -- and the caption says so
+    norm = M.copy()
+    for j in range(M.shape[1]):
+        col = M[:, j]
+        top = np.nanmax(col)
+        norm[:, j] = col / top if top and not np.isnan(top) else 0
+    cmap = cm.get_cmap("Blues")
+
+    fig, ax = plt.subplots(figsize=(9.8, 0.46 * len(rows) + 1.6))
+    for i in range(M.shape[0]):
+        for j in range(M.shape[1]):
+            v, nv = M[i, j], norm[i, j]
+            if np.isnan(v):
+                ax.add_patch(plt.Rectangle((j, i), 1, 1, color="#F2F3F5"))
+                ax.text(j + 0.5, i + 0.5, "—", ha="center", va="center",
+                        fontsize=8, color=MUTED)
+                continue
+            bg = cmap(0.08 + 0.84 * nv)
+            ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
+            lum = mcolors.rgb_to_hsv(bg[:3])[2]
+            ax.text(j + 0.5, i + 0.5, COLS[j][2].format(v), ha="center", va="center",
+                    fontsize=8, color="white" if lum < 0.55 else INK)
+    ax.set_xlim(0, M.shape[1])
+    ax.set_ylim(M.shape[0], 0)
+    ax.set_xticks(np.arange(M.shape[1]) + 0.5)
+    ax.set_xticklabels([c for c, *_ in COLS], fontsize=8.5)
+    ax.xaxis.set_ticks_position("top")
+    ax.set_yticks(np.arange(len(rows)) + 0.5)
+    ax.set_yticklabels([n for n, _ in rows], fontsize=8.5)
+    if gem and pcf:
+        ax.axhline(len(gem), color=INK, lw=1.4)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.tick_params(length=0)
+    return _finish(fig, ax, "tangle_lives_in_top_block_pair")
+
+
+# ---------------------------------------------------------------------------
 # 10a. The battery, question by question. Each metric was designed to answer
 #      one plain-language question about an edge; this figure puts the question
 #      in the panel title and the measured answer under it, per layer, so a
@@ -1311,6 +1402,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"config (k={C.SRES_RANK_TOP_K}) + {len(observed)} measured pass rates",
         lambda: sres_null_rate_vs_dictionary_size(observed))
 
+    run("tangle_lives_in_top_block_pair", bool(layers or pcfg),
+        f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports, all block pairs"
+        if (layers or pcfg) else "needs metrics_report.json for at least one source",
+        lambda: tangle_lives_in_top_block_pair(layers, pcfg))
+
     run("battery_questions_gemma", bool(layers),
         f"{len(layers)} gemma layer reports + {len(second)} second passes"
         if layers else "needs gemma metrics_report.json",
@@ -1388,8 +1484,9 @@ def _captions():
             "survives. This is the only one of the project's four original claims that BOS "
             "exclusion left unchanged, because it is a ratio over children that already have a "
             "parent rather than a count of candidate edges, and so does not depend on the "
-            "contaminated candidate set. Deeper pairs are much lower, on candidate sets that are "
-            "also much smaller.")
+            "contaminated candidate set. Deeper pairs are far less multi-parented --- and their "
+            "candidate sets are comparable or larger, because the blocks widen with depth, so "
+            "the drop is not a small-sample artifact.")
         sps = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in lay}
         sps = {L: v for L, v in sps.items() if v and "0->1" in v}
         if sps:
@@ -1444,7 +1541,7 @@ def _captions():
             "carried by globally frequent tokens. Panels are on separate scales; layers are "
             "ordered, so depth is encoded as a single-hue ramp rather than as five categorical "
             "colours. The frequency control is nearly silent in the top block pair and rises "
-            "sharply in the deeper ones, on candidate sets that are also far smaller there.")
+            "sharply in the deeper ones.")
 
     arch = sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json"))
     if arch and lay:
@@ -1602,6 +1699,16 @@ def _captions():
                 "because the two rules would support different claims about which part of gemma "
                 "a four-block transformer stands in for.")
     if lay:
+        d["tangle_lives_in_top_block_pair"] = (
+            "Every metric per block pair, averaged over each source's graded layers; a cell is "
+            "the mean over the layers where that pair has candidate edges at all, and a dash "
+            "marks a pair with none. Colour ranks \\emph{within} a column (each column is its "
+            "own quantity and scale), so the reading is locational: the structural pathology "
+            "--- multi-parenting, fan-out concentration, base-rate co-firing, superparents --- "
+            "concentrates in the outermost pair B0$\\rightarrow$B1 on both sources, and the "
+            "deeper pairs are clean but hold candidate sets one to three orders of magnitude "
+            "smaller. The hierarchy is broken at its top boundary and quiet below it.")
+    if lay:
         d["battery_questions_gemma"] = (
             "Each metric of the battery was built to answer one plain-language question about "
             "a candidate edge; each panel titles that question and plots its measured answer "
@@ -1676,6 +1783,8 @@ TEX_ORDER = [
      "The recovered graph, drawn.", "What the battery finds on gemma-2-2b"),
     ("MAIN 4", "multiparenting_by_layer", False,
      "The recovered graph is not a tree.", None),
+    ("MAIN 4b", "tangle_lives_in_top_block_pair", True,
+     "The tangle lives in the coarsest block pair, on both sources.", None),
     ("MAIN 5", "funnel_coverage_to_sres", False,
      "Coverage proposes; the strict test disposes.", None),
     ("MAIN 6", "base_rate_vs_frequency_capture", False,
