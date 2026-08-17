@@ -398,21 +398,20 @@ def t_tier1(toy):
 # ---------------------------------------------------------------------------
 # 6. The gemma result, per layer.
 # ---------------------------------------------------------------------------
-def t_gemma(layers, second6, has_bos=True):
-    # Which layers carry the strict column is read off the run directories. The
-    # caption used to say "layer 6 alone"; layer 1 has had a second pass for some
-    # time, and a hand-written scope note is the part that goes stale first.
-    _sp = [L for L, _ in layers
-           if (C.OUT_DIR / C.SOURCE_NAME / f"layer_{L:02d}" / "second_pass.json").exists()]
-    sres_layers = ("layer~" + str(_sp[0]) if len(_sp) == 1 else
-                   "layers~" + ", ".join(str(L) for L in _sp[:-1]) + f" and~{_sp[-1]}"
-                   if _sp else "no layer")
+def t_gemma(layers, second, has_bos=True):
+    # Which layers carry the strict column is read off the run directories --
+    # `second` maps layer -> second_pass.json content. The caption used to say
+    # "layer 6 alone", then "layers 1 and 6" while the body still filled only
+    # L6: a hand-written scope note is the part that goes stale first, so the
+    # scope sentence is now chosen by the same data that fills the cells.
+    _sp = [L for L, _ in layers if second.get(L)]
     rows = []
     for L, r in layers:
         p = _pair(r)
         s = ""
-        if L == 6 and second6:
-            sr = second6["0->1"]["sres"]
+        sp = second.get(L)
+        if sp and "0->1" in sp:
+            sr = sp["0->1"]["sres"]
             s = rf"{sr['n_pass']}/{sr['n_edges_scored']:,}"
         rows.append([f"L{L}", f"{p['n_candidate_edges']:,}",
                      rf"{100 * p['reconstruction']['frac_pass']:.0f}\%",
@@ -420,18 +419,28 @@ def t_gemma(layers, second6, has_bos=True):
                      rf"{100 * p['freq_control']['frac_freq_driven']:.1f}\%",
                      rf"{100 * p['degree']['poly_frac']:.0f}\%",
                      s or "---"])
+    if len(_sp) == len(layers):
+        sres_note = (r" The $S_\mathrm{res}$ pass has been run on every graded layer; its "
+                     r"rates are only comparable against the shared null of Table~\ref{tab:null}.")
+    elif _sp:
+        sres_note = (r" The $S_\mathrm{res}$ column is filled for layer"
+                     + ("s~" if len(_sp) > 1 else "~")
+                     + ", ".join(str(L) for L in _sp)
+                     + " alone: stage~03 needs a cached token stream that the released "
+                     "statistics do not carry, so a blank cell means the pass has not been "
+                     "run there, not that nothing passed.")
+    else:
+        sres_note = r" No layer has had the $S_\mathrm{res}$ pass (stage~03) yet."
     return table(
-        "gemma", r"\textbf{Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, all five graded "
+        "gemma", rf"\textbf{{Block pair B0$\rightarrow$B1 on \texttt{{gemma-2-2b}}, all "
+        rf"{len(layers)} graded "
         r"layers.} Read left to right: coverage proposes thousands of edges, the reconstruction "
         "filter keeps most of them, and the independence null rejects most of them --- the "
         "over-connection is what the parent's own firing rate already forces, not capture of "
         "frequent tokens, which the frequency control puts at 1--2\\%. Multi-parenting is the "
         "measure that does not depend on the candidate set and the only one of the project's "
         r"original four claims to survive BOS exclusion"
-        + (r" (Table~\ref{tab:bos})" if has_bos else "") + ". The "
-        r"$S_\mathrm{res}$ column is filled for " + sres_layers + " alone: stage~03 needs a "
-        "cached token stream that the released statistics do not carry, so a blank cell means "
-        "the pass has not been run there, not that nothing passed.",
+        + (r" (Table~\ref{tab:bos})" if has_bos else "") + "." + sres_note,
         ["Layer", "Candidates", "Recon.", "At chance", "Freq.-driven",
          r"$\geq 2$ parents", r"$S_\mathrm{res}$"],
         rows, star=True)
@@ -440,11 +449,12 @@ def t_gemma(layers, second6, has_bos=True):
 # ---------------------------------------------------------------------------
 # 7. Cross-source (appendix).
 # ---------------------------------------------------------------------------
-def t_sources(layers, second6, pcfg):
+def t_sources(layers, second, pcfg):
     rows = []
     l6 = next((r for L, r in layers if L == 6), None)
     if l6:
         p = _pair(l6)
+        second6 = second.get(6)
         sr = second6["0->1"]["sres"] if second6 else None
         rows.append([r"\texttt{gemma-2-2b} L6", f"{C.D_SAE:,}", str(len(C.BLOCK_RANGES)),
                      f"{l6['total_tokens']:,}", f"{p['n_candidate_edges']:,}",
@@ -593,14 +603,17 @@ def t_align(rs):
 # ---------------------------------------------------------------------------
 # 8. The k/D null (appendix).
 # ---------------------------------------------------------------------------
-def t_null(layers, second6, pcfg):
+def t_null(layers, second, pcfg):
     k = C.SRES_RANK_TOP_K
     rows = [["Synthetic toy (Tier 1)", "42", rf"{100 * k / 42:.1f}\%", "---", "---"],
             ["Trained toy (Tier 2)", "20", rf"{100 * k / 20:.1f}\%", "5/5 true edges", "---"]]
     obs = []
-    if second6:
-        s = second6["0->1"]["sres"]
-        obs.append((r"\texttt{gemma-2-2b} L6", C.D_SAE, 100 * s["n_pass"] / s["n_edges_scored"]))
+    for L, _ in layers:
+        sp = second.get(L)
+        if sp and "0->1" in sp and sp["0->1"]["sres"]["n_edges_scored"]:
+            s = sp["0->1"]["sres"]
+            obs.append((rf"\texttt{{gemma-2-2b}} L{L}", C.D_SAE,
+                        100 * s["n_pass"] / s["n_edges_scored"]))
     for name, r, sp in pcfg:
         if sp and "0->1" in sp and sp["0->1"]["sres"]["n_edges_scored"]:
             s = sp["0->1"]["sres"]
@@ -626,11 +639,12 @@ def t_null(layers, second6, pcfg):
 # ---------------------------------------------------------------------------
 # 9. BOS before/after (appendix).
 # ---------------------------------------------------------------------------
-def t_bos(layers, arch):
+def t_bos(matched):
+    """`matched` is [(current_report, archived_v1_report)] per shared layer."""
     def mean(reports, fn):
         return sum(fn(_pair(r)) for r in reports) / len(reports)
 
-    cur = [r for _, r in layers]
+    cur, arch = [c for c, _ in matched], [a for _, a in matched]
     spec = [
         ("Candidate edges", lambda p: p["n_candidate_edges"], "{:,.0f}", True),
         (r"Improve reconstruction, \%", lambda p: 100 * p["reconstruction"]["frac_pass"],
@@ -653,7 +667,8 @@ def t_bos(layers, arch):
                      fmt.format(a), fmt.format(b), rf"{b / a:.2f}$\times$" if a else "---"])
     return table(
         "bos", r"\textbf{One contaminating token position moved five of six metrics.} Means over "
-        "the five graded layers, block pair B0$\\rightarrow$B1, before and after excluding the "
+        rf"the {len(matched)} layers graded both before and after the fix, "
+        "block pair B0$\\rightarrow$B1, before and after excluding the "
         "beginning-of-sequence position. BOS is an attention sink on which effectively every "
         "feature fires; with 400 documents it gave every pair in the dictionary 400 joint firings "
         r"against a support guard of $\mathrm{MIN\_JOINT} = 30$, so the guard admitted pairs that "
@@ -670,19 +685,26 @@ def build(dry: bool):
     written, skipped, parts = [], [], []
     G = C.OUT_DIR / C.SOURCE_NAME
     layers = gemma_layers()
-    second6 = _json(G / "layer_06" / "second_pass.json")
+    # layer -> second_pass.json, for every layer that has one
+    second = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in gemma_layers()}
+    second = {L: v for L, v in second.items() if v}
     toy = _json(C.OUT_DIR / "synthetic_toy_calibration.json")
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     align = _json(C.OUT_DIR / "block_tree_alignment.json")
     pcfg = pcfg_runs()
-    arch = [_json(p) for p in
-            sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json"))]
+    # Archived v1 reports matched BY LAYER to the current ones: a layer graded
+    # only after the BOS fix has no counterpart and must not veto the pairs
+    # that do exist. `matched` carries (current, archived) per shared layer.
+    arch_by_L = {}
+    for p in sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json")):
+        arch_by_L.setdefault(int(p.parent.name.split("__")[0].split("_")[1]), _json(p))
+    matched = [(r, arch_by_L[L]) for L, r in layers if L in arch_by_L]
     # Two tables cite Table~\ref{tab:bos}. It is only emitted when the archived
     # pre-BOS reports are present, so the citation has to be conditional too --
     # otherwise a clone without outputs_archive/ compiles with a dangling ref
     # printing '??', which is exactly the kind of quiet staleness this file
     # exists to prevent.
-    has_bos = bool(arch and layers) and len(arch) == len(layers)
+    has_bos = len(matched) >= 2
 
     def add(slot, name, ok, why, fn, section=None):
         if not ok:
@@ -703,10 +725,10 @@ def build(dry: bool):
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
     add("MAIN 6", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
         if layers else "needs gemma metrics_report.json",
-        lambda: t_gemma(layers, second6, has_bos), "The result")
+        lambda: t_gemma(layers, second, has_bos), "The result")
     add("APP 1", "sources", bool(layers and pcfg), f"gemma + {len(pcfg)} PCFG runs"
         if (layers and pcfg) else "needs a gemma report and a PCFG report",
-        lambda: t_sources(layers, second6, pcfg), "Appendix")
+        lambda: t_sources(layers, second, pcfg), "Appendix")
     # The layer-by-layer cross-source pair. `t_layers` needs one layer index
     # graded on both sources; `t_align` additionally needs the two pairing rules
     # to actually disagree, which they only do once the reference source has
@@ -723,13 +745,13 @@ def build(dry: bool):
         "the same runs under both pairing rules" if X.alignment_gaps(xs) is not None
         else "the two pairing rules select the same runs here, so the table is empty",
         lambda: t_align(xs))
-    add("APP 4", "null", bool(second6 or pcfg), "measured pass rates + config"
-        if (second6 or pcfg) else "needs at least one second_pass.json",
-        lambda: t_null(layers, second6, pcfg))
-    add("APP 5", "bos", bool(arch and layers) and len(arch) == len(layers),
-        f"{len(arch)} archived v1 reports vs {len(layers)} current"
-        if arch else "needs the pre-BOS reports in outputs_archive/",
-        lambda: t_bos(layers, arch))
+    add("APP 4", "null", bool(second or pcfg), "measured pass rates + config"
+        if (second or pcfg) else "needs at least one second_pass.json",
+        lambda: t_null(layers, second, pcfg))
+    add("APP 5", "bos", has_bos,
+        f"{len(matched)} layers graded both before and after BOS exclusion"
+        if arch_by_L else "needs the pre-BOS reports in outputs_archive/",
+        lambda: t_bos(matched))
     return written, skipped, parts
 
 

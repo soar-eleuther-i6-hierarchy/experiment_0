@@ -82,6 +82,25 @@
 % [MAIN 3]
 \begin{figure}[tbp]
   \centering
+  \includegraphics[width=\linewidth]{recovered_graph_toy_vs_gemma}
+  \caption{%
+    \textbf{The recovered graph, drawn.}
+    The two recovered graphs, drawn edge by edge rather than summarized. \emph{Left:} the
+    trained toy --- 6 of 9 true edges recovered, 0 false positives; dashed edges are misses,
+    and every miss is a child feature the SAE never learned. \emph{Right:} the 1,700 candidate
+    edges of block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b} layer 6 that reached the
+    probe, with the 10 probe-confirmed edges in green. The layout gives a tree its best
+    chance: every child is placed beneath the parent whose decoder best matches its probe, so
+    a clean hierarchy would render as near-vertical lines and every crossing that remains is
+    multi-parenting, not plotting. The same battery draws a tree where the world is a tree,
+    and a tangle on the released SAE.
+  }
+  \label{fig:recovered-graph-toy-vs-gemma}
+\end{figure}
+
+% [MAIN 4]
+\begin{figure}[tbp]
+  \centering
   \includegraphics[width=\linewidth]{multiparenting_by_layer}
   \caption{%
     \textbf{The recovered graph is not a tree.}
@@ -97,19 +116,19 @@
   \label{fig:multiparenting-by-layer}
 \end{figure}
 
-% [MAIN 4]
+% [MAIN 5]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
   \caption{%
     \textbf{Coverage proposes; the strict test disposes.}
-    Block pair B0$\rightarrow$B1 of the layer-6 Matryoshka SAE on \texttt{gemma-2-2b}. Reverse
-    coverage $R \geq 0.5$ with a joint-support guard admits 2,428 candidate edges. The
-    reconstruction-ablation filter---drawn as a dashed reference rather than a funnel stage,
-    because it is applied to all candidates in parallel and does not nest---passes 2,086 of
-    them (86\%), so the cheap filter barely bites. Of the 1,700 edges reaching the probe-based
-    $S_\mathrm{res}$ rank test, 10 pass (0.6\%). \textbf{Caveat:} stage~03 has been run on
-    layer~6 only, so this ratio has a single layer behind it.
+    Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, every layer with the full three-stage
+    pass (6 of 6). Reverse coverage $R \geq 0.5$ with a joint-support guard admits
+    1,129--2,929 candidate edges per layer; the independence null keeps the majority; the
+    probe-based $S_\mathrm{res}$ rank test confirms 8--55 edges (0.6--4.0\% of those it
+    scores). The reconstruction-ablation filter is applied to all candidates in parallel and
+    does not nest, so it is reported in the subtitle rather than drawn as a stage. The y-axis
+    is logarithmic: the collapse from thousands to tens is the result.
   }
   \label{fig:funnel-coverage-to-sres}
 \end{figure}
@@ -118,7 +137,7 @@
 % The bottleneck-hijacking hypothesis, tested
 % -------------------------------------------------------------------------
 
-% [MAIN 5]
+% [MAIN 6]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{base_rate_vs_frequency_capture}
@@ -136,7 +155,7 @@
   \label{fig:base-rate-vs-frequency-capture}
 \end{figure}
 
-% [MAIN 6]
+% [MAIN 7]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{superparent_fanout_vs_firing}
@@ -158,7 +177,7 @@
 % What this says about metric batteries
 % -------------------------------------------------------------------------
 
-% [MAIN 7]
+% [MAIN 8]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{shared_input_moved_every_metric}
@@ -209,7 +228,7 @@
   \caption{%
     \textbf{Same-level structure lives in the outermost block.}
     Directed edges and co-extensive duplicates \emph{within} each block, where no block
-    ordering fixes the direction and it must be derived from coverage asymmetry, across all 8
+    ordering fixes the direction and it must be derived from coverage asymmetry, across all 10
     graded runs. Reported as a rate per available pair rather than as a count: gemma's blocks
     are nested prefixes of 128 to 6{,}144 features, so the number of available pairs differs
     by a factor of 2{,}300 and raw counts invert the reading---the deepest block holds the
@@ -276,7 +295,7 @@
     among the best. The reading we would take, carrying that caveat, is that the many-to-many
     fan-out B0$\rightarrow$B1 is a property of the Matryoshka nesting rather than of
     \texttt{gemma-2-2b}: what the base model changes is how much of it there is---6.0\%
-    against 0.7\% of all B0$\times$B1 feature pairs become candidate edges---and not its
+    against 1.5\% of all B0$\times$B1 feature pairs become candidate edges---and not its
     character. \textbf{Both PCFG runs are a single grammar configuration} (zipf exponent 1.5,
     delimiters: eos)---one point of the three-axis sweep Exp 2 specifies (terminal
     distribution, formatting density, grammar depth), so this compares gemma against one PCFG
@@ -300,13 +319,13 @@
     Comparing two base models of different depth requires an alignment, and the two defensible
     ones disagree here about which runs to pair: by block index the PCFG layers pair with
     gemma's L1 and L3, and by relative depth $(L{+}1)/N$---the fraction of the network that
-    has run when the SAE reads \texttt{hook\_resid\_post}---they pair with gemma's L12 and
-    L24, at opposite ends of the network. The choice is therefore not presentational, so it is
-    measured here rather than made in an axis label: the mean gap over the six measures is 8.8
-    points under block index against 13.8 under relative depth. \textbf{On 2 shared layers
-    this is suggestive, not a result.} It is reported because an unstated alignment does the
-    same work invisibly, and because the two rules would support different claims about which
-    part of gemma a four-block transformer stands in for.
+    has run when the SAE reads \texttt{hook\_resid\_post}---they pair with gemma's L6 and L12
+    and L18 and L24, at opposite ends of the network. The choice is therefore not
+    presentational, so it is measured here rather than made in an axis label: the mean gap
+    over the six measures is 8.8 points under block index against 14.8 under relative depth.
+    \textbf{On 2 shared layers this is suggestive, not a result.} It is reported because an
+    unstated alignment does the same work invisibly, and because the two rules would support
+    different claims about which part of gemma a four-block transformer stands in for.
   }
   \label{fig:cross-source-alignment-check}
 \end{figure}
@@ -325,4 +344,40 @@
     the withdrawal is itself a result about how easily a depth trend can be manufactured.
   }
   \label{fig:depth-profile-across-layers}
+\end{figure}
+
+% [APP 8]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{pcfg_formatting_sweep}
+  \caption{%
+    \textbf{The formatting-density axis, swept.}
+    Four measures of block pair B0$\rightarrow$B1 against the delimiter density of the
+    generating grammar, at layer 2 of the PCFG transformer; one point per seed (3 per
+    density), the line through the seed means. Formatting density is the axis the project
+    treats as the mechanism behind bottleneck hijacking, and the reading is the shape: a
+    measure that stays flat across the axis is a property of the SAE that no grammar knob
+    reaches, while a measure that slopes is confounded with the corpus and must be controlled
+    before it is blamed on the architecture. Seeds are plotted individually because with three
+    of them a mean without its spread would overstate what one grammar configuration can
+    support.
+  }
+  \label{fig:pcfg-formatting-sweep}
+\end{figure}
+
+% [APP 9]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{battery_questions_gemma}
+  \caption{%
+    \textbf{The battery, question by question.}
+    Each metric of the battery was built to answer one plain-language question about a
+    candidate edge; each panel titles that question and plots its measured answer on
+    \texttt{gemma-2-2b}, block pair B0$\rightarrow$B1, at every graded layer. Read as a whole
+    the figure shows the split the paper's results rest on: the questions about an edge's
+    \emph{quality} (reconstruction, frequency, siblings) come back healthy, while the
+    questions about the graph's \emph{structure} (base-rate co-firing, the probe, fan-out)
+    come back failing, at every depth.
+  }
+  \label{fig:battery-questions-gemma}
 \end{figure}

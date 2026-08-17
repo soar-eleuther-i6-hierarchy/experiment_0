@@ -153,43 +153,45 @@ def _finish(fig, ax_or_axes, name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 1. The funnel: what each stage removes, for one run that has the strict test
+# 1. The funnel: what each stage removes, at every layer that has the strict
+#    test. Originally one horizontal funnel for layer 6, the only run that had
+#    stage 03; once the other five caught up, showing one layer understated the
+#    evidence and overstated how special that layer was.
 # ---------------------------------------------------------------------------
-def funnel_coverage_to_sres(report, second, pair="0->1", where=""):
-    pr = _pair(report, pair)
-    sres = second[pair]["sres"]
-    n_cand = pr["n_candidate_edges"]
-    stages = [
-        (f"Candidate edges\nreverse coverage ≥ {C.EDGE_TAU}", n_cand, NEUTRAL),
-        ("Above chance\nPMI > 0", sres["n_edges_scored"], CAT[0]),
-        ("Genuine refinement\npasses probe S_res", sres["n_pass"], GOOD),
-    ]
-    n_recon = pr["reconstruction"]["n_pass"]
-
-    fig, ax = plt.subplots(figsize=(7.6, 3.4))
-    y = np.arange(len(stages))
-    ax.barh(y, [v for _, v, _ in stages], color=[c for _, _, c in stages], height=0.55)
-    ax.invert_yaxis()
-    ax.set_yticks(y)
-    ax.set_yticklabels([lab for lab, _, _ in stages])
-    for i, (_, v, _) in enumerate(stages):
-        ax.text(v + n_cand * 0.015, i, f"{v:,}   {100 * v / n_cand:.1f}%",
-                va="center", fontsize=9.5, color=INK)
-    # The ablation filter runs on all candidates independently, so it is not a
-    # funnel stage; drawn as a reference line to avoid implying it nests.
-    ax.axvline(n_recon, ls=(0, (4, 3)), lw=1.3, color=CAT[3])
-    ax.text(n_recon - n_cand * 0.02, 2.42,
-            f"ablation filter (parallel, not nested)\npasses {n_recon:,}"
-            f"  ({100 * n_recon / n_cand:.0f}%)",
-            fontsize=8, color=CAT[3], ha="right", va="top")
-    ax.set_ylim(2.85, -0.6)
-    ax.set_xlim(0, n_cand * 1.3)
-    ax.set_xlabel("parent → child edges")
-    _title(ax, f"{where}, block pair B{pair.replace('->', '→B')}: "
-               f"co-firing proposes, the strict test disposes",
-           f"{sres['n_pass']:,} of {n_cand:,} candidate edges "
-           f"({100 * sres['n_pass'] / n_cand:.1f}%) survive", width=74)
-    ax.grid(True, axis="x", alpha=0.12)
+def funnel_coverage_to_sres(layers, second, pair="0->1", where=""):
+    stages = [f"candidate edges\nreverse coverage ≥ {C.EDGE_TAU}",
+              "above chance\nPMI > 0", "genuine refinement\npasses probe S_res"]
+    x = np.arange(len(stages))
+    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    lo, hi = [], []
+    for i, (L, rep) in enumerate(layers):
+        sp = second.get(L)
+        if not (sp and pair in sp):
+            continue
+        pr = _pair(rep, pair)
+        sres = sp[pair]["sres"]
+        vals = [pr["n_candidate_edges"], sres["n_edges_scored"], sres["n_pass"]]
+        # log y: the whole story is three orders of magnitude, and on a linear
+        # axis every line would lie on the floor after the first stage
+        ax.plot(x, vals, "-o", color=DEPTH[i % len(DEPTH)], lw=1.8, ms=5, zorder=3)
+        ax.annotate(f"L{L}", (x[-1], vals[-1]), textcoords="offset points",
+                    xytext=(10, -3), fontsize=8, color=DEPTH[i % len(DEPTH)])
+        lo.append(vals), hi.append(pr["reconstruction"]["n_pass"])
+    ax.set_yscale("log")
+    ax.set_xticks(x)
+    ax.set_xticklabels(stages, fontsize=9)
+    ax.set_xlim(-0.25, len(stages) - 0.55)
+    ax.set_ylabel("parent → child edges (log)")
+    first, last = [v[0] for v in lo], [v[-1] for v in lo]
+    share = [100 * b / a for a, b in zip(first, last)]
+    # the ablation filter is parallel, not a nested stage; summarized in text
+    rec = [100 * h / v[0] for h, v in zip(hi, lo)]
+    _title(ax, f"{where}: co-firing proposes thousands, the strict test confirms tens — "
+               "every graded layer",
+           f"{min(last)}–{max(last)} of {min(first):,}–{max(first):,} candidates survive "
+           f"({min(share):.1f}–{max(share):.1f}%). The parallel ablation filter passes "
+           f"{min(rec):.0f}–{max(rec):.0f}% and is not drawn as a stage", width=86)
+    ax.grid(True, axis="y", which="both", alpha=0.12)
     ax.set_axisbelow(True)
     return _finish(fig, ax, "funnel_coverage_to_sres")
 
@@ -472,31 +474,48 @@ def cross_source_funnel_shares(runs):
     # 14% on the chart where the shortlist is 70%, two different thresholds under
     # one name.
     stages = ["improve\nreconstruction", "clears chance\n(PMI ≥ 0.5)", "frequency-\ndriven"]
-    fig, ax = plt.subplots(figsize=(8.0, 3.8))
+    # One MARKER per run, grouped by source, rather than one bar per run: the
+    # original grouped bars were drawn for two runs, and with every graded
+    # layer of both sources present (ten runs) thirty bars cycling four
+    # colours stopped saying which source was which. The question this figure
+    # answers is cross-source, so source is the encoding and the within-source
+    # scatter is shown, not averaged away.
+    fig, ax = plt.subplots(figsize=(8.6, 4.0))
     x = np.arange(len(stages))
-    w = 0.8 / max(len(runs), 1)
-    for i, (name, rep) in enumerate(runs):
-        pr = _pair(rep, "0->1")
-        if pr is None:
-            continue
-        n = pr["n_candidate_edges"]
-        vals = [100 * pr["reconstruction"]["frac_pass"],
-                100 * (n - pr["independence_null"]["n_chance_level"]) / n
-                if pr["independence_null"].get("n_chance_level") is not None else np.nan,
-                100 * pr["freq_control"]["frac_freq_driven"]]
-        off = (i - (len(runs) - 1) / 2) * w
-        ax.bar(x + off, vals, w * 0.92, color=CAT[i % len(CAT)],
-               label=f"{name}  (n={n:,})")
-        for xx, vv in zip(x + off, vals):
-            if not np.isnan(vv):
-                ax.text(xx, vv + 1.5, f"{vv:.0f}", ha="center", fontsize=7.5, color=MUTED)
+    groups = [("gemma-2-2b", [r for r in runs if r[0].startswith("gemma")], CAT[0], "o", -0.16),
+              ("PCFG", [r for r in runs if not r[0].startswith("gemma")], CAT[1], "s", +0.16)]
+    for src, members, col, mark, off in groups:
+        pts = {j: [] for j in range(len(stages))}
+        for k, (name, rep) in enumerate(members):
+            pr = _pair(rep, "0->1")
+            if pr is None:
+                continue
+            n = pr["n_candidate_edges"]
+            vals = [100 * pr["reconstruction"]["frac_pass"],
+                    100 * (n - pr["independence_null"]["n_chance_level"]) / n
+                    if pr["independence_null"].get("n_chance_level") is not None else np.nan,
+                    100 * pr["freq_control"]["frac_freq_driven"]]
+            jit = (k - (len(members) - 1) / 2) * (0.16 / max(len(members) - 1, 1))
+            for j, v in enumerate(vals):
+                if not np.isnan(v):
+                    pts[j].append(v)
+                    ax.scatter(j + off + jit, v, s=42, marker=mark, color=col,
+                               alpha=0.75, edgecolor="white", linewidth=0.6, zorder=3,
+                               label=f"{src} — {len(members)} layers" if (j, k) == (0, 0) else None)
+        for j, vs in pts.items():
+            if vs:                        # a tick at the group mean, spread kept visible
+                ax.plot([j + off - 0.11, j + off + 0.11], [np.mean(vs)] * 2,
+                        lw=2, color=col, zorder=2)
     ax.set_xticks(x)
     ax.set_xticklabels(stages)
     ax.set_ylabel("% of that run's candidate edges")
-    ax.legend(fontsize=8.5, frameon=False)
-    _title(ax, "The same battery, unchanged, on two SAE sources — block pair B0→B1",
-           "shares rather than counts: the dictionaries differ in size and in block count",
-           width=76)
+    ax.set_ylim(-4, 108)
+    ax.legend(fontsize=8.5, frameon=False, loc="center right")
+    _title(ax, "The same battery, unchanged, on two SAE sources — block pair B0→B1, every "
+               "graded layer",
+           "one marker per run, tick = source mean; shares rather than counts, because the "
+           "dictionaries differ in size and in block count",
+           width=84)
     ax.grid(True, axis="y", alpha=0.12)
     ax.set_axisbelow(True)
     return _finish(fig, ax, "cross_source_funnel_shares")
@@ -705,13 +724,18 @@ def in_block_relations(runs):
 def shared_input_moved_every_metric(layers):
     import math
     ARCH = C.HERE / "outputs_archive"
-    v1 = []
-    for L, _ in layers:
+    # Paired BY LAYER, not by count. A layer graded after the BOS fix (layer 1)
+    # has no archived v1 counterpart, and requiring the two lists to be the same
+    # length made one new layer silently kill this figure -- the comparison is
+    # per-layer, so it should simply run on the layers that have both versions.
+    matched = []
+    for L, rep in layers:
         hits = sorted(ARCH.glob(f"layer_{L:02d}__v1__*/metrics_report.json"))
         if hits:
-            v1.append(_json(hits[0]))
-    if len(v1) != len(layers):
-        raise SystemExit("archived v1 reports missing")
+            matched.append((rep, _json(hits[0])))
+    if len(matched) < 2:
+        raise SystemExit("fewer than two layers have an archived v1 counterpart")
+    cur, v1 = [c for c, _ in matched], [a for _, a in matched]
 
     def mean(reports, fn):
         return sum(fn(_pair(r, "0->1")) for r in reports) / len(reports)
@@ -729,7 +753,7 @@ def shared_input_moved_every_metric(layers):
                           else p["degree"]["n_multi_parented"] / max(p["degree"]["n_children_with_parent"], 1)),
          False),
     ]
-    data = [(lab, mean(v1, fn), mean([r for _, r in layers], fn), shared) for lab, fn, shared in rows]
+    data = [(lab, mean(v1, fn), mean(cur, fn), shared) for lab, fn, shared in rows]
     data.sort(key=lambda t: abs(math.log2(max(t[2], 1e-9) / max(t[1], 1e-9))))
 
     fig, ax = plt.subplots(figsize=(9.4, 4.8))
@@ -765,7 +789,8 @@ def shared_input_moved_every_metric(layers):
     ax.axvline(0, color=INK, lw=1)
     ax.set_yticks(y)
     ax.set_yticklabels([lab for lab, *_ in data], fontsize=9)
-    ax.set_xlabel("log₂ change when the contaminating token position is removed, mean over 5 layers\n"
+    ax.set_xlabel(f"log₂ change when the contaminating token position is removed, "
+                  f"mean over the {len(matched)} layers graded both before and after\n"
                   "each pair reads  withdrawn → current")
     ax.set_xlim(min(fold) - 4.2, max(fold) + 4.2)
     ax.set_ylim(-0.7, len(data) - 0.3)
@@ -857,6 +882,14 @@ def sres_null_rate_vs_dictionary_size(observed):
     for name, d, obs in observed:
         y0, y1 = (floor if obs <= 0 else obs), 100 * k / d
         ax.plot([d, d], [min(y0, y1), max(y0, y1)], lw=1.2, color=GOOD, alpha=0.45, zorder=2)
+    # With one run per dictionary a label per point was fine; with every layer's
+    # second pass present there are several runs at the SAME D, and a label each
+    # stacks into an unreadable column. Markers are cheap and stay; text is not:
+    # only the extremes of each dictionary's group are named, because the group's
+    # spread IS the finding -- runs on one dictionary land on both sides of one null.
+    by_d: dict = {}
+    for name, d, obs in observed:
+        by_d.setdefault(d, []).append((name, obs))
     for name, d, obs in observed:
         # A measured 0% has no position on a log axis. Plotting it at the floor
         # with an open marker and saying so beats dropping the point, which would
@@ -868,11 +901,15 @@ def sres_null_rate_vs_dictionary_size(observed):
                    color="white" if at_zero else GOOD, zorder=4,
                    edgecolor=GOOD, linewidth=1.6,
                    label=None if drew_obs else "measured pass rate")
-        ax.annotate(f"{name}: {'0% — no edge passed' if at_zero else f'observed {obs:.2f}%'}"
-                    + ("" if at_zero else f"\n≈{obs / (100 * k / d):.0f}× its own chance rate"),
-                    (d, floor if at_zero else obs), textcoords="offset points",
-                    xytext=(11, -4 if at_zero else 8), fontsize=8, color=GOOD)
         drew_obs = True
+        group = by_d[d]
+        lo, hi = min(o for _, o in group), max(o for _, o in group)
+        if len(group) > 2 and obs not in (lo, hi):
+            continue
+        ax.annotate(f"{name}: {'0% — no edge passed' if at_zero else f'{obs:.2f}%'}"
+                    + ("" if at_zero else f"  ≈{obs / (100 * k / d):.0f}× chance"),
+                    (d, floor if at_zero else obs), textcoords="offset points",
+                    xytext=(11, -4 if at_zero else 4), fontsize=7.5, color=GOOD)
     ax.set_xscale("log")
     ax.set_yscale("log")
     if zeros:
@@ -883,16 +920,241 @@ def sres_null_rate_vs_dictionary_size(observed):
     ax.set_ylabel("% of unrelated parents that pass (log)")
     # lifted clear of the zero-floor rule that runs along the bottom
     ax.legend(fontsize=8.5, frameon=False, loc="lower left", bbox_to_anchor=(0.0, 0.10))
-    ratios = [f"{name} {obs / (100 * k / d):.0f}×" if obs > 0 else f"{name} below chance"
-              for name, d, obs in observed]
+    # One summary clause per dictionary, not one per run: the subtitle has to
+    # stay readable at ten measurements as it was at three.
+    parts = []
+    for d in sorted(by_d):
+        grp, nl = by_d[d], 100 * k / d
+        lo, hi = min(o for _, o in grp), max(o for _, o in grp)
+        rng = (f"{lo:.2f}–{hi:.2f}%" if len(grp) > 1 else
+               (f"{hi:.2f}%" if hi > 0 else "0%"))
+        vs = ("below chance" if hi <= nl else
+              f"up to {hi / nl:.0f}× its null" if lo <= nl else
+              f"{lo / nl:.0f}–{hi / nl:.0f}× its null")
+        parts.append(f"{len(grp)} run{'s' if len(grp) > 1 else ''} at D={d:,}: {rng}, {vs}")
     _title(ax, "The rank rule's strictness is set by dictionary size, not by k alone",
            "grey line = what chance alone gives at each D; the vertical drop to it is what a "
-           "measured rate is worth. " + ", ".join(ratios) +
-           ". Two runs on the same 1,792-latent dictionary land on opposite sides of their own "
+           "measured rate is worth. " + "; ".join(parts) +
+           ". Runs on the same dictionary land on both sides of their own "
            "null, so a raw pass rate compares nothing", width=78)
     ax.grid(True, which="both", alpha=0.12)
     ax.set_axisbelow(True)
     return _finish(fig, ax, "sres_null_rate_vs_dictionary_size")
+
+
+# ---------------------------------------------------------------------------
+# 10a. The battery, question by question. Each metric was designed to answer
+#      one plain-language question about an edge; this figure puts the question
+#      in the panel title and the measured answer under it, per layer, so a
+#      reader meets the instrument and its verdict in the same glance.
+# ---------------------------------------------------------------------------
+def battery_questions_gemma(layers, second):
+    import textwrap
+    Ls = [L for L, _ in layers]
+    P = [_pair(r, "0->1") for _, r in layers]
+    sres_pct = [100 * second[L]["0->1"]["sres"]["frac_pass"]
+                if second.get(L) and "0->1" in second[L] else np.nan for L in Ls]
+    panels = [
+        ("Activation coverage",
+         "Does the child fire only when the parent fires?",
+         [p["n_candidate_edges"] for p in P], "candidate edges", None),
+        ("Reconstruction condition",
+         "Does the pair actually carry reconstruction, or do the two just activate together?",
+         [100 * p["reconstruction"]["frac_pass"] for p in P], "% of edges passing", None),
+        ("Sibling redundancy",
+         "Are the children almost copies of each other — feature splitting posing as hierarchy?",
+         [p["sibling_redundancy"]["mean_redundancy"] for p in P], "mean pairwise Jaccard",
+         C.SIBLING_REDUNDANCY_FLAG),
+        ("Out-degree / superparents",
+         "Does one parent fan out over most of the next block?",
+         [p["n_superparents"] for p in P], "parents flagged", None),
+        ("Token-frequency control",
+         "Does the edge still hold on rare tokens, or is it frequency-driven?",
+         [100 * p["freq_control"]["frac_freq_driven"] for p in P], "% frequency-driven", None),
+        ("Independence null",
+         "Is the co-firing above chance at all, or just the parent's base rate?",
+         [100 * p["independence_null"]["frac_chance_level"] for p in P], "% at chance", None),
+        ("Probe-based S_res",
+         "Does the parent's decoder really point to the child's concept?",
+         sres_pct, "% of scored edges passing", None),
+        ("Exact joint-child coverage",
+         "How much of the parent do the kept children really explain?",
+         [p["joint_child"]["r_supp_mean"] for p in P], "mean support coverage", None),
+    ]
+    fig, axes = plt.subplots(2, 4, figsize=(13.8, 6.6))
+    for ax, (name, q, vals, ylab, thr) in zip(np.ravel(axes), panels):
+        ax.bar(np.arange(len(Ls)), vals, 0.62, color=CAT[0])
+        if thr is not None:
+            ax.axhline(thr, ls=(0, (4, 3)), lw=1.2, color=CAT[3])
+            ax.text(len(Ls) - 0.4, thr, f"flag ≥ {thr:g}", fontsize=6.8, color=CAT[3],
+                    ha="right", va="bottom")
+        ax.set_xticks(np.arange(len(Ls)))
+        ax.set_xticklabels([f"L{L}" for L in Ls], fontsize=7.5)
+        ax.set_ylabel(ylab, fontsize=8)
+        ax.margins(y=0.22)
+        ax.tick_params(labelsize=7.5)
+        ax.grid(True, axis="y", alpha=0.12)
+        ax.set_axisbelow(True)
+        ax.text(0, 1.30, name, transform=ax.transAxes, fontsize=9.5,
+                fontweight="bold", color=INK, va="top")
+        ax.text(0, 1.19, "\n".join(textwrap.wrap(q, 38)), transform=ax.transAxes,
+                fontsize=7.3, color=MUTED, va="top", style="italic")
+    _title(fig, "The battery, question by question — gemma-2-2b, block pair B0→B1, "
+                "every graded layer",
+           "each panel is the question one metric asks and its measured answer; the questions "
+           "the edges pass are about quality, the ones they fail are about structure", width=120)
+    fig.subplots_adjust(top=0.82, hspace=0.85, wspace=0.34)
+    return _finish(fig, axes, "battery_questions_gemma")
+
+
+# ---------------------------------------------------------------------------
+# 10b. The recovered graph itself, drawn from the edge lists rather than
+#      summarized. One panel per world: the trained toy's recovered tree, and
+#      the real B0->B1 edge set on gemma. The layout gives a tree its best
+#      chance -- every child is placed under its strongest parent -- so any
+#      crossing that remains is structure, not plotting.
+# ---------------------------------------------------------------------------
+def recovered_graph_toy_vs_gemma(tt, sp, where):
+    true_edges = [tuple(e) for e in tt["true_edges"]]
+    found = {tuple(e) for e in tt["found_edges"]}
+    sres = sp["0->1"]["sres"]
+    edges = sres["edges"]
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.4),
+                             gridspec_kw={"width_ratios": [1, 1.9]})
+
+    # -- toy: the tree it recovered, missed edges dashed ----------------------
+    ax = axes[0]
+    t_parents = sorted({p for p, _ in true_edges})
+    t_children = sorted({c for _, c in true_edges})
+    # children grouped under their (unique, by construction) true parent
+    order = sorted(t_children, key=lambda c: next(p for p, cc in true_edges if cc == c))
+    cx = {c: i / max(len(order) - 1, 1) for i, c in enumerate(order)}
+    px = {p: np.mean([cx[c] for pp, c in true_edges if pp == p]) for p in t_parents}
+    for p, c in true_edges:
+        ok = (p, c) in found
+        ax.plot([px[p], cx[c]], [1, 0], linestyle="-" if ok else (0, (3, 3)),
+                lw=2 if ok else 1.2, color=GOOD if ok else NEUTRAL, zorder=2)
+    ax.scatter([px[p] for p in t_parents], [1] * len(t_parents), s=90, color=INK, zorder=3)
+    ax.scatter([cx[c] for c in order], [0] * len(order), s=48, color=MUTED, zorder=3)
+    n_fp = tt["false_positives"]
+    ax.set_title(f"trained toy — {len(found)}/{len(true_edges)} true edges recovered, "
+                 f"{n_fp} false positive{'s' if n_fp != 1 else ''}\n"
+                 "dashed = missed (child feature never learned)", fontsize=9.5, loc="left")
+
+    # -- gemma: every candidate edge that reached the probe -------------------
+    ax = axes[1]
+    by_child: dict = {}
+    for e in edges:
+        by_child.setdefault(e["child"], []).append(e)
+    # anchor each child under the parent that correlates best with its probe --
+    # the layout a genuine tree would satisfy with near-vertical lines
+    anchor = {c: max(es, key=lambda e: e["parent_corr"])["parent"] for c, es in by_child.items()}
+    deg: dict = {}
+    for e in edges:
+        deg[e["parent"]] = deg.get(e["parent"], 0) + 1
+    parents = sorted(deg, key=lambda p: -deg[p])
+    px = {p: i / max(len(parents) - 1, 1) for i, p in enumerate(parents)}
+    children = sorted(by_child, key=lambda c: px[anchor[c]])
+    cx = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
+    for e in edges:
+        if not e["pass"]:
+            ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=0.35,
+                    color=CAT[0], alpha=0.07, zorder=1)
+    n_pass = 0
+    for e in edges:
+        if e["pass"]:
+            n_pass += 1
+            ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=1.8,
+                    color=GOOD, zorder=3)
+    ax.scatter(list(px.values()), [1] * len(px), s=14, color=INK, zorder=4)
+    ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
+    ax.set_title(f"{where} — the {len(edges):,} candidate edges that reached the probe\n"
+                 f"{len(px)} parents × {len(cx)} children; green = the {n_pass} probe-confirmed",
+                 fontsize=9.5, loc="left")
+
+    for ax in axes:
+        ax.set_xticks([])
+        ax.set_yticks([0, 1])
+        ax.set_yticklabels(["child block", "parent block"], fontsize=8.5)
+        ax.set_ylim(-0.14, 1.14)
+        for s in ("left", "bottom"):
+            ax.spines[s].set_visible(False)
+    _title(fig, "The recovered graph, drawn: a tree where the world is a tree, a tangle on the "
+                "released SAE",
+           "layout gives a tree its best chance — each child sits under the parent that best "
+           "matches its probe, so a clean hierarchy would be near-vertical lines. The crossings "
+           "are the structure", width=110)
+    fig.subplots_adjust(top=0.80)
+    return _finish(fig, axes, "recovered_graph_toy_vs_gemma")
+
+
+# ---------------------------------------------------------------------------
+# 11. The formatting-density axis of the PCFG sweep, at the one layer the local
+#     runs grade. Formatting density is the axis the project treats as the
+#     mechanism behind bottleneck hijacking, so it gets its own figure: which
+#     measures a grammar knob can move, and which are properties of the SAE.
+# ---------------------------------------------------------------------------
+def pcfg_formatting_sweep(fmt_runs):
+    """Metric against delimiter density, one point per seed, mean drawn through.
+
+    The reading is the SHAPE: a flat line is a measure no grammar knob moves --
+    intrinsic to the architecture -- and a slope is a measure confounded with
+    the corpus. That split is computed and printed rather than asserted.
+    """
+    layer = fmt_runs[0][2]["config"]["layer"]
+    panels = [
+        ("multi-parenting, % of children", lambda r, sp:
+            100 * _pair(r, "0->1")["degree"]["poly_frac"]),
+        ("at chance for the base rate, %", lambda r, sp:
+            100 * _pair(r, "0->1")["independence_null"]["frac_chance_level"]),
+        ("superparents flagged", lambda r, sp:
+            _pair(r, "0->1")["n_superparents"]),
+        (r"probe-confirmed $S_{res}$, %", lambda r, sp:
+            100 * sp["0->1"]["sres"]["frac_pass"] if sp and "0->1" in sp else np.nan),
+    ]
+    dens = sorted({d for d, *_ in fmt_runs})
+    # ORDINAL x positions. The densities are 0, 0.1667, 0.2308 and 0.24: on a
+    # numeric axis the last two land 0.009 apart, their tick labels print on
+    # top of each other, and two-thirds of the panel is empty. The spacing of
+    # the sweep's rungs is the sweep author's choice, not a finding, so equal
+    # spacing loses nothing and the labels carry the true values.
+    xpos = {d: i for i, d in enumerate(dens)}
+    fig, axes = plt.subplots(1, len(panels), figsize=(12.4, 3.4))
+    knob, seed_noise = [], []
+    for ax, (label, fn) in zip(axes, panels):
+        means, spreads = [], []
+        for d in dens:
+            vals = [fn(r, sp) for dd, _, r, sp in fmt_runs if dd == d]
+            vals = [v for v in vals if not np.isnan(v)]
+            ax.scatter([xpos[d]] * len(vals), vals, s=26, color=CAT[0], alpha=0.55, zorder=2)
+            means.append(float(np.mean(vals)) if vals else np.nan)
+            spreads.append(max(vals) - min(vals) if len(vals) > 1 else 0.0)
+        ax.plot([xpos[d] for d in dens], means, "-o", color=CAT[0], lw=2, ms=4, zorder=3)
+        ax.set_title(label, fontsize=9.5, loc="left")
+        ax.set_xlabel("delimiter density")
+        ax.set_xticks(list(xpos.values()))
+        ax.set_xticklabels([f"{d:g}" for d in dens], fontsize=8)
+        ax.margins(y=0.25, x=0.08)
+        ax.grid(True, axis="y", alpha=0.12)
+        ax.set_axisbelow(True)
+        # What three seeds can and cannot support, computed: the knob's effect
+        # is the range of the seed means, and it only means something where it
+        # exceeds how far the seeds scatter at a single density.
+        m = [v for v in means if not np.isnan(v)]
+        clean = label.split(",")[0].replace("$", "").replace("_{res}", "_res")
+        (knob if max(m) - min(m) > float(np.mean(spreads)) else
+         seed_noise).append(clean)
+    _title(fig, f"The formatting-density axis, swept — PCFG transformer, layer {layer}, "
+                f"{len(fmt_runs) // len(dens)} seeds per density",
+           "one point per seed; the line joins seed means. Where the seeds scatter more at one "
+           "density than the mean moves across the whole axis, the knob's effect is not "
+           "resolved at three seeds"
+           + (f" — that is the case for {', '.join(seed_noise)}" if seed_noise else "")
+           + (f"; resolved above seed noise: {', '.join(knob)}" if knob else ""),
+           width=110)
+    fig.subplots_adjust(top=0.76)
+    return _finish(fig, axes, "pcfg_formatting_sweep")
 
 
 # ---------------------------------------------------------------------------
@@ -915,13 +1177,15 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
             return
         written.append(fn())
 
-    # the funnel needs a run that has stage 03; layer 6 is the gemma one that does
+    # layer -> second_pass.json, for every layer that has the strict test
+    second = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in layers}
+    second = {L: v for L, v in second.items() if v}
     l6 = _json(G / "layer_06" / "metrics_report.json")
     s6 = _json(G / "layer_06" / "second_pass.json")
-    run("funnel_coverage_to_sres", bool(l6 and s6),
-        "gemma-2-2b/layer_06 metrics_report.json + second_pass.json"
-        if (l6 and s6) else "needs layer_06/second_pass.json (stage 03, run on L6 only)",
-        lambda: funnel_coverage_to_sres(l6, s6, where="gemma-2-2b, layer 6"))
+    run("funnel_coverage_to_sres", bool(second),
+        f"{len(second)} gemma layers with metrics_report.json + second_pass.json"
+        if second else "needs at least one gemma second_pass.json (stage 03)",
+        lambda: funnel_coverage_to_sres(layers, second, where="gemma-2-2b"))
 
     run("edge_survival_by_block_pair", len(layers) >= 2,
         f"{len(layers)} gemma layer reports" if layers else "needs ≥2 gemma metrics_report.json",
@@ -932,9 +1196,13 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     run("multiparenting_by_layer", len(layers) >= 1,
         f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
         lambda: multiparenting_by_layer(layers))
-    n_arch = len(sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json")))
-    run("shared_input_moved_every_metric", n_arch >= len(layers) and len(layers) >= 2,
-        f"{len(layers)} current reports vs {n_arch} archived v1 reports" if n_arch
+    # Matched BY LAYER: a layer graded only after the BOS fix has no v1
+    # counterpart and must not veto the figure for the layers that do.
+    arch_L = {int(p.parent.name.split("__")[0].split("_")[1])
+              for p in (C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json")}
+    n_match = sum(1 for L, _ in layers if L in arch_L)
+    run("shared_input_moved_every_metric", n_match >= 2,
+        f"{n_match} layers graded both before and after BOS exclusion" if n_match
         else "needs the pre-BOS reports in outputs_archive/",
         lambda: shared_input_moved_every_metric(layers))
     run("base_rate_vs_frequency_capture", len(layers) >= 1,
@@ -961,12 +1229,14 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     pcfg = [(p.name, _json(p / "metrics_report.json"))
             for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")) if p.is_dir()]
     pcfg = [(f"PCFG {n.replace('_', ' ')}", r) for n, r in pcfg if r]
-    # Every PCFG layer, not the first one. `pcfg[:1]` silently dropped layer 03,
-    # which is the run that carries the strict test -- the exact "renders 6 of 10
-    # and reads as complete" failure this file is written against.
-    runs = ([("gemma-2-2b layer 06", l6)] if l6 else []) + pcfg
-    run("cross_source_funnel_shares", len(runs) >= 2,
-        f"{len(runs)} sources" if len(runs) >= 2 else "needs a gemma report and a PCFG report",
+    # Every graded layer of BOTH sources. This figure once carried gemma layer 6
+    # alone -- the layer that had the strict test first -- and kept doing so
+    # after the other five caught up, which read as "the comparison rests on one
+    # layer" long after it no longer did.
+    runs = [(f"gemma L{L}", rep) for L, rep in layers] + pcfg
+    run("cross_source_funnel_shares", bool(layers and pcfg),
+        f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports"
+        if (layers and pcfg) else "needs a gemma report and a PCFG report",
         lambda: cross_source_funnel_shares(runs))
 
     # The two cross-source depth figures. Both need at least one layer index that
@@ -1000,9 +1270,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         else "needs in_block_edges.json — pipeline stage 01c",
         lambda: in_block_relations(ib))
 
-    # observed S_res shares, read off whatever second_pass.json files exist
+    # observed S_res shares, read off whatever second_pass.json files exist --
+    # every gemma layer that has one, not the single layer that had one first
     observed = []
-    probes = [("gemma L6", 32768, G / "layer_06" / "second_pass.json")]
+    probes = [(f"gemma L{int(q.parent.name.split('_')[1])}", C.D_SAE, q)
+              for q in sorted(G.glob("layer_*/second_pass.json"))]
     probes += [(f"PCFG {q.parent.name.replace('_', ' ')}", 1792, q)
                for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json"))]
     for label, d_sae, path in probes:
@@ -1015,6 +1287,31 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     run("sres_null_rate_vs_dictionary_size", True,
         f"config (k={C.SRES_RANK_TOP_K}) + {len(observed)} measured pass rates",
         lambda: sres_null_rate_vs_dictionary_size(observed))
+
+    run("battery_questions_gemma", bool(layers),
+        f"{len(layers)} gemma layer reports + {len(second)} second passes"
+        if layers else "needs gemma metrics_report.json",
+        lambda: battery_questions_gemma(layers, second))
+
+    # the recovered graph itself, from the largest edge list that has the probe
+    run("recovered_graph_toy_vs_gemma", bool(tt and s6),
+        "trained_toy_calibration.json + gemma layer_06 second_pass.json"
+        if (tt and s6) else "needs the trained-toy calibration and a gemma second_pass.json",
+        lambda: recovered_graph_toy_vs_gemma(tt, s6, "gemma-2-2b layer 6, B0→B1"))
+
+    # the formatting-density sweep runs, named fmt_<density*1e4>_s<seed>
+    fmt_runs = []
+    for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*")):
+        r = _json(p / "metrics_report.json")
+        if r:
+            fmt_runs.append((int(p.name.split("_")[1]) / 1e4,
+                             p.name.split("_s")[-1], r,
+                             _json(p / "second_pass.json")))
+    n_dens = len({d for d, *_ in fmt_runs})
+    run("pcfg_formatting_sweep", n_dens >= 2,
+        f"{len(fmt_runs)} fmt_* runs across {n_dens} delimiter densities"
+        if fmt_runs else "needs pcfg-matryoshka/fmt_* metric reports",
+        lambda: pcfg_formatting_sweep(fmt_runs))
 
     return written, skipped, sources
 
@@ -1070,20 +1367,23 @@ def _captions():
             "parent rather than a count of candidate edges, and so does not depend on the "
             "contaminated candidate set. Deeper pairs are much lower, on candidate sets that are "
             "also much smaller.")
-        if sp6:
-            sr = sp6["0->1"]["sres"]
+        sps = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in lay}
+        sps = {L: v for L, v in sps.items() if v and "0->1" in v}
+        if sps:
+            cands = [rp(L)["n_candidate_edges"] for L in sps]
+            passes = [sps[L]["0->1"]["sres"]["n_pass"] for L in sps]
+            shares = [100 * sps[L]["0->1"]["sres"]["frac_pass"] for L in sps]
             d["funnel_coverage_to_sres"] = (
-                r"Block pair B0$\rightarrow$B1 of the layer-6 Matryoshka SAE on "
-                rf"\texttt{{gemma-2-2b}}. Reverse coverage $R \geq {C.EDGE_TAU}$ with a "
-                f"joint-support guard admits {p6['n_candidate_edges']:,} candidate edges. The "
-                "reconstruction-ablation filter---drawn as a dashed reference rather than a "
-                "funnel stage, because it is applied to all candidates in parallel and does not "
-                f"nest---passes {p6['reconstruction']['n_pass']:,} of them "
-                rf"({100 * p6['reconstruction']['frac_pass']:.0f}\%), so the cheap filter barely "
-                f"bites. Of the {sr['n_edges_scored']:,} edges reaching the probe-based "
-                rf"$S_\mathrm{{res}}$ rank test, {sr['n_pass']} pass "
-                rf"({100 * sr['frac_pass']:.1f}\%). \textbf{{Caveat:}} stage~03 has been run on "
-                "layer~6 only, so this ratio has a single layer behind it.")
+                rf"Block pair B0$\rightarrow$B1 on \texttt{{gemma-2-2b}}, every layer with the "
+                rf"full three-stage pass ({len(sps)} of {len(lay)}). Reverse coverage "
+                rf"$R \geq {C.EDGE_TAU}$ with a joint-support guard admits "
+                f"{min(cands):,}--{max(cands):,} candidate edges per layer; the independence "
+                "null keeps the majority; the probe-based $S_\\mathrm{res}$ rank test confirms "
+                f"{min(passes)}--{max(passes)} edges "
+                rf"({min(shares):.1f}--{max(shares):.1f}\% of those it scores). The "
+                "reconstruction-ablation filter is applied to all candidates in parallel and "
+                "does not nest, so it is reported in the subtitle rather than drawn as a stage. "
+                "The y-axis is logarithmic: the collapse from thousands to tens is the result.")
         d["base_rate_vs_frequency_capture"] = (
             r"Two per-edge diagnostics on the same candidate sets, B0$\rightarrow$B1. The "
             "independence null asks whether co-firing exceeds what the parent's own firing rate "
@@ -1278,6 +1578,52 @@ def _captions():
                 "It is reported because an unstated alignment does the same work invisibly, and "
                 "because the two rules would support different claims about which part of gemma "
                 "a four-block transformer stands in for.")
+    if lay:
+        d["battery_questions_gemma"] = (
+            "Each metric of the battery was built to answer one plain-language question about "
+            "a candidate edge; each panel titles that question and plots its measured answer "
+            r"on \texttt{gemma-2-2b}, block pair B0$\rightarrow$B1, at every graded layer. Read "
+            "as a whole the figure shows the split the paper's results rest on: the questions "
+            "about an edge's \\emph{quality} (reconstruction, frequency, siblings) come back "
+            "healthy, while the questions about the graph's \\emph{structure} (base-rate "
+            "co-firing, the probe, fan-out) come back failing, at every depth.")
+
+    sp6 = _json(G / "layer_06" / "second_pass.json")
+    tt2 = _json(C.OUT_DIR / "trained_toy_calibration.json")
+    if tt2 and sp6:
+        s = sp6["0->1"]["sres"]
+        d["recovered_graph_toy_vs_gemma"] = (
+            r"The two recovered graphs, drawn edge by edge rather than summarized. "
+            r"\emph{Left:} the trained toy --- "
+            f"{len(tt2['found_edges'])} of {len(tt2['true_edges'])} true edges recovered, "
+            f"{tt2['false_positives']} false positives; dashed edges are misses, and every miss "
+            r"is a child feature the SAE never learned. \emph{Right:} the "
+            f"{s['n_edges_scored']:,} candidate edges of block pair B0$\\rightarrow$B1 on "
+            r"\texttt{gemma-2-2b} layer 6 that reached the probe, with the "
+            f"{s['n_pass']} probe-confirmed edges in green. The layout gives a tree its best "
+            "chance: every child is placed beneath the parent whose decoder best matches its "
+            "probe, so a clean hierarchy would render as near-vertical lines and every crossing "
+            "that remains is multi-parenting, not plotting. The same battery draws a tree where "
+            "the world is a tree, and a tangle on the released SAE.")
+
+    fmt_dirs = sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*"))
+    if fmt_dirs:
+        _fr = [(int(p.name.split("_")[1]) / 1e4, _json(p / "metrics_report.json"))
+               for p in fmt_dirs]
+        _fr = [(d0, r) for d0, r in _fr if r]
+        _dens = sorted({d0 for d0, _ in _fr})
+        _lay = _fr[0][1]["config"]["layer"]
+        d["pcfg_formatting_sweep"] = (
+            "Four measures of block pair B0$\\rightarrow$B1 against the delimiter density of "
+            f"the generating grammar, at layer {_lay} of the PCFG transformer; one point per "
+            f"seed ({len(_fr) // len(_dens)} per density), the line through the seed means. "
+            "Formatting density is the axis the project treats as the mechanism behind "
+            "bottleneck hijacking, and the reading is the shape: a measure that stays flat "
+            "across the axis is a property of the SAE that no grammar knob reaches, while a "
+            "measure that slopes is confounded with the corpus and must be controlled before "
+            "it is blamed on the architecture. Seeds are plotted individually because with "
+            "three of them a mean without its spread would overstate what one grammar "
+            "configuration can support.")
     d["sres_null_rate_vs_dictionary_size"] = (
         r"The $S_\mathrm{res}$ test passes an edge when both decoders fall within the top "
         rf"$k = {C.SRES_RANK_TOP_K}$ of the probe's correlations over the whole dictionary. It "
@@ -1303,16 +1649,18 @@ TEX_ORDER = [
      "Every metric scored against a known tree.", "The instrument"),
     ("MAIN 2", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
-    ("MAIN 3", "multiparenting_by_layer", False,
-     "The recovered graph is not a tree.", "What the battery finds on gemma-2-2b"),
-    ("MAIN 4", "funnel_coverage_to_sres", False,
+    ("MAIN 3", "recovered_graph_toy_vs_gemma", True,
+     "The recovered graph, drawn.", "What the battery finds on gemma-2-2b"),
+    ("MAIN 4", "multiparenting_by_layer", False,
+     "The recovered graph is not a tree.", None),
+    ("MAIN 5", "funnel_coverage_to_sres", False,
      "Coverage proposes; the strict test disposes.", None),
-    ("MAIN 5", "base_rate_vs_frequency_capture", False,
+    ("MAIN 6", "base_rate_vs_frequency_capture", False,
      "The over-connection is a base-rate effect, not token-frequency capture.",
      "The bottleneck-hijacking hypothesis, tested"),
-    ("MAIN 6", "superparent_fanout_vs_firing", False,
+    ("MAIN 7", "superparent_fanout_vs_firing", False,
      "Why a parent that fires often enough clears the coverage bar for nothing.", None),
-    ("MAIN 7", "shared_input_moved_every_metric", True,
+    ("MAIN 8", "shared_input_moved_every_metric", True,
      "Six metrics designed as independent detectors failed together.",
      "What this says about metric batteries"),
     ("APP 1", "sres_null_rate_vs_dictionary_size", False,
@@ -1335,6 +1683,10 @@ TEX_ORDER = [
      "Which alignment the comparison rests on, measured rather than assumed.", None),
     ("APP 7", "depth_profile_across_layers", True,
      "No measure is monotonic in depth.", None),
+    ("APP 8", "pcfg_formatting_sweep", True,
+     "The formatting-density axis, swept.", None),
+    ("APP 9", "battery_questions_gemma", True,
+     "The battery, question by question.", None),
 ]
 
 TEX_HEAD = r"""% ===========================================================================
