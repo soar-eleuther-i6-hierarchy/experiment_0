@@ -5,7 +5,7 @@
 % caption was read from the JSON its figure plots, at generation time; do not
 % edit a number here by hand, regenerate.
 %
-% Ordered as the paper reads. MAIN 1-7 are the main text, APP 1-5 the appendix.
+% Ordered as the paper reads. MAIN 1-5 are the main text, APP 1-13 the appendix.
 %
 % Requires: graphicx. Emitted for a ONECOLUMN class, which is what the ICLR
 % template uses; pass --twocolumn for full-width figure* floats.
@@ -28,56 +28,47 @@
 \graphicspath{{./}{paper_figuers/}{figuers/}{figures/}{../paper_figuers/}{../figuers/}{../figures/}{../}}
 
 % -------------------------------------------------------------------------
-% The instrument
+% What the battery finds on gemma-2-2b
 % -------------------------------------------------------------------------
 
 % [MAIN 1]
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{calibration_synthetic_toy_scorecard}
+  \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
   \caption{%
-    \textbf{Every metric scored against a known tree.}
-    All 14 scorecard rows on a hand-built world with a known five-parent tree and six injected
-    structures; 14 pass, covering 21 of 21 metric functions. \emph{Left:} rows whose two
-    classes separate by a ratio, on a log axis. \emph{Right:} rows scored categorically, where
-    the recovered answer is either right or not. The two are kept apart because a categorical
-    margin of $1.0$ means \emph{correct}, and on a ratio axis that would read as \emph{no
-    separation at all}. The two hatched rows are negative controls, which pass when the
-    battery does \emph{not} act: an absorbed child, whose true edge coverage can never propose
-    because the child fires exactly where its parent is silent, and a shared-topic pair that
-    clears coverage, reconstruction, the frequency control and the independence null. They
-    turn the two open columns of the properties matrix into demonstrated limitations rather
-    than asserted ones, and a regression makes them fail visibly.
+    \textbf{Broad coverage does not translate into confirmed structure.} Coverage proposes
+    many candidate relationships (1,129--2,929 per layer), but successive independence and
+    probe tests eliminate most of them: the independence null rejects 69--86\%, and the probe
+    confirms only 8--55 edges per layer ($0.6$--$4.0\%$ of those scored), leaving only a small
+    subset of supported parent--child relationships. The reconstruction filter (passing
+    54--90\%) is evaluated separately because it does not form a nested stage. The PCFG panel
+    repeats the same collapse at small scale: 111--781 candidates per layer end in 0--4
+    probe-confirmed edges.
   }
-  \label{fig:calibration-synthetic-toy-scorecard}
+  \label{fig:funnel-coverage-to-sres}
 \end{figure}
 
 % [MAIN 2]
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{calibration_trained_toy_recovery}
+  \includegraphics[width=\linewidth]{multiparenting_by_layer}
   \caption{%
-    \textbf{The same tree, after a real training run.}
-    A Matryoshka SAE trained on the toy hierarchy, with the metrics run on the \emph{learned}
-    latents rather than on constructed statistics. Precision 1.00, recall 0.67: 6 of 9 true
-    edges recovered with 0 false positives, and every miss is an edge whose child the SAE
-    never learned---it recovered 17 of 20 true features, which bounds recall from above.
-    \emph{Right:} the lateral control, asking whether the Matryoshka nesting itself places a
-    parent in an earlier block than its children. Beyond edge recovery, the parent-conditioned
-    sibling metric reports 0.96 for one true parent against 0.00 and 0.00 for the others. The
-    grammar declares every parent's children mutually exclusive, and they co-fire 0 times in
-    200{,}000 draws; the latents that recovered them co-fire 27,592 times, and one of the two
-    never fires alone. The SAE conflated two concepts the grammar keeps apart. This is a
-    defect nobody injected, which the synthetic tier structurally cannot produce, and which
-    the rest of the battery misses: both of that parent's edges are counted as recovered and
-    precision stays $1.00$.
+    \textbf{The recovered graph is not a tree.} Child features are often associated with
+    multiple parents rather than a single parent: in the top block pair B0$\rightarrow$B1,
+    89--100\% of children with any parent have two or more, at every graded layer, revealing
+    pervasive multi-parenting in the recovered structure. Deeper block pairs appear cleaner
+    (8--57\%) on candidate sets of comparable or larger size, so the drop reflects genuinely
+    looser structure rather than a smaller sample. Gemma's B3$\rightarrow$B4 pair is marked
+    n.a.: it is not yet computed, because grading it exhausts memory (B4 alone spans 24{,}576
+    latents); a rerun is pending. Every bar prints the number of children behind its
+    percentage as $n{=}$; a 100\% computed over one child is a coin flip, not a result, and
+    the label keeps it from reading as one. The PCFG panel shows the same signature (26--100\%
+    in B0$\rightarrow$B1 across its layers), so the multi-parenting is a property of the
+    Matryoshka nesting, not of natural language; its deeper-pair bars rest on a handful of
+    children and carry their support ($n$) rather than posing as results.
   }
-  \label{fig:calibration-trained-toy-recovery}
+  \label{fig:multiparenting-by-layer}
 \end{figure}
-
-% -------------------------------------------------------------------------
-% What the battery finds on gemma-2-2b
-% -------------------------------------------------------------------------
 
 % [MAIN 3]
 \begin{figure}[tbp]
@@ -85,44 +76,83 @@
   \includegraphics[width=\linewidth]{recovered_graph_toy_vs_gemma}
   \caption{%
     \textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially recovered, but
-    not as a clean tree --- especially at scale. \emph{Left:} the trained toy recovers 6/9
-    true edges with no false positives, while \emph{Middle:} a Matryoshka SAE trained on a
-    PCFG corpus (layer~3) repeats the tangle at small scale --- 772 candidate edges, 4
-    probe-confirmed --- and \emph{Right:} Gemma-2-2B (layer 12, B0$\rightarrow$B1) shows
-    substantial multi-parenting among the 1,111 candidate edges that reached the probe --- 63
-    parents $\times$ 355 children, with only the 22 probe-confirmed edges in green. Read left
-    to right, the worlds ascend in scale and complexity --- 20 hand-built features, a
-    1,792-latent SAE over a small transformer, a 32,768-latent SAE over a 2B-parameter LLM ---
+    not as a clean tree, especially at scale. \emph{Left:} the trained toy recovers 6/9 true
+    edges with no false positives, while \emph{Middle:} a Matryoshka SAE trained on a PCFG
+    corpus (layer~3) repeats the tangle at small scale (772 candidate edges, 4
+    probe-confirmed), and \emph{Right:} Gemma-2-2B (layer 12, B0$\rightarrow$B1) shows
+    substantial multi-parenting among the 1,111 candidate edges that reached the probe (63
+    parents $\times$ 355 children), with only the 22 probe-confirmed edges in green. Read left
+    to right, the worlds ascend in scale and complexity (20 hand-built features, a
+    1,792-latent SAE over a small transformer, a 32,768-latent SAE over a 2B-parameter LLM),
     and the recovered structure degrades in step: a clean tree, a small tangle, a dense one.
     Each child is placed beneath its best-matching parent, so a clean hierarchy would appear
     as near-vertical lines.
   }
-  \label{fig:recovered-graph-toy-vs-gemma}
+  \label{fig:recovered-graph}
 \end{figure}
+
+% -------------------------------------------------------------------------
+% The instrument, calibrated
+% -------------------------------------------------------------------------
 
 % [MAIN 4]
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{multiparenting_by_layer}
+  \includegraphics[width=\linewidth]{calibration_synthetic_toy_scorecard}
   \caption{%
-    \textbf{The recovered graph is not a tree.} Child features are often associated with
-    multiple parents rather than a single parent --- in the top block pair B0$\rightarrow$B1,
-    89--100\% of children with any parent have two or more, at every graded layer ---
-    revealing pervasive multi-parenting in the recovered structure. Deeper block pairs appear
-    cleaner (8--57\%) on candidate sets of comparable or larger size, so the drop reflects
-    genuinely looser structure rather than a smaller sample. Gemma's B3$\rightarrow$B4 pair is
-    marked n.a.: it is not yet computed --- grading it exhausts memory (B4 alone spans
-    24{,}576 latents) and a rerun is pending. Bars resting on fewer than 20 children print
-    that support as $n{=}$; a 100\% computed over one child is a coin flip, not a result, and
-    the label keeps it from reading as one. The PCFG panel shows the same signature ---
-    26--100\% in B0$\rightarrow$B1 across its layers --- so the multi-parenting is a property
-    of the Matryoshka nesting, not of natural language; its deeper-pair bars rest on a handful
-    of children and carry their support ($n$) rather than posing as results.
+    \textbf{Calibrating the metrics where the answer is known.} The test world is built by
+    hand: activations are composed from a known concept hierarchy (five parent features, each
+    with children that fire only when it fires) plus six planted look-alike structures that a
+    naive co-firing analysis would mistake for parent--child links, such as a feature pair
+    that co-fires only through shared frequent tokens, a pair lifted together by a shared
+    topic, and an always-on ``super-parent''. Each row is one metric of the battery
+    (Table~\ref{tab:battery}) applied to this world, and a row passes when the metric tells
+    its planted target apart from healthy structure; 14 of 14 rows pass. \emph{Left:} metrics
+    that return a score. The bar is the separation: the ratio between the metric's value on
+    the pairs it must flag and its value on the pairs it must keep, so $1\times$ means the two
+    are indistinguishable and the metric carries no signal. \emph{Right:} metrics whose output
+    is a discrete answer (an edge set, a direction), scored simply as correct or not; the two
+    panels are separate because a discrete answer has no meaningful ratio. The two hatched
+    rows are negative controls, planted blind spots expected to slip through: an absorbed
+    child that coverage cannot even propose (the child fires exactly where its parent is
+    silent) and a shared-topic pair that every filter accepts. They pass when nothing catches
+    them, documenting the battery's limits, and a code change that made them catchable would
+    fail them visibly. Passing this tier is what licenses running the same battery on real
+    models, where no ground truth exists.
   }
-  \label{fig:multiparenting-by-layer}
+  \label{fig:calibration-synthetic-toy-scorecard}
 \end{figure}
 
-% [MAIN 4b]
+% [MAIN 5]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_trained_toy_recovery}
+  \caption{%
+    \textbf{The same world, after a real training run.} The toy world's ground truth is a
+    tree: a set of parent$\rightarrow$child links between features (its edges). Here a
+    Matryoshka SAE is actually trained on the world's activations, each learned latent is
+    matched to the true feature it represents, and an edge counts as recovered when the SAE
+    learned latents for both of its features and the battery keeps the link between them.
+    Precision 1.00, recall 0.67: 6 of 9 true edges recovered with 0 false positives, and every
+    miss is an edge whose child the SAE never learned: it recovered 17 of 20 true features,
+    which bounds recall from above. \emph{Right:} the lateral control, asking whether the
+    Matryoshka nesting itself places a parent in an earlier block than its children. Beyond
+    edge recovery, the parent-conditioned sibling metric reports 0.96 for one true parent
+    against 0.00 and 0.00 for the others. The grammar declares every parent's children
+    mutually exclusive, and they co-fire 0 times in 200{,}000 draws; the latents that
+    recovered them co-fire 27,592 times, and one of the two never fires alone. The SAE
+    conflated two concepts the grammar keeps apart. This is a defect nobody injected, which
+    the synthetic tier structurally cannot produce, and which the rest of the battery misses:
+    both of that parent's edges are counted as recovered and precision stays $1.00$.
+  }
+  \label{fig:calibration-trained-toy-recovery}
+\end{figure}
+
+% -------------------------------------------------------------------------
+% Appendix
+% -------------------------------------------------------------------------
+
+% [APP 1]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
@@ -131,8 +161,8 @@
     Every metric per block pair, averaged over each source's graded layers; a cell is the mean
     over the layers where that pair has candidate edges at all, and a dash marks a pair with
     none. Colour ranks \emph{within} a column (each column is its own quantity and scale), so
-    the reading is locational: the structural pathology --- multi-parenting, fan-out
-    concentration, base-rate co-firing, superparents --- concentrates in the outermost pair
+    the reading is locational: the structural pathology (multi-parenting, fan-out
+    concentration, base-rate co-firing, superparents) concentrates in the outermost pair
     B0$\rightarrow$B1 on both sources, and the deeper pairs are clean but hold candidate sets
     one to three orders of magnitude smaller. The hierarchy is broken at its top boundary and
     quiet below it.
@@ -140,28 +170,11 @@
   \label{fig:tangle-lives-in-top-block-pair}
 \end{figure}
 
-% [MAIN 5]
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
-  \caption{%
-    \textbf{Broad coverage does not translate into confirmed structure.} Coverage proposes
-    many candidate relationships (1,129--2,929 per layer), but successive independence and
-    probe tests eliminate most of them --- the independence null rejects 69--86\%, and the
-    probe confirms only 8--55 edges per layer ($0.6$--$4.0\%$ of those scored) --- leaving
-    only a small subset of supported parent--child relationships. The reconstruction filter
-    (passing 54--90\%) is evaluated separately because it does not form a nested stage. The
-    PCFG panel repeats the same collapse at small scale: 111--781 candidates per layer end in
-    0--4 probe-confirmed edges.
-  }
-  \label{fig:funnel-coverage-to-sres}
-\end{figure}
-
 % -------------------------------------------------------------------------
 % The bottleneck-hijacking hypothesis, tested
 % -------------------------------------------------------------------------
 
-% [MAIN 6]
+% [APP 2]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{base_rate_vs_frequency_capture}
@@ -172,14 +185,14 @@
     rejects 69--86\% of edges. The token-frequency control asks whether the edge survives once
     globally frequent tokens are removed, and rejects 0.7--2.2\%. They disagree by
     37--104$\times$ at every layer. This tests the observation the bottleneck-hijacking
-    hypothesis is built on---that the over-connected parents mostly track high-frequency
-    tokens such as spaces, punctuation and \emph{the}---and does not support it: the frequency
-    control exonerates 98--99\% of edges while the base-rate null rejects most of them.
+    hypothesis is built on (that the over-connected parents mostly track high-frequency tokens
+    such as spaces, punctuation and \emph{the}) and does not support it: the frequency control
+    exonerates 98--99\% of edges while the base-rate null rejects most of them.
   }
   \label{fig:base-rate-vs-frequency-capture}
 \end{figure}
 
-% [MAIN 7]
+% [APP 3]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{superparent_fanout_vs_firing}
@@ -189,7 +202,7 @@
     independence that probability is simply the parent's firing rate $\rho$, so the enrichment
     a parent needs over chance is $\tau/\rho$, the grey curve. All 34 parents flagged as
     superparents, across five layers and every block pair, lie on it. 26 of them fire on at
-    least 50\% of tokens and therefore clear the bar at $\leq 1\times$ enrichment---on base
+    least 50\% of tokens and therefore clear the bar at $\leq 1\times$ enrichment: on base
     rate alone, with no association whatsoever between parent and child. A parent firing on
     1\% of tokens would need 50$\times$ enrichment for the same edge. This is the mechanism
     behind the previous figure.
@@ -201,7 +214,7 @@
 % What this says about metric batteries
 % -------------------------------------------------------------------------
 
-% [MAIN 8]
+% [APP 4]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{shared_input_moved_every_metric}
@@ -221,11 +234,7 @@
   \label{fig:shared-input-moved-every-metric}
 \end{figure}
 
-% -------------------------------------------------------------------------
-% Appendix
-% -------------------------------------------------------------------------
-
-% [APP 1]
+% [APP 5]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{sres_null_rate_vs_dictionary_size}
@@ -236,7 +245,7 @@
     parent passes whenever chance places it there: the null rate is $k/D$, the grey line,
     which is $11.9\%$ on the 42-feature synthetic toy, $0.28\%$ on a 1{,}792-latent PCFG SAE
     and $0.015\%$ on gemma's 32{,}768. Each measured pass rate is drawn with a vertical drop
-    to its own null, and that distance---not the rate---is what the measurement is worth. Two
+    to its own null, and that distance (not the rate) is what the measurement is worth. Two
     runs on the \emph{same} 1{,}792-latent dictionary land on opposite sides of their null,
     which is why a raw pass rate compares nothing across sources. A measured zero has no
     position on a logarithmic axis and is drawn at a marked floor rather than silently
@@ -245,7 +254,7 @@
   \label{fig:sres-null-rate-vs-dictionary-size}
 \end{figure}
 
-% [APP 2]
+% [APP 6]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{in_block_relations}
@@ -255,16 +264,16 @@
     ordering fixes the direction and it must be derived from coverage asymmetry, across all 10
     graded runs. Reported as a rate per available pair rather than as a count: gemma's blocks
     are nested prefixes of 128 to 6{,}144 features, so the number of available pairs differs
-    by a factor of 2{,}300 and raw counts invert the reading---the deepest block holds the
-    most duplicate pairs and the fewest per pair. The concentration in B0 also holds on a PCFG
-    SAE whose eight blocks are all 224 features, so it is not an artefact of B0 being small.
-    What distinguishes B0 is being the outermost Matryoshka prefix: the one block trained to
+    by a factor of 2{,}300 and raw counts invert the reading: the deepest block holds the most
+    duplicate pairs and the fewest per pair. The concentration in B0 also holds on a PCFG SAE
+    whose eight blocks are all 224 features, so it is not an artefact of B0 being small. What
+    distinguishes B0 is being the outermost Matryoshka prefix: the one block trained to
     reconstruct on its own.
   }
   \label{fig:in-block-relations}
 \end{figure}
 
-% [APP 3]
+% [APP 7]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{edge_survival_by_block_pair}
@@ -279,7 +288,7 @@
   \label{fig:edge-survival-by-block-pair}
 \end{figure}
 
-% [APP 4]
+% [APP 8]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{cross_source_funnel_shares}
@@ -291,13 +300,13 @@
     block count and counts would not compare. Thresholds are deliberately not tuned per
     source: holding them fixed is what makes any cross-source comparison mean something. The
     reconstruction filter should be read with care on PCFG, where the weakest candidate edge
-    sits $3.5\times$ above the threshold---the filter is inert there, and the surviving edges
+    sits $3.5\times$ above the threshold, so the filter is inert there and the surviving edges
     have passed coverage alone.
   }
   \label{fig:cross-source-funnel-shares}
 \end{figure}
 
-% [APP 5]
+% [APP 9]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{cross_source_layer_response}
@@ -317,23 +326,23 @@
     $\geq$ 2 parents stands out, and the reconstruction filter moves from nearly the worst to
     among the best. The reading we would take, carrying that caveat, is that the many-to-many
     fan-out B0$\rightarrow$B1 is a property of the Matryoshka nesting rather than of
-    \texttt{gemma-2-2b}: what the base model changes is how much of it there is---6.0\%
-    against 1.5\% of all B0$\times$B1 feature pairs become candidate edges---and not its
-    character. \textbf{Both PCFG runs are a single grammar configuration} (zipf exponent 1.5,
-    delimiters: eos)---one point of the three-axis sweep Exp 2 specifies (terminal
-    distribution, formatting density, grammar depth), so this compares gemma against one PCFG
-    corpus and not against PCFG. In particular the formatting axis, which the project now
-    treats as the mechanism behind bottleneck hijacking, is at its second-lowest rung here.
-    \textbf{Two shared layers cannot establish a trend}, and the deeperblock pairs are
-    excluded because the PCFG runs hold 0--3 candidate edges in each of them. The token
-    budgets also differ by 21$\times$, which cuts against the density gap rather than
-    explaining it: the joint-support guard is an absolute count, so more tokens make it easier
-    to clear, and the source with more tokens is the sparser one.
+    \texttt{gemma-2-2b}: what the base model changes is how much of it there is (6.0\% against
+    1.5\% of all B0$\times$B1 feature pairs become candidate edges), not its character.
+    \textbf{Both PCFG runs are a single grammar configuration} (zipf exponent 1.5, delimiters:
+    eos), one point of the three-axis sweep Exp 2 specifies (terminal distribution, formatting
+    density, grammar depth), so this compares gemma against one PCFG corpus and not against
+    PCFG. In particular the formatting axis, which the project now treats as the mechanism
+    behind bottleneck hijacking, is at its second-lowest rung here. \textbf{Two shared layers
+    cannot establish a trend}, and the deeperblock pairs are excluded because the PCFG runs
+    hold 0--3 candidate edges in each of them. The token budgets also differ by 21$\times$,
+    which cuts against the density gap rather than explaining it: the joint-support guard is
+    an absolute count, so more tokens make it easier to clear, and the source with more tokens
+    is the sparser one.
   }
   \label{fig:cross-source-layer-response}
 \end{figure}
 
-% [APP 6]
+% [APP 10]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{cross_source_alignment_check}
@@ -341,19 +350,19 @@
     \textbf{Which alignment the comparison rests on, measured rather than assumed.}
     Comparing two base models of different depth requires an alignment, and the two defensible
     ones disagree here about which runs to pair: by block index the PCFG layers pair with
-    gemma's L1 and L3, and by relative depth $(L{+}1)/N$---the fraction of the network that
-    has run when the SAE reads \texttt{hook\_resid\_post}---they pair with gemma's L6 and L12
-    and L18 and L24, at opposite ends of the network. The choice is therefore not
-    presentational, so it is measured here rather than made in an axis label: the mean gap
-    over the six measures is 8.8 points under block index against 14.8 under relative depth.
-    \textbf{On 2 shared layers this is suggestive, not a result.} It is reported because an
-    unstated alignment does the same work invisibly, and because the two rules would support
-    different claims about which part of gemma a four-block transformer stands in for.
+    gemma's L1 and L3, and by relative depth $(L{+}1)/N$ (the fraction of the network that has
+    run when the SAE reads \texttt{hook\_resid\_post}) they pair with gemma's L6 and L12 and
+    L18 and L24, at opposite ends of the network. The choice is therefore not presentational,
+    so it is measured here rather than made in an axis label: the mean gap over the six
+    measures is 8.8 points under block index against 14.8 under relative depth. \textbf{On 2
+    shared layers this is suggestive, not a result.} It is reported because an unstated
+    alignment does the same work invisibly, and because the two rules would support different
+    claims about which part of gemma a four-block transformer stands in for.
   }
   \label{fig:cross-source-alignment-check}
 \end{figure}
 
-% [APP 7]
+% [APP 11]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{depth_profile_across_layers}
@@ -369,7 +378,7 @@
   \label{fig:depth-profile-across-layers}
 \end{figure}
 
-% [APP 8]
+% [APP 12]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{pcfg_formatting_sweep}
@@ -388,7 +397,7 @@
   \label{fig:pcfg-formatting-sweep}
 \end{figure}
 
-% [APP 9]
+% [APP 13]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{battery_questions_gemma}

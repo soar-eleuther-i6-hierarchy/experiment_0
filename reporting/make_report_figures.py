@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -493,6 +494,11 @@ def calibration_synthetic_toy_scorecard(rows):
     ratio.sort(key=lambda r: r["margin"])
     n_pass = sum(r["pass"] for r in rows)
 
+    # the calibration JSON numbers its rows with internal codes ("2b.", "3'.")
+    # that mean nothing to a reader; the figure shows the metric's name alone
+    def plain(label):
+        return re.sub(r"^\s*\d+[a-z]?'?\.\s*", "", label)
+
     fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.4),
                              gridspec_kw={"width_ratios": [1.75, 1]})
     ax = axes[0]
@@ -508,11 +514,12 @@ def calibration_synthetic_toy_scorecard(rows):
                 ">1000×" if r["margin"] >= 1000 else f"{r['margin']:.1f}×",
                 va="center", fontsize=8, color=MUTED)
     ax.set_yticks(np.arange(len(ratio)))
-    ax.set_yticklabels([r["metric"] for r in ratio], fontsize=8.5)
+    ax.set_yticklabels([plain(r["metric"]) for r in ratio], fontsize=8.5)
     ax.set_xscale("log")
     ax.set_xlim(0.3, 1.2e5)
     ax.axvline(1.0, ls=(0, (2, 3)), lw=1, color=NEUTRAL)
-    ax.set_xlabel("separation between the two classes (log) — 1× is no separation")
+    ax.set_xlabel("how far apart the metric scores planted vs healthy structure "
+                  "(ratio, log) — 1× = indistinguishable")
     ax.set_title("scored by margin", fontsize=9.5, loc="left")
     fig.legend(handles=[
         plt.Rectangle((0, 0), 1, 1, color=GOOD, label="caught its pathology"),
@@ -530,7 +537,7 @@ def calibration_synthetic_toy_scorecard(rows):
         ax.text(0.5, i, "correct" if r["pass"] else "wrong", va="center", ha="center",
                 fontsize=8.5, color="white", fontweight="bold")
     ax.set_yticks(np.arange(len(cat_rows)))
-    ax.set_yticklabels([r["metric"] for r in cat_rows], fontsize=8.5)
+    ax.set_yticklabels([plain(r["metric"]) for r in cat_rows], fontsize=8.5)
     ax.set_xticks([])
     ax.set_xlim(0, 1)
     ax.set_title("scored categorically —\nthe answer is right or it is not",
@@ -1624,26 +1631,26 @@ def _captions():
         deep = [v for v in deep if not np.isnan(v)]
         d["multiparenting_by_layer"] = (
             r"\textbf{The recovered graph is not a tree.} Child features are often "
-            "associated with multiple parents rather than a single parent --- in the "
+            "associated with multiple parents rather than a single parent: in the "
             rf"top block pair B0$\rightarrow$B1, {min(poly):.0f}--{max(poly):.0f}\% of "
-            "children with any parent have two or more, at every graded layer --- "
+            "children with any parent have two or more, at every graded layer, "
             "revealing pervasive multi-parenting in the recovered structure. Deeper "
             rf"block pairs appear cleaner ({min(deep):.0f}--{max(deep):.0f}\%) on "
             "candidate sets of comparable or larger size, so the drop reflects "
             "genuinely looser structure rather than a smaller sample. Gemma's "
-            r"B3$\rightarrow$B4 pair is marked n.a.: it is not yet computed --- "
-            "grading it exhausts memory (B4 alone spans 24{,}576 latents) and a "
-            "rerun is pending. Bars resting on fewer than 20 children print that "
-            "support as $n{=}$; a 100\\% computed over one child is a coin flip, "
+            r"B3$\rightarrow$B4 pair is marked n.a.: it is not yet computed, because "
+            "grading it exhausts memory (B4 alone spans 24{,}576 latents); a rerun "
+            "is pending. Every bar prints the number of children behind its "
+            "percentage as $n{=}$; a 100\\% computed over one child is a coin flip, "
             "not a result, and the label keeps it from reading as one.")
         pp = [100 * _pair(r, "0->1")["degree"]["poly_frac"]
               for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*"))
               for r in [_json(q / "metrics_report.json")] if r]
         if pp:
             d["multiparenting_by_layer"] += (
-                f" The PCFG panel shows the same signature --- "
-                rf"{min(pp):.0f}--{max(pp):.0f}\% in B0$\rightarrow$B1 across its layers "
-                "--- so the multi-parenting is a property of the Matryoshka nesting, not "
+                f" The PCFG panel shows the same signature "
+                rf"({min(pp):.0f}--{max(pp):.0f}\% in B0$\rightarrow$B1 across its "
+                "layers), so the multi-parenting is a property of the Matryoshka nesting, not "
                 "of natural language; its deeper-pair bars rest on a handful of children "
                 "and carry their support ($n$) rather than posing as results.")
         sps = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in lay}
@@ -1657,10 +1664,10 @@ def _captions():
                 r"\textbf{Broad coverage does not translate into confirmed structure.} "
                 "Coverage proposes many candidate relationships "
                 f"({min(cands):,}--{max(cands):,} per layer), but successive independence "
-                "and probe tests eliminate most of them --- the independence null rejects "
+                "and probe tests eliminate most of them: the independence null rejects "
                 rf"{min(ch):.0f}--{max(ch):.0f}\%, and the probe confirms only "
                 f"{min(passes)}--{max(passes)} edges per layer "
-                rf"(${min(shares):.1f}$--${max(shares):.1f}\%$ of those scored) --- leaving "
+                rf"(${min(shares):.1f}$--${max(shares):.1f}\%$ of those scored), leaving "
                 "only a small subset of supported parent--child relationships. The "
                 rf"reconstruction filter (passing {min(recs):.0f}--{max(recs):.0f}\%) is "
                 "evaluated separately because it does not form a nested stage.")
@@ -1684,9 +1691,9 @@ def _captions():
             rf"are removed, and rejects {min(fq):.1f}--{max(fq):.1f}\%. They disagree by "
             rf"{min(c / f for c, f in zip(ch, fq)):.0f}--"
             rf"{max(c / f for c, f in zip(ch, fq)):.0f}$\times$ at every layer. This tests the "
-            "observation the bottleneck-hijacking hypothesis is built on---that the "
+            "observation the bottleneck-hijacking hypothesis is built on (that the "
             "over-connected parents mostly track high-frequency tokens such as spaces, "
-            r"punctuation and \emph{the}---and does not support it: the frequency control "
+            r"punctuation and \emph{the}) and does not support it: the frequency control "
             r"exonerates 98--99\% of edges while the base-rate null rejects most of them.")
         d["superparent_fanout_vs_firing"] = (
             r"An edge is kept when $P(\mathrm{parent} \mid \mathrm{child}) \geq \tau = "
@@ -1695,7 +1702,7 @@ def _captions():
             rf"curve. All {len(fires)} parents flagged as superparents, across five layers and "
             rf"every block pair, lie on it. {free} of them fire on at least "
             rf"{100 * C.EDGE_TAU:.0f}\% of tokens and therefore clear the bar at "
-            r"$\leq 1\times$ enrichment---on base rate alone, with no association whatsoever "
+            r"$\leq 1\times$ enrichment: on base rate alone, with no association whatsoever "
             r"between parent and child. A parent firing on 1\% of tokens would need "
             rf"{C.EDGE_TAU / 0.01:.0f}$\times$ enrichment for the same edge. This is the "
             "mechanism behind the previous figure.")
@@ -1732,19 +1739,28 @@ def _captions():
     toy = _json(C.OUT_DIR / "synthetic_toy_calibration.json")
     if toy:
         d["calibration_synthetic_toy_scorecard"] = (
-            f"All {len(toy)} scorecard rows on a hand-built world with a known five-parent tree "
-            f"and six injected structures; {sum(r['pass'] for r in toy)} pass, covering 21 "
-            r"of 21 metric functions. \emph{Left:} rows whose two classes "
-            r"separate by a ratio, on a log axis. \emph{Right:} rows scored categorically, where "
-            "the recovered answer is either right or not. The two are kept apart because a "
-            r"categorical margin of $1.0$ means \emph{correct}, and on a ratio axis that would "
-            r"read as \emph{no separation at all}. The two hatched rows are negative controls, "
-            r"which pass when the battery does \emph{not} act: an absorbed child, whose true edge "
-            "coverage can never propose because the child fires exactly where its parent is "
-            "silent, and a shared-topic pair that clears coverage, reconstruction, the frequency "
-            "control and the independence null. They turn the two open columns of the properties "
-            "matrix into demonstrated limitations rather than asserted ones, and a regression "
-            "makes them fail visibly.")
+            r"\textbf{Calibrating the metrics where the answer is known.} The test world is "
+            "built by hand: activations are composed from a known concept hierarchy (five "
+            "parent features, each with children that fire only when it fires) plus six "
+            "planted look-alike structures that a naive co-firing analysis would mistake for "
+            "parent--child links, such as a feature pair that co-fires only through shared "
+            "frequent tokens, a pair lifted together by a shared topic, and an always-on "
+            r"``super-parent''. Each row is one metric of the battery (Table~\ref{tab:battery}) "
+            "applied to this world, and a row passes when the metric tells its planted target "
+            f"apart from healthy structure; {sum(r['pass'] for r in toy)} of {len(toy)} rows "
+            r"pass. \emph{Left:} metrics that return a score. The bar is the separation: the "
+            "ratio between the metric's value on the pairs it must flag and its value on the "
+            r"pairs it must keep, so $1\times$ means the two are indistinguishable and the "
+            r"metric carries no signal. \emph{Right:} metrics whose output is a discrete "
+            "answer (an edge set, a direction), scored simply as correct or not; the two "
+            "panels are separate because a discrete answer has no meaningful ratio. The two "
+            "hatched rows are negative controls, planted blind spots expected to slip "
+            "through: an absorbed child that coverage cannot even propose (the child fires "
+            "exactly where its parent is silent) and a shared-topic pair that every filter "
+            "accepts. They pass when nothing catches them, documenting the battery's limits, "
+            "and a code change that made them catchable would fail them visibly. Passing "
+            "this tier is what licenses running the same battery on real models, where no "
+            "ground truth exists.")
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     if tt:
@@ -1768,11 +1784,15 @@ def _captions():
                     "the rest of the battery misses: both of that parent's edges are counted as "
                     "recovered and precision stays $1.00$.")
         d["calibration_trained_toy_recovery"] = (
-            "A Matryoshka SAE trained on the toy hierarchy, with the metrics run on the "
-            r"\emph{learned} latents rather than on constructed statistics. Precision "
+            r"\textbf{The same world, after a real training run.} The toy world's ground "
+            "truth is a tree: a set of parent$\\rightarrow$child links between features "
+            "(its edges). Here a Matryoshka SAE is actually trained on the world's "
+            "activations, each learned latent is matched to the true feature it represents, "
+            "and an edge counts as recovered when the SAE learned latents for both of its "
+            "features and the battery keeps the link between them. Precision "
             rf"{tt['precision']:.2f}, recall {tt['recall']:.2f}: {tt['true_positives']} of "
             f"{len(tt['true_edges'])} true edges recovered with {tt['false_positives']} false "
-            "positives, and every miss is an edge whose child the SAE never learned---it "
+            "positives, and every miss is an edge whose child the SAE never learned: it "
             f"recovered {tt['n_recovered_features']} of {tt['n_features']} true features, which "
             r"bounds recall from above. \emph{Right:} the lateral control, asking whether the "
             "Matryoshka nesting itself places a parent in an earlier block than its children."
@@ -1787,7 +1807,7 @@ def _captions():
             f"all {len(ib)} graded runs. Reported as a rate per available pair rather than as a "
             "count: gemma's blocks are nested prefixes of 128 to 6{,}144 features, so the number "
             "of available pairs differs by a factor of 2{,}300 and raw counts invert the "
-            "reading---the deepest block holds the most duplicate pairs and the fewest per pair. "
+            "reading: the deepest block holds the most duplicate pairs and the fewest per pair. "
             "The concentration in B0 also holds on a PCFG SAE whose eight blocks are all 224 "
             "features, so it is not an artefact of B0 being small. What distinguishes B0 is "
             "being the outermost Matryoshka prefix: the one block trained to reconstruct on its "
@@ -1800,7 +1820,7 @@ def _captions():
         "in block count and counts would not compare. Thresholds are deliberately not tuned per "
         "source: holding them fixed is what makes any cross-source comparison mean something. "
         "The reconstruction filter should be read with care on PCFG, where the weakest candidate "
-        r"edge sits $3.5\times$ above the threshold---the filter is inert there, and the "
+        r"edge sits $3.5\times$ above the threshold, so the filter is inert there and the "
         "surviving edges have passed coverage alone.")
     dr = X.rows()
     by_layer = X.matched(dr, "layer")
@@ -1836,11 +1856,11 @@ def _captions():
             "the best. The reading we would take, carrying that caveat, is that the "
             "many-to-many fan-out "
             "B0$\\rightarrow$B1 is a property of the Matryoshka nesting rather than of "
-            r"\texttt{gemma-2-2b}: what the base model changes is how much of it there is---"
+            r"\texttt{gemma-2-2b}: what the base model changes is how much of it there is ("
             + " against ".join(rf"{dens[r['label']]:.1f}\%" for r in (gem[0], oth[0]))
-            + " of all B0$\\times$B1 feature pairs become candidate edges---and not its "
+            + " of all B0$\\times$B1 feature pairs become candidate edges), not its "
             r"character. \textbf{Both PCFG runs are a single grammar configuration} ("
-            + X.grammar_line(dr) + r")---one point of the three-axis sweep Exp 2 specifies "
+            + X.grammar_line(dr) + r"), one point of the three-axis sweep Exp 2 specifies "
             "(terminal distribution, formatting density, grammar depth), so this compares gemma "
             "against one PCFG corpus and not against PCFG. In particular the formatting axis, "
             "which the project now treats as the mechanism behind bottleneck hijacking, is at "
@@ -1860,8 +1880,8 @@ def _captions():
                 "defensible ones disagree here about which runs to pair: by block index the PCFG "
                 "layers pair with gemma's "
                 + " and ".join(f"L{q['layer']}" for _, q, _ in by_layer) + ", and by relative "
-                r"depth $(L{+}1)/N$---the fraction of the network that has run when the SAE reads "
-                r"\texttt{hook\_resid\_post}---they pair with gemma's "
+                r"depth $(L{+}1)/N$ (the fraction of the network that has run when the SAE reads "
+                r"\texttt{hook\_resid\_post}) they pair with gemma's "
                 + " and ".join(f"L{q['layer']}" for _, q, _ in by_depth) + ", at opposite ends of "
                 "the network. The choice is therefore not presentational, so it is measured here "
                 "rather than made in an axis label: the mean gap over the six measures is "
@@ -1876,7 +1896,7 @@ def _captions():
             "the mean over the layers where that pair has candidate edges at all, and a dash "
             "marks a pair with none. Colour ranks \\emph{within} a column (each column is its "
             "own quantity and scale), so the reading is locational: the structural pathology "
-            "--- multi-parenting, fan-out concentration, base-rate co-firing, superparents --- "
+            "(multi-parenting, fan-out concentration, base-rate co-firing, superparents) "
             "concentrates in the outermost pair B0$\\rightarrow$B1 on both sources, and the "
             "deeper pairs are clean but hold candidate sets one to three orders of magnitude "
             "smaller. The hierarchy is broken at its top boundary and quiet below it.")
@@ -1910,20 +1930,20 @@ def _captions():
             b = best["0->1"]["sres"]
             mid = (rf"\emph{{Middle:}} a Matryoshka SAE trained on a PCFG corpus "
                    f"({best_name.replace('layer~0', 'layer~')}) repeats the tangle at "
-                   f"small scale --- {b['n_edges_scored']:,} candidate edges, "
-                   f"{b['n_pass']} probe-confirmed --- and ")
+                   f"small scale ({b['n_edges_scored']:,} candidate edges, "
+                   f"{b['n_pass']} probe-confirmed), and ")
             # the dictionary sizes that make "ascending scale" a number, not a vibe
             rr = _json(C.OUT_DIR / "pcfg-matryoshka"
                        / best_name.replace("~", "_") / "metrics_report.json")
             d_p = ((rr or {}).get("config") or {}).get("d_sae", 1792)
             grad = (" Read left to right, the worlds ascend in scale and complexity "
-                    f"--- {tt2['n_features']} hand-built features, a {d_p:,}-latent SAE "
+                    f"({tt2['n_features']} hand-built features, a {d_p:,}-latent SAE "
                     f"over a small transformer, a {C.D_SAE:,}-latent SAE over a "
-                    "2B-parameter LLM --- and the recovered structure degrades in step: "
+                    "2B-parameter LLM), and the recovered structure degrades in step: "
                     "a clean tree, a small tangle, a dense one.")
         d["recovered_graph_toy_vs_gemma"] = (
             r"\textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially "
-            r"recovered, but not as a clean tree --- especially at scale. \emph{Left:} "
+            r"recovered, but not as a clean tree, especially at scale. \emph{Left:} "
             f"the trained toy recovers "
             f"{len(tt2['found_edges'])}/{len(tt2['true_edges'])} true edges with "
             # "no false positives" reads as prose while the count is zero, and
@@ -1931,7 +1951,7 @@ def _captions():
             f"{tt2['false_positives'] or 'no'} false positives, while " + mid +
             rf"\emph{{Right:}} Gemma-2-2B (layer {GRAPH_LAYER}, B0$\rightarrow$B1) shows "
             f"substantial multi-parenting among the {s['n_edges_scored']:,} candidate edges "
-            f"that reached the probe --- {n_par} parents $\\times$ {n_chi} children, with "
+            f"that reached the probe ({n_par} parents $\\times$ {n_chi} children), with "
             f"only the {s['n_pass']} probe-confirmed edges in green." + grad +
             " Each child is placed "
             "beneath its best-matching parent, so a clean hierarchy would appear as "
@@ -1961,8 +1981,8 @@ def _captions():
         "is a geometry test, so an unrelated parent passes whenever chance places it there: the "
         r"null rate is $k/D$, the grey line, which is $11.9\%$ on the 42-feature synthetic toy, "
         r"$0.28\%$ on a 1{,}792-latent PCFG SAE and $0.015\%$ on gemma's 32{,}768. Each measured "
-        "pass rate is drawn with a vertical drop to its own null, and that distance---not the "
-        r"rate---is what the measurement is worth. Two runs on the \emph{same} 1{,}792-latent "
+        "pass rate is drawn with a vertical drop to its own null, and that distance (not the "
+        r"rate) is what the measurement is worth. Two runs on the \emph{same} 1{,}792-latent "
         "dictionary land on opposite sides of their null, which is why a raw pass rate compares "
         "nothing across sources. A measured zero has no position on a logarithmic axis and is "
         "drawn at a marked floor rather than silently dropped.")
@@ -1976,49 +1996,52 @@ def _captions():
 # has one); the hypothesis figure and the mechanism that explains it are adjacent;
 # and the battery's own failure closes, because it qualifies everything above it.
 TEX_ORDER = [
-    ("MAIN 1", "calibration_synthetic_toy_scorecard", True,
-     "Every metric scored against a known tree.", "The instrument"),
-    ("MAIN 2", "calibration_trained_toy_recovery", True,
-     "The same tree, after a real training run.", None),
-    ("MAIN 3", "recovered_graph_toy_vs_gemma", True,
-     "The recovered graph, drawn.", "What the battery finds on gemma-2-2b"),
-    ("MAIN 4", "multiparenting_by_layer", False,
+    # main text: the three headline results first, then the two calibration
+    # figures that license them; everything after goes to the appendix
+    ("MAIN 1", "funnel_coverage_to_sres", False,
+     "Coverage proposes; the strict test disposes.",
+     "What the battery finds on gemma-2-2b"),
+    ("MAIN 2", "multiparenting_by_layer", False,
      "The recovered graph is not a tree.", None),
-    ("MAIN 4b", "tangle_lives_in_top_block_pair", True,
-     "The tangle lives in the coarsest block pair, on both sources.", None),
-    ("MAIN 5", "funnel_coverage_to_sres", False,
-     "Coverage proposes; the strict test disposes.", None),
-    ("MAIN 6", "base_rate_vs_frequency_capture", False,
+    ("MAIN 3", "recovered_graph_toy_vs_gemma", True,
+     "The recovered graph, drawn.", None),
+    ("MAIN 4", "calibration_synthetic_toy_scorecard", True,
+     "Every metric scored against a known tree.", "The instrument, calibrated"),
+    ("MAIN 5", "calibration_trained_toy_recovery", True,
+     "The same tree, after a real training run.", None),
+    ("APP 1", "tangle_lives_in_top_block_pair", True,
+     "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
+    ("APP 2", "base_rate_vs_frequency_capture", False,
      "The over-connection is a base-rate effect, not token-frequency capture.",
      "The bottleneck-hijacking hypothesis, tested"),
-    ("MAIN 7", "superparent_fanout_vs_firing", False,
+    ("APP 3", "superparent_fanout_vs_firing", False,
      "Why a parent that fires often enough clears the coverage bar for nothing.", None),
-    ("MAIN 8", "shared_input_moved_every_metric", True,
+    ("APP 4", "shared_input_moved_every_metric", True,
      "Six metrics designed as independent detectors failed together.",
      "What this says about metric batteries"),
-    ("APP 1", "sres_null_rate_vs_dictionary_size", False,
-     "A top-$k$ rank rule is only as strict as the dictionary is large.", "Appendix"),
-    ("APP 2", "in_block_relations", True,
+    ("APP 5", "sres_null_rate_vs_dictionary_size", False,
+     "A top-$k$ rank rule is only as strict as the dictionary is large.", None),
+    ("APP 6", "in_block_relations", True,
      "Same-level structure lives in the outermost block.", None),
-    ("APP 3", "edge_survival_by_block_pair", True,
+    ("APP 7", "edge_survival_by_block_pair", True,
      "What each filter removes, by block pair and by depth.", None),
-    ("APP 4", "cross_source_funnel_shares", False,
+    ("APP 8", "cross_source_funnel_shares", False,
      "One unchanged battery across SAE sources.", None),
     # The two cross-source depth figures sit together and immediately after the
     # funnel that establishes the sources are comparable at all. The alignment
     # check follows the result it qualifies rather than preceding it: it is a
     # caveat on how the layers were paired, and a reader who has not yet seen the
     # pairing has nothing to apply it to.
-    ("APP 5", "cross_source_layer_response", True,
+    ("APP 9", "cross_source_layer_response", True,
      "The shape of the B0$\\rightarrow$B1 relation is the same on both base models; "
      "its strength is not.", None),
-    ("APP 6", "cross_source_alignment_check", False,
+    ("APP 10", "cross_source_alignment_check", False,
      "Which alignment the comparison rests on, measured rather than assumed.", None),
-    ("APP 7", "depth_profile_across_layers", True,
+    ("APP 11", "depth_profile_across_layers", True,
      "No measure is monotonic in depth.", None),
-    ("APP 8", "pcfg_formatting_sweep", True,
+    ("APP 12", "pcfg_formatting_sweep", True,
      "The formatting-density axis, swept.", None),
-    ("APP 9", "battery_questions_gemma", True,
+    ("APP 13", "battery_questions_gemma", True,
      "The battery, question by question.", None),
 ]
 
@@ -2029,7 +2052,7 @@ TEX_HEAD = r"""% ===============================================================
 % caption was read from the JSON its figure plots, at generation time; do not
 % edit a number here by hand, regenerate.
 %
-% Ordered as the paper reads. MAIN 1-7 are the main text, APP 1-5 the appendix.
+% Ordered as the paper reads. MAIN 1-5 are the main text, APP 1-13 the appendix.
 %
 % Requires: graphicx. Emitted for a ONECOLUMN class, which is what the ICLR
 % template uses; pass --twocolumn for full-width figure* floats.
@@ -2102,7 +2125,11 @@ def write_tex(out_dir: Path, graphics: str):
             L.append(_wrap(body))
         else:
             L.append(r"    % no caption body: nothing in _captions() covers this figure")
-        L += [r"  }", rf"  \label{{fig:{name.replace('_', '-')}}}",
+        # labels default to the figure name; overrides keep manuscript-facing
+        # labels short where the file name is long
+        label = {"recovered_graph_toy_vs_gemma": "recovered-graph",
+                 }.get(name, name.replace("_", "-"))
+        L += [r"  }", rf"  \label{{fig:{label}}}",
               rf"\end{{{env}}}", ""]
         n += 1
     (out_dir / "figures.tex").write_text("\n".join(L))
