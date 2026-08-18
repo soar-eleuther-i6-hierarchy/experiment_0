@@ -2,15 +2,12 @@
 The sampler: documents, topics, token ids, coefficients, activations.
 
 Structural rules enforced token-wise, not on average:
-  - containment  (A1): a child can only fire where its parent fires
-  - exclusivity       : mutually exclusive siblings never co-fire
+  - containment : a child can only fire where its parent fires
+  - exclusivity : mutually exclusive siblings never co-fire
 
 Both are drawn so the marginals still come out at their designed values — exclusive
 children share one uniform draw partitioned by their `p_edge`, which is exact as long
-as the sibling budget holds — each parent's child edge-probs sum to <= 1 (spec 0.7-5).
-
-Manifold features draw a continuous, bounded strength with the same mean and spread as
-the discrete features — a smooth graded axis rather than an on/off switch.
+as the sibling budget holds — each parent's child edge-probs sum to <= 1.
 """
 
 from __future__ import annotations
@@ -46,13 +43,11 @@ def _zipf_probs(vocab: int, s: float) -> torch.Tensor:
     return w / w.sum()
 
 
-def _strength(n: int, mean_strength: float, cv: float, kind: str, gen: torch.Generator) -> torch.Tensor:
+def _strength(n: int, mean_strength: float, cv: float, gen: torch.Generator) -> torch.Tensor:
     """Positive strength with mean `mean_strength` and sd `cv*mean_strength`, exactly.
 
     Discrete features use a lognormal (right-skewed, strictly positive) with matched
-    first two moments. Manifold features use a *uniform* draw with the same two
-    moments, giving the smooth bounded axis C-tile needs; the positivity of its lower
-    endpoint requires cv < 1/sqrt(3).
+    first two moments.
 
     Lognormal rather than Gamma because `torch.distributions.Gamma` does not accept an
     explicit `generator`, and the only sampler that does is `torch._standard_gamma` —
@@ -60,12 +55,6 @@ def _strength(n: int, mean_strength: float, cv: float, kind: str, gen: torch.Gen
     """
     if n == 0:
         return torch.zeros(0, dtype=DT)
-    if kind == "manifold":
-        b = cv * mean_strength * (12.0 ** 0.5)
-        a = mean_strength - b / 2.0
-        if a <= 0:
-            raise ValueError(f"manifold feature needs cv < 1/sqrt(3); got cv={cv}")
-        return a + b * torch.rand(n, generator=gen, dtype=DT)
     sig2 = math.log(1.0 + cv ** 2)
     mean_log = math.log(mean_strength) - sig2 / 2.0
     z = torch.randn(n, generator=gen, dtype=DT)
@@ -88,11 +77,8 @@ def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geome
     probs = _zipf_probs(cfg.vocab, cfg.zipf_s)
     tokens = torch.multinomial(probs, n, replacement=True, generator=gen)
 
-    # All token-bound features share the top-frequency ids, so their co-firing lives
-    # entirely in the top frequency bucket. Per-pair disjoint id sets
-    # do not work: under Zipf the mass of ids 2i, 2i+1 falls below the design firing
-    # rate within a few pairs, and the realised rate is then silently capped by the
-    # ids rather than set by p_k.
+    # All token-bound features share one top-frequency id set (disjoint per-pair sets
+    # would fall below the design firing rate under Zipf; see DESIGN.md).
     high_ids = torch.arange(cfg.n_bind_ids, dtype=torch.long)
     token_sets: dict[int, torch.Tensor] = {
         k: high_ids for k in range(F) if tree.token_bound[k]
@@ -122,8 +108,9 @@ def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geome
             continue                                      # handled per-parent below
         fires[:, k] = fires[:, par] & (torch.rand(n, generator=gen, dtype=DT) < tree.p_edge_of(k))
 
-    # Exclusive sibling groups: one uniform draw per token, partitioned by p_edge.
-    # Iterate `tree.topology_ordering`, NOT `tree.children` — this loop reads `fires[:, par]`, so a parent that is itself an exclusive child must already have been resolved. Dict insertion order happens to give that today, but only incidentally; topological order makes it structural.
+    # Exclusive sibling groups: one uniform draw per token, partitioned by p_edge. Must
+    # iterate in topological order — this reads `fires[:, par]`, so an exclusive child
+    # that is itself a parent must already be resolved.
     for par in tree.topology_ordering:
         kids = tree.children.get(par, [])
         if not tree.exclusive.get(par, False) or not kids:
@@ -139,7 +126,7 @@ def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geome
     for k in range(F):
         idx = fires[:, k].nonzero(as_tuple=True)[0]
         if idx.numel():
-            A[idx, k] = _strength(idx.numel(), float(strengths.mean_strength[k]), cfg.strength_spread, tree.kind[k], gen)
+            A[idx, k] = _strength(idx.numel(), float(strengths.mean_strength[k]), cfg.strength_spread, gen)
 
     Atilde = A @ geo.Lam.T
     noise = cfg.noise_sigma * torch.randn(n, cfg.D, generator=gen, dtype=DT)
