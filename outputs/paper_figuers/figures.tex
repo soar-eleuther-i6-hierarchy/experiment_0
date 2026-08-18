@@ -73,7 +73,7 @@
 % [MAIN 3]
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{recovered_graph_toy_vs_gemma}
+  \includegraphics[width=\linewidth]{recovered_graph_toy_vs_pcfg_vs_gemma}
   \caption{%
     \textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially recovered, but
     not as a clean tree, especially at scale. \emph{Left:} the trained toy recovers 6/9 true
@@ -184,12 +184,30 @@
     \emph{median} child of the whole pair has 3. This is the per-child view of the 81\%
     multi-parenting rate: the violation is not a tail event but the typical case.
     Neuronpedia's labels name the absurdity: a child read as ``medical terminology related to
-    renal and pulmonary tissues a'' is claimed by parents read as ``terms related to data
-    management and database op'', ``technical terminology related to programming and'',
-    ``technical terms related to mathematics and progr'', among others; the labels are
-    automatic and noisy, but the point is structural, not semantic.
+    renal and pulmonary tissues…'' is claimed by parents read as ``terms related to data
+    management and database…'', ``technical terminology related to programming…'', ``technical
+    terms related to mathematics and…'', among others; the labels are automatic and noisy, but
+    the point is structural, not semantic.
   }
   \label{fig:a-slice-of-the-tangle}
+\end{figure}
+
+% [APP 1b']
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{one_child_many_parents}
+  \caption{%
+    \textbf{A child with 10 parents.} The single-child view of the slice in
+    Fig.~\ref{fig:a-slice-of-the-tangle}, with every claiming parent's label spelled out. A
+    tree grants each child exactly one parent; the most-claimed child feature of gemma-2-2b
+    (layer 12, B0$\rightarrow$B1) is claimed by 10 at once, while the \emph{median} child with
+    any parent has 3. Neuronpedia's labels name the absurdity: a child read as ``medical
+    terminology related to renal and pulmonary tissues…'' is claimed by parents read as
+    ``terms related to data management and database…'', ``technical terminology related to
+    programming…'', ``technical terms related to mathematics and…'', among others; the labels
+    are automatic and noisy, but the point is structural, not semantic.
+  }
+  \label{fig:one-child-many-parents}
 \end{figure}
 
 % [APP 1c]

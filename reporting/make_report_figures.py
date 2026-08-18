@@ -47,6 +47,7 @@ import argparse
 import json
 import re
 import sys
+import textwrap
 from pathlib import Path
 
 import matplotlib
@@ -1243,7 +1244,7 @@ def battery_questions_gemma(layers, second):
 #      chance -- every child is placed under its strongest parent -- so any
 #      crossing that remains is structure, not plotting.
 # ---------------------------------------------------------------------------
-def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
+def recovered_graph_toy_vs_pcfg_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
     true_edges = [tuple(e) for e in tt["true_edges"]]
     found = {tuple(e) for e in tt["found_edges"]}
 
@@ -1332,7 +1333,7 @@ def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
            "matches its probe, so a clean hierarchy would be near-vertical lines. The crossings "
            "are the structure", width=110)
     fig.subplots_adjust(top=0.80)
-    return _finish(fig, axes, "recovered_graph_toy_vs_gemma")
+    return _finish(fig, axes, "recovered_graph_toy_vs_pcfg_vs_gemma")
 
 
 # ---------------------------------------------------------------------------
@@ -1771,11 +1772,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
             if (sp_p is None or spx["0->1"]["sres"]["n_edges_scored"]
                     > sp_p["0->1"]["sres"]["n_edges_scored"]):
                 sp_p, sp_p_name = spx, lab
-    run("recovered_graph_toy_vs_gemma", bool(tt and s_gl),
+    run("recovered_graph_toy_vs_pcfg_vs_gemma", bool(tt and s_gl),
         f"trained_toy_calibration.json + gemma layer_{GRAPH_LAYER:02d}"
         + (f" + {sp_p_name}" if sp_p else "") + " second_pass.json"
         if (tt and s_gl) else "needs the trained-toy calibration and a gemma second_pass.json",
-        lambda: recovered_graph_toy_vs_gemma(tt, s_gl,
+        lambda: recovered_graph_toy_vs_pcfg_vs_gemma(tt, s_gl,
                                              f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1",
                                              sp_p, f"{sp_p_name}, B0→B1"))
 
@@ -1791,10 +1792,10 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
         lambda: a_slice_of_the_tangle(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1", lbl))
 
-    # presentation asset only — generated fresh but deliberately absent from
-    # TEX_ORDER, so it never enters figures.tex or the paper's figure count
+    # the single-child twin of the slice; also emitted into figures.tex (APP
+    # 1b') so the manuscript can pick one of the pair and comment the other
     run("one_child_many_parents", bool(s_gl),
-        f"gemma layer_{GRAPH_LAYER:02d} second_pass.json (slides asset, not in the paper)"
+        f"gemma layer_{GRAPH_LAYER:02d} second_pass.json (single-child twin of the slice)"
         if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
         lambda: one_child_many_parents(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1", lbl))
 
@@ -2171,7 +2172,7 @@ def _captions():
                     f"over a small transformer, a {C.D_SAE:,}-latent SAE over a "
                     "2B-parameter LLM), and the recovered structure degrades in step: "
                     "a clean tree, a small tangle, a dense one.")
-        d["recovered_graph_toy_vs_gemma"] = (
+        d["recovered_graph_toy_vs_pcfg_vs_gemma"] = (
             r"\textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially "
             r"recovered, but not as a clean tree, especially at scale. \emph{Left:} "
             f"the trained toy recovers "
@@ -2217,9 +2218,12 @@ def _captions():
             pl = [lblj.get(str(p), "") for p in wp]
             pl = [t for t in pl if t][:3]
             if pl and lblj.get(str(wc)):
+                # word-boundary truncation: a caption quote cut mid-word reads
+                # as a typo, not an ellipsis
+                short = lambda t, w: textwrap.shorten(t, w, placeholder="…")
                 ex = (rf" Neuronpedia's labels name the absurdity: a child read as "
-                      rf"``{lblj[str(wc)][:60]}'' is claimed by parents read as "
-                      + ", ".join(f"``{t[:48]}''" for t in pl)
+                      rf"``{short(lblj[str(wc)], 60)}'' is claimed by parents read as "
+                      + ", ".join(f"``{short(t, 48)}''" for t in pl)
                       + ", among others; the labels are automatic and noisy, but the "
                         "point is structural, not semantic.")
         d["a_slice_of_the_tangle"] = (
@@ -2234,6 +2238,15 @@ def _captions():
             rf"{100 * sum(1 for v in bc.values() if len(v) >= 2) / len(bc):.0f}\% "
             "multi-parenting rate: the violation is not a tail event but the typical "
             "case." + ex)
+        d["one_child_many_parents"] = (
+            r"\textbf{A child with "
+            + f"{len(wp)}"
+            + r" parents.} The single-child view of the slice in "
+            r"Fig.~\ref{fig:a-slice-of-the-tangle}, with every claiming parent's label "
+            "spelled out. A tree grants each child exactly one parent; the most-claimed "
+            rf"child feature of gemma-2-2b (layer {GRAPH_LAYER}, B0$\rightarrow$B1) is "
+            rf"claimed by {len(wp)} at once, while the \emph{{median}} child with any "
+            rf"parent has {cnts[len(cnts) // 2]}." + ex)
 
     fmt_dirs = sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*"))
     if fmt_dirs:
@@ -2281,7 +2294,7 @@ TEX_ORDER = [
      "What the battery finds on gemma-2-2b"),
     ("MAIN 2", "multiparenting_by_layer", False,
      "The recovered graph is not a tree.", None),
-    ("MAIN 3", "recovered_graph_toy_vs_gemma", True,
+    ("MAIN 3", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
      "The recovered graph, drawn.", None),
     ("MAIN 4", "calibration_synthetic_toy_scorecard", True,
      "Every metric scored against a known tree.", "The instrument, calibrated"),
@@ -2291,6 +2304,10 @@ TEX_ORDER = [
      "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
     ("APP 1b", "a_slice_of_the_tangle", False,
      "A slice of the tangle: every child in it has many parents.", None),
+    # the single-child twin of the slice: emitted so the manuscript can choose
+    # between them; expected to be commented in/out there, not both shown
+    ("APP 1b'", "one_child_many_parents", False,
+     "A child with ten parents: the single-child view of the slice.", None),
     ("APP 1c", "one_parent_owns_the_block", False,
      "One parent owns the block: the hub behind the tangle, isolated.", None),
     ("APP 2", "base_rate_vs_frequency_capture", False,
@@ -2409,7 +2426,7 @@ def write_tex(out_dir: Path, graphics: str):
             L.append(r"    % no caption body: nothing in _captions() covers this figure")
         # labels default to the figure name; overrides keep manuscript-facing
         # labels short where the file name is long
-        label = {"recovered_graph_toy_vs_gemma": "recovered-graph",
+        label = {"recovered_graph_toy_vs_pcfg_vs_gemma": "recovered-graph",
                  }.get(name, name.replace("_", "-"))
         L += [r"  }", rf"  \label{{fig:{label}}}",
               rf"\end{{{env}}}", ""]
