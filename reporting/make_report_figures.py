@@ -1356,7 +1356,12 @@ def one_parent_owns_the_block(sp, where):
 
     # -- left: the fan ------------------------------------------------------
     ax = axes[0]
-    cy = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
+    # claimed children drawn as one contiguous segment, unclaimed below it:
+    # child ids carry no order, so the split is the only meaningful grouping,
+    # and it keeps the grey minority visible instead of occluded
+    children = ([c for c in children if c in top_kids]
+                + [c for c in children if c not in top_kids])
+    cy = {c: 1 - i / max(len(children) - 1, 1) for i, c in enumerate(children)}
     for c in top_kids:
         ax.plot([0.06, 0.94], [0.5, cy[c]], lw=0.7, color=CAT[0],
                 alpha=0.45, zorder=1)
@@ -1406,6 +1411,133 @@ def one_parent_owns_the_block(sp, where):
            "claims most of the next block", width=100)
     fig.subplots_adjust(top=0.80)
     return _finish(fig, axes, "one_parent_owns_the_block")
+
+
+# ---------------------------------------------------------------------------
+# 10c'. The single-child version of the slice below: one child and every
+#       parent that claims it, with all parent labels spelled out. NOT in
+#       TEX_ORDER — the paper carries the slice; this one is generated as a
+#       presentation asset (slides, talks), where one glance and ten label
+#       lines beat a network panel. Kept in the generator so its numbers and
+#       labels stay current with every regeneration.
+# ---------------------------------------------------------------------------
+def one_child_many_parents(sp, where, labels=None):
+    import textwrap
+    edges = sp["0->1"]["sres"]["edges"]
+    by_child: dict = {}
+    for e in edges:
+        by_child.setdefault(e["child"], []).append(e["parent"])
+    child, parents = max(by_child.items(), key=lambda kv: len(kv[1]))
+    counts = sorted(len(v) for v in by_child.values())
+    med = counts[len(counts) // 2]
+    labels = labels or {}
+
+    def lab(i, width=52):
+        t = labels.get(str(i), "")
+        return textwrap.shorten(t, width=width, placeholder="…") if t else f"feature {i}"
+
+    fig, ax = plt.subplots(figsize=(11.5, 4.6))
+    ys = np.linspace(0.96, 0.04, len(parents))
+    for p, y in zip(sorted(parents), ys):
+        ax.plot([0.435, 0.86], [y, 0.5], lw=1.1, color=CAT[0], alpha=0.55, zorder=1)
+        ax.scatter([0.435], [y], s=26, color=INK, zorder=3)
+        ax.text(0.425, y, lab(p), ha="right", va="center", fontsize=8, color=MUTED)
+    ax.scatter([0.86], [0.5], s=200, color=INK, zorder=4)
+    child_txt = textwrap.fill(labels.get(str(child), f"feature {child}"), 26)
+    ax.text(0.885, 0.5, child_txt, ha="left", va="center", fontsize=9,
+            color=INK, fontweight="bold")
+    ax.text(0.435, 1.06, f"{len(parents)} parent features, all claiming…",
+            ha="center", fontsize=9.5, color=INK)
+    ax.text(0.86, 1.06, "…one child", ha="center", fontsize=9.5, color=INK)
+    ax.set_xlim(0, 1.18)
+    ax.set_ylim(-0.05, 1.14)
+    ax.set_xticks([]); ax.set_yticks([])
+    for s in ax.spines.values():
+        s.set_visible(False)
+    ax.set_title(f"{where} — the most-claimed child feature and every parent that claims it\n"
+                 "a tree grants each child exactly one parent "
+                 f"(the median child here has {med}) · labels: Neuronpedia, shown as read",
+                 fontsize=9.5, loc="left")
+    _title(fig, "A child with ten parents",
+           "the tree violation itself, drawn on the released SAE", width=100)
+    fig.subplots_adjust(top=0.82, left=0.02, right=0.99, bottom=0.03)
+    return _finish(fig, ax, "one_child_many_parents", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 10c. The mirror case study, and the sharper one: a SLICE of the block pair
+#      around the most-claimed children. A tree permits a parent many
+#      children; it grants each child exactly ONE parent, so a slice in which
+#      every child trails several parents is the tree violation itself, drawn
+#      — and drawn as a neighbourhood, so it cannot be read as one bad apple.
+#      Neuronpedia labels name the absurdity for the featured child.
+# ---------------------------------------------------------------------------
+def a_slice_of_the_tangle(sp, where, labels=None, n_children=8):
+    import textwrap
+    edges = sp["0->1"]["sres"]["edges"]
+    by_child: dict = {}
+    for e in edges:
+        by_child.setdefault(e["child"], []).append(e["parent"])
+    # a stated rule, not a hand pick: the n most-claimed children of the pair,
+    # plus every parent that claims any of them
+    kids = sorted(by_child, key=lambda c: -len(by_child[c]))[:n_children]
+    star = kids[0]
+    pars = sorted({p for c in kids for p in by_child[c]})
+    pshare = {p: sum(1 for c in kids if p in by_child[c]) for p in pars}
+    labels = labels or {}
+
+    fig, ax = plt.subplots(figsize=(11.5, 4.9))
+    px = {p: 0.06 + 0.88 * i / max(len(pars) - 1, 1) for i, p in enumerate(pars)}
+    kx = {c: 0.14 + 0.72 * i / max(len(kids) - 1, 1)
+          for i, c in enumerate(sorted(kids, key=lambda c: min(px[p] for p in by_child[c])))}
+    for c in kids:
+        for p in by_child[c]:
+            hot = c == star
+            ax.plot([px[p], kx[c]], [1, 0], lw=1.5 if hot else 0.9,
+                    color=CAT[3] if hot else CAT[0],
+                    alpha=0.85 if hot else 0.4, zorder=2 if hot else 1)
+    ax.scatter([px[p] for p in pars], [1] * len(pars),
+               s=[24 + 26 * pshare[p] for p in pars], color=INK, zorder=3)
+    ax.scatter([kx[c] for c in kids if c != star], [0] * (len(kids) - 1),
+               s=42, color=MUTED, zorder=3)
+    ax.scatter([kx[star]], [0], s=90, color=CAT[3], zorder=4)
+    for c in kids:
+        ax.text(kx[c], -0.09, f"×{len(by_child[c])}", ha="center", fontsize=8.5,
+                color=CAT[3] if c == star else MUTED)
+    star_txt = labels.get(str(star), "")
+    if star_txt:
+        ax.text(kx[star], -0.30,
+                textwrap.fill("“" + star_txt + "”", 42), ha="center", va="top",
+                fontsize=8, color=CAT[3])
+    # the two parents claiming the most of these children, named
+    named = sorted(pars, key=lambda p: -pshare[p])[:2]
+    for i, p in enumerate(named):
+        t = labels.get(str(p), "")
+        if t:
+            # anchor flips near the panel edges so the label never leaves it
+            ha = "right" if px[p] > 0.75 else ("left" if px[p] < 0.25 else "center")
+            ax.text(px[p], 1.10 + 0.10 * (i % 2),
+                    textwrap.shorten("“" + t + "”", 52, placeholder="…”"),
+                    ha=ha, fontsize=7.5, color=MUTED)
+    ax.text(0.5, -0.52, "×N = how many parents claim that child   ·   a tree would put "
+                        "exactly one line into every child", ha="center", fontsize=9,
+            color=INK)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-0.62, 1.24)
+    ax.set_xticks([]); ax.set_yticks([0, 1])
+    ax.set_yticklabels(["child block", "parent block"], fontsize=8.5)
+    for s in ("left", "bottom", "top", "right"):
+        ax.spines[s].set_visible(False)
+    ax.set_title(f"{where} — the {len(kids)} most-claimed children, and every parent "
+                 f"that claims them ({len(pars)} parents, "
+                 f"{sum(len(by_child[c]) for c in kids)} edges)\n"
+                 "orange = the featured child · dot area = how many of these children "
+                 "the parent claims · labels: Neuronpedia, shown as read",
+                 fontsize=9.5, loc="left")
+    _title(fig, "A slice of the tangle: every child in it has many parents",
+           "the tree violation drawn as a neighbourhood, not one bad apple", width=100)
+    fig.subplots_adjust(top=0.82, left=0.085, right=0.985, bottom=0.02)
+    return _finish(fig, ax, "a_slice_of_the_tangle", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1651,6 +1783,20 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"gemma layer_{GRAPH_LAYER:02d} second_pass.json"
         if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
         lambda: one_parent_owns_the_block(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1"))
+
+    lbl = _json(G / f"layer_{GRAPH_LAYER:02d}" / "feature_labels.json") or {}
+    run("a_slice_of_the_tangle", bool(s_gl),
+        f"gemma layer_{GRAPH_LAYER:02d} second_pass.json"
+        + (" + feature_labels.json" if lbl else " (no labels cached)")
+        if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
+        lambda: a_slice_of_the_tangle(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1", lbl))
+
+    # presentation asset only — generated fresh but deliberately absent from
+    # TEX_ORDER, so it never enters figures.tex or the paper's figure count
+    run("one_child_many_parents", bool(s_gl),
+        f"gemma layer_{GRAPH_LAYER:02d} second_pass.json (slides asset, not in the paper)"
+        if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
+        lambda: one_child_many_parents(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1", lbl))
 
     # the formatting-density sweep runs, named fmt_<density*1e4>_s<seed>
     fmt_runs = []
@@ -2041,6 +2187,53 @@ def _captions():
             "beneath its best-matching parent, so a clean hierarchy would appear as "
             "near-vertical lines, and a parent's dot area scales with its child count, "
             "so the hub parents that own most of the tangle are visible at a glance.")
+        ed = sp_gl["0->1"]["sres"]["edges"]
+        dg: dict = {}
+        for e in ed:
+            dg[e["parent"]] = dg.get(e["parent"], 0) + 1
+        ps = sorted(dg, key=lambda p: -dg[p])
+        ch = {e["child"] for e in ed}
+        tk = {e["child"] for e in ed if e["parent"] == ps[0]}
+        d["one_parent_owns_the_block"] = (
+            r"\textbf{One parent owns the block.} The hub structure behind the tangle, "
+            rf"isolated on gemma-2-2b (layer {GRAPH_LAYER}, B0$\rightarrow$B1). "
+            rf"\emph{{Left:}} the single biggest parent feature claims {len(tk)} of the "
+            rf"{len(ch)} children that have any parent ({100 * len(tk) / len(ch):.0f}\%). "
+            rf"\emph{{Right:}} ownership of all {len(ed):,} candidate edges is "
+            rf"concentrated: the top parent alone carries {100 * dg[ps[0]] / len(ed):.0f}\%, "
+            rf"the top five {100 * sum(dg[p] for p in ps[:5]) / len(ed):.0f}\%, and the top "
+            rf"ten {100 * sum(dg[p] for p in ps[:10]) / len(ed):.0f}\% of every proposed "
+            "parent$\\rightarrow$child relationship. A hierarchy distributes parenthood; "
+            "a hub monopolises it, which is what the fan-out Gini and superparent metrics "
+            "quantify in aggregate.")
+        bc: dict = {}
+        for e in ed:
+            bc.setdefault(e["child"], []).append(e["parent"])
+        wc, wp = max(bc.items(), key=lambda kv: len(kv[1]))
+        cnts = sorted(len(v) for v in bc.values())
+        lblj = _json(G / f"layer_{GRAPH_LAYER:02d}" / "feature_labels.json") or {}
+        ex = ""
+        if lblj:
+            pl = [lblj.get(str(p), "") for p in wp]
+            pl = [t for t in pl if t][:3]
+            if pl and lblj.get(str(wc)):
+                ex = (rf" Neuronpedia's labels name the absurdity: a child read as "
+                      rf"``{lblj[str(wc)][:60]}'' is claimed by parents read as "
+                      + ", ".join(f"``{t[:48]}''" for t in pl)
+                      + ", among others; the labels are automatic and noisy, but the "
+                        "point is structural, not semantic.")
+        d["a_slice_of_the_tangle"] = (
+            r"\textbf{A slice of the tangle.} A parent with many children is what a "
+            "hierarchy looks like; a child with many parents is what breaks one. A tree "
+            "grants each child exactly one parent, and in this slice of "
+            rf"gemma-2-2b (layer {GRAPH_LAYER}, B0$\rightarrow$B1), selected by a "
+            "stated rule (the eight most-claimed children and every parent claiming "
+            rf"them), the featured child alone is claimed by {len(wp)} parents at "
+            rf"once, its neighbours by 7--9 each, and the \emph{{median}} child of the "
+            rf"whole pair has {cnts[len(cnts) // 2]}. This is the per-child view of the "
+            rf"{100 * sum(1 for v in bc.values() if len(v) >= 2) / len(bc):.0f}\% "
+            "multi-parenting rate: the violation is not a tail event but the typical "
+            "case." + ex)
 
     fmt_dirs = sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*"))
     if fmt_dirs:
@@ -2096,7 +2289,9 @@ TEX_ORDER = [
      "The same tree, after a real training run.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
      "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
-    ("APP 1b", "one_parent_owns_the_block", False,
+    ("APP 1b", "a_slice_of_the_tangle", False,
+     "A slice of the tangle: every child in it has many parents.", None),
+    ("APP 1c", "one_parent_owns_the_block", False,
      "One parent owns the block: the hub behind the tangle, isolated.", None),
     ("APP 2", "base_rate_vs_frequency_capture", False,
      "The over-connection is a base-rate effect, not token-frequency capture.",

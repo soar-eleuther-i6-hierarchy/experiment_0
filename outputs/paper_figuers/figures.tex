@@ -171,6 +171,43 @@
   \label{fig:tangle-lives-in-top-block-pair}
 \end{figure}
 
+% [APP 1b]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{a_slice_of_the_tangle}
+  \caption{%
+    \textbf{A slice of the tangle.} A parent with many children is what a hierarchy looks
+    like; a child with many parents is what breaks one. A tree grants each child exactly one
+    parent, and in this slice of gemma-2-2b (layer 12, B0$\rightarrow$B1), selected by a
+    stated rule (the eight most-claimed children and every parent claiming them), the featured
+    child alone is claimed by 10 parents at once, its neighbours by 7--9 each, and the
+    \emph{median} child of the whole pair has 3. This is the per-child view of the 81\%
+    multi-parenting rate: the violation is not a tail event but the typical case.
+    Neuronpedia's labels name the absurdity: a child read as ``medical terminology related to
+    renal and pulmonary tissues a'' is claimed by parents read as ``terms related to data
+    management and database op'', ``technical terminology related to programming and'',
+    ``technical terms related to mathematics and progr'', among others; the labels are
+    automatic and noisy, but the point is structural, not semantic.
+  }
+  \label{fig:a-slice-of-the-tangle}
+\end{figure}
+
+% [APP 1c]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{one_parent_owns_the_block}
+  \caption{%
+    \textbf{One parent owns the block.} The hub structure behind the tangle, isolated on
+    gemma-2-2b (layer 12, B0$\rightarrow$B1). \emph{Left:} the single biggest parent feature
+    claims 220 of the 355 children that have any parent (62\%). \emph{Right:} ownership of all
+    1,111 candidate edges is concentrated: the top parent alone carries 20\%, the top five
+    60\%, and the top ten 78\% of every proposed parent$\rightarrow$child relationship. A
+    hierarchy distributes parenthood; a hub monopolises it, which is what the fan-out Gini and
+    superparent metrics quantify in aggregate.
+  }
+  \label{fig:one-parent-owns-the-block}
+\end{figure}
+
 % -------------------------------------------------------------------------
 % The bottleneck-hijacking hypothesis, tested
 % -------------------------------------------------------------------------
