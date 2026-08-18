@@ -319,7 +319,12 @@ def depth_profile_across_layers(layers):
 #    because it is a ratio over children that already have a parent.
 # ---------------------------------------------------------------------------
 def multiparenting_by_layer(layers, pcfg=None):
-    pairs = ["0->1", "1->2", "2->3"]
+    # EVERY block pair each source's nesting defines, not a fixed prefix of
+    # them: the pair list is read off block_ranges (gemma: 5 blocks -> 4 pairs,
+    # PCFG: 8 blocks -> 7 pairs). A pair the pipeline never graded is drawn as
+    # an explicit "n.a." at the baseline rather than silently omitted -- gemma's
+    # B3->B4 is not yet computed (grading it OOMs: B4 alone spans 24,576
+    # latents), and the figure must say so rather than hide the column.
     # one panel per SOURCE: the claim is cross-source ("the tangle is a
     # property of the nesting, not of gemma"), so the PCFG runs stand beside
     # gemma rather than in a separate appendix figure
@@ -327,48 +332,101 @@ def multiparenting_by_layer(layers, pcfg=None):
     if pcfg:
         groups.append(("PCFG", [(n.replace("PCFG ", "").replace("layer ", "L"), r)
                                 for n, r in pcfg]))
-    fig, axes = plt.subplots(1, len(groups), figsize=(4.0 + 4.4 * len(groups), 3.9),
+    # the first four pairs keep the figure's original categorical hues (CAT),
+    # so B0->B1 stays the blue readers already know; the three pairs the wider
+    # PCFG nesting adds get three new hues. Adjacent-pair CVD separation
+    # checked programmatically (Viénot simulation + OKLab): all pairs >= 8
+    # except vermilion<->pink under tritanopia (7.0), which is legal here
+    # because every bar carries its value as a direct label.
+    RAMP = CAT + ["#CC79A7", "#6A51A3", "#56B4E9"]
+
+    def pair_list(runs):
+        n_blocks = max((len(r.get("block_ranges", [])) for _, r in runs), default=0)
+        return [f"{i}->{i + 1}" for i in range(max(n_blocks - 1, 0))]
+
+    per_src_pairs = {src: pair_list(runs) for src, runs in groups}
+    all_pairs = max(per_src_pairs.values(), key=len)
+
+    fig, axes = plt.subplots(1, len(groups), figsize=(4.0 + 4.8 * len(groups), 4.1),
                              sharey=True,
-                             gridspec_kw={"width_ratios": [len(g[1]) for g in groups]})
+                             gridspec_kw={"width_ratios":
+                                          [len(g[1]) * len(per_src_pairs[g[0]])
+                                           for g in groups]})
     axes = np.atleast_1d(axes)
     for ax, (src, runs) in zip(axes, groups):
+        pairs = per_src_pairs[src]
         x = np.arange(len(runs))
-        w = 0.26
+        w = 0.86 / max(len(pairs), 1)
+        fs_val = 6.0 if len(pairs) > 4 else 7.5
         for j, p in enumerate(pairs):
             vals, supp = [], []
             for _, r in runs:
                 q = _pair(r, p) or {}
                 vals.append(100 * q.get("degree", {}).get("poly_frac", np.nan))
                 supp.append(q.get("degree", {}).get("n_children_with_parent"))
-            off = (j - 1) * w
-            ax.bar(x + off, vals, w, color=CAT[j],
-                   label=f"B{p.replace('->', '→B')}" if src == groups[0][0] else None)
+            off = (j - (len(pairs) - 1) / 2) * w
+            ax.bar(x + off, [0 if np.isnan(v) else v for v in vals], w * 0.92,
+                   color=RAMP[j])
             for xx, vv, nn in zip(x + off, vals, supp):
                 if np.isnan(vv):
+                    # absence of measurement, made visible instead of skipped
+                    ax.text(xx, 2.5, "n.a.", ha="center", va="bottom", rotation=90,
+                            fontsize=5.5, color=NEUTRAL)
                     continue
-                # a 100% bar computed over two children must say so: bars with
-                # thin support carry their n, so the eye cannot read a
-                # one-child ratio as a result
-                thin = nn is not None and nn < 20
-                ax.text(xx, vv + 1.6, f"{vv:.0f}" + (f"\nn={nn}" if thin else ""),
-                        ha="center", fontsize=6.5 if thin else 7.5, color=MUTED)
+                # every bar carries its support: the % answers "how much",
+                # n answers "over how many children it was computed". The %
+                # sits above the bar; n is rotated inside the bar so wide
+                # counts (n=3190) never collide with the neighbouring bar.
+                # Bars too short to hold the text stack both above instead.
+                # inside only when the bar is tall enough to hold the whole
+                # rotated string (~2.3 axis units per character + padding);
+                # otherwise the white tail vanishes into the white background
+                fits_inside = (nn is not None
+                               and vv >= 6 + 2.3 * len(f"n={nn}"))
+                if fits_inside:
+                    ax.text(xx, vv + 1.6, f"{vv:.0f}", ha="center",
+                            fontsize=5.5 if len(pairs) > 4 else 6.5, color=MUTED)
+                    ax.text(xx, 2.5, f"n={nn}", ha="center", va="bottom",
+                            rotation=90, fontsize=5.5, color="#FFFFFF")
+                else:
+                    # short bar: value above it, n rotated above the value —
+                    # never horizontal, so wide counts cannot reach a neighbour
+                    ax.text(xx, vv + 1.6, f"{vv:.0f}", ha="center",
+                            fontsize=5.5, color=MUTED)
+                    if nn is not None:
+                        ax.text(xx, vv + 7.0, f"n={nn}", ha="center", va="bottom",
+                                rotation=90, fontsize=5.0, color=MUTED)
         ax.set_xticks(x)
         ax.set_xticklabels([lab for lab, _ in runs])
-        ax.set_title(src, fontsize=10, loc="left", color=INK)
+        ax.set_title(f"{src} — {len(pairs) + 1} blocks, {len(pairs)} pairs",
+                     fontsize=10, loc="left", color=INK)
         ax.set_ylim(0, 112)
         ax.axhline(100, ls=(0, (2, 3)), lw=1, color=NEUTRAL)
         ax.grid(True, axis="y", alpha=0.12)
         ax.set_axisbelow(True)
     axes[0].set_ylabel("% of children with ≥ 2 parents")
-    # below the axis: at 100% the top bars reach the legend's only free space
-    fig.legend(fontsize=8.5, frameon=False, ncol=3, loc="lower center",
-               bbox_to_anchor=(0.5, -0.03))
+    # one shared key for every pair either source defines, colored by the ramp
+    handles = [plt.Rectangle((0, 0), 1, 1, color=RAMP[j])
+               for j in range(len(all_pairs))]
+    # the key sits above its two shared footnotes: both apply to both panels
+    fig.legend(handles, [f"B{p.replace('->', '→B')}" for p in all_pairs],
+               fontsize=8, frameon=False, ncol=min(len(all_pairs), 7),
+               loc="lower center", bbox_to_anchor=(0.5, 0.062))
+    fig.text(0.5, 0.042, "n = children behind the %",
+             ha="center", fontsize=7.5, color=MUTED)
+    fig.text(0.5, 0.008, "n.a. = B3→B4 not yet computed (out of memory)",
+             ha="center", fontsize=7.5, color=MUTED)
     _title(fig, "The graph is not a tree: in the top block pair nearly every child has "
                 "several parents, on both sources",
-           "the one measure BOS exclusion left unchanged — it is a ratio over children that "
-           "already have a parent", width=100)
-    fig.subplots_adjust(bottom=0.16)
-    return _finish(fig, axes, "multiparenting_by_layer")
+           "every block pair each nesting defines; n.a. = not computed yet — gemma's "
+           "B3→B4 runs out of memory (B4 alone spans 24,576 latents), rerun pending. "
+           "Ratio over children that already have a parent — the one measure BOS "
+           "exclusion left unchanged", width=110)
+    # tight_layout ignores fig.legend and would drop it onto the tick labels;
+    # this figure manages its own margins and passes tight=False
+    fig.subplots_adjust(left=0.055, right=0.995, top=0.80, bottom=0.25,
+                        wspace=0.06)
+    return _finish(fig, axes, "multiparenting_by_layer", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1204,7 +1262,8 @@ def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
     n_fp = tt["false_positives"]
     ax.set_title(f"trained toy — {len(found)}/{len(true_edges)} true edges recovered, "
                  f"{n_fp} false positive{'s' if n_fp != 1 else ''}\n"
-                 "dashed = missed (child feature never learned)", fontsize=9.5, loc="left")
+                 "green = recovered · dashed = missed (never learned)",
+                 fontsize=9.5, loc="left")
 
     # -- a probed SAE: every candidate edge that reached the probe ------------
     def draw_probed(ax, sp_x, label):
@@ -1236,9 +1295,12 @@ def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
                         color=GOOD, zorder=3)
         ax.scatter(list(px.values()), [1] * len(px), s=14, color=INK, zorder=4)
         ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
-        ax.set_title(f"{label} — the {len(edges):,} candidate edges that reached the "
-                     f"probe\n{len(px)} parents × {len(cx)} children; green = the "
-                     f"{n_pass} probe-confirmed", fontsize=9.5, loc="left")
+        key = (f"blue = candidate, unconfirmed · green = probe-confirmed ({n_pass})"
+               if n_pass else
+               "blue = candidate, unconfirmed · probe-confirmed: none")
+        ax.set_title(f"{label} — {len(edges):,} candidate edges "
+                     f"({len(px)} parents × {len(cx)} children)\n" + key,
+                     fontsize=9.5, loc="left")
 
     if n_panels == 3:
         draw_probed(axes[1], sp_pcfg, where_pcfg)
@@ -1478,7 +1540,12 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     # the recovered graph itself, drawn at GRAPH_LAYER (see the constant). The
     # PCFG panel is drawn at the PCFG layer with the LARGEST probe-scored edge
     # set -- a stated rule, so the panel does not quietly follow whichever run
-    # happened to finish first.
+    # happened to finish first. Chosen over depth-matching the gemma panel
+    # because this figure's job is to show the full funnel visually --
+    # candidate, rejected, and probe-CONFIRMED edges -- and the largest scored
+    # set is the one panel guaranteed to carry all three stages (a
+    # depth-matched layer can have zero confirmed edges, which reads as a dead
+    # probe). Depth-matched cross-source comparisons live in the tables.
     s_gl = second.get(GRAPH_LAYER)
     sp_p, sp_p_name = None, ""
     for lab, _, spx in pcfg:
@@ -1563,7 +1630,12 @@ def _captions():
             "revealing pervasive multi-parenting in the recovered structure. Deeper "
             rf"block pairs appear cleaner ({min(deep):.0f}--{max(deep):.0f}\%) on "
             "candidate sets of comparable or larger size, so the drop reflects "
-            "genuinely looser structure rather than a smaller sample.")
+            "genuinely looser structure rather than a smaller sample. Gemma's "
+            r"B3$\rightarrow$B4 pair is marked n.a.: it is not yet computed --- "
+            "grading it exhausts memory (B4 alone spans 24{,}576 latents) and a "
+            "rerun is pending. Bars resting on fewer than 20 children print that "
+            "support as $n{=}$; a 100\\% computed over one child is a coin flip, "
+            "not a result, and the label keeps it from reading as one.")
         pp = [100 * _pair(r, "0->1")["degree"]["poly_frac"]
               for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*"))
               for r in [_json(q / "metrics_report.json")] if r]

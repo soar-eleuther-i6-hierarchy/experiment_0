@@ -110,10 +110,14 @@
     89--100\% of children with any parent have two or more, at every graded layer ---
     revealing pervasive multi-parenting in the recovered structure. Deeper block pairs appear
     cleaner (8--57\%) on candidate sets of comparable or larger size, so the drop reflects
-    genuinely looser structure rather than a smaller sample. The PCFG panel shows the same
-    signature --- 26--100\% in B0$\rightarrow$B1 across its layers --- so the multi-parenting
-    is a property of the Matryoshka nesting, not of natural language; its deeper-pair bars
-    rest on a handful of children and carry their support ($n$) rather than posing as results.
+    genuinely looser structure rather than a smaller sample. Gemma's B3$\rightarrow$B4 pair is
+    marked n.a.: it is not yet computed --- grading it exhausts memory (B4 alone spans
+    24{,}576 latents) and a rerun is pending. Bars resting on fewer than 20 children print
+    that support as $n{=}$; a 100\% computed over one child is a coin flip, not a result, and
+    the label keeps it from reading as one. The PCFG panel shows the same signature ---
+    26--100\% in B0$\rightarrow$B1 across its layers --- so the multi-parenting is a property
+    of the Matryoshka nesting, not of natural language; its deeper-pair bars rest on a handful
+    of children and carry their support ($n$) rather than posing as results.
   }
   \label{fig:multiparenting-by-layer}
 \end{figure}
