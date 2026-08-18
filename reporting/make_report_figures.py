@@ -1300,11 +1300,17 @@ def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
                 n_pass += 1
                 ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=1.8,
                         color=GOOD, zorder=3)
-        ax.scatter(list(px.values()), [1] * len(px), s=14, color=INK, zorder=4)
+        # parent dot AREA scales with its child count, so the hub parents that
+        # own most of the tangle are visible at a glance instead of hiding in a
+        # uniform row of dots
+        max_deg = max(deg.values())
+        sizes = [8 + 150 * deg[p] / max_deg for p in px]
+        ax.scatter(list(px.values()), [1] * len(px), s=sizes, color=INK, zorder=4)
         ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
-        key = (f"blue = candidate, unconfirmed · green = probe-confirmed ({n_pass})"
-               if n_pass else
-               "blue = candidate, unconfirmed · probe-confirmed: none")
+        key = ((f"blue = candidate, unconfirmed · green = probe-confirmed ({n_pass})"
+                if n_pass else
+                "blue = candidate, unconfirmed · probe-confirmed: none")
+               + f"\ndot area = a parent's child count (max {max_deg})")
         ax.set_title(f"{label} — {len(edges):,} candidate edges "
                      f"({len(px)} parents × {len(cx)} children)\n" + key,
                      fontsize=9.5, loc="left")
@@ -1327,6 +1333,79 @@ def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
            "are the structure", width=110)
     fig.subplots_adjust(top=0.80)
     return _finish(fig, axes, "recovered_graph_toy_vs_gemma")
+
+
+# ---------------------------------------------------------------------------
+# 10b. The hub, isolated: the single biggest parent of the released SAE's top
+#      block pair, drawn with every child it claims — the case study behind
+#      the tangle. Left: the fan itself. Right: how ownership of ALL candidate
+#      edges concentrates in the few biggest parents.
+# ---------------------------------------------------------------------------
+def one_parent_owns_the_block(sp, where):
+    edges = sp["0->1"]["sres"]["edges"]
+    deg: dict = {}
+    for e in edges:
+        deg[e["parent"]] = deg.get(e["parent"], 0) + 1
+    parents = sorted(deg, key=lambda p: -deg[p])
+    children = sorted({e["child"] for e in edges})
+    top = parents[0]
+    top_kids = {e["child"] for e in edges if e["parent"] == top}
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.2),
+                             gridspec_kw={"width_ratios": [1.6, 1]})
+
+    # -- left: the fan ------------------------------------------------------
+    ax = axes[0]
+    cy = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
+    for c in top_kids:
+        ax.plot([0.06, 0.94], [0.5, cy[c]], lw=0.7, color=CAT[0],
+                alpha=0.45, zorder=1)
+    claimed = [cy[c] for c in children if c in top_kids]
+    others = [cy[c] for c in children if c not in top_kids]
+    ax.scatter([0.94] * len(claimed), claimed, s=14, color=CAT[0], zorder=3)
+    ax.scatter([0.94] * len(others), others, s=6, color=NEUTRAL, zorder=2)
+    ax.scatter([0.06], [0.5], s=340, color=INK, zorder=4)
+    ax.annotate("one parent feature",
+                xy=(0.06, 0.5), xytext=(0.13, 0.93), fontsize=9, color=INK,
+                arrowprops=dict(arrowstyle="-", lw=0.8, color=MUTED))
+    ax.text(0.985, 0.5,
+            f"{len(top_kids)} of {len(children)} children claimed "
+            f"({100 * len(top_kids) / len(children):.0f}%)",
+            rotation=90, va="center", fontsize=9, color=CAT[0])
+    ax.set_xlim(0, 1.05)
+    ax.set_ylim(-0.04, 1.04)
+    ax.set_xticks([]); ax.set_yticks([])
+    for s in ax.spines.values():
+        s.set_visible(False)
+    ax.set_title(f"{where} — the single biggest parent, and every child it claims\n"
+                 "grey = the children it does not", fontsize=9.5, loc="left")
+
+    # -- right: who owns the candidate edges --------------------------------
+    ax = axes[1]
+    total = len(edges)
+    shares = [("top 1 parent", deg[parents[0]] / total),
+              ("top 5", sum(deg[p] for p in parents[:5]) / total),
+              ("top 10", sum(deg[p] for p in parents[:10]) / total),
+              (f"all {len(parents)}", 1.0)]
+    for i, (lab, v) in enumerate(shares):
+        ax.barh(i, 100 * v, height=0.55, color=CAT[0] if i < 3 else NEUTRAL)
+        ax.text(100 * v + 2, i, f"{100 * v:.0f}%", va="center", fontsize=9,
+                color=MUTED)
+    ax.set_yticks(range(len(shares)))
+    ax.set_yticklabels([lab for lab, _ in shares], fontsize=9)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 118)
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xlabel(f"share of the {total:,} candidate edges", fontsize=9)
+    ax.set_title("who owns the edges", fontsize=9.5, loc="left")
+    ax.grid(True, axis="x", alpha=0.12)
+    ax.set_axisbelow(True)
+
+    _title(fig, "One parent owns the block",
+           "the hub structure behind the tangle, isolated: a single always-on feature "
+           "claims most of the next block", width=100)
+    fig.subplots_adjust(top=0.80)
+    return _finish(fig, axes, "one_parent_owns_the_block")
 
 
 # ---------------------------------------------------------------------------
@@ -1567,6 +1646,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         lambda: recovered_graph_toy_vs_gemma(tt, s_gl,
                                              f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1",
                                              sp_p, f"{sp_p_name}, B0→B1"))
+
+    run("one_parent_owns_the_block", bool(s_gl),
+        f"gemma layer_{GRAPH_LAYER:02d} second_pass.json"
+        if s_gl else "needs the gemma second_pass.json at GRAPH_LAYER",
+        lambda: one_parent_owns_the_block(s_gl, f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1"))
 
     # the formatting-density sweep runs, named fmt_<density*1e4>_s<seed>
     fmt_runs = []
@@ -1955,7 +2039,8 @@ def _captions():
             f"only the {s['n_pass']} probe-confirmed edges in green." + grad +
             " Each child is placed "
             "beneath its best-matching parent, so a clean hierarchy would appear as "
-            "near-vertical lines.")
+            "near-vertical lines, and a parent's dot area scales with its child count, "
+            "so the hub parents that own most of the tangle are visible at a glance.")
 
     fmt_dirs = sorted((C.OUT_DIR / "pcfg-matryoshka").glob("fmt_*"))
     if fmt_dirs:
@@ -2011,6 +2096,8 @@ TEX_ORDER = [
      "The same tree, after a real training run.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
      "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
+    ("APP 1b", "one_parent_owns_the_block", False,
+     "One parent owns the block: the hub behind the tangle, isolated.", None),
     ("APP 2", "base_rate_vs_frequency_capture", False,
      "The over-connection is a base-rate effect, not token-frequency capture.",
      "The bottleneck-hijacking hypothesis, tested"),

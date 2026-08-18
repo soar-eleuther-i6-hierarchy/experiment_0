@@ -86,7 +86,8 @@
     1,792-latent SAE over a small transformer, a 32,768-latent SAE over a 2B-parameter LLM),
     and the recovered structure degrades in step: a clean tree, a small tangle, a dense one.
     Each child is placed beneath its best-matching parent, so a clean hierarchy would appear
-    as near-vertical lines.
+    as near-vertical lines, and a parent's dot area scales with its child count, so the hub
+    parents that own most of the tangle are visible at a glance.
   }
   \label{fig:recovered-graph}
 \end{figure}
