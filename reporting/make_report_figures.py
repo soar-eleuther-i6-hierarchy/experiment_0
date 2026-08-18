@@ -181,42 +181,60 @@ def _finish(fig, ax_or_axes, name: str, tight: bool = True) -> str:
 #    stage 03; once the other five caught up, showing one layer understated the
 #    evidence and overstated how special that layer was.
 # ---------------------------------------------------------------------------
-def funnel_coverage_to_sres(layers, second, pair="0->1", where=""):
+def funnel_coverage_to_sres(layers, second, pcfg=None, pair="0->1", where=""):
     stages = [f"candidate edges\nreverse coverage ≥ {C.EDGE_TAU}",
               "above chance\nPMI > 0", "genuine refinement\npasses probe S_res"]
     x = np.arange(len(stages))
-    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    # one panel per SOURCE: the funnel collapses the same way on both, which
+    # is itself the cross-source claim, so the PCFG runs stand beside gemma
+    groups = [("gemma-2-2b", [(f"L{L}", rep, second.get(L)) for L, rep in layers])]
+    if pcfg:
+        pruns = [(lab.replace("PCFG layer ", "L"), r, sp) for lab, r, sp in pcfg
+                 if sp and pair in sp]
+        if pruns:
+            groups.append(("PCFG", pruns))
+    fig, axes = plt.subplots(1, len(groups), figsize=(4.4 + 4.4 * len(groups), 4.4),
+                             sharey=True)
+    axes = np.atleast_1d(axes)
     lo, hi = [], []
-    for i, (L, rep) in enumerate(layers):
-        sp = second.get(L)
-        if not (sp and pair in sp):
-            continue
-        pr = _pair(rep, pair)
-        sres = sp[pair]["sres"]
-        vals = [pr["n_candidate_edges"], sres["n_edges_scored"], sres["n_pass"]]
-        # log y: the whole story is three orders of magnitude, and on a linear
-        # axis every line would lie on the floor after the first stage
-        ax.plot(x, vals, "-o", color=DEPTH[i % len(DEPTH)], lw=1.8, ms=5, zorder=3)
-        ax.annotate(f"L{L}", (x[-1], vals[-1]), textcoords="offset points",
-                    xytext=(10, -3), fontsize=8, color=DEPTH[i % len(DEPTH)])
-        lo.append(vals), hi.append(pr["reconstruction"]["n_pass"])
-    ax.set_yscale("log")
-    ax.set_xticks(x)
-    ax.set_xticklabels(stages, fontsize=9)
-    ax.set_xlim(-0.25, len(stages) - 0.55)
-    ax.set_ylabel("parent → child edges (log)")
+    for ax, (src, runs) in zip(axes, groups):
+        for i, (lab, rep, sp) in enumerate(runs):
+            if not (sp and pair in sp):
+                continue
+            pr = _pair(rep, pair)
+            sres = sp[pair]["sres"]
+            vals = [pr["n_candidate_edges"], sres["n_edges_scored"], sres["n_pass"]]
+            # log y: the whole story is three orders of magnitude, and on a
+            # linear axis every line would lie on the floor after stage one.
+            # A measured ZERO has no position on a log axis, so it is drawn at
+            # a floor with its true value in the end label instead of dropped.
+            plot_vals = [max(v, 0.5) for v in vals]
+            ax.plot(x, plot_vals, "-o", color=DEPTH[i % len(DEPTH)], lw=1.8, ms=5,
+                    zorder=3)
+            ax.annotate(lab + (" (0 pass)" if vals[-1] == 0 else ""),
+                        (x[-1], plot_vals[-1]), textcoords="offset points",
+                        xytext=(10, -3 + 6 * (i % 2)), fontsize=8,
+                        color=DEPTH[i % len(DEPTH)])
+            if src == groups[0][0]:
+                lo.append(vals), hi.append(pr["reconstruction"]["n_pass"])
+        ax.set_yscale("log")
+        ax.set_xticks(x)
+        ax.set_xticklabels(stages, fontsize=8.5)
+        ax.set_xlim(-0.25, len(stages) - 0.45)
+        ax.set_title(src, fontsize=10, loc="left", color=INK)
+        ax.grid(True, axis="y", which="both", alpha=0.12)
+        ax.set_axisbelow(True)
+    axes[0].set_ylabel("parent → child edges (log)")
     first, last = [v[0] for v in lo], [v[-1] for v in lo]
     share = [100 * b / a for a, b in zip(first, last)]
     # the ablation filter is parallel, not a nested stage; summarized in text
     rec = [100 * h / v[0] for h, v in zip(hi, lo)]
-    _title(ax, f"{where}: co-firing proposes thousands, the strict test confirms tens — "
-               "every graded layer",
-           f"{min(last)}–{max(last)} of {min(first):,}–{max(first):,} candidates survive "
-           f"({min(share):.1f}–{max(share):.1f}%). The parallel ablation filter passes "
-           f"{min(rec):.0f}–{max(rec):.0f}% and is not drawn as a stage", width=86)
-    ax.grid(True, axis="y", which="both", alpha=0.12)
-    ax.set_axisbelow(True)
-    return _finish(fig, ax, "funnel_coverage_to_sres")
+    _title(fig, f"{where}: co-firing proposes thousands, the strict test confirms tens — "
+                "every graded layer, both sources",
+           f"{min(last)}–{max(last)} of {min(first):,}–{max(first):,} gemma candidates "
+           f"survive ({min(share):.1f}–{max(share):.1f}%). The parallel ablation filter "
+           f"passes {min(rec):.0f}–{max(rec):.0f}% and is not drawn as a stage", width=86)
+    return _finish(fig, axes, "funnel_coverage_to_sres")
 
 
 # ---------------------------------------------------------------------------
@@ -300,33 +318,57 @@ def depth_profile_across_layers(layers):
 # 4. Multi-parenting: the one claim that did not move when BOS was excluded,
 #    because it is a ratio over children that already have a parent.
 # ---------------------------------------------------------------------------
-def multiparenting_by_layer(layers):
+def multiparenting_by_layer(layers, pcfg=None):
     pairs = ["0->1", "1->2", "2->3"]
-    fig, ax = plt.subplots(figsize=(7.4, 3.6))
-    x = np.arange(len(layers))
-    w = 0.26
-    for j, p in enumerate(pairs):
-        vals = [100 * (_pair(r, p) or {}).get("degree", {}).get("poly_frac", np.nan)
-                for _, r in layers]
-        off = (j - 1) * w
-        ax.bar(x + off, vals, w, color=CAT[j], label=f"B{p.replace('->', '→B')}")
-        for xx, vv in zip(x + off, vals):
-            if not np.isnan(vv):
-                ax.text(xx, vv + 1.6, f"{vv:.0f}", ha="center", fontsize=7.5, color=MUTED)
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"L{L}" for L, _ in layers])
-    ax.set_ylabel("% of children with ≥ 2 parents")
-    ax.set_ylim(0, 112)
-    ax.axhline(100, ls=(0, (2, 3)), lw=1, color=NEUTRAL)
+    # one panel per SOURCE: the claim is cross-source ("the tangle is a
+    # property of the nesting, not of gemma"), so the PCFG runs stand beside
+    # gemma rather than in a separate appendix figure
+    groups = [("gemma-2-2b", [(f"L{L}", r) for L, r in layers])]
+    if pcfg:
+        groups.append(("PCFG", [(n.replace("PCFG ", "").replace("layer ", "L"), r)
+                                for n, r in pcfg]))
+    fig, axes = plt.subplots(1, len(groups), figsize=(4.0 + 4.4 * len(groups), 3.9),
+                             sharey=True,
+                             gridspec_kw={"width_ratios": [len(g[1]) for g in groups]})
+    axes = np.atleast_1d(axes)
+    for ax, (src, runs) in zip(axes, groups):
+        x = np.arange(len(runs))
+        w = 0.26
+        for j, p in enumerate(pairs):
+            vals, supp = [], []
+            for _, r in runs:
+                q = _pair(r, p) or {}
+                vals.append(100 * q.get("degree", {}).get("poly_frac", np.nan))
+                supp.append(q.get("degree", {}).get("n_children_with_parent"))
+            off = (j - 1) * w
+            ax.bar(x + off, vals, w, color=CAT[j],
+                   label=f"B{p.replace('->', '→B')}" if src == groups[0][0] else None)
+            for xx, vv, nn in zip(x + off, vals, supp):
+                if np.isnan(vv):
+                    continue
+                # a 100% bar computed over two children must say so: bars with
+                # thin support carry their n, so the eye cannot read a
+                # one-child ratio as a result
+                thin = nn is not None and nn < 20
+                ax.text(xx, vv + 1.6, f"{vv:.0f}" + (f"\nn={nn}" if thin else ""),
+                        ha="center", fontsize=6.5 if thin else 7.5, color=MUTED)
+        ax.set_xticks(x)
+        ax.set_xticklabels([lab for lab, _ in runs])
+        ax.set_title(src, fontsize=10, loc="left", color=INK)
+        ax.set_ylim(0, 112)
+        ax.axhline(100, ls=(0, (2, 3)), lw=1, color=NEUTRAL)
+        ax.grid(True, axis="y", alpha=0.12)
+        ax.set_axisbelow(True)
+    axes[0].set_ylabel("% of children with ≥ 2 parents")
     # below the axis: at 100% the top bars reach the legend's only free space
-    ax.legend(fontsize=8.5, frameon=False, ncol=3, loc="upper center",
-              bbox_to_anchor=(0.5, -0.09))
-    _title(ax, "The graph is not a tree: in the top block pair nearly every child has several parents",
+    fig.legend(fontsize=8.5, frameon=False, ncol=3, loc="lower center",
+               bbox_to_anchor=(0.5, -0.03))
+    _title(fig, "The graph is not a tree: in the top block pair nearly every child has "
+                "several parents, on both sources",
            "the one measure BOS exclusion left unchanged — it is a ratio over children that "
-           "already have a parent", width=82)
-    ax.grid(True, axis="y", alpha=0.12)
-    ax.set_axisbelow(True)
-    return _finish(fig, ax, "multiparenting_by_layer")
+           "already have a parent", width=100)
+    fig.subplots_adjust(bottom=0.16)
+    return _finish(fig, axes, "multiparenting_by_layer")
 
 
 # ---------------------------------------------------------------------------
@@ -1136,14 +1178,14 @@ def battery_questions_gemma(layers, second):
 #      chance -- every child is placed under its strongest parent -- so any
 #      crossing that remains is structure, not plotting.
 # ---------------------------------------------------------------------------
-def recovered_graph_toy_vs_gemma(tt, sp, where):
+def recovered_graph_toy_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg=""):
     true_edges = [tuple(e) for e in tt["true_edges"]]
     found = {tuple(e) for e in tt["found_edges"]}
-    sres = sp["0->1"]["sres"]
-    edges = sres["edges"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.2, 4.4),
-                             gridspec_kw={"width_ratios": [1, 1.9]})
+    n_panels = 3 if (sp_pcfg and "0->1" in sp_pcfg) else 2
+    ratios = [1, 1.35, 1.75][:n_panels] if n_panels == 3 else [1, 1.9]
+    fig, axes = plt.subplots(1, n_panels, figsize=(6.2 + 3.4 * n_panels, 4.4),
+                             gridspec_kw={"width_ratios": ratios})
 
     # -- toy: the tree it recovered, missed edges dashed ----------------------
     ax = axes[0]
@@ -1164,36 +1206,43 @@ def recovered_graph_toy_vs_gemma(tt, sp, where):
                  f"{n_fp} false positive{'s' if n_fp != 1 else ''}\n"
                  "dashed = missed (child feature never learned)", fontsize=9.5, loc="left")
 
-    # -- gemma: every candidate edge that reached the probe -------------------
-    ax = axes[1]
-    by_child: dict = {}
-    for e in edges:
-        by_child.setdefault(e["child"], []).append(e)
-    # anchor each child under the parent that correlates best with its probe --
-    # the layout a genuine tree would satisfy with near-vertical lines
-    anchor = {c: max(es, key=lambda e: e["parent_corr"])["parent"] for c, es in by_child.items()}
-    deg: dict = {}
-    for e in edges:
-        deg[e["parent"]] = deg.get(e["parent"], 0) + 1
-    parents = sorted(deg, key=lambda p: -deg[p])
-    px = {p: i / max(len(parents) - 1, 1) for i, p in enumerate(parents)}
-    children = sorted(by_child, key=lambda c: px[anchor[c]])
-    cx = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
-    for e in edges:
-        if not e["pass"]:
-            ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=0.35,
-                    color=CAT[0], alpha=0.07, zorder=1)
-    n_pass = 0
-    for e in edges:
-        if e["pass"]:
-            n_pass += 1
-            ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=1.8,
-                    color=GOOD, zorder=3)
-    ax.scatter(list(px.values()), [1] * len(px), s=14, color=INK, zorder=4)
-    ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
-    ax.set_title(f"{where} — the {len(edges):,} candidate edges that reached the probe\n"
-                 f"{len(px)} parents × {len(cx)} children; green = the {n_pass} probe-confirmed",
-                 fontsize=9.5, loc="left")
+    # -- a probed SAE: every candidate edge that reached the probe ------------
+    def draw_probed(ax, sp_x, label):
+        edges = sp_x["0->1"]["sres"]["edges"]
+        by_child: dict = {}
+        for e in edges:
+            by_child.setdefault(e["child"], []).append(e)
+        # anchor each child under the parent that correlates best with its
+        # probe -- the layout a genuine tree would satisfy with near-vertical
+        # lines
+        anchor = {c: max(es, key=lambda e: e["parent_corr"])["parent"]
+                  for c, es in by_child.items()}
+        deg: dict = {}
+        for e in edges:
+            deg[e["parent"]] = deg.get(e["parent"], 0) + 1
+        parents = sorted(deg, key=lambda p: -deg[p])
+        px = {p: i / max(len(parents) - 1, 1) for i, p in enumerate(parents)}
+        children = sorted(by_child, key=lambda c: px[anchor[c]])
+        cx = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
+        for e in edges:
+            if not e["pass"]:
+                ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=0.35,
+                        color=CAT[0], alpha=0.07, zorder=1)
+        n_pass = 0
+        for e in edges:
+            if e["pass"]:
+                n_pass += 1
+                ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=1.8,
+                        color=GOOD, zorder=3)
+        ax.scatter(list(px.values()), [1] * len(px), s=14, color=INK, zorder=4)
+        ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
+        ax.set_title(f"{label} — the {len(edges):,} candidate edges that reached the "
+                     f"probe\n{len(px)} parents × {len(cx)} children; green = the "
+                     f"{n_pass} probe-confirmed", fontsize=9.5, loc="left")
+
+    if n_panels == 3:
+        draw_probed(axes[1], sp_pcfg, where_pcfg)
+    draw_probed(axes[-1], sp, where)
 
     for ax in axes:
         ax.set_xticks([])
@@ -1303,11 +1352,19 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     second = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in layers}
     second = {L: v for L, v in second.items() if v}
     l6 = _json(G / "layer_06" / "metrics_report.json")
-    s6 = _json(G / "layer_06" / "second_pass.json")
+    # every PCFG depth run, as (label, report, second_pass) so the two-source
+    # figures never re-derive which directory a second pass belongs to
+    pcfg = []
+    for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")):
+        r = _json(p / "metrics_report.json")
+        if r:
+            pcfg.append((f"PCFG {p.name.replace('_', ' ')}", r,
+                         _json(p / "second_pass.json")))
     run("funnel_coverage_to_sres", bool(second),
-        f"{len(second)} gemma layers with metrics_report.json + second_pass.json"
+        f"{len(second)} gemma + {sum(1 for *_, sp in pcfg if sp)} PCFG layers with "
+        "second_pass.json"
         if second else "needs at least one gemma second_pass.json (stage 03)",
-        lambda: funnel_coverage_to_sres(layers, second, where="gemma-2-2b"))
+        lambda: funnel_coverage_to_sres(layers, second, pcfg, where="gemma-2-2b"))
 
     run("edge_survival_by_block_pair", len(layers) >= 2,
         f"{len(layers)} gemma layer reports" if layers else "needs ≥2 gemma metrics_report.json",
@@ -1316,8 +1373,9 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"{len(layers)} gemma layer reports" if layers else "needs ≥2 gemma metrics_report.json",
         lambda: depth_profile_across_layers(layers))
     run("multiparenting_by_layer", len(layers) >= 1,
-        f"{len(layers)} gemma layer reports" if layers else "needs gemma metrics_report.json",
-        lambda: multiparenting_by_layer(layers))
+        f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports"
+        if layers else "needs gemma metrics_report.json",
+        lambda: multiparenting_by_layer(layers, [(n, r) for n, r, _ in pcfg]))
     # Matched BY LAYER: a layer graded only after the BOS fix has no v1
     # counterpart and must not veto the figure for the layers that do.
     arch_L = {int(p.parent.name.split("__")[0].split("_")[1])
@@ -1348,14 +1406,11 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         if tt else "needs outputs/trained_toy_calibration.json (Tier 2)",
         lambda: calibration_trained_toy_recovery(tt, align))
 
-    pcfg = [(p.name, _json(p / "metrics_report.json"))
-            for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")) if p.is_dir()]
-    pcfg = [(f"PCFG {n.replace('_', ' ')}", r) for n, r in pcfg if r]
     # Every graded layer of BOTH sources. This figure once carried gemma layer 6
     # alone -- the layer that had the strict test first -- and kept doing so
     # after the other five caught up, which read as "the comparison rests on one
     # layer" long after it no longer did.
-    runs = [(f"gemma L{L}", rep) for L, rep in layers] + pcfg
+    runs = [(f"gemma L{L}", rep) for L, rep in layers] + [(n, r) for n, r, _ in pcfg]
     run("cross_source_funnel_shares", bool(layers and pcfg),
         f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports"
         if (layers and pcfg) else "needs a gemma report and a PCFG report",
@@ -1413,20 +1468,31 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     run("tangle_lives_in_top_block_pair", bool(layers or pcfg),
         f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports, all block pairs"
         if (layers or pcfg) else "needs metrics_report.json for at least one source",
-        lambda: tangle_lives_in_top_block_pair(layers, pcfg))
+        lambda: tangle_lives_in_top_block_pair(layers, [(n, r) for n, r, _ in pcfg]))
 
     run("battery_questions_gemma", bool(layers),
         f"{len(layers)} gemma layer reports + {len(second)} second passes"
         if layers else "needs gemma metrics_report.json",
         lambda: battery_questions_gemma(layers, second))
 
-    # the recovered graph itself, drawn at GRAPH_LAYER (see the constant)
+    # the recovered graph itself, drawn at GRAPH_LAYER (see the constant). The
+    # PCFG panel is drawn at the PCFG layer with the LARGEST probe-scored edge
+    # set -- a stated rule, so the panel does not quietly follow whichever run
+    # happened to finish first.
     s_gl = second.get(GRAPH_LAYER)
+    sp_p, sp_p_name = None, ""
+    for lab, _, spx in pcfg:
+        if spx and "0->1" in spx and spx["0->1"]["sres"]["n_edges_scored"]:
+            if (sp_p is None or spx["0->1"]["sres"]["n_edges_scored"]
+                    > sp_p["0->1"]["sres"]["n_edges_scored"]):
+                sp_p, sp_p_name = spx, lab
     run("recovered_graph_toy_vs_gemma", bool(tt and s_gl),
-        f"trained_toy_calibration.json + gemma layer_{GRAPH_LAYER:02d} second_pass.json"
+        f"trained_toy_calibration.json + gemma layer_{GRAPH_LAYER:02d}"
+        + (f" + {sp_p_name}" if sp_p else "") + " second_pass.json"
         if (tt and s_gl) else "needs the trained-toy calibration and a gemma second_pass.json",
         lambda: recovered_graph_toy_vs_gemma(tt, s_gl,
-                                             f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1"))
+                                             f"gemma-2-2b layer {GRAPH_LAYER}, B0→B1",
+                                             sp_p, f"{sp_p_name}, B0→B1"))
 
     # the formatting-density sweep runs, named fmt_<density*1e4>_s<seed>
     fmt_runs = []
@@ -1498,6 +1564,16 @@ def _captions():
             rf"block pairs appear cleaner ({min(deep):.0f}--{max(deep):.0f}\%) on "
             "candidate sets of comparable or larger size, so the drop reflects "
             "genuinely looser structure rather than a smaller sample.")
+        pp = [100 * _pair(r, "0->1")["degree"]["poly_frac"]
+              for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*"))
+              for r in [_json(q / "metrics_report.json")] if r]
+        if pp:
+            d["multiparenting_by_layer"] += (
+                f" The PCFG panel shows the same signature --- "
+                rf"{min(pp):.0f}--{max(pp):.0f}\% in B0$\rightarrow$B1 across its layers "
+                "--- so the multi-parenting is a property of the Matryoshka nesting, not "
+                "of natural language; its deeper-pair bars rest on a handful of children "
+                "and carry their support ($n$) rather than posing as results.")
         sps = {L: _json(G / f"layer_{L:02d}" / "second_pass.json") for L, _ in lay}
         sps = {L: v for L, v in sps.items() if v and "0->1" in v}
         if sps:
@@ -1516,6 +1592,18 @@ def _captions():
                 "only a small subset of supported parent--child relationships. The "
                 rf"reconstruction filter (passing {min(recs):.0f}--{max(recs):.0f}\%) is "
                 "evaluated separately because it does not form a nested stage.")
+            pc = []
+            for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json")):
+                spx, rr = _json(q), _json(q.parent / "metrics_report.json")
+                if spx and "0->1" in spx and rr:
+                    pc.append((_pair(rr, "0->1")["n_candidate_edges"],
+                               spx["0->1"]["sres"]["n_pass"]))
+            if pc:
+                d["funnel_coverage_to_sres"] += (
+                    " The PCFG panel repeats the same collapse at small scale: "
+                    f"{min(c for c, _ in pc)}--{max(c for c, _ in pc)} candidates per "
+                    f"layer end in {min(p for _, p in pc)}--{max(p for _, p in pc)} "
+                    "probe-confirmed edges.")
         d["base_rate_vs_frequency_capture"] = (
             r"Two per-edge diagnostics on the same candidate sets, B0$\rightarrow$B1. The "
             "independence null asks whether co-firing exceeds what the parent's own firing rate "
@@ -1736,6 +1824,31 @@ def _captions():
         s = sp_gl["0->1"]["sres"]
         n_par = len({e["parent"] for e in s["edges"]})
         n_chi = len({e["child"] for e in s["edges"]})
+        # the PCFG middle panel: same largest-probe-scored-set rule as build()
+        mid = ""
+        best, best_name = None, ""
+        for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json")):
+            spx = _json(q)
+            if spx and "0->1" in spx and spx["0->1"]["sres"]["n_edges_scored"]:
+                if (best is None or spx["0->1"]["sres"]["n_edges_scored"]
+                        > best["0->1"]["sres"]["n_edges_scored"]):
+                    best, best_name = spx, q.parent.name.replace("_", "~")
+        grad = ""
+        if best:
+            b = best["0->1"]["sres"]
+            mid = (rf"\emph{{Middle:}} a Matryoshka SAE trained on a PCFG corpus "
+                   f"({best_name.replace('layer~0', 'layer~')}) repeats the tangle at "
+                   f"small scale --- {b['n_edges_scored']:,} candidate edges, "
+                   f"{b['n_pass']} probe-confirmed --- and ")
+            # the dictionary sizes that make "ascending scale" a number, not a vibe
+            rr = _json(C.OUT_DIR / "pcfg-matryoshka"
+                       / best_name.replace("~", "_") / "metrics_report.json")
+            d_p = ((rr or {}).get("config") or {}).get("d_sae", 1792)
+            grad = (" Read left to right, the worlds ascend in scale and complexity "
+                    f"--- {tt2['n_features']} hand-built features, a {d_p:,}-latent SAE "
+                    f"over a small transformer, a {C.D_SAE:,}-latent SAE over a "
+                    "2B-parameter LLM --- and the recovered structure degrades in step: "
+                    "a clean tree, a small tangle, a dense one.")
         d["recovered_graph_toy_vs_gemma"] = (
             r"\textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially "
             r"recovered, but not as a clean tree --- especially at scale. \emph{Left:} "
@@ -1743,11 +1856,12 @@ def _captions():
             f"{len(tt2['found_edges'])}/{len(tt2['true_edges'])} true edges with "
             # "no false positives" reads as prose while the count is zero, and
             # falls back to the number the moment a regeneration makes it real
-            f"{tt2['false_positives'] or 'no'} false positives, while "
+            f"{tt2['false_positives'] or 'no'} false positives, while " + mid +
             rf"\emph{{Right:}} Gemma-2-2B (layer {GRAPH_LAYER}, B0$\rightarrow$B1) shows "
             f"substantial multi-parenting among the {s['n_edges_scored']:,} candidate edges "
             f"that reached the probe --- {n_par} parents $\\times$ {n_chi} children, with "
-            f"only the {s['n_pass']} probe-confirmed edges in green. Each child is placed "
+            f"only the {s['n_pass']} probe-confirmed edges in green." + grad +
+            " Each child is placed "
             "beneath its best-matching parent, so a clean hierarchy would appear as "
             "near-vertical lines.")
 

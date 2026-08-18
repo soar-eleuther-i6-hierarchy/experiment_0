@@ -86,11 +86,16 @@
   \caption{%
     \textbf{The recovered graph, drawn edge by edge.} Hierarchy is partially recovered, but
     not as a clean tree --- especially at scale. \emph{Left:} the trained toy recovers 6/9
-    true edges with no false positives, while \emph{Right:} Gemma-2-2B (layer 12,
-    B0$\rightarrow$B1) shows substantial multi-parenting among the 1,111 candidate edges that
-    reached the probe --- 63 parents $\times$ 355 children, with only the 22 probe-confirmed
-    edges in green. Each child is placed beneath its best-matching parent, so a clean
-    hierarchy would appear as near-vertical lines.
+    true edges with no false positives, while \emph{Middle:} a Matryoshka SAE trained on a
+    PCFG corpus (layer~3) repeats the tangle at small scale --- 772 candidate edges, 4
+    probe-confirmed --- and \emph{Right:} Gemma-2-2B (layer 12, B0$\rightarrow$B1) shows
+    substantial multi-parenting among the 1,111 candidate edges that reached the probe --- 63
+    parents $\times$ 355 children, with only the 22 probe-confirmed edges in green. Read left
+    to right, the worlds ascend in scale and complexity --- 20 hand-built features, a
+    1,792-latent SAE over a small transformer, a 32,768-latent SAE over a 2B-parameter LLM ---
+    and the recovered structure degrades in step: a clean tree, a small tangle, a dense one.
+    Each child is placed beneath its best-matching parent, so a clean hierarchy would appear
+    as near-vertical lines.
   }
   \label{fig:recovered-graph-toy-vs-gemma}
 \end{figure}
@@ -105,7 +110,10 @@
     89--100\% of children with any parent have two or more, at every graded layer ---
     revealing pervasive multi-parenting in the recovered structure. Deeper block pairs appear
     cleaner (8--57\%) on candidate sets of comparable or larger size, so the drop reflects
-    genuinely looser structure rather than a smaller sample.
+    genuinely looser structure rather than a smaller sample. The PCFG panel shows the same
+    signature --- 26--100\% in B0$\rightarrow$B1 across its layers --- so the multi-parenting
+    is a property of the Matryoshka nesting, not of natural language; its deeper-pair bars
+    rest on a handful of children and carry their support ($n$) rather than posing as results.
   }
   \label{fig:multiparenting-by-layer}
 \end{figure}
@@ -138,7 +146,9 @@
     probe tests eliminate most of them --- the independence null rejects 69--86\%, and the
     probe confirms only 8--55 edges per layer ($0.6$--$4.0\%$ of those scored) --- leaving
     only a small subset of supported parent--child relationships. The reconstruction filter
-    (passing 54--90\%) is evaluated separately because it does not form a nested stage.
+    (passing 54--90\%) is evaluated separately because it does not form a nested stage. The
+    PCFG panel repeats the same collapse at small scale: 111--781 candidates per layer end in
+    0--4 probe-confirmed edges.
   }
   \label{fig:funnel-coverage-to-sres}
 \end{figure}
