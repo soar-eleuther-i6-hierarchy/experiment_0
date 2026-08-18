@@ -1,10 +1,10 @@
 """
-Builds the feature forest (the `Tree`) from a ToyConfig: the parent/child edges,
+Builds the feature forest from a ToyConfig: the parent/child edges,
 their transitive closure, and the per-feature tags.
 
-Only DIRECT parent-child edges are stored in `parents`; `ancestors` / `descendents`
+Only direct parent-child edges are stored in `parents`; `ancestors` / `descendents`
 are the transitive closure of those edges. The distinction matters: a
-grandparent-grandchild pair is contained (so it passes coverage) but is NOT a direct
+grandparent-grandchild pair is contained (so it passes coverage) but is not a direct
 edge — it is labelled `transitive` and scored on its own, apart from real edges.
 
 Every feature has a single parent (the forest is a set of independent trees, no
@@ -30,7 +30,6 @@ class Tree:
     topology_ordering: list[int]
     root_p: dict[int, float]                             # roots only
     # --- tags -------------------------------------------------------------
-    kind: dict[int, str] = field(default_factory=dict)          # "discrete" | "manifold"
     kappa: dict[int, float] = field(default_factory=dict)       # topic modulation, 0 = off
     topic: dict[int, int | None] = field(default_factory=dict)
     token_bound: dict[int, bool] = field(default_factory=dict)
@@ -78,7 +77,6 @@ def build_tree(cfg: ToyConfig) -> Tree:
     children: dict[int, list[int]] = {}
     exclusive: dict[int, bool] = {}
     root_p: dict[int, float] = {}
-    kind: dict[int, str] = {}
     kappa: dict[int, float] = {}
     topic: dict[int, int | None] = {}
     token_bound: dict[int, bool] = {}
@@ -90,7 +88,6 @@ def build_tree(cfg: ToyConfig) -> Tree:
         nonlocal nxt
         k = nxt
         nxt += 1
-        kind[k] = "discrete"
         kappa[k] = 0.0
         topic[k] = None
         token_bound[k] = False
@@ -118,21 +115,15 @@ def build_tree(cfg: ToyConfig) -> Tree:
                 nxt_frontier.append(c)
         frontier = nxt_frontier
 
-    # --- confounds --------------------------------------------------------
-    # The firing rates below are deliberately literal: they define the archetypes
-    # rather than parameterising a sweep. Counts and composition are config
-    # fields while the defining rates are not, and should not be swept without changing
-    # what the archetype means.
+    # --- confounds (archetype rates are tuned constants; see DESIGN.md) ----
     if cfg.confounds:
-        # superparent: an always-on childless feature, plus a legitimately broad parent
-        # as its foil (without the foil, out-degree separates nothing and scores 100%
-        # trivially).
+        # superparent: an always-on childless feature, with a broad parent as its foil.
         for _ in range(cfg.n_superparent):
             s = new("superparent")
             root_p[s] = 0.85
         for _ in range(cfg.n_broad_parent):
             b = new("broad_parent")
-            root_p[b] = 0.60
+            root_p[b] = 0.40
             exclusive[b] = False
             for _ in range(cfg.broad_children):
                 c = new("broad_child")
@@ -144,7 +135,7 @@ def build_tree(cfg: ToyConfig) -> Tree:
         for i in range(cfg.n_token_bound_pairs):
             for j in (0, 1):
                 k = new("token_bound")
-                root_p[k] = 0.05
+                root_p[k] = 0.10
                 token_bound[k] = True
                 tags[k].add(f"tokpair{i}")
 
@@ -154,22 +145,20 @@ def build_tree(cfg: ToyConfig) -> Tree:
             z = i % cfg.Z
             for j in (0, 1):
                 k = new("topical")
-                root_p[k] = 0.04
+                root_p[k] = 0.09
                 kappa[k] = cfg.kappa
                 topic[k] = z
                 tags[k].add(f"toppair{i}")
 
-        # manifold features: continuous-strength (graded, not on/off) features.
-        for _ in range(cfg.n_manifold):
-            k = new("manifold")
-            kind[k] = "manifold"
-            root_p[k] = 0.06
-
     F = nxt
     ancestors, descendents, topology_ordering = _close(parents, F)
 
-    return Tree(
+    result = Tree(
         F=F, parents=parents, children=children, exclusive=exclusive,
         ancestors=ancestors, descendents=descendents, topology_ordering=topology_ordering,
-        root_p=root_p, kind=kind, kappa=kappa, topic=topic, token_bound=token_bound, tags=tags,
+        root_p=root_p, kappa=kappa, topic=topic, token_bound=token_bound, tags=tags,
     )
+    # Reject infeasible configs at build time (imported lazily to avoid a tree <-> strengths import cycle).
+    from .validate import validate_config
+    validate_config(cfg, result)
+    return result

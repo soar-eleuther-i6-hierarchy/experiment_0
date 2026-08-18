@@ -1,13 +1,13 @@
 """
-Feature directions — spec section 0.2, in the constructive order.
+Feature directions, built in constructive order.
 
 The order matters and cannot be inverted: `u` is drawn first and `g` is built from it.
 Deriving `u` from `g` while also drawing `u` under a coherence bound is circular, and
-steps 2a/2b must interleave per feature because 2a needs `g` for every ancestor.
+the two per-feature steps must interleave: orthogonalising `u_k` against its ancestor
+span needs `g` for every ancestor, which the earlier features have already built.
 
-The `Lambda` returned here is read off the construction. It is NOT `U^T G` — those
-agree only when {u_a} is orthonormal, which holds along a chain but fails for
-siblings. See `tests_local/test_toygen.py::test_gram_route_is_not_lambda`.
+The `Lambda` returned here is read off the construction, not `U^T G` (the two differ
+once siblings are involved). See `tests_local/test_toygen.py::test_gram_route_is_not_lambda`.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ class Geometry:
     u: torch.Tensor            # [F, D] residual directions
     g: torch.Tensor            # [F, D] concept directions
     Lam: torch.Tensor          # [F, F] constructive change of basis
-    coherence: float           # realised max |cos(u_a, u_b)| AFTER orthogonalisation
+    coherence: float           # realised max |cos(u_a, u_b)| after orthogonalisation
     # build_directions is best-effort: it returns the lowest of 8 draws rather than
     # raising, so the F/D sweep survives even when the target coherence is missed.
     # coherence_ok records whether the target was met on this draw, carried on the
@@ -57,23 +57,14 @@ def _repel(x: torch.Tensor, max_unrelated_cos: float, steps: int = 60) -> torch.
     return x
 
 
-def build_directions(cfg: ToyConfig, tree: Tree,
-                     seed: int | None = None) -> Geometry:
+def build_directions(cfg: ToyConfig, tree: Tree, seed: int | None = None) -> Geometry:
     gen = torch.Generator().manual_seed(cfg.seed if seed is None else seed)
     F, D = tree.F, cfg.D
 
-    # `max_unrelated_cos` is a TARGET, not a hard bound, and the difference is load-bearing.
-    # Orthogonalising against ancestor spans (2a) moves the vectors, so the realised
-    # coherence is not directly controllable from the draw — which is why spec 0.2
-    # says to *report* the post-orthogonalisation value rather than assert it.
-    #
-    # Raising instead would break the planned F/D sweep outright: at D=64, F=240
-    # (F/D = 3.8) no draw in 128 attempts satisfies max_unrelated_cos=0.35, and the plan's backbone
-    # is F/D = 4 swept to 8 and 16. Failing there would make exactly the
-    # superposition regime we care about unreachable.
-    #
-    # So: best-effort over a few draws, keep the lowest, and record whether the
-    # target was met in `coherence_ok`.
+    # `max_unrelated_cos` is a target, not a hard bound: orthogonalising against ancestor
+    # spans moves the vectors, so the realised coherence isn't controllable from the draw
+    # (and a tight bound is unreachable by rejection at F >> D; see DESIGN.md). Best-effort
+    # over 8 draws, keep the lowest, and record whether the target was met in `coherence_ok`.
     best: Geometry | None = None
     for _ in range(8):
         # --- step 1: draw low-coherence seed directions -----------------------
@@ -84,7 +75,10 @@ def build_directions(cfg: ToyConfig, tree: Tree,
         g = torch.zeros(F, D, dtype=DT)
         Lam = torch.zeros(F, F, dtype=DT)
 
-        # --- step 2: interleaved 2a/2b, in topological order ------------------
+        # --- step 2: build u and g together, in topological order -------------
+        # For each feature (parents before children): orthogonalise its drawn
+        # direction against its ancestors' concept directions to get u_k, then
+        # form g_k from u_k plus its parent's direction.
         for k in tree.topology_ordering:
             anc = sorted(tree.ancestors[k])
             if anc:
@@ -96,7 +90,7 @@ def build_directions(cfg: ToyConfig, tree: Tree,
                 raise ValueError(f"u_{k} undefined: the drawn direction lies in its ancestor span")
             u[k] = r / r.norm()
 
-            # 2b: w_k loads on the immediate parent's RESIDUAL direction, weight 1.
+            # w_k loads on the immediate parent's residual direction, weight 1.
             par = tree.parent_of(k)
             a_k = float(tree.alpha_of(k))
             if par is None or a_k == 0.0:

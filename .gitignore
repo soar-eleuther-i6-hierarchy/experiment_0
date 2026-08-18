@@ -31,6 +31,9 @@ outputs/**/token_cache/
 # run dir's figures/; never tracked)
 figures/
 
+# Generated toy-world visualization (rebuilt from the generator; a viz artifact, not source)
+toygen/*.html
+
 # OS
 .DS_Store
 
@@ -39,6 +42,11 @@ figures/
 tests_local/
 outputs_local/
 scoring/
+toygen/DESIGN.md
+
+# Transitional: a one-shot 5.x->6.x checkpoint-boundary probe, retired once training
+# moves to the sae-training repo. Kept local, not tracked.
+training/roundtrip_check.py
 # Sibling repos (MEETING_NOTES/, PCFG/, sae-training/) live BESIDE experiment_0,
 # not inside it — nothing to ignore here. Tier-2 calibration finds the
 # sae-training clone at ../sae-training or via EXP0_SAE_TRAINING.

@@ -40,6 +40,18 @@ def firing_rates(tree: Tree) -> torch.Tensor:
     return p
 
 
+def target_l0(tree: Tree) -> float:
+    """The world's expected L0 = mean active features per token = sum of firing rates.
+
+    This is the true sparsity of the sampled world, and the number the SAE's top-k must
+    match: a dictionary with `k` far below it is structurally unable to represent an
+    average token, so every recovery/AUROC number would be measured through a starved
+    dictionary. Callers derive the SAE's `k` from this rather than a declared constant,
+    because the true L0 moves with the tree (e.g. adding superparents raises it).
+    """
+    return float(firing_rates(tree).sum())
+
+
 def topic_rates(p_i: float | torch.Tensor, kappa: float, z_i: int | None,
                 pi: torch.Tensor) -> torch.Tensor:
     """Per-topic firing rate that marginalises back to `p_i` under a uniform prior.

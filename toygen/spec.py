@@ -9,12 +9,11 @@ Three ready-made recipes at the bottom:
   - minimal:  a small backbone for quick bring-up.
 
 Each planted property maps to a reported SAE phenomenon (one reference each):
-  is_a / sibling / transitive  hierarchical & categorical concept geometry -- Park et al. 2024 (arXiv:2406.01506)
-  firing_only                  the orthogonal-geometry null, i.e. is_a's hard negative (contrast to the above)
-  superparent / broad_parent   high-density and feature-splitting features -- Bricken et al. 2023 (Towards Monosemanticity)
-  token_bound                  single-token / spurious co-activation features -- Bricken et al. 2023
-  topical                      co-occurring feature clusters ("lobes") -- Li et al. 2024 (arXiv:2410.19750)
-  manifold                     non-linear / circular (graded) features -- Engels et al. 2024 (arXiv:2405.14860)
+  is_a / sibling / transitive:  hierarchical & categorical concept geometry -- Park et al. 2024 (arXiv:2406.01506)
+  firing_only:  the orthogonal-geometry null, i.e. is_a's hard negative (contrast to the above)
+  superparent / broad_parent:  high-density and feature-splitting features -- Bricken et al. 2023 (Towards Monosemanticity)
+  token_bound:  single-token / spurious co-activation features -- Bricken et al. 2023
+  topical:  co-occurring feature clusters ("lobes") -- Li et al. 2024 (arXiv:2410.19750)
 Dictionary-side properties (absorption, feature splitting, merging) are induced by SAE
 training, not built here.
 The base activation model (sum of active feature directions) follows Elhage et al. 2022 (arXiv:2209.10652).
@@ -34,8 +33,8 @@ class ToyConfig:
     # --- activation space ---------------------------------------------------
     D: int = 128                     # dimension of the activation vectors the SAE sees
     noise_sigma: float = 0.05        # std of the Gaussian noise added to every activation (> 0)
-    max_unrelated_cos: float = 0.35  # target cap on the cosine between unrelated direction arrows,
-                                     # so random pairs don't accidentally look aligned
+    max_unrelated_cos: float = 0.12  # cap on the cosine between unrelated feature directions,
+                                     # so random pairs don't look accidentally aligned
 
     # --- tree shape ---------------------------------------------------------
     n_roots: int = 6                 # independent trees in the forest
@@ -51,26 +50,22 @@ class ToyConfig:
     eps_p: float = 0.02              # keep child_p_edge <= 1 - eps so a parent can fire without a given child
 
     # --- composition (geometry) ---------------------------------------------
-    alpha: float = 0.55              # cosine of a child's arrow onto its parent's (the is_a overlap)
-    alpha_zero_every: int = 4        # every n-th edge, counted across the whole forest, gets alpha = 0:
-                                     # the firing_only cell -- nested firing but orthogonal geometry
+    alpha: float = 0.48              # cosine of a child's direction onto its parent (is_a overlap). Siblings share alpha^2 of the parent. See DESIGN.md for the 0.48 choice.
+    alpha_zero_every: int = 4        # every n-th edge, counted across the whole forest, gets alpha = 0: the firing_only cell -- nested firing but orthogonal geometry
     eps_alpha: float = 0.02          # keep alpha <= 1 - eps so the change-of-basis matrix stays invertible
 
     # --- strength -----------------------------------------------------------
     strength_spread: float = 0.35    # spread of firing strengths (sd / mean); < 0.5 keeps every strength positive
-    firing_threshold: float = 0.015  # a feature counts as active only above this strength. Provisional: a trained
-                                     # SAE sets its own cutoff, so this is only a stand-in for the analytic path
-    K: int = 6                       # target sparsity: mean active features per token (sum of firing rates ~ K)
+    K: int = 6                       # legacy sparsity hint only; actual k is derived from the tree's true L0 by world.choose_k.
 
     # --- strength scale -----------------------------------------------------
-    E0: float = 1.0                  # base strength scale; every feature's mean active
-                                     # strength is q * sqrt(E0), with no designed ladder
+    E0: float = 1.0                  # base strength scale; every feature's mean active strength is q * sqrt(E0), with no designed ladder
 
     # --- corpus (only exercised by the frequency / topical confounds) -------
     vocab: int = 5000                # token-id vocabulary size
     doc_len: int = 128               # tokens per document
     freq_high_mass: float = 0.50     # corpus-mass cut point for the high frequency token bucket
-    freq_mid_mass: float = 0.40      # cut point for the mid frequency bucket (keep in step with config.py to stay comparable)
+    freq_mid_mass: float = 0.40      # cut point for the mid frequency bucket
     Z: int = 8                       # number of topics (used by the topical confound)
     zipf_s: float = 1.05             # Zipf exponent controlling how skewed token frequencies are
 
@@ -79,12 +74,11 @@ class ToyConfig:
     n_superparent: int = 1           # always-on wide parents -- the base-rate confound
     n_broad_parent: int = 1          # genuine wide parents -- the superparent's honest foil, so out-degree isn't trivially decisive
     broad_children: int = 5          # children under each broad parent
-    broad_alpha: float = 0.35        # broad children's geometric loading, kept low so their inherited loudness fits the parent's band
-    n_token_bound_pairs: int = 6     # feature pairs that co-fire only via shared token ids (frequency coincidence)
-    n_topical_pairs: int = 6         # feature pairs lifted together by a shared topic (topical co-occurrence)
-    n_manifold: int = 4              # features whose strength is a smooth dial, not on/off (e.g. sentiment), so the metrics don't assume every concept is a clean switch
-    kappa: float = 3.0               # topic-modulation strength for topical features
-    n_bind_ids: int = 6              # how many top-frequency token ids the token-bound features share; the set must carry enough corpus mass to support their firing rate
+    broad_alpha: float = 0.48        # is_a overlap for the broad parent's children. Held equal to `alpha` so these is_a edges sit above the unrelated ceiling; a lower value would drop them into the null band where the metric could not separate them.
+    n_token_bound_pairs: int = 8     # token-bound feature pairs that co-fire only via a shared token-id set. They form one clique (all share the same ids), so 8 pairs = 16 features = 240 ordered frequency pairs, not 16.
+    n_topical_pairs: int = 12        # feature pairs lifted by a shared topic. Topics are assigned round-robin (z = i % Z), so with Z = 8 some topics carry more than one pair and form larger groups: 12 pairs = 24 features across 8 topic groups. Raise Z for uniform 2-feature groups.
+    kappa: float = 7.2               # topic-modulation strength for the topical confound; higher lifts same-topic co-firing so the confound can propose a false edge. Bounded so per-topic firing rates stay in [0, 1] (validate_config enforces this).
+    n_bind_ids: int = 2              # how many top-frequency token ids the token-bound features share. Must stay under the id set's Zipf mass (validate_config enforces this).
 
 
 def replace(cfg: ToyConfig, **kw) -> ToyConfig:
