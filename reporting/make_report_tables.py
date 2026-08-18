@@ -172,29 +172,33 @@ def t_battery():
          rf"$\geq {C.EDGE_TAU}$", r"\texttt{coverage}"),
         ("1b", "Forward coverage $F$", r"$P(\text{child} \mid \text{parent})$",
          "reported", r"\texttt{coverage}"),
-        ("1c", "Joint-child coverage", r"$R_\mathrm{supp}$, $R_\mathrm{mass}$, energy share",
-         "reported", r"\texttt{joint\_child}"),
-        ("2a", "Reconstruction ablation", "both features carry mass on the child's tokens",
-         rf"$\geq {C.RECON_REL_GAIN_MIN}$", r"\texttt{reconstruction}"),
-        ("2b", r"Probe $S_\mathrm{res}$", "both decoders near the child-concept probe",
-         rf"top-{C.SRES_RANK_TOP_K} rank", r"\texttt{sres}"),
-        ("3", "Sibling redundancy", "co-activation among one parent's children",
-         rf"$\geq {C.SIBLING_REDUNDANCY_FLAG}$", r"\texttt{sibling\_redundancy}"),
-        ("4", "Out-degree", "one parent covering most of the next block",
-         rf"$\geq {100 * C.SUPERPARENT_OUTDEG_FRAC:.0f}\%$", r"\texttt{outdegree}"),
-        ("5", "Token-frequency control", "does the edge survive on rare tokens",
-         rf"$\geq {C.FREQ_SURVIVAL_MIN}$", r"\texttt{token\_control}"),
-        ("6", "Independence null", "PMI against independent firing",
+        ("2", "Independence null", "PMI against independent firing",
          r"$> 0$", r"\texttt{independence\_null}"),
-        ("7", "In-block directed coverage", "containment within one block, and duplicates",
+        ("3", "Token-frequency control", "does the edge survive on rare tokens",
+         rf"$\geq {C.FREQ_SURVIVAL_MIN}$", r"\texttt{token\_control}"),
+        ("4", "Reconstruction ablation", "both features carry mass on the child's tokens",
+         rf"$\geq {C.RECON_REL_GAIN_MIN}$", r"\texttt{reconstruction}"),
+        ("5", r"Probe $S_\mathrm{res}$", "both decoders near the child-concept probe",
+         rf"top-{C.SRES_RANK_TOP_K} rank", r"\texttt{sres}"),
+        ("6", "Out-degree", "one parent covering most of the next block",
+         rf"$\geq {100 * C.SUPERPARENT_OUTDEG_FRAC:.0f}\%$", r"\texttt{outdegree}"),
+        ("7", "Sibling redundancy", "co-activation among one parent's children",
+         rf"$\geq {C.SIBLING_REDUNDANCY_FLAG}$", r"\texttt{sibling\_redundancy}"),
+        ("8", "Joint-child coverage", r"$R_\mathrm{supp}$, $R_\mathrm{mass}$, energy share",
+         "reported", r"\texttt{joint\_child}"),
+        ("---", "In-block directed coverage", "containment within one block, and duplicates",
          "asymmetry", r"\texttt{in\_block\_edges}"),
     ]
     return table(
-        "battery", r"\textbf{The metric battery.} Ten measurements of the same edge. Metric~1 "
-        "defines the candidate set and 2--7 grade it. Metric~2a is named honestly as a "
-        r"\emph{contribution filter} rather than as Tree SAE's $S_\mathrm{res}$: two strong but "
-        "unrelated co-firing features pass both of its legs, and its pass rate scales with block "
-        r"energy. The probe-based $S_\mathrm{res}$ is 2b, and its target is the self-label "
+        "battery", r"\textbf{The metric battery.} Eight questions about the same edge, plus an "
+        "unnumbered in-block measurement that grades same-level pairs rather than candidate "
+        "edges. Metric~1 defines the candidate set and 2--8 grade it: 2--5 weigh a single edge "
+        "with increasingly demanding evidence, from chance to frequency to reconstruction to "
+        "meaning, and 6--8 widen the view from one edge to the parent's whole neighbourhood. "
+        r"Metric~4 is named honestly as a \emph{contribution filter} rather than as Tree SAE's "
+        r"$S_\mathrm{res}$: two strong but unrelated co-firing features pass both of its legs, "
+        "and its pass rate scales with block energy. The probe-based $S_\\mathrm{res}$ is "
+        "metric~5, and its target is the self-label "
         r"$\mathbf{1}[f_c > 0]$, so a corrupted latent yields a probe that validates its own "
         "corruption; we report it as self-labeled and as a self-consistency check, not as ground "
         "truth.",
@@ -205,32 +209,45 @@ def t_battery():
 # ---------------------------------------------------------------------------
 # 3. The properties matrix. NOT derived -- see the module docstring.
 # ---------------------------------------------------------------------------
+# Column order matches the battery order of Section "Metrics"; the
+# Poly-parenting column is separate from Superparent on purpose. A superparent
+# is an out-degree pathology (one parent swallowing the block) and
+# poly-parenting an in-degree one (one child claimed by several parents); the
+# second is what the results section actually measures, and only `outdegree`
+# reads in-degree at all.
 MATRIX = [
-    ("1a Reverse coverage",        "P", "x", "x", "x", "x", "x", "x"),
-    ("1b Forward coverage",        "P", "x", "x", "P", "x", "x", "x"),
-    ("1c Joint-child",             "P", "x", "Y", "Y", "x", "x", "x"),
-    ("2a Reconstruction",          "P", "x", "x", "x", "x", "P", "x"),
-    (r"2b Probe $S_\mathrm{res}$", "Y", "P", "x", "P", "P", "Y", "x"),
-    ("3 Sibling redundancy",       "P", "x", "Y", "x", "Y", "x", "x"),
-    ("4 Out-degree",               "x", "x", "x", "Y", "x", "P", "x"),
-    ("5 Frequency control",        "P", "x", "x", "P", "x", "Y", "x"),
-    ("6 Independence null",        "P", "x", "x", "Y", "x", "Y", "x"),
-    ("7 In-block coverage",        "Y", "x", "Y", "x", "Y", "x", "x"),
+    ("1 Reverse coverage",        "P", "x", "x", "x", "x", "x", "x", "x"),
+    ("1 Forward coverage",        "P", "x", "x", "P", "x", "x", "x", "x"),
+    ("2 Independence null",       "P", "x", "x", "Y", "P", "x", "Y", "x"),
+    ("3 Frequency control",       "P", "x", "x", "P", "x", "x", "Y", "x"),
+    ("4 Reconstruction",          "P", "x", "x", "x", "x", "x", "P", "x"),
+    (r"5 Probe $S_\mathrm{res}$", "Y", "P", "x", "P", "P", "P", "Y", "x"),
+    ("6 Out-degree",              "x", "x", "x", "Y", "Y", "x", "P", "x"),
+    ("7 Sibling redundancy",      "P", "x", "Y", "x", "x", "Y", "x", "x"),
+    ("8 Joint-child",             "P", "x", "Y", "Y", "x", "x", "x", "x"),
+    ("--- In-block coverage",     "Y", "x", "Y", "x", "x", "Y", "x", "x"),
 ]
 GLYPH = {"Y": r"$\bullet$", "P": r"$\circ$", "x": r"--"}
 
 
 def t_matrix():
     cols = ["Parent$\\rightarrow$child", "Absorption", "Splitting", "Superparent",
-            "Siblings", "Frequency", "Topic"]
+            "Poly-parenting", "Siblings", "Frequency", "Topic"]
     rows = [[r[0]] + [GLYPH[c] for c in r[1:]] for r in MATRIX]
     return table(
         "matrix", r"\textbf{What each metric can separate.} A candidate pair can look like an "
-        "edge for seven reasons and only one is hierarchy, so the question per metric is which "
+        "edge for eight reasons and only one is hierarchy, so the question per metric is which "
         r"column it adds, not whether it is correct. $\bullet$ detects, $\circ$ partial "
         "(necessary but not sufficient, or only in some regimes), -- blind. \\textbf{These cells "
         "are read off each metric's construction and are not a measured accuracy}; every one is "
-        r"exercised by a row of Table~\ref{tab:tier1}. Two columns are open and stay open. "
+        r"exercised by a row of Table~\ref{tab:tier1}. \emph{Superparent} and "
+        r"\emph{poly-parenting} are separate columns because they are separate pathologies: the "
+        "first is an out-degree failure, one parent claiming most of the child block, and the "
+        "second an in-degree failure, one child claimed by several parents. Only the out-degree "
+        "metric reads in-degree at all; the two filters marked partial there earn it by removing "
+        "the edges that produce the tangle, the base-rate hubs and the geometrically unrelated "
+        "pairs, rather than by measuring a child's parent count. "
+        r"Two columns are open and stay open. "
         r"\emph{Absorption} is unreachable because coverage gates the candidate set and an "
         "absorbed child has low $R$ by construction. \\emph{Topic} --- two specific, unrelated "
         "features sharing a latent subject --- passes coverage, reconstruction, the frequency "

@@ -184,8 +184,14 @@ def _finish(fig, ax_or_axes, name: str, tight: bool = True) -> str:
 #    evidence and overstated how special that layer was.
 # ---------------------------------------------------------------------------
 def funnel_coverage_to_sres(layers, second, pcfg=None, pair="0->1", where=""):
-    stages = [f"candidate edges\nreverse coverage ≥ {C.EDGE_TAU}",
-              "above chance\nPMI > 0", "genuine refinement\npasses probe S_res"]
+    # Stage labels carry the battery number, because the three stages are
+    # metrics 1, 2 and 5 in order: the funnel walks the battery forward and
+    # skips nothing that is nested. The last stage is named for what it
+    # measures, not for what it would mean if the probe were ground truth --
+    # its target is the child's own self-label, so "genuine refinement" would
+    # claim exactly what the methodology section disavows.
+    stages = [f"1. candidate edges\nreverse coverage ≥ {C.EDGE_TAU}",
+              "2. above chance\nPMI > 0", "5. probe-confirmed\npasses probe S_res"]
     x = np.arange(len(stages))
     # one panel per SOURCE: the funnel collapses the same way on both, which
     # is itself the cross-source claim, so the PCFG runs stand beside gemma
@@ -1178,30 +1184,37 @@ def battery_questions_gemma(layers, second):
     P = [_pair(r, "0->1") for _, r in layers]
     sres_pct = [100 * second[L]["0->1"]["sres"]["frac_pass"]
                 if second.get(L) and "0->1" in second[L] else np.nan for L in Ls]
+    # Panels follow the battery order of the Metrics section so the figure and
+    # the section can be read against each other panel by number. Note the 2x4
+    # grid does NOT align with the battery's own split: metrics 2-5 grade a
+    # single edge and 6-8 widen to the parent's neighbourhood, so the group
+    # boundary falls inside the bottom row, whose first panel (the probe) is
+    # still a single-edge test. The quality/structure reading of this figure is
+    # therefore carried by the caption, not by the layout.
     panels = [
-        ("Activation coverage",
+        ("1. Activation coverage",
          "Does the child fire only when the parent fires?",
          [p["n_candidate_edges"] for p in P], "candidate edges", None),
-        ("Reconstruction condition",
+        ("2. Independence null",
+         "Is the co-firing above chance at all, or just the parent's base rate?",
+         [100 * p["independence_null"]["frac_chance_level"] for p in P], "% at chance", None),
+        ("3. Token-frequency control",
+         "Does the edge still hold on rare tokens, or is it frequency-driven?",
+         [100 * p["freq_control"]["frac_freq_driven"] for p in P], "% frequency-driven", None),
+        ("4. Reconstruction condition",
          "Does the pair actually carry reconstruction, or do the two just activate together?",
          [100 * p["reconstruction"]["frac_pass"] for p in P], "% of edges passing", None),
-        ("Sibling redundancy",
+        ("5. Probe-based S_res",
+         "Does the parent's decoder really point to the child's concept?",
+         sres_pct, "% of scored edges passing", None),
+        ("6. Out-degree / superparents",
+         "Does one parent fan out over most of the next block?",
+         [p["n_superparents"] for p in P], "parents flagged", None),
+        ("7. Sibling redundancy",
          "Are the children almost copies of each other — feature splitting posing as hierarchy?",
          [p["sibling_redundancy"]["mean_redundancy"] for p in P], "mean pairwise Jaccard",
          C.SIBLING_REDUNDANCY_FLAG),
-        ("Out-degree / superparents",
-         "Does one parent fan out over most of the next block?",
-         [p["n_superparents"] for p in P], "parents flagged", None),
-        ("Token-frequency control",
-         "Does the edge still hold on rare tokens, or is it frequency-driven?",
-         [100 * p["freq_control"]["frac_freq_driven"] for p in P], "% frequency-driven", None),
-        ("Independence null",
-         "Is the co-firing above chance at all, or just the parent's base rate?",
-         [100 * p["independence_null"]["frac_chance_level"] for p in P], "% at chance", None),
-        ("Probe-based S_res",
-         "Does the parent's decoder really point to the child's concept?",
-         sres_pct, "% of scored edges passing", None),
-        ("Exact joint-child coverage",
+        ("8. Exact joint-child coverage",
          "How much of the parent do the kept children really explain?",
          [p["joint_child"]["r_supp_mean"] for p in P], "mean support coverage", None),
     ]

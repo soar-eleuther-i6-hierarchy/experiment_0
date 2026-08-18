@@ -58,7 +58,7 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{The metric battery.} Ten measurements of the same edge. Metric~1 defines the candidate set and 2--7 grade it. Metric~2a is named honestly as a \emph{contribution filter} rather than as Tree SAE's $S_\mathrm{res}$: two strong but unrelated co-firing features pass both of its legs, and its pass rate scales with block energy. The probe-based $S_\mathrm{res}$ is 2b, and its target is the self-label $\mathbf{1}[f_c > 0]$, so a corrupted latent yields a probe that validates its own corruption; we report it as self-labeled and as a self-consistency check, not as ground truth.}
+  \caption{\textbf{The metric battery.} Eight questions about the same edge, plus an unnumbered in-block measurement that grades same-level pairs rather than candidate edges. Metric~1 defines the candidate set and 2--8 grade it: 2--5 weigh a single edge with increasingly demanding evidence, from chance to frequency to reconstruction to meaning, and 6--8 widen the view from one edge to the parent's whole neighbourhood. Metric~4 is named honestly as a \emph{contribution filter} rather than as Tree SAE's $S_\mathrm{res}$: two strong but unrelated co-firing features pass both of its legs, and its pass rate scales with block energy. The probe-based $S_\mathrm{res}$ is metric~5, and its target is the self-label $\mathbf{1}[f_c > 0]$, so a corrupted latent yields a probe that validates its own corruption; we report it as self-labeled and as a self-consistency check, not as ground truth.}
   \label{tab:battery}
   \begin{tabular}{llllr}
     \toprule
@@ -66,14 +66,14 @@
     \midrule
     1a & Reverse coverage $R$ & $P(\text{parent} \mid \text{child})$ & $\geq 0.5$ & \texttt{coverage} \\
     1b & Forward coverage $F$ & $P(\text{child} \mid \text{parent})$ & reported & \texttt{coverage} \\
-    1c & Joint-child coverage & $R_\mathrm{supp}$, $R_\mathrm{mass}$, energy share & reported & \texttt{joint\_child} \\
-    2a & Reconstruction ablation & both features carry mass on the child's tokens & $\geq 0.01$ & \texttt{reconstruction} \\
-    2b & Probe $S_\mathrm{res}$ & both decoders near the child-concept probe & top-5 rank & \texttt{sres} \\
-    3 & Sibling redundancy & co-activation among one parent's children & $\geq 0.5$ & \texttt{sibling\_redundancy} \\
-    4 & Out-degree & one parent covering most of the next block & $\geq 30\%$ & \texttt{outdegree} \\
-    5 & Token-frequency control & does the edge survive on rare tokens & $\geq 0.5$ & \texttt{token\_control} \\
-    6 & Independence null & PMI against independent firing & $> 0$ & \texttt{independence\_null} \\
-    7 & In-block directed coverage & containment within one block, and duplicates & asymmetry & \texttt{in\_block\_edges} \\
+    2 & Independence null & PMI against independent firing & $> 0$ & \texttt{independence\_null} \\
+    3 & Token-frequency control & does the edge survive on rare tokens & $\geq 0.5$ & \texttt{token\_control} \\
+    4 & Reconstruction ablation & both features carry mass on the child's tokens & $\geq 0.01$ & \texttt{reconstruction} \\
+    5 & Probe $S_\mathrm{res}$ & both decoders near the child-concept probe & top-5 rank & \texttt{sres} \\
+    6 & Out-degree & one parent covering most of the next block & $\geq 30\%$ & \texttt{outdegree} \\
+    7 & Sibling redundancy & co-activation among one parent's children & $\geq 0.5$ & \texttt{sibling\_redundancy} \\
+    8 & Joint-child coverage & $R_\mathrm{supp}$, $R_\mathrm{mass}$, energy share & reported & \texttt{joint\_child} \\
+    --- & In-block directed coverage & containment within one block, and duplicates & asymmetry & \texttt{in\_block\_edges} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -82,22 +82,22 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{What each metric can separate.} A candidate pair can look like an edge for seven reasons and only one is hierarchy, so the question per metric is which column it adds, not whether it is correct. $\bullet$ detects, $\circ$ partial (necessary but not sufficient, or only in some regimes), -- blind. \textbf{These cells are read off each metric's construction and are not a measured accuracy}; every one is exercised by a row of Table~\ref{tab:tier1}. Two columns are open and stay open. \emph{Absorption} is unreachable because coverage gates the candidate set and an absorbed child has low $R$ by construction. \emph{Topic} --- two specific, unrelated features sharing a latent subject --- passes coverage, reconstruction, the frequency control and PMI alike; closing it needs a model-based topic null rather than another threshold.}
+  \caption{\textbf{What each metric can separate.} A candidate pair can look like an edge for eight reasons and only one is hierarchy, so the question per metric is which column it adds, not whether it is correct. $\bullet$ detects, $\circ$ partial (necessary but not sufficient, or only in some regimes), -- blind. \textbf{These cells are read off each metric's construction and are not a measured accuracy}; every one is exercised by a row of Table~\ref{tab:tier1}. \emph{Superparent} and \emph{poly-parenting} are separate columns because they are separate pathologies: the first is an out-degree failure, one parent claiming most of the child block, and the second an in-degree failure, one child claimed by several parents. Only the out-degree metric reads in-degree at all; the two filters marked partial there earn it by removing the edges that produce the tangle, the base-rate hubs and the geometrically unrelated pairs, rather than by measuring a child's parent count. Two columns are open and stay open. \emph{Absorption} is unreachable because coverage gates the candidate set and an absorbed child has low $R$ by construction. \emph{Topic} --- two specific, unrelated features sharing a latent subject --- passes coverage, reconstruction, the frequency control and PMI alike; closing it needs a model-based topic null rather than another threshold.}
   \label{tab:matrix}
-  \begin{tabular}{lccccccc}
+  \begin{tabular}{lcccccccc}
     \toprule
-     & Parent$\rightarrow$child & Absorption & Splitting & Superparent & Siblings & Frequency & Topic \\
+     & Parent$\rightarrow$child & Absorption & Splitting & Superparent & Poly-parenting & Siblings & Frequency & Topic \\
     \midrule
-    1a Reverse coverage & $\circ$ & -- & -- & -- & -- & -- & -- \\
-    1b Forward coverage & $\circ$ & -- & -- & $\circ$ & -- & -- & -- \\
-    1c Joint-child & $\circ$ & -- & $\bullet$ & $\bullet$ & -- & -- & -- \\
-    2a Reconstruction & $\circ$ & -- & -- & -- & -- & $\circ$ & -- \\
-    2b Probe $S_\mathrm{res}$ & $\bullet$ & $\circ$ & -- & $\circ$ & $\circ$ & $\bullet$ & -- \\
-    3 Sibling redundancy & $\circ$ & -- & $\bullet$ & -- & $\bullet$ & -- & -- \\
-    4 Out-degree & -- & -- & -- & $\bullet$ & -- & $\circ$ & -- \\
-    5 Frequency control & $\circ$ & -- & -- & $\circ$ & -- & $\bullet$ & -- \\
-    6 Independence null & $\circ$ & -- & -- & $\bullet$ & -- & $\bullet$ & -- \\
-    7 In-block coverage & $\bullet$ & -- & $\bullet$ & -- & $\bullet$ & -- & -- \\
+    1 Reverse coverage & $\circ$ & -- & -- & -- & -- & -- & -- & -- \\
+    1 Forward coverage & $\circ$ & -- & -- & $\circ$ & -- & -- & -- & -- \\
+    2 Independence null & $\circ$ & -- & -- & $\bullet$ & $\circ$ & -- & $\bullet$ & -- \\
+    3 Frequency control & $\circ$ & -- & -- & $\circ$ & -- & -- & $\bullet$ & -- \\
+    4 Reconstruction & $\circ$ & -- & -- & -- & -- & -- & $\circ$ & -- \\
+    5 Probe $S_\mathrm{res}$ & $\bullet$ & $\circ$ & -- & $\circ$ & $\circ$ & $\circ$ & $\bullet$ & -- \\
+    6 Out-degree & -- & -- & -- & $\bullet$ & $\bullet$ & -- & $\circ$ & -- \\
+    7 Sibling redundancy & $\circ$ & -- & $\bullet$ & -- & -- & $\bullet$ & -- & -- \\
+    8 Joint-child & $\circ$ & -- & $\bullet$ & $\bullet$ & -- & -- & -- & -- \\
+    --- In-block coverage & $\bullet$ & -- & $\bullet$ & -- & -- & $\bullet$ & -- & -- \\
     \bottomrule
   \end{tabular}
 \end{table}
