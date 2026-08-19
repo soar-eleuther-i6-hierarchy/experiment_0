@@ -93,10 +93,10 @@
 \end{figure}
 
 % -------------------------------------------------------------------------
-% The instrument, calibrated
+% Appendix: the instrument, calibrated
 % -------------------------------------------------------------------------
 
-% [MAIN 4]
+% [APP 0a]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_synthetic_toy_scorecard}
@@ -124,7 +124,7 @@
   \label{fig:calibration-synthetic-toy-scorecard}
 \end{figure}
 
-% [MAIN 5]
+% [APP 0b]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_trained_toy_recovery}
@@ -134,26 +134,18 @@
     Matryoshka SAE is actually trained on the world's activations, each learned latent is
     matched to the true feature it represents, and an edge counts as recovered when the SAE
     learned latents for both of its features and the battery keeps the link between them.
-    Precision 1.00, recall 1.00: 9 of 9 true edges recovered with 0 false positives, and every
-    miss is an edge whose child the SAE never learned: it recovered 20 of 20 true features,
-    which bounds recall from above. \emph{Right:} the lateral control, asking whether the
-    Matryoshka nesting itself places a parent in an earlier block than its children. Beyond
-    edge recovery, the parent-conditioned sibling metric reports 0.00 for one true parent
-    against 0.00 and 0.00 for the others. The grammar declares every parent's children
-    mutually exclusive, and they co-fire 0 times in 200{,}000 draws; the latents that
-    recovered them co-fire 0 times, and one of the two never fires alone. The SAE conflated
-    two concepts the grammar keeps apart. This is a defect nobody injected, which the
-    synthetic tier structurally cannot produce, and which the rest of the battery misses: both
-    of that parent's edges are counted as recovered and precision stays $1.00$.
+    Precision 1.00, recall 1.00: 9 of 9 true edges recovered with 0 false positives. The SAE
+    recovered 20 of 20 true features, so no edge was out of reach and recall is not bounded by
+    the SAE here. \emph{Right:} the lateral control, asking whether the Matryoshka nesting
+    itself places a parent in an earlier block than its children. Beyond edge recovery, the
+    parent-conditioned sibling metric stays at or below 0.00 for every true parent, against a
+    threshold of 0.50: on this checkpoint the SAE kept each parent's mutually exclusive
+    children apart rather than conflating them.
   }
   \label{fig:calibration-trained-toy-recovery}
 \end{figure}
 
-% -------------------------------------------------------------------------
-% Appendix
-% -------------------------------------------------------------------------
-
-% [APP 0]
+% [APP 0c]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_toy_tree_recovered}
@@ -179,6 +171,10 @@
   }
   \label{fig:calibration-toy-tree-recovered}
 \end{figure}
+
+% -------------------------------------------------------------------------
+% Appendix: what the battery finds
+% -------------------------------------------------------------------------
 
 % [APP 1]
 \begin{figure}[tbp]

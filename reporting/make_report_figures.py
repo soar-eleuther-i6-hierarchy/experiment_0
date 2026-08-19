@@ -529,8 +529,25 @@ def calibration_synthetic_toy_scorecard(rows):
     def plain(label):
         return re.sub(r"^\s*\d+[a-z]?'?\.\s*", "", label)
 
-    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.4),
-                             gridspec_kw={"width_ratios": [1.75, 1]})
+    def row_label(r):
+        """Metric name over the job it is there to do.
+
+        The job is recorded per row in the calibration JSON and was not shown, so the
+        figure listed thirteen names with no statement of what any of them is for --
+        the first thing a reader asked for.
+        """
+        job = r.get("job", "")
+        if not job:
+            return plain(r["metric"])
+        # Wrapped, not widened: one 55-character line per row needs a gutter so deep
+        # that the bars lose the canvas. Two short lines fit the same words.
+        return plain(r["metric"]) + "\n" + textwrap.fill(job, 42)
+
+    # Wide, and laid out by hand: each row now carries its job on a second line, and
+    # two columns of two-line labels do not fit inside a tight_layout that also has to
+    # find room for a two-line axis label and a two-entry key.
+    fig, axes = plt.subplots(1, 2, figsize=(15.5, 7.8),
+                             gridspec_kw={"width_ratios": [1.9, 1]})
     ax = axes[0]
     # Negative controls pass when the battery does NOT act, so they are a
     # different kind of claim and are hatched rather than recoloured -- texture is
@@ -544,18 +561,29 @@ def calibration_synthetic_toy_scorecard(rows):
                 ">1000×" if r["margin"] >= 1000 else f"{r['margin']:.1f}×",
                 va="center", fontsize=8, color=MUTED)
     ax.set_yticks(np.arange(len(ratio)))
-    ax.set_yticklabels([plain(r["metric"]) for r in ratio], fontsize=8.5)
+    ax.set_yticklabels([row_label(r) for r in ratio], fontsize=8)
     ax.set_xscale("log")
     ax.set_xlim(0.3, 1.2e5)
     ax.axvline(1.0, ls=(0, (2, 3)), lw=1, color=NEUTRAL)
-    ax.set_xlabel("how far apart the metric scores planted vs healthy structure "
-                  "(ratio, log) — 1× = indistinguishable")
-    ax.set_title("scored by margin", fontsize=9.5, loc="left")
+    ax.set_xlabel("separation: the metric's score on healthy structure divided by its "
+                  "score on the planted defect\n(log scale; 1× means it scores the two "
+                  "alike, and cannot tell them apart)")
+    ax.set_title("scored by separation", fontsize=9.5, loc="left")
+    # The planted defects, named: "injected structures" appeared with nothing saying
+    # what was injected. Figure-level, under the key, so both are read together.
+    fig.text(0.012, 0.055,
+             "Planted defects: a SUPERPARENT (fires on ~90% of tokens with a tiny "
+             "activation, so it co-fires with every child but adds almost nothing to\n"
+             "reconstruction), a FREQUENCY-COINCIDENCE edge (lives only on high-frequency "
+             "tokens),\nand a FEATURE-SPLIT parent (three near-duplicate children firing on "
+             "the same tokens with the same direction).",
+             fontsize=7.8, color=MUTED, va="bottom")
     fig.legend(handles=[
-        plt.Rectangle((0, 0), 1, 1, color=GOOD, label="caught its pathology"),
+        plt.Rectangle((0, 0), 1, 1, color=GOOD,
+                      label="passes: flags the planted defect and leaves healthy structure alone"),
         plt.Rectangle((0, 0), 1, 1, facecolor=GOOD, hatch="///", edgecolor="white",
-                      label="negative control — passes when nothing catches it"),
-    ], fontsize=8, frameon=False, loc="lower right", ncol=2, bbox_to_anchor=(0.99, -0.02))
+                      label="negative control: passes only if no metric rejects the pair"),
+    ], fontsize=8, frameon=False, loc="lower left", ncol=2, bbox_to_anchor=(0.008, 0.10))
     ax.grid(True, axis="x", alpha=0.12)
     ax.set_axisbelow(True)
 
@@ -567,18 +595,24 @@ def calibration_synthetic_toy_scorecard(rows):
         ax.text(0.5, i, "correct" if r["pass"] else "wrong", va="center", ha="center",
                 fontsize=8.5, color="white", fontweight="bold")
     ax.set_yticks(np.arange(len(cat_rows)))
-    ax.set_yticklabels([plain(r["metric"]) for r in cat_rows], fontsize=8.5)
+    ax.set_yticklabels([row_label(r) for r in cat_rows], fontsize=8)
     ax.set_xticks([])
     ax.set_xlim(0, 1)
-    ax.set_title("scored categorically —\nthe answer is right or it is not",
+    ax.set_title("scored pass / fail\n(the recovered set matches ground truth, or does not)",
                  fontsize=9.5, loc="left")
     ax.spines["bottom"].set_visible(False)
 
     _title(fig, f"Every metric scored against a known tree — {n_pass}/{len(rows)} rows pass",
            "the hatched rows are limitations demonstrated rather than caught: an absorbed edge "
            "coverage cannot propose, and a shared-topic pair every filter accepts", width=112)
-    fig.subplots_adjust(top=0.80)
-    return _finish(fig, axes, "calibration_synthetic_toy_scorecard")
+    # Right-hand ticks on the right panel: with two-line labels, left-hand ticks put
+    # this panel's text into the left panel's plot area.
+    axes[1].yaxis.tick_right()
+    axes[1].tick_params(axis="y", length=0)
+    # Hand-laid, not tight_layout: the label gutters, the key and the note below it all
+    # need reserved space that tight_layout would reclaim.
+    fig.subplots_adjust(left=0.215, right=0.845, top=0.94, bottom=0.26, wspace=0.05)
+    return _finish(fig, axes, "calibration_synthetic_toy_scorecard", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -2294,22 +2328,36 @@ def _captions():
         pt = tt.get("per_token") or {}
         red = pt.get("parent_conditioned_redundancy") or {}
         cof = pt.get("child_cofire") or {}
+        # This clause reports a conflation the SAE committed and the battery missed. It
+        # only belongs in the caption when the run actually shows one: written as fixed
+        # prose it survived a change of reference checkpoint and went on describing a
+        # defect that had gone away, against redundancy figures that were all 0.00.
+        # REDUNDANCY_THR mirrors the threshold the metric itself uses.
+        REDUNDANCY_THR = (tt.get("per_token") or {}).get("redundancy_threshold", 0.5)
         extra = ""
         if red and cof:
             w = max(red.items(), key=lambda kv: kv[1])
-            if w[0] in cof:
+            others = [v for k, v in red.items() if k != w[0]]
+            if w[0] in cof and w[1] >= REDUNDANCY_THR and cof[w[0]]["learned"] > 0:
                 extra = (
                     " Beyond edge recovery, the parent-conditioned sibling metric reports "
                     f"{w[1]:.2f} for one true parent against "
-                    + " and ".join(f"{v:.2f}" for k, v in red.items() if k != w[0])
+                    + " and ".join(f"{v:.2f}" for v in others)
                     + " for the others. The grammar declares every parent's children mutually "
                     f"exclusive, and they co-fire {cof[w[0]]['ground_truth']} times in "
                     "200{,}000 draws; the latents that recovered them co-fire "
-                    f"{cof[w[0]]['learned']:,} times, and one of the two never fires alone. The "
-                    "SAE conflated two concepts the grammar keeps apart. This is a defect nobody "
-                    "injected, which the synthetic tier structurally cannot produce, and which "
-                    "the rest of the battery misses: both of that parent's edges are counted as "
-                    "recovered and precision stays $1.00$.")
+                    f"{cof[w[0]]['learned']:,} times. The SAE conflated two concepts the "
+                    "grammar keeps apart: a defect nobody injected, which the synthetic tier "
+                    "structurally cannot produce, and which the rest of the battery misses, "
+                    "since both of that parent's edges are still counted as recovered."
+                )
+            elif red:
+                extra = (
+                    " Beyond edge recovery, the parent-conditioned sibling metric stays at or "
+                    f"below {max(red.values()):.2f} for every true parent, against a threshold "
+                    f"of {REDUNDANCY_THR:.2f}: on this checkpoint the SAE kept each parent's "
+                    "mutually exclusive children apart rather than conflating them."
+                )
         # DRAFT caption -- captions are written by hand here, so this is a starting
         # point to rewrite, not final text. Every number in it is computed above from
         # trained_toy_calibration.json rather than typed, so an edit to the data cannot
@@ -2394,9 +2442,13 @@ def _captions():
             "features and the battery keeps the link between them. Precision "
             rf"{tt['precision']:.2f}, recall {tt['recall']:.2f}: {tt['true_positives']} of "
             f"{len(tt['true_edges'])} true edges recovered with {tt['false_positives']} false "
-            "positives, and every miss is an edge whose child the SAE never learned: it "
-            f"recovered {tt['n_recovered_features']} of {tt['n_features']} true features, which "
-            r"bounds recall from above. \emph{Right:} the lateral control, asking whether the "
+            f"positives. The SAE recovered {tt['n_recovered_features']} of {tt['n_features']} "
+            "true features, "
+            + ("and every miss is an edge whose child it never learned, which bounds recall "
+               "from above. "
+               if tt["true_positives"] < len(tt["true_edges"]) else
+               "so no edge was out of reach and recall is not bounded by the SAE here. ")
+            + r"\emph{Right:} the lateral control, asking whether the "
             "Matryoshka nesting itself places a parent in an earlier block than its children."
             + extra)
 
@@ -2679,16 +2731,18 @@ TEX_ORDER = [
      "The recovered graph is not a tree.", None),
     ("MAIN 3", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
      "The recovered graph, drawn.", None),
-    ("MAIN 4", "calibration_synthetic_toy_scorecard", True,
-     "Every metric scored against a known tree.", "The instrument, calibrated"),
-    ("MAIN 5", "calibration_trained_toy_recovery", True,
+    # The whole calibration ladder sits in the appendix: it is what licenses the main
+    # text's numbers rather than a finding of its own, and the three read as one
+    # argument only when they are adjacent.
+    ("APP 0a", "calibration_synthetic_toy_scorecard", True,
+     "Every metric scored against a known tree.", "Appendix: the instrument, calibrated"),
+    ("APP 0b", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
-    # First in the appendix rather than beside MAIN 5: it is the same result drawn out
-    # for a reader who needs to see what an edge is, not a separate claim.
-    ("APP 0", "calibration_toy_tree_recovered", True,
-     "That tree drawn, before and after the battery.", "Appendix"),
+    ("APP 0c", "calibration_toy_tree_recovered", True,
+     "That tree drawn, before and after the battery.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
-     "The tangle lives in the coarsest block pair, on both sources.", None),
+     "The tangle lives in the coarsest block pair, on both sources.",
+     "Appendix: what the battery finds"),
     ("APP 1b", "a_slice_of_the_tangle", False,
      "A slice of the tangle: every child in it has many parents.", None),
     # the single-child twin of the slice: emitted so the manuscript can choose
