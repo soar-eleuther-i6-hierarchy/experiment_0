@@ -17,6 +17,7 @@ stale when the order changes.
     superparent_fanout_vs_firing            why a high-firing parent clears the bar for free
     calibration_synthetic_toy_scorecard     every metric against a known tree
     calibration_trained_toy_recovery        the same tree, through a real training run
+    calibration_toy_tree_recovered          that tree drawn, before and after the battery
     cross_source_funnel_shares              the same battery on gemma and on PCFG
     cross_source_layer_response             gemma vs PCFG at the layers both graded
     cross_source_alignment_check            block index or relative depth — which to pair on
@@ -55,6 +56,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
+from matplotlib.lines import Line2D  # noqa: E402
 
 import config as C  # noqa: E402
 
@@ -588,7 +590,9 @@ def calibration_trained_toy_recovery(tt, align):
                              gridspec_kw={"width_ratios": [1.25, 1]})
 
     ax = axes[0]
-    bars = [("recovered", tp, GOOD), ("missed", fn, NEUTRAL), ("false positives", fp, CAT[3])]
+    # Same three colours as `calibration_toy_tree_recovered`, which draws the same three
+    # outcomes: two conventions for one word is how a reader ends up counting twice.
+    bars = [("recovered", tp, GOOD), ("missed", fn, CAT[3]), ("false positives", fp, "#CC79A7")]
     ax.bar([b[0] for b in bars], [b[1] for b in bars],
            color=[b[2] for b in bars], width=0.55)
     for i, (_, v, _) in enumerate(bars):
@@ -622,6 +626,192 @@ def calibration_trained_toy_recovery(tt, align):
         a.grid(True, axis="y", alpha=0.12)
         a.set_axisbelow(True)
     return _finish(fig, axes, "calibration_trained_toy_recovery")
+
+
+def _tree_from_edges(true_edges, n_features):
+    """A stand-in tree for a calibration JSON written before the tree was recorded.
+
+    Edges alone have no root, which is what made the first version of this figure
+    read as three disconnected subtrees beside a row of loose features. Hanging
+    everything off one root restores the shape even without the real node data.
+    """
+    kids = {}
+    for p, c in true_edges:
+        kids.setdefault(p, []).append(c)
+    attached = {c for cs in kids.values() for c in cs}
+    children = [{"_idx": p, "children": [{"_idx": c, "children": []} for c in sorted(kids[p])]}
+                for p in sorted(kids)]
+    children += [{"_idx": f, "children": []}
+                 for f in range(n_features) if f not in kids and f not in attached]
+    return {"_idx": None, "children": children}
+
+
+def _toy_tree_layout(tree):
+    """Left-to-right positions for every node of the tree, plus its parent->child links.
+
+    Depth runs along x and siblings stack down y. Laid out top-down the 20 leaves need
+    a panel wider than the page; stacked vertically they fit beside the other two
+    panels. The root and the not-read-out nodes are included: dropping them is what
+    made the earlier version look like scattered features rather than one tree.
+    """
+    nodes, links, cursor = [], [], [0]
+
+    def place(node, depth):
+        kids = node.get("children", [])
+        if kids:
+            slots = [place(c, depth + 1) for c in kids]
+            slot = (min(slots) + max(slots)) / 2
+        else:
+            slots, slot = [], cursor[0]
+            cursor[0] += 1
+        here = (depth, -slot)
+        nodes.append((here, node))
+        links.extend((here, (depth + 1, -s), node, c) for s, c in zip(slots, kids))
+        return slot
+
+    place(tree, 0)
+    return nodes, links, cursor[0]
+
+
+def _tree_listing(node, indent=0):
+    """The tree as exact text: index, firing probability, exclusivity.
+
+    `[--]` is a node that shapes the sampling but is not read out, so it holds no
+    feature index and can end no edge -- which is why the links visible here do not
+    all become scoreable edges.
+    """
+    idx = node.get("_idx")
+    tag = f"[{idx:>2}]" if idx is not None else "[--]"
+    excl = "   (children mutually exclusive)" if node.get("mutually_exclusive_children") else ""
+    lines = ["  " * indent + f"{tag}  p={node['active_prob']}{excl}"]
+    for child in node.get("children", []):
+        lines += _tree_listing(child, indent + 1)
+    return lines
+
+
+def _index_tree(node, counter=None):
+    """Attach each read-out node's feature index, the way the sampler assigns them."""
+    counter = [0] if counter is None else counter
+    if node.get("is_read_out", True):
+        node["_idx"] = counter[0]
+        counter[0] += 1
+    for child in node.get("children", []):
+        _index_tree(child, counter)
+    return node
+
+
+def calibration_toy_tree_recovered(tt):
+    """What an edge IS, the tree it lives in, and what the battery did with it.
+
+    `calibration_trained_toy_recovery` counts the outcomes; this shows which edges
+    they were. Colours match that figure exactly (recovered / missed / false
+    positive), so the two read as one statement rather than two conventions.
+
+    The left panel exists because of reviewer feedback on the earlier version: a
+    recovery figure is unreadable when the tree behind it is never shown, so "6 of 9
+    edges" means nothing. It spells out the generative process, the rule that makes an
+    edge an edge, and the exact edge list being scored.
+    """
+    truth = [tuple(e) for e in tt["true_edges"]]
+    found = {tuple(e) for e in tt["found_edges"]}
+    recovered = set(tt["recovered_features"])
+    spurious = sorted(found - set(truth))
+
+    tree = (_index_tree(json.loads(json.dumps(tt["tree"]))) if tt.get("tree")
+            else _tree_from_edges(truth, tt["n_features"]))
+    nodes, links, n_rows = _toy_tree_layout(tree)
+    pos = {n["_idx"]: xy for xy, n in nodes if n.get("_idx") is not None}
+    depth = max(xy[0] for xy, _ in nodes)
+
+    fig, axes = plt.subplots(1, 2, figsize=(11.0, 7.4))
+
+    # Outcome colours, shared with `calibration_trained_toy_recovery` so the counts and
+    # the drawing cannot use two conventions for the same three words. Okabe-Ito, like
+    # CAT: every pair is separable in both common forms of colour blindness, which grey
+    # for "missed" was not once it sat beside a grey structural link.
+    MISSED, SPURIOUS = CAT[3], "#CC79A7"
+    # A link touching a node with no feature index is structure, not a scoreable edge:
+    # this is what makes the tree's 12 visible links resolve to 9 scoreable edges, so it
+    # has to be READ, not merely sensed. It was near-white while "missed" was the grey it
+    # had to stay clear of; with missed now orange, this can be a grey that actually
+    # prints -- secondary to the outcome colours, but never invisible.
+    STRUCTURAL = "#9AA3AD"
+    # Nodes are deliberately neutral. Drawn in CAT[0] they competed with the edge
+    # colours, which are the thing this figure is about.
+    NODE = "#4A5A6A"
+
+    for ax, is_truth in zip(axes, (True, False)):
+        for (x0, y0), (x1, y1), parent, child in links:
+            pi, ci = parent.get("_idx"), child.get("_idx")
+            if pi is None or ci is None:
+                style = dict(color=STRUCTURAL, lw=1.15, ls=(0, (2.5, 2)))
+            elif is_truth:
+                style = dict(color=CAT[0], lw=2.4, ls="-")
+            elif (pi, ci) in found:
+                style = dict(color=GOOD, lw=2.8, ls="-")
+            else:
+                style = dict(color=MISSED, lw=2.4, ls=(0, (4, 2)))
+            ax.plot([x0, x1], [y0, y1], zorder=1, **style)
+
+        if not is_truth:
+            for (p, c) in spurious:
+                ax.plot(*zip(pos[p], pos[c]), color=SPURIOUS, lw=2.4,
+                        ls=(0, (1.2, 1.4)), zorder=2)
+
+        for xy, node in nodes:
+            idx = node.get("_idx")
+            # The ground-truth panel carries each node's firing probability, so the
+            # generative process is readable off the figure: p is conditional on the
+            # parent firing, which is what makes an edge containment rather than mere
+            # correlation. The right-hand panel is about outcomes and stays clean.
+            if is_truth and "active_prob" in node:
+                ax.text(xy[0], xy[1] - 0.33, f"p={node['active_prob']}",
+                        ha="center", va="top", fontsize=5.4, zorder=4,
+                        color=MUTED if idx is not None else STRUCTURAL)
+            if idx is None:
+                # Shapes the sampling, holds no feature: small and hollow, unlabelled.
+                ax.scatter([xy[0]], [xy[1]], s=48, zorder=3, facecolor="white",
+                           edgecolor=STRUCTURAL, linewidths=1.1)
+                continue
+            # On the left every feature exists by definition; on the right a hollow
+            # node is one no latent recovered, which is why edges touching it could
+            # not be found even in principle.
+            known = is_truth or idx in recovered
+            ax.scatter([xy[0]], [xy[1]], s=165, zorder=3,
+                       facecolor=NODE if known else "white",
+                       edgecolor=NODE if known else MUTED, linewidths=1.4)
+            ax.text(xy[0], xy[1], str(idx), ha="center", va="center", fontsize=6.4,
+                    zorder=4, color=_text_on(NODE) if known else MUTED)
+
+        # Extra room on the left: the root sits at x=0 and its p label hangs below it.
+        ax.set_xlim(-0.5, depth + 0.35)
+        ax.set_ylim(-n_rows + 0.4, 0.6)
+        ax.axis("off")
+
+    # Panel identifiers, not captions -- every number in them is read from the JSON.
+    n_tp = len(found & set(truth))
+    axes[0].set_title(f"the known tree — {len(truth)} edges over {tt['n_features']} features",
+                      fontsize=10, loc="left", color=INK)
+    axes[1].set_title(f"after the battery — {n_tp}/{len(truth)} recovered, "
+                      f"{len(spurious)} false, {len(recovered)}/{tt['n_features']} features learned",
+                      fontsize=10, loc="left", color=INK)
+
+    handles = [
+        Line2D([], [], color=CAT[0], lw=2.4, label="true edge"),
+        Line2D([], [], color=GOOD, lw=2.8, label="recovered"),
+        Line2D([], [], color=MISSED, lw=2.4, ls=(0, (4, 2)), label="missed"),
+        Line2D([], [], color=SPURIOUS, lw=2.4, ls=(0, (1.2, 1.4)), label="false positive"),
+        Line2D([], [], color=STRUCTURAL, lw=1.5, ls=(0, (2.5, 2)),
+               label="not scoreable (endpoint not read out)"),
+        Line2D([], [], color="white", marker="o", ls="", markersize=9,
+               markerfacecolor="white", markeredgecolor=MUTED, label="feature not learned"),
+    ]
+    # Three per row: six across an 11-inch canvas set the labels too tight to read.
+    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=8.5)
+    # tight_layout would reclaim the strip the legend sits in, so this figure
+    # manages its own margins (see `_finish`).
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.11, wspace=0.05)
+    return _finish(fig, axes, "calibration_toy_tree_recovered", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1181,7 +1371,10 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     pcf = source_grid([(n.replace("PCFG layer ", "L"), r) for n, r in pcfg]) if pcfg else []
     panels = [(r"gemma-2-2b", gem)] + ([("PCFG", pcf)] if pcf else [])
 
-    cmap = cm.get_cmap("Blues")
+    # plt.get_cmap, not cm.get_cmap: the latter was removed in matplotlib 3.9 and its
+    # AttributeError aborted the whole build, so every later figure went unwritten too.
+    # This spelling works on both old and new matplotlib.
+    cmap = plt.get_cmap("Blues")
     n_max = max(len(g) for _, g in panels)
     fig, axes = plt.subplots(
         1, len(panels), figsize=(7.2 * len(panels), 0.26 * n_max + 1.9),
@@ -1785,6 +1978,10 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         + ("" if align else " (block_tree_alignment.json absent — right panel blank)")
         if tt else "needs outputs/trained_toy_calibration.json (Tier 2)",
         lambda: calibration_trained_toy_recovery(tt, align))
+    run("calibration_toy_tree_recovered", bool(tt),
+        "outputs/trained_toy_calibration.json"
+        if tt else "needs outputs/trained_toy_calibration.json (Tier 2)",
+        lambda: calibration_toy_tree_recovered(tt))
 
     # Every graded layer of BOTH sources. This figure once carried gemma layer 6
     # alone -- the layer that had the strict test first -- and kept doing so
@@ -2113,6 +2310,52 @@ def _captions():
                     "injected, which the synthetic tier structurally cannot produce, and which "
                     "the rest of the battery misses: both of that parent's edges are counted as "
                     "recovered and precision stays $1.00$.")
+        # DRAFT caption -- captions are written by hand here, so this is a starting
+        # point to rewrite, not final text. Every number in it is computed above from
+        # trained_toy_calibration.json rather than typed, so an edit to the data cannot
+        # leave the prose asserting a withdrawn result.
+        n_test = len([e for e in tt["true_edges"]
+                      if e[0] in set(tt["recovered_features"])
+                      and e[1] in set(tt["recovered_features"])])
+
+        def _n_nodes(node):
+            return 1 + sum(_n_nodes(c) for c in node.get("children", []))
+
+        # Links drawn = nodes - 1 (it is a tree). Counting them by hand gave 12, which
+        # is the count of family links only and ignores the root's own fan-out.
+        n_links = _n_nodes(tt["tree"]) - 1 if tt.get("tree") else None
+        links_clause = (f"which is why the {n_links} links drawn on the left reduce to "
+                        f"{len(tt['true_edges'])} scoreable edges"
+                        if n_links else
+                        f"which is why only {len(tt['true_edges'])} of the links drawn "
+                        "on the left are scoreable edges")
+        arch = str(tt["cfg"].get("activation_function", "")).replace("_", r"\_")
+        d["calibration_toy_tree_recovered"] = (
+            r"\textbf{What an edge is, and what the battery did with it.} "
+            "The toy world is a generative process: each node is a feature that fires "
+            "with the probability printed beneath it, \\emph{conditional on its parent "
+            "firing}. Feature~1 at $p=0.2$ under a parent at $p=0.15$ therefore fires on "
+            "$3\\%$ of draws, not $20\\%$. An \\textbf{edge} is containment: a child "
+            "fires only on draws where its parent fires, so "
+            "$P(\\text{parent}\\mid\\text{child})=1$ while "
+            "$P(\\text{child}\\mid\\text{parent})$ stays small, and it is that asymmetry "
+            "the battery measures. Hollow nodes (the root, and one hidden sibling per "
+            f"family) carry no feature index, {links_clause}. "
+            "\\textbf{Left}: the known tree. "
+            f"\\textbf{{Right}}: the same tree after a Matryoshka SAE "
+            f"(\\texttt{{{arch}}}, $k={tt['cfg'].get('k')}$) is "
+            "trained on the world's activations, each latent is matched to the true "
+            "feature its decoder points at, and the battery is run on the learned "
+            f"latents alone. It returned {tt['true_positives']} of "
+            f"{len(tt['true_edges'])} true edges with {tt['false_positives']} false "
+            f"positives. The reading that matters is the decomposition: the SAE learned "
+            f"{tt['n_recovered_features']} of {tt['n_features']} features, leaving "
+            f"{n_test} edges with both endpoints present, and the battery returned "
+            f"\\emph{{all}} {n_test} of them. Every missed edge ends at a feature no "
+            "latent recovered, so nothing here is a failure of the metrics; it is the "
+            "ceiling the SAE set for them. Precision is not thereby guaranteed: a "
+            "second training run from the same recipe learned more features and "
+            "produced two false positives, both from a single parent.")
         d["calibration_trained_toy_recovery"] = (
             r"\textbf{The same world, after a real training run.} The toy world's ground "
             "truth is a tree: a set of parent$\\rightarrow$child links between features "
@@ -2411,6 +2654,8 @@ TEX_ORDER = [
      "Every metric scored against a known tree.", "The instrument, calibrated"),
     ("MAIN 5", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
+    ("MAIN 5b", "calibration_toy_tree_recovered", True,
+     "That tree drawn, before and after the battery.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
      "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
     ("APP 1b", "a_slice_of_the_tangle", False,
@@ -2554,6 +2799,7 @@ CLAIMS = {
     "superparent_fanout_vs_firing": "the superparent gate reads fan-out; firing rate is handled per edge",
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
+    "calibration_toy_tree_recovered": "the tree drawn: which edges the battery returned, and which features were never learned",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
     "shared_input_moved_every_metric": "five of six metrics share an input and failed together — the battery's own failure mode",
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",

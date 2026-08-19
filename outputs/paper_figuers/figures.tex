@@ -138,15 +138,42 @@
     miss is an edge whose child the SAE never learned: it recovered 17 of 20 true features,
     which bounds recall from above. \emph{Right:} the lateral control, asking whether the
     Matryoshka nesting itself places a parent in an earlier block than its children. Beyond
-    edge recovery, the parent-conditioned sibling metric reports 0.96 for one true parent
+    edge recovery, the parent-conditioned sibling metric reports 0.74 for one true parent
     against 0.00 and 0.00 for the others. The grammar declares every parent's children
     mutually exclusive, and they co-fire 0 times in 200{,}000 draws; the latents that
-    recovered them co-fire 27,592 times, and one of the two never fires alone. The SAE
+    recovered them co-fire 17,912 times, and one of the two never fires alone. The SAE
     conflated two concepts the grammar keeps apart. This is a defect nobody injected, which
     the synthetic tier structurally cannot produce, and which the rest of the battery misses:
     both of that parent's edges are counted as recovered and precision stays $1.00$.
   }
   \label{fig:calibration-trained-toy-recovery}
+\end{figure}
+
+% [MAIN 5b]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_toy_tree_recovered}
+  \caption{%
+    \textbf{What an edge is, and what the battery did with it.} The toy world is a generative
+    process: each node is a feature that fires with the probability printed beneath it,
+    \emph{conditional on its parent firing}. Feature~1 at $p=0.2$ under a parent at $p=0.15$
+    therefore fires on $3\%$ of draws, not $20\%$. An \textbf{edge} is containment: a child
+    fires only on draws where its parent fires, so $P(\text{parent}\mid\text{child})=1$ while
+    $P(\text{child}\mid\text{parent})$ stays small, and it is that asymmetry the battery
+    measures. Hollow nodes (the root, and one hidden sibling per family) carry no feature
+    index, which is why the 23 links drawn on the left reduce to 9 scoreable edges.
+    \textbf{Left}: the known tree. \textbf{Right}: the same tree after a Matryoshka SAE
+    (\texttt{batch\_topk}, $k=2$) is trained on the world's activations, each latent is
+    matched to the true feature its decoder points at, and the battery is run on the learned
+    latents alone. It returned 6 of 9 true edges with 0 false positives. The reading that
+    matters is the decomposition: the SAE learned 17 of 20 features, leaving 6 edges with both
+    endpoints present, and the battery returned \emph{all} 6 of them. Every missed edge ends
+    at a feature no latent recovered, so nothing here is a failure of the metrics; it is the
+    ceiling the SAE set for them. Precision is not thereby guaranteed: a second training run
+    from the same recipe learned more features and produced two false positives, both from a
+    single parent.
+  }
+  \label{fig:calibration-toy-tree-recovered}
 \end{figure}
 
 % -------------------------------------------------------------------------
