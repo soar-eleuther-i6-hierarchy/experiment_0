@@ -30,7 +30,16 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(ROOT))
 
-CKPT = ROOT / "outputs" / "toy_trained"
+# Which checkpoint to grade. EXP0_TOY_CKPT points it at another one -- a re-run from
+# sae-training, or the notebook's reference-model SAE -- without editing this file, so a
+# comparison across checkpoints cannot silently become a comparison across script edits.
+CKPT = Path(os.environ.get("EXP0_TOY_CKPT", ROOT / "outputs" / "toy_trained"))
+
+# Where the result lands. Defaults beside the other reports; overridden when grading a
+# checkpoint that is not the canonical one, so a side experiment cannot overwrite the
+# number the paper's tables and figures read.
+OUT_JSON = Path(os.environ.get(
+    "EXP0_TOY_CALIB_OUT", ROOT / "outputs" / "trained_toy_calibration.json"))
 
 
 def _find_tree() -> Path:
@@ -216,11 +225,24 @@ def load_sae():
     return load_file(str(CKPT / "sae_weights.safetensors")), json.loads((CKPT / "cfg.json").read_text())
 
 
+def is_reference_sae(w) -> bool:
+    """Does this checkpoint come from the upstream reference model?
+
+    ``normalizer.running_avg`` is a parameter only the upstream MatryoshkaSAE
+    (noanabeshima/matryoshka-saes) carries; this repo's ``architectures/matryoshka.py``
+    has no normaliser. Keying on a tensor that must exist beats keying on a cfg field
+    a hand-written checkpoint might set either way.
+    """
+    return "normalizer.running_avg" in w
+
+
 def encode(w, x, cfg):
     """Replicate the trained SAE's activation. The toy SAE uses batch_topk with no
     saved inference threshold, so we apply the same batch-wide top-(k*n) selection
     the architecture uses at train time; relu alone would leave the codes near-zero.
     """
+    if is_reference_sae(w):
+        return encode_decode(w, x, cfg)[0]
     pre = (x - w["b_dec"]) @ w["W_enc"] + w["b_enc"]
     act = cfg.get("activation_function", "relu")
     if act == "relu":
@@ -238,6 +260,33 @@ def encode(w, x, cfg):
     out = torch.zeros_like(flat)
     out.scatter_(-1, top.indices, top.values)
     return out.reshape_as(post)
+
+
+def encode_decode(w, x, cfg):
+    """``(activations, residual)`` for either family of toy SAE.
+
+    Two forward passes reach this script and they differ in ways that silently move
+    every statistic downstream -- co-firing counts, ablation gains, the residual norm:
+
+    * this repo's ``architectures/matryoshka.py`` centres the input by ``b_dec`` and
+      returns the post-activation codes directly;
+    * the upstream reference model centres nothing, rescales its input by a
+      running-average normaliser, and reports activations multiplied by ``||W_dec||``
+      before undoing that rescaling (``get_acts`` in its ``sae.py``).
+
+    Reusing the first path on a checkpoint of the second kind loads without error and
+    reports numbers that look plausible, which is exactly why the split is explicit.
+    """
+    if not is_reference_sae(w):
+        acts = encode(w, x, cfg)
+        return acts, x - (acts @ w["W_dec"] + w["b_dec"])
+
+    # normalize(x) = x * sqrt(d) / running_avg; unnormalize divides by the same factor.
+    scale = (x.shape[-1] ** 0.5) / w["normalizer.running_avg"]
+    codes = torch.relu((x * scale) @ w["W_enc"] + w["b_enc"])
+    x_hat = (codes @ w["W_dec"] + w["b_dec"]) / scale
+    acts = (codes * w["W_dec"].norm(dim=1)) / scale
+    return acts, x - x_hat
 
 
 def match_latents(w, true_dirs):
@@ -268,8 +317,7 @@ def main():
     n = 200_000
     gt = sample(tree, n, F, gen)                       # [n, F] ground-truth firings
     x = gt @ true_dirs                                 # model input
-    acts = encode(w, x, cfg)                           # LEARNED latent activations
-    resid = x - (acts @ w["W_dec"] + w["b_dec"])
+    acts, resid = encode_decode(w, x, cfg)             # LEARNED latent activations
 
     fired = (acts > 1e-3).double()
     g = per_token_ablation_gain(acts.double(), resid.double(), w["W_dec"].double())
@@ -350,6 +398,11 @@ def main():
 
     result = {
         "n_features": F,
+        # The tree itself, not just its edges. Reporting has to be able to SHOW what an
+        # edge is -- reviewer feedback was that a recovery figure means nothing when the
+        # tree behind it is never displayed -- and reading it back out of sae-training
+        # would make a figure depend on a second repo being checked out beside this one.
+        "tree": json.loads(_find_tree().read_text()),
         "n_recovered_features": len(recovered),
         "recovered_features": sorted(recovered),
         "true_edges": sorted(truth),
@@ -363,7 +416,8 @@ def main():
         "missed_children": sorted({c for _, c in fn if c not in recovered}),
         "per_token": pt,
     }
-    out = ROOT / "outputs" / "trained_toy_calibration.json"
+    out = OUT_JSON
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2))
     print(f"wrote {out}")
     return result

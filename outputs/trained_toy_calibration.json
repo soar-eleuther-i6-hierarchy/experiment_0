@@ -1,5 +1,139 @@
 {
   "n_features": 20,
+  "tree": {
+    "active_prob": 1.0,
+    "is_read_out": false,
+    "children": [
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      }
+    ],
+    "mutually_exclusive_children": false
+  },
   "n_recovered_features": 17,
   "recovered_features": [
     0,
