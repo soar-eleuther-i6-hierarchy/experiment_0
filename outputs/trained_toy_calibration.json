@@ -197,19 +197,19 @@
         "pass": true,
         "parent_rank": 0,
         "child_rank": 1,
-        "parent_corr": 1.642456576400582,
-        "child_corr": 1.0814991960441531,
-        "s_res": 1.0814991960441531
+        "parent_corr": 1.3300772748038003,
+        "child_corr": 1.0436230109781945,
+        "s_res": 1.0436230109781945
       },
       {
         "edge": "0 -> 2",
         "testable": true,
         "pass": true,
-        "parent_rank": 0,
-        "child_rank": 1,
-        "parent_corr": 0.8700693266808663,
-        "child_corr": 0.7556484389352933,
-        "s_res": 0.7556484389352933
+        "parent_rank": 1,
+        "child_rank": 0,
+        "parent_corr": 0.6035908166887017,
+        "child_corr": 0.8687789954923344,
+        "s_res": 0.6035908166887017
       },
       {
         "edge": "0 -> 3",
@@ -220,11 +220,11 @@
         "edge": "4 -> 5",
         "testable": true,
         "pass": true,
-        "parent_rank": 0,
-        "child_rank": 1,
-        "parent_corr": 1.2935276455729083,
-        "child_corr": 1.2422755118210664,
-        "s_res": 1.2422755118210664
+        "parent_rank": 1,
+        "child_rank": 0,
+        "parent_corr": 1.0314846798943431,
+        "child_corr": 1.3708621002613903,
+        "s_res": 1.0314846798943431
       },
       {
         "edge": "4 -> 6",
@@ -235,11 +235,11 @@
         "edge": "4 -> 7",
         "testable": true,
         "pass": true,
-        "parent_rank": 1,
+        "parent_rank": 2,
         "child_rank": 0,
-        "parent_corr": 1.476606617908091,
-        "child_corr": 1.5104308461049705,
-        "s_res": 1.476606617908091
+        "parent_corr": 1.1724211089142078,
+        "child_corr": 1.6478904689303528,
+        "s_res": 1.1724211089142078
       },
       {
         "edge": "8 -> 9",
@@ -252,9 +252,9 @@
         "pass": true,
         "parent_rank": 1,
         "child_rank": 0,
-        "parent_corr": 1.6282624699780144,
-        "child_corr": 1.7490635961655014,
-        "s_res": 1.6282624699780144
+        "parent_corr": 1.286872987157344,
+        "child_corr": 1.6747855787223735,
+        "s_res": 1.286872987157344
       },
       {
         "edge": "8 -> 11",
@@ -264,7 +264,7 @@
     ],
     "parent_conditioned_redundancy": {
       "0": 0.0,
-      "4": 0.9582,
+      "4": 0.7436,
       "8": 0.0
     },
     "child_cofire": {
@@ -278,7 +278,7 @@
       },
       "4": {
         "ground_truth": 0,
-        "learned": 27592,
+        "learned": 17912,
         "children": [
           5,
           7

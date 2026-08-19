@@ -182,18 +182,25 @@ def n_features(tree) -> int:
 def sample(tree, n, F, gen) -> torch.Tensor:
     """[n, F] binary ground-truth activations, honouring the two structural rules:
     a child can fire only if its parent fires, and exclusive siblings never co-fire.
+
+    Inside an exclusive group ``active_prob`` is the multinomial PICK WEIGHT, and the
+    picked sibling then fires with certainty -- ``Tree.sample`` in the training repo
+    passes ``force_active=True`` there. Drawing a second Bernoulli on the picked child
+    applies its probability twice, which dropped the child firing rate by ~5x (0.006
+    instead of 0.030 on this tree) and graded the SAE on a distribution it was never
+    trained on. ``forced`` is what keeps this sampler on the training distribution.
     """
     out = torch.zeros(n, F)
 
-    def rec(node, mask):
-        fire = mask & (torch.rand(n, generator=gen) < node.p)
+    def rec(node, mask, forced=False):
+        fire = mask if forced else mask & (torch.rand(n, generator=gen) < node.p)
         if node.idx is not None:
             out[fire, node.idx] = 1.0
         if node.excl and node.children:
             probs = torch.tensor([c.p for c in node.children])
             pick = torch.multinomial(probs, n, replacement=True, generator=gen)
             for i, c in enumerate(node.children):
-                rec(c, fire & (pick == i))
+                rec(c, fire & (pick == i), forced=True)
         else:
             for c in node.children:
                 rec(c, fire)
