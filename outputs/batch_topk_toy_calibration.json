@@ -134,20 +134,17 @@
     ],
     "mutually_exclusive_children": false
   },
-  "n_recovered_features": 20,
+  "n_recovered_features": 17,
   "recovered_features": [
     0,
     1,
     2,
-    3,
     4,
     5,
-    6,
     7,
     8,
     9,
     10,
-    11,
     12,
     13,
     14,
@@ -205,16 +202,8 @@
       2
     ],
     [
-      0,
-      3
-    ],
-    [
       4,
       5
-    ],
-    [
-      4,
-      6
     ],
     [
       4,
@@ -227,169 +216,39 @@
     [
       8,
       10
-    ],
-    [
-      8,
-      11
     ]
   ],
-  "true_positives": 9,
+  "true_positives": 6,
   "false_positives": 0,
-  "false_negatives": 0,
+  "false_negatives": 3,
   "precision": 1.0,
-  "recall": 1.0,
+  "recall": 0.6666666666666666,
   "cfg": {
     "d_in": 20,
     "d_sae": 20,
-    "activation_function": "relu",
-    "k": null,
-    "architecture": "MatryoshkaSAE",
-    "notebook_config": {
-      "n_latents": 20,
-      "target_l0": 1.2338,
-      "n_prefixes": 10,
-      "d_model": 20,
-      "n_steps": 40000,
-      "lr": 0.03,
-      "permute_latents": true,
-      "sparsity_type": "l1",
-      "starting_sparsity_loss_scale": 0.2
-    },
-    "tree_dict": {
-      "active_prob": 1.0,
-      "is_read_out": false,
-      "children": [
-        {
-          "active_prob": 0.15,
-          "is_read_out": true,
-          "mutually_exclusive_children": true,
-          "children": [
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.4,
-              "is_read_out": false
-            }
-          ]
-        },
-        {
-          "active_prob": 0.15,
-          "is_read_out": true,
-          "mutually_exclusive_children": true,
-          "children": [
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.4,
-              "is_read_out": false
-            }
-          ]
-        },
-        {
-          "active_prob": 0.15,
-          "is_read_out": true,
-          "mutually_exclusive_children": true,
-          "children": [
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.2,
-              "is_read_out": true,
-              "mutually_exclusive_children": false,
-              "children": []
-            },
-            {
-              "active_prob": 0.4,
-              "is_read_out": false
-            }
-          ]
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        },
-        {
-          "active_prob": 0.05,
-          "is_read_out": true,
-          "mutually_exclusive_children": false
-        }
-      ],
-      "mutually_exclusive_children": false
-    },
-    "seed": 0
+    "lr": 0.03,
+    "l1_coefficient": 0.2,
+    "activation_function": "batch_topk",
+    "k": 2,
+    "threshold_beta": 0.999,
+    "threshold_start_step": 1000,
+    "device": "cuda:3",
+    "dtype": "float32",
+    "wandb_project": null,
+    "wandb_run_id": null,
+    "latent_sizes": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      20
+    ],
+    "architecture": "MatryoshkaSAE"
   },
   "edge_rows": [
     {
@@ -410,8 +269,8 @@
       "edge": "0 -> 3",
       "parent": 0,
       "child": 3,
-      "found": true,
-      "category": "recovered"
+      "found": false,
+      "category": "missed: child not learned"
     },
     {
       "edge": "4 -> 5",
@@ -424,8 +283,8 @@
       "edge": "4 -> 6",
       "parent": 4,
       "child": 6,
-      "found": true,
-      "category": "recovered"
+      "found": false,
+      "category": "missed: child not learned"
     },
     {
       "edge": "4 -> 7",
@@ -452,25 +311,29 @@
       "edge": "8 -> 11",
       "parent": 8,
       "child": 11,
-      "found": true,
-      "category": "recovered"
+      "found": false,
+      "category": "missed: child not learned"
     }
   ],
-  "missed_children": [],
+  "missed_children": [
+    3,
+    6,
+    11
+  ],
   "per_token": {
-    "n_testable": 9,
-    "n_pass": 9,
+    "n_testable": 5,
+    "n_pass": 5,
     "chance_pass_rate": 0.25,
     "edges": [
       {
         "edge": "0 -> 1",
         "testable": true,
         "pass": true,
-        "parent_rank": 1,
-        "child_rank": 0,
-        "parent_corr": 1.1377522584315811,
-        "child_corr": 1.195736915840967,
-        "s_res": 1.1377522584315811
+        "parent_rank": 0,
+        "child_rank": 1,
+        "parent_corr": 1.3300772748038003,
+        "child_corr": 1.0436230109781945,
+        "s_res": 1.0436230109781945
       },
       {
         "edge": "0 -> 2",
@@ -478,59 +341,44 @@
         "pass": true,
         "parent_rank": 1,
         "child_rank": 0,
-        "parent_corr": 1.2039040091512052,
-        "child_corr": 1.216938538890225,
-        "s_res": 1.2039040091512052
+        "parent_corr": 0.6035908166887017,
+        "child_corr": 0.8687789954923344,
+        "s_res": 0.6035908166887017
       },
       {
         "edge": "0 -> 3",
-        "testable": true,
-        "pass": true,
-        "parent_rank": 0,
-        "child_rank": 1,
-        "parent_corr": 1.211774617318043,
-        "child_corr": 1.203426483285574,
-        "s_res": 1.203426483285574
+        "testable": false,
+        "why": "endpoint never learned"
       },
       {
         "edge": "4 -> 5",
         "testable": true,
         "pass": true,
-        "parent_rank": 0,
-        "child_rank": 1,
-        "parent_corr": 1.3824228729871952,
-        "child_corr": 1.3268450773574703,
-        "s_res": 1.3268450773574703
+        "parent_rank": 1,
+        "child_rank": 0,
+        "parent_corr": 1.0314846798943431,
+        "child_corr": 1.3708621002613903,
+        "s_res": 1.0314846798943431
       },
       {
         "edge": "4 -> 6",
-        "testable": true,
-        "pass": true,
-        "parent_rank": 1,
-        "child_rank": 0,
-        "parent_corr": 1.2989371183956457,
-        "child_corr": 1.5923214183265726,
-        "s_res": 1.2989371183956457
+        "testable": false,
+        "why": "endpoint never learned"
       },
       {
         "edge": "4 -> 7",
         "testable": true,
         "pass": true,
-        "parent_rank": 0,
-        "child_rank": 1,
-        "parent_corr": 1.3061309563910397,
-        "child_corr": 1.2972252783624296,
-        "s_res": 1.2972252783624296
+        "parent_rank": 2,
+        "child_rank": 0,
+        "parent_corr": 1.1724211089142078,
+        "child_corr": 1.6478904689303528,
+        "s_res": 1.1724211089142078
       },
       {
         "edge": "8 -> 9",
-        "testable": true,
-        "pass": true,
-        "parent_rank": 1,
-        "child_rank": 0,
-        "parent_corr": 1.1326166800173585,
-        "child_corr": 1.246186298570069,
-        "s_res": 1.1326166800173585
+        "testable": false,
+        "why": "too few negatives for a probe"
       },
       {
         "edge": "8 -> 10",
@@ -538,24 +386,19 @@
         "pass": true,
         "parent_rank": 1,
         "child_rank": 0,
-        "parent_corr": 1.1486379492482202,
-        "child_corr": 1.3387904326946811,
-        "s_res": 1.1486379492482202
+        "parent_corr": 1.286872987157344,
+        "child_corr": 1.6747855787223735,
+        "s_res": 1.286872987157344
       },
       {
         "edge": "8 -> 11",
-        "testable": true,
-        "pass": true,
-        "parent_rank": 1,
-        "child_rank": 0,
-        "parent_corr": 1.1504507173084644,
-        "child_corr": 1.3394051674511427,
-        "s_res": 1.1504507173084644
+        "testable": false,
+        "why": "endpoint never learned"
       }
     ],
     "parent_conditioned_redundancy": {
       "0": 0.0,
-      "4": 0.0,
+      "4": 0.7436,
       "8": 0.0
     },
     "child_cofire": {
@@ -564,15 +407,13 @@
         "learned": 0,
         "children": [
           1,
-          3,
           2
         ]
       },
       "4": {
         "ground_truth": 0,
-        "learned": 0,
+        "learned": 17912,
         "children": [
-          6,
           5,
           7
         ]
@@ -582,8 +423,7 @@
         "learned": 0,
         "children": [
           10,
-          9,
-          11
+          9
         ]
       }
     },

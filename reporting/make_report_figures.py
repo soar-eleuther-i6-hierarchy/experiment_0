@@ -2330,6 +2330,9 @@ def _captions():
                         f"which is why only {len(tt['true_edges'])} of the links drawn "
                         "on the left are scoreable edges")
         arch = str(tt["cfg"].get("activation_function", "")).replace("_", r"\_")
+        # k is meaningless for a relu SAE and is stored as null there; printing
+        # "$k=None$" in a caption is worse than printing nothing.
+        k_clause = (f", $k={tt['cfg']['k']}$" if tt["cfg"].get("k") is not None else "")
         d["calibration_toy_tree_recovered"] = (
             r"\textbf{What an edge is, and what the battery did with it.} "
             "The toy world is a generative process: each node is a feature that fires "
@@ -2343,7 +2346,7 @@ def _captions():
             f"family) carry no feature index, {links_clause}. "
             "\\textbf{Left}: the known tree. "
             f"\\textbf{{Right}}: the same tree after a Matryoshka SAE "
-            f"(\\texttt{{{arch}}}, $k={tt['cfg'].get('k')}$) is "
+            f"(\\texttt{{{arch}}}{k_clause}) is "
             "trained on the world's activations, each latent is matched to the true "
             "feature its decoder points at, and the battery is run on the learned "
             f"latents alone. It returned {tt['true_positives']} of "

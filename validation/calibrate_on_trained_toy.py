@@ -30,10 +30,27 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
 sys.path.insert(0, str(ROOT))
 
-# Which checkpoint to grade. EXP0_TOY_CKPT points it at another one -- a re-run from
-# sae-training, or the notebook's reference-model SAE -- without editing this file, so a
+# Which checkpoint to grade. The default is the reference-model Matryoshka trained by
+# sae-training/scripts/train_saes_on_toy.ipynb (40k steps, seed 0): it is the only run
+# that learned all 20 features, so it grades the battery without the confound of edges
+# whose endpoints were never available to find.
+#
+# outputs/toy_trained/ holds one directory per checkpoint, each with its own cfg.json
+# and sae_weights.safetensors:
+#
+#   matryoshka_toy/    relu + adaptive L1, upstream reference implementation (default)
+#   batch_topk_toy/    batch_topk k=2, this repo's trainer -- an independent second run
+#                      on a different architecture, kept as a stability check
+#
+# Grade the second with:
+#   EXP0_TOY_CKPT=outputs/toy_trained/batch_topk_toy \
+#   EXP0_TOY_CALIB_OUT=outputs/batch_topk_toy_calibration.json \
+#   python3 validation/calibrate_on_trained_toy.py
+#
+# EXP0_TOY_CKPT points this at another checkpoint without editing the file, so a
 # comparison across checkpoints cannot silently become a comparison across script edits.
-CKPT = Path(os.environ.get("EXP0_TOY_CKPT", ROOT / "outputs" / "toy_trained"))
+CKPT = Path(os.environ.get(
+    "EXP0_TOY_CKPT", ROOT / "outputs" / "toy_trained" / "matryoshka_toy"))
 
 # Where the result lands. Defaults beside the other reports; overridden when grading a
 # checkpoint that is not the canonical one, so a side experiment cannot overwrite the
@@ -309,7 +326,14 @@ def main():
     print(f"  true edges: {sorted(truth)}")
 
     w, cfg = load_sae()
-    true_dirs = torch.eye(F)                          # identity embedding, per the paper
+    # Identity embedding, per the paper -- unless the checkpoint shipped the directions
+    # it was actually trained on. The notebook jitters feature norms by ~5%, so grading
+    # it against a clean identity would feed the SAE activations it never saw. Matching
+    # is unaffected (match_latents normalises), the co-firing statistics are not.
+    true_dirs = w["true_feats"] if "true_feats" in w else torch.eye(F)
+    if "true_feats" in w:
+        print(f"using the checkpoint's own feature directions "
+              f"(norms {true_dirs.norm(dim=1).min():.3f}-{true_dirs.norm(dim=1).max():.3f})")
     match = match_latents(w, true_dirs)
     recovered = {int(t) for t in match if t >= 0}
     print(f"\ntrained Matryoshka SAE: recovered {len(recovered)}/{F} true features")

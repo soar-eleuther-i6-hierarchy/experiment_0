@@ -1,0 +1,153 @@
+{
+  "d_in": 20,
+  "d_sae": 20,
+  "activation_function": "relu",
+  "k": null,
+  "architecture": "MatryoshkaSAE",
+  "notebook_config": {
+    "n_latents": 20,
+    "target_l0": 1.2338,
+    "n_prefixes": 10,
+    "d_model": 20,
+    "n_steps": 40000,
+    "lr": 0.03,
+    "permute_latents": true,
+    "sparsity_type": "l1",
+    "starting_sparsity_loss_scale": 0.2
+  },
+  "tree_dict": {
+    "active_prob": 1.0,
+    "is_read_out": false,
+    "children": [
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.15,
+        "is_read_out": true,
+        "mutually_exclusive_children": true,
+        "children": [
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.2,
+            "is_read_out": true,
+            "mutually_exclusive_children": false,
+            "children": []
+          },
+          {
+            "active_prob": 0.4,
+            "is_read_out": false
+          }
+        ]
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      },
+      {
+        "active_prob": 0.05,
+        "is_read_out": true,
+        "mutually_exclusive_children": false
+      }
+    ],
+    "mutually_exclusive_children": false
+  },
+  "seed": 0
+}
