@@ -88,6 +88,27 @@ NEUTRAL = "#C9CCD1"          # "removed" / reference — not a category
 GOOD = "#009E73"             # status: survived. Reserved, never a series colour.
 INK, MUTED = "#2B2B33", "#5A6B7B"
 
+
+def _text_on(bg):
+    """Ink or white on `bg`, whichever the eye can actually read.
+
+    The old rule compared HSV "value", which is max(r, g, b) and therefore stays
+    high on a saturated blue long after the swatch has gone dark: on the Blues
+    ramp it kept choosing dark ink from 70% to 90% of the scale, where dark ink
+    lands at a contrast ratio of 2.0 against the 4.5 a small label needs. This
+    compares WCAG relative luminance instead and picks the higher contrast, so
+    the label follows the swatch instead of a proxy for it.
+    """
+    from matplotlib import colors as mcolors
+
+    def _lum(c):
+        lin = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+               for v in mcolors.to_rgb(c)]
+        return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+    L = _lum(bg)
+    return "white" if 1.05 / (L + 0.05) > (L + 0.05) / (_lum(INK) + 0.05) else INK
+
 plt.rcParams.update({
     "font.size": 9.5,
     "axes.edgecolor": "#D8DBE0",
@@ -1089,87 +1110,152 @@ def sres_null_rate_vs_dictionary_size(observed):
 #     per pair.
 # ---------------------------------------------------------------------------
 def tangle_lives_in_top_block_pair(layers, pcfg):
-    from matplotlib import cm, colors as mcolors
+    """Every metric per block pair AND per layer, one panel per source.
+
+    The earlier version averaged each cell over a source's graded layers, which
+    a reader read as a single layer -- the rows are block pairs, and nothing in
+    the grid said the layer axis had been collapsed. Averaging also hid how thin
+    the deep rows are: a PCFG pair can hold one candidate edge at one layer and
+    still print a confident-looking percentage.
+
+    So no cell is a mean any more. Rows are (block pair, layer) and the two
+    sources sit in their own panels, which is also what lets the layer sets
+    differ -- gemma is graded at L1..L24 and the PCFG transformer has four
+    layers, so a shared row axis was never possible.
+    """
+    from matplotlib import cm
     COLS = [
         ("candidates", lambda p: p["n_candidate_edges"], "{:,.0f}"),
-        ("multi-parent %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
+        ("poly-parenting %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
         ("fan-out Gini", lambda p: p["degree"]["outdeg_gini"], "{:.2f}"),
         ("at chance %", lambda p: 100 * p["independence_null"]["frac_chance_level"], "{:.0f}"),
-        ("superparents", lambda p: p["n_superparents"], "{:.1f}"),
+        ("superparents", lambda p: p["n_superparents"], "{:.0f}"),
         ("sibling Jaccard", lambda p: p["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
         ("freq-driven %", lambda p: 100 * p["freq_control"]["frac_freq_driven"], "{:.1f}"),
     ]
 
-    def source_rows(reports):
-        pairs = sorted({q["pair"] for r in reports for q in r["pairs"]},
-                       key=lambda s: int(s.split("->")[0]))
-        out = []
-        def safe(fn, q):
-            # deep pairs carry nulls where a sub-metric had nothing to score;
-            # absence is NaN, never zero
-            try:
-                v = fn(q)
-                return float(v) if v is not None else np.nan
-            except (TypeError, KeyError):
-                return np.nan
+    def safe(fn, q):
+        # a sub-metric with nothing to score is absent, never zero
+        try:
+            v = fn(q)
+            return float(v) if v is not None else np.nan
+        except (TypeError, KeyError):
+            return np.nan
 
-        for pr in pairs:
-            row = []
-            for _, fn, _ in COLS:
-                # mean over the layers where this pair has candidates at all;
-                # a metric of an empty candidate set is not a small value, it
-                # is no value, and averaging it in would fake cleanliness
-                vals = [safe(fn, q) for r in reports
-                        for q in [_pair(r, pr)]
-                        if q and q["n_candidate_edges"] > 0]
-                vals = [v for v in vals if not np.isnan(v)]
-                row.append(float(np.mean(vals)) if vals else np.nan)
-            out.append((pr, row))
+    def source_grid(named_reports):
+        """[(block pair, layer label, row values, note)] for one source, pair-major.
+
+        `note` is None for a measured row. An adjacent block pair that the run
+        never computed still gets a row, carrying the reason instead of values:
+        a pair silently missing from a grid reads as a pair with nothing in it,
+        which is a different claim from one that was never attempted.
+        """
+        pairs = sorted({q["pair"] for _, r in named_reports for q in r["pairs"]},
+                       key=lambda t: int(t.split("->")[0]))
+        ranges = next((r.get("block_ranges") for _, r in named_reports
+                       if r.get("block_ranges")), None)
+        out = []
+        for k in range(len(ranges) - 1 if ranges else 0):
+            pr = f"{k}->{k + 1}"
+            name = f"B{k}→B{k + 1}"
+            if pr in pairs:
+                for lab, r in named_reports:
+                    q = _pair(r, pr)
+                    # a layer where the pair proposes nothing is shown as an
+                    # empty row rather than dropped: the absence is a measurement
+                    vals = [safe(fn, q) if q else np.nan for _, fn, _ in COLS]
+                    if q and q["n_candidate_edges"] == 0:
+                        vals = [0.0] + [np.nan] * (len(COLS) - 1)
+                    out.append((name, lab, vals, None))
+                continue
+            # never computed: say so, and say how big the object was
+            P = ranges[k][1] - ranges[k][0]
+            Cn = ranges[k + 1][1] - ranges[k + 1][0]
+            # no layer tick: the band spans the whole row and would collide
+            # with it, and "which layer" is not a question a skipped pair has
+            out.append((name, "", [np.nan] * len(COLS),
+                        f"not computed: {P:,}×{Cn:,} exceeds the memory budget"))
         return out
 
-    gem = source_rows([r for _, r in layers])
-    pcf = source_rows([r for _, r, *_ in [(n, rep) for n, rep in pcfg]]) if pcfg else []
-    rows = [(f"gemma B{p.replace('->', '→B')}", v) for p, v in gem] \
-         + [(f"PCFG B{p.replace('->', '→B')}", v) for p, v in pcf]
-    M = np.array([v for _, v in rows])
+    gem = source_grid([(f"L{L}", r) for L, r in layers])
+    pcf = source_grid([(n.replace("PCFG layer ", "L"), r) for n, r in pcfg]) if pcfg else []
+    panels = [(r"gemma-2-2b", gem)] + ([("PCFG", pcf)] if pcf else [])
 
-    # one hue, light -> dark, per COLUMN: the columns are different quantities
-    # on different scales, so colour can only rank within a column -- which is
-    # exactly the locational claim -- and the caption says so
-    norm = M.copy()
-    for j in range(M.shape[1]):
-        col = M[:, j]
-        top = np.nanmax(col)
-        norm[:, j] = col / top if top and not np.isnan(top) else 0
     cmap = cm.get_cmap("Blues")
+    n_max = max(len(g) for _, g in panels)
+    fig, axes = plt.subplots(
+        1, len(panels), figsize=(7.2 * len(panels), 0.26 * n_max + 1.9),
+        gridspec_kw={"width_ratios": [1] * len(panels), "wspace": 0.55})
+    axes = np.atleast_1d(axes)
 
-    fig, ax = plt.subplots(figsize=(9.8, 0.46 * len(rows) + 1.6))
-    for i in range(M.shape[0]):
-        for j in range(M.shape[1]):
-            v, nv = M[i, j], norm[i, j]
-            if np.isnan(v):
-                ax.add_patch(plt.Rectangle((j, i), 1, 1, color="#F2F3F5"))
-                ax.text(j + 0.5, i + 0.5, "—", ha="center", va="center",
-                        fontsize=8, color=MUTED)
+    for ax, (src, grid) in zip(axes, panels):
+        M = np.array([v for _, _, v, _ in grid], dtype=float)
+        notes = [n for _, _, _, n in grid]
+        # colour ranks WITHIN a column and within a panel: the columns are
+        # different quantities on different scales, and the two sources have
+        # different dictionaries, so cross-panel colour would compare nothing
+        norm = np.zeros_like(M)
+        with np.errstate(invalid="ignore"):
+            for j in range(M.shape[1]):
+                col = M[:, j]
+                top = np.nanmax(col) if not np.all(np.isnan(col)) else np.nan
+                if top and not np.isnan(top):
+                    norm[:, j] = col / top
+        for i in range(M.shape[0]):
+            # an uncomputed pair is one band carrying its reason, not a row of
+            # dashes: a dash means "measured, nothing there", which is the
+            # opposite of what a skipped pair licenses anyone to conclude
+            if notes[i]:
+                ax.add_patch(plt.Rectangle((0, i), M.shape[1], 1,
+                                           facecolor="#EDEEF1", hatch="///",
+                                           edgecolor="white", lw=0))
+                ax.text(M.shape[1] / 2, i + 0.5, notes[i], ha="center",
+                        va="center", fontsize=6.4, color=MUTED, style="italic")
                 continue
-            bg = cmap(0.08 + 0.84 * nv)
-            ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
-            lum = mcolors.rgb_to_hsv(bg[:3])[2]
-            ax.text(j + 0.5, i + 0.5, COLS[j][2].format(v), ha="center", va="center",
-                    fontsize=8, color="white" if lum < 0.55 else INK)
-    ax.set_xlim(0, M.shape[1])
-    ax.set_ylim(M.shape[0], 0)
-    ax.set_xticks(np.arange(M.shape[1]) + 0.5)
-    ax.set_xticklabels([c for c, *_ in COLS], fontsize=8.5)
-    ax.xaxis.set_ticks_position("top")
-    ax.set_yticks(np.arange(len(rows)) + 0.5)
-    ax.set_yticklabels([n for n, _ in rows], fontsize=8.5)
-    if gem and pcf:
-        ax.axhline(len(gem), color=INK, lw=1.4)
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    ax.tick_params(length=0)
-    return _finish(fig, ax, "tangle_lives_in_top_block_pair")
+            for j in range(M.shape[1]):
+                v, nv = M[i, j], norm[i, j]
+                if np.isnan(v):
+                    ax.add_patch(plt.Rectangle((j, i), 1, 1, color="#F2F3F5"))
+                    ax.text(j + 0.5, i + 0.5, "—", ha="center", va="center",
+                            fontsize=7, color=MUTED)
+                    continue
+                bg = cmap(0.06 + 0.86 * nv)
+                ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
+                ax.text(j + 0.5, i + 0.5, COLS[j][2].format(v), ha="center",
+                        va="center", fontsize=7, color=_text_on(bg))
+        ax.set_xlim(0, M.shape[1])
+        ax.set_ylim(M.shape[0], 0)
+        ax.set_xticks(np.arange(M.shape[1]) + 0.5)
+        ax.set_xticklabels([c for c, *_ in COLS], fontsize=7.6, rotation=32,
+                           ha="left")
+        ax.xaxis.set_ticks_position("top")
+        ax.set_yticks(np.arange(len(grid)) + 0.5)
+        ax.set_yticklabels([lay for _, lay, _, _ in grid], fontsize=7.4)
+        # the block pair is a GROUP over consecutive layer rows, so it is drawn
+        # once per group outside the layer ticks rather than repeated per row
+        bounds, prev = [], None
+        for i, (pr, _, _, _) in enumerate(grid):
+            if pr != prev:
+                bounds.append(i)
+                prev = pr
+        for k, b in enumerate(bounds):
+            stop = bounds[k + 1] if k + 1 < len(bounds) else len(grid)
+            ax.text(-1.55, (b + stop) / 2, grid[b][0], fontsize=8.2,
+                    fontweight="bold", color=INK, ha="left", va="center")
+            if b:
+                ax.axhline(b, color=INK, lw=1.0)
+        ax.text(0, -0.055 * (24 / max(len(grid), 1)) * len(grid) / 6 - 1.2, "",
+                transform=ax.transData)
+        ax.set_title(src, fontsize=10.5, fontweight="bold", color=INK,
+                     loc="left", pad=26)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.tick_params(length=0)
+        ax.set_xlabel("one row = one block pair at one layer;  colour ranks within "
+                      "a column of this panel;  — : nothing to score",
+                      fontsize=7, color=MUTED, labelpad=8, loc="left")
+
+    return _finish(fig, axes, "tangle_lives_in_top_block_pair")
 
 
 # ---------------------------------------------------------------------------
@@ -2136,14 +2222,26 @@ def _captions():
                 "a four-block transformer stands in for.")
     if lay:
         d["tangle_lives_in_top_block_pair"] = (
-            "Every metric per block pair, averaged over each source's graded layers; a cell is "
-            "the mean over the layers where that pair has candidate edges at all, and a dash "
-            "marks a pair with none. Colour ranks \\emph{within} a column (each column is its "
-            "own quantity and scale), so the reading is locational: the structural pathology "
-            "(multi-parenting, fan-out concentration, base-rate co-firing, superparents) "
-            "concentrates in the outermost pair B0$\\rightarrow$B1 on both sources, and the "
-            "deeper pairs are clean but hold candidate sets one to three orders of magnitude "
-            "smaller. The hierarchy is broken at its top boundary and quiet below it.")
+            "Every metric per block pair \\emph{and} per layer, one panel per SAE source; no "
+            "cell is an average, so a row is one block pair read at one layer and an empty "
+            "candidate set shows as a dash rather than as a number. Colour ranks "
+            "\\emph{within} a column of its own panel (the columns are different quantities on "
+            "different scales, and the two sources have different dictionaries), so the reading "
+            "is locational. Three things read off it. The structural pathology "
+            "(poly-parenting, base-rate co-firing, superparents) sits in the outermost pair "
+            "B0$\\rightarrow$B1 and it is not an average effect: poly-parenting is 89--100\\% at "
+            "\\emph{every} graded layer of gemma and 99--100\\% at three of the four PCFG layers. "
+            "The deeper pairs are not clean but differently broken, failing the frequency "
+            "control instead (up to 96.3\\% of B2$\\rightarrow$B3 edges at L1) with sibling "
+            "overlap several times higher. And fan-out Gini is the one column that localises "
+            "nothing, sitting at 0.81--0.97 on gemma and 0.95--1.00 on PCFG in every pair at "
+            "every layer, which makes it a property of the dictionary rather than of any "
+            "boundary within it. The PCFG deep pairs rest on one to three candidate edges, so "
+            "their quiet columns record emptiness, not health. gemma's fourth adjacent pair "
+            "B3$\\rightarrow$B4 carries a reason rather than a row of dashes: it was never "
+            "computed, because its co-firing matrix is 6{,}144$\\times$24{,}576 and does not "
+            "fit this run's memory budget. It is drawn because a pair silently absent from a "
+            "grid reads as a pair with nothing in it, which is a claim the run never tested.")
     if lay:
         d["battery_questions_gemma"] = (
             "Each metric of the battery was built to answer one plain-language question about "

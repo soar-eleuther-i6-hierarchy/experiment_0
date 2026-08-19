@@ -159,14 +159,24 @@
   \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
   \caption{%
     \textbf{The tangle lives in the coarsest block pair, on both sources.}
-    Every metric per block pair, averaged over each source's graded layers; a cell is the mean
-    over the layers where that pair has candidate edges at all, and a dash marks a pair with
-    none. Colour ranks \emph{within} a column (each column is its own quantity and scale), so
-    the reading is locational: the structural pathology (multi-parenting, fan-out
-    concentration, base-rate co-firing, superparents) concentrates in the outermost pair
-    B0$\rightarrow$B1 on both sources, and the deeper pairs are clean but hold candidate sets
-    one to three orders of magnitude smaller. The hierarchy is broken at its top boundary and
-    quiet below it.
+    Every metric per block pair \emph{and} per layer, one panel per SAE source; no cell is an
+    average, so a row is one block pair read at one layer and an empty candidate set shows as
+    a dash rather than as a number. Colour ranks \emph{within} a column of its own panel (the
+    columns are different quantities on different scales, and the two sources have different
+    dictionaries), so the reading is locational. Three things read off it. The structural
+    pathology (poly-parenting, base-rate co-firing, superparents) sits in the outermost pair
+    B0$\rightarrow$B1 and it is not an average effect: poly-parenting is 89--100\% at
+    \emph{every} graded layer of gemma and 99--100\% at three of the four PCFG layers. The
+    deeper pairs are not clean but differently broken, failing the frequency control instead
+    (up to 96.3\% of B2$\rightarrow$B3 edges at L1) with sibling overlap several times higher.
+    And fan-out Gini is the one column that localises nothing, sitting at 0.81--0.97 on gemma
+    and 0.95--1.00 on PCFG in every pair at every layer, which makes it a property of the
+    dictionary rather than of any boundary within it. The PCFG deep pairs rest on one to three
+    candidate edges, so their quiet columns record emptiness, not health. gemma's fourth
+    adjacent pair B3$\rightarrow$B4 carries a reason rather than a row of dashes: it was never
+    computed, because its co-firing matrix is 6{,}144$\times$24{,}576 and does not fit this
+    run's memory budget. It is drawn because a pair silently absent from a grid reads as a
+    pair with nothing in it, which is a claim the run never tested.
   }
   \label{fig:tangle-lives-in-top-block-pair}
 \end{figure}
