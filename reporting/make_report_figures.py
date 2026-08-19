@@ -2333,6 +2333,36 @@ def _captions():
         # k is meaningless for a relu SAE and is stored as null there; printing
         # "$k=None$" in a caption is worse than printing nothing.
         k_clause = (f", $k={tt['cfg']['k']}$" if tt["cfg"].get("k") is not None else "")
+
+        # These two sentences used to be fixed prose written for a checkpoint that
+        # missed three edges. Swapping the reference checkpoint left them asserting
+        # things the data no longer said -- "every missed edge..." with nothing missed,
+        # and a companion run described from memory. Both are now derived.
+        n_missed = len(tt["true_edges"]) - tt["true_positives"]
+        ceiling_clause = (
+            "Every missed edge ends at a feature no latent recovered, so nothing here "
+            "is a failure of the metrics; it is the ceiling the SAE set for them."
+            if n_missed else
+            "Nothing was dropped and nothing was invented: on this checkpoint the "
+            "battery reproduces the tree exactly.")
+
+        comp = _json(C.OUT_DIR / "batch_topk_toy_calibration.json")
+        if comp:
+            c_truth = {tuple(e) for e in comp["true_edges"]}
+            c_found = {tuple(e) for e in comp["found_edges"]}
+            c_rec = set(comp["recovered_features"])
+            c_test = {e for e in c_truth if e[0] in c_rec and e[1] in c_rec}
+            companion_clause = (
+                " One run is not a guarantee. An independent checkpoint on a different "
+                f"architecture (\\texttt{{batch\\_topk}}, $k={comp['cfg'].get('k')}$, "
+                f"this repo's trainer) learned {comp['n_recovered_features']} of "
+                f"{comp['n_features']} features and returned "
+                f"{comp['true_positives']} of {len(c_truth)} edges with "
+                f"{comp['false_positives']} false positives: it too returned every edge "
+                f"whose endpoints both existed ({len(c_found & c_test)} of {len(c_test)})."
+            )
+        else:
+            companion_clause = ""
         d["calibration_toy_tree_recovered"] = (
             r"\textbf{What an edge is, and what the battery did with it.} "
             "The toy world is a generative process: each node is a feature that fires "
@@ -2354,11 +2384,7 @@ def _captions():
             f"positives. The reading that matters is the decomposition: the SAE learned "
             f"{tt['n_recovered_features']} of {tt['n_features']} features, leaving "
             f"{n_test} edges with both endpoints present, and the battery returned "
-            f"\\emph{{all}} {n_test} of them. Every missed edge ends at a feature no "
-            "latent recovered, so nothing here is a failure of the metrics; it is the "
-            "ceiling the SAE set for them. Precision is not thereby guaranteed: a "
-            "second training run from the same recipe learned more features and "
-            "produced two false positives, both from a single parent.")
+            f"\\emph{{all}} {n_test} of them. {ceiling_clause}{companion_clause}")
         d["calibration_trained_toy_recovery"] = (
             r"\textbf{The same world, after a real training run.} The toy world's ground "
             "truth is a tree: a set of parent$\\rightarrow$child links between features "

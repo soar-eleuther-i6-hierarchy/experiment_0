@@ -167,11 +167,11 @@
     feature its decoder points at, and the battery is run on the learned latents alone. It
     returned 9 of 9 true edges with 0 false positives. The reading that matters is the
     decomposition: the SAE learned 20 of 20 features, leaving 9 edges with both endpoints
-    present, and the battery returned \emph{all} 9 of them. Every missed edge ends at a
-    feature no latent recovered, so nothing here is a failure of the metrics; it is the
-    ceiling the SAE set for them. Precision is not thereby guaranteed: a second training run
-    from the same recipe learned more features and produced two false positives, both from a
-    single parent.
+    present, and the battery returned \emph{all} 9 of them. Nothing was dropped and nothing
+    was invented: on this checkpoint the battery reproduces the tree exactly. One run is not a
+    guarantee. An independent checkpoint on a different architecture (\texttt{batch\_topk},
+    $k=2$, this repo's trainer) learned 17 of 20 features and returned 6 of 9 edges with 0
+    false positives: it too returned every edge whose endpoints both existed (6 of 6).
   }
   \label{fig:calibration-toy-tree-recovered}
 \end{figure}
