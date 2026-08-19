@@ -111,6 +111,28 @@ def apply_rescale_patch(sae: BatchTopkMatryoshkaSAE) -> None:
     sae.activation_fn = RescaledBatchTopK()
 
 
+@torch.no_grad()
+def sae_quality(sae, X: torch.Tensor) -> dict:
+    """Reconstruction quality of the SAE on an activation batch X [N, D].
+
+    final_mse: mean squared reconstruction error per element.
+    explained_variance: 1 - SS_res/SS_tot (R^2-style, over the whole batch).
+    dead_feature_frac: fraction of latents that never fire on X.
+    realized_l0: mean nonzero latents per token (should track k for an unfolded SAE).
+    """
+    sae.eval()
+    acts = sae.encode(X)
+    resid = X - sae.decode(acts)
+    ss_tot = (X - X.mean(dim=0)).pow(2).sum().clamp_min(1e-12)
+    fired = acts > 0
+    return {
+        "final_mse": resid.pow(2).mean().item(),
+        "explained_variance": (1.0 - resid.pow(2).sum() / ss_tot).item(),
+        "dead_feature_frac": (fired.sum(0) == 0).float().mean().item(),
+        "realized_l0": fired.float().sum(-1).mean().item(),
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="backbone", choices=sorted(spec.CONFIGS))
@@ -243,6 +265,16 @@ def main() -> None:
     out = Path(args.out) / checkpoint_dirname(
         args.config, args.variant, k, args.expansion, overrides, seed=args.seed)
     sae.save_model_final(out)
+
+    # Final reconstruction quality, measured on the reloaded (saved/deployment) model over an
+    # in-distribution batch. Persisted per seed so training quality is tracked without wandb.
+    from sae_lens import SAE as _SAE
+    eval_idx = torch.randint(0, h.shape[0], (min(131072, h.shape[0]),), device=h.device)
+    train_quality = sae_quality(_SAE.load_from_pretrained(str(out), device=device), h[eval_idx])
+    print(f"train quality: EV={train_quality['explained_variance'] * 100:.2f}%  "
+          f"dead={train_quality['dead_feature_frac'] * 100:.2f}%  "
+          f"realized_L0={train_quality['realized_l0']:.2f}  mse={train_quality['final_mse']:.5f}")
+
     meta = {
         "config": args.config,
         "variant": args.variant,
@@ -264,6 +296,7 @@ def main() -> None:
         "resolved_config": dataclasses.asdict(cfg),
         "topk_threshold": float(sae.topk_threshold),
         "W_dec_norm_mean": float(sae.W_dec.norm(dim=-1).mean()),
+        "train_quality": train_quality,
     }
     (out / "toy_meta.json").write_text(json.dumps(meta, indent=2))
     print(f"saved {out}\n{json.dumps(meta, indent=2)}")

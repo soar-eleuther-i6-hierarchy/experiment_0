@@ -41,7 +41,6 @@ toygen/*.html
 # to keep a scratch run from touching the published outputs/.
 tests_local/
 outputs_local/
-scoring/
 toygen/DESIGN.md
 
 # Transitional: a one-shot 5.x->6.x checkpoint-boundary probe, retired once training
