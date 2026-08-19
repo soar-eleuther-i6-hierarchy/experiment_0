@@ -2683,10 +2683,12 @@ TEX_ORDER = [
      "Every metric scored against a known tree.", "The instrument, calibrated"),
     ("MAIN 5", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
-    ("MAIN 5b", "calibration_toy_tree_recovered", True,
-     "That tree drawn, before and after the battery.", None),
+    # First in the appendix rather than beside MAIN 5: it is the same result drawn out
+    # for a reader who needs to see what an edge is, not a separate claim.
+    ("APP 0", "calibration_toy_tree_recovered", True,
+     "That tree drawn, before and after the battery.", "Appendix"),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
-     "The tangle lives in the coarsest block pair, on both sources.", "Appendix"),
+     "The tangle lives in the coarsest block pair, on both sources.", None),
     ("APP 1b", "a_slice_of_the_tangle", False,
      "A slice of the tangle: every child in it has many parents.", None),
     # the single-child twin of the slice: emitted so the manuscript can choose
