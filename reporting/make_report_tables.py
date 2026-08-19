@@ -210,9 +210,9 @@ def t_battery():
 # 3. The properties matrix. NOT derived -- see the module docstring.
 # ---------------------------------------------------------------------------
 # Column order matches the battery order of Section "Metrics"; the
-# Poly-parenting column is separate from Superparent on purpose. A superparent
+# Multi-parenting column is separate from Superparent on purpose. A superparent
 # is an out-degree pathology (one parent swallowing the block) and
-# poly-parenting an in-degree one (one child claimed by several parents); the
+# multi-parenting an in-degree one (one child claimed by several parents); the
 # second is what the results section actually measures, and only `outdegree`
 # reads in-degree at all.
 MATRIX = [
@@ -232,7 +232,7 @@ GLYPH = {"Y": r"$\bullet$", "P": r"$\circ$", "x": r"--"}
 
 def t_matrix():
     cols = ["Parent$\\rightarrow$child", "Absorption", "Splitting", "Superparent",
-            "Poly-parenting", "Siblings", "Frequency", "Topic"]
+            "Multi-parenting", "Siblings", "Frequency", "Topic"]
     rows = [[r[0]] + [GLYPH[c] for c in r[1:]] for r in MATRIX]
     return table(
         "matrix", r"\textbf{What each metric can separate.} A candidate pair can look like an "
@@ -241,7 +241,7 @@ def t_matrix():
         "(necessary but not sufficient, or only in some regimes), -- blind. \\textbf{These cells "
         "are read off each metric's construction and are not a measured accuracy}; every one is "
         r"exercised by a row of Table~\ref{tab:tier1}. \emph{Superparent} and "
-        r"\emph{poly-parenting} are separate columns because they are separate pathologies: the "
+        r"\emph{multi-parenting} are separate columns because they are separate pathologies: the "
         "first is an out-degree failure, one parent claiming most of the child block, and the "
         "second an in-degree failure, one child claimed by several parents. Only the out-degree "
         "metric reads in-degree at all; the two filters marked partial there earn it by removing "

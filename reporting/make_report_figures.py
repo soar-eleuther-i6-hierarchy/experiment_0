@@ -1126,7 +1126,7 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     from matplotlib import cm
     COLS = [
         ("candidates", lambda p: p["n_candidate_edges"], "{:,.0f}"),
-        ("poly-parenting %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
+        ("multi-parenting %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
         ("fan-out Gini", lambda p: p["degree"]["outdeg_gini"], "{:.2f}"),
         ("at chance %", lambda p: 100 * p["independence_null"]["frac_chance_level"], "{:.0f}"),
         ("superparents", lambda p: p["n_superparents"], "{:.0f}"),
@@ -2228,8 +2228,8 @@ def _captions():
             "\\emph{within} a column of its own panel (the columns are different quantities on "
             "different scales, and the two sources have different dictionaries), so the reading "
             "is locational. Three things read off it. The structural pathology "
-            "(poly-parenting, base-rate co-firing, superparents) sits in the outermost pair "
-            "B0$\\rightarrow$B1 and it is not an average effect: poly-parenting is 89--100\\% at "
+            "(multi-parenting, base-rate co-firing, superparents) sits in the outermost pair "
+            "B0$\\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\\% at "
             "\\emph{every} graded layer of gemma and 99--100\\% at three of the four PCFG layers. "
             "The deeper pairs are not clean but differently broken, failing the frequency "
             "control instead (up to 96.3\\% of B2$\\rightarrow$B3 edges at L1) with sibling "
