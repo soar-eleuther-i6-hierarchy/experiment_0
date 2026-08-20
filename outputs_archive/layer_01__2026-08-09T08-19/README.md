@@ -31,18 +31,12 @@ font:500 13px/1.15 system-ui,-apple-system,"Segoe UI",sans-serif;margin:0 0 14px
 .x0nav details.dens summary:hover{color:#C79BF2;}}
 </style><nav class="x0nav"><div class="row"><a class="brand" href="../../">SOAR I-6 · metrics</a><a class="" href="../../outputs/">Results</a><a class="" href="../../outputs/synthetic_toy_calibration.html">Synthetic Toy Calibration</a><a class="" href="../../outputs/trained_toy_calibration.html">Trained Toy Calibration</a><a class="" href="../../outputs/pcfg-matryoshka/">pcfg-matryoshka</a><a class="" href="../../outputs/gemma-2-2b/">gemma-2-2b</a><a class="gh" href="https://github.com/soar-eleuther-i6-hierarchy/metrics" title="Browse the code on GitHub"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>Code</a></div></nav>
 
-# Layer 01
+# Layer 01 — archived snapshot, reports not captured
 
-The 7 pages for layer 1 of `google/gemma-2-2b`'s residual stream, graded by the metrics in [`metrics/`](../../../metrics/README.md). Use the bar above to move between layers while staying on the same page.
+This archive holds **no reports**. The four `layer_01__2026-08-09T08-*` snapshots were taken while
+the run directory contained only its index page, so the seven pages the index used to advertise were
+never copied in and every link to them was dead. The list is removed rather than left pointing at
+files that do not exist here.
 
-| Page | What is on it |
-| ---- | ------------- |
-| [Dashboard](metrics_dashboard.html) | filter funnel and the per-block-pair distributions |
-| [Superparents](superparent_sankey.html) | one superparent's fan-out to its children |
-| [In-block](in_block_dashboard.html) | same-level edges and duplicates inside one block, where no block ordering fixes direction |
-| [Qualitative](qualitative_dashboard.html) | surviving vs rejected edges, with Neuronpedia labels |
-| [Metrics report](metrics_report.html) | the numbers behind the dashboard, as text |
-| [In-block report](in_block_edges.html) | the same-level edges and duplicates per block, as text |
-| [Qualitative report](qualitative_check.html) | survivor vs rejected edges read against the labels |
-
-Both reports are also in the repo as `.md`; the `.html` links above are what GitHub Pages renders. The `exp0_stats.pt` cache behind these numbers is not in git -- see [outputs/README.md](../../README.md#the-big-caches-are-not-in-git).
+The live layer-01 run, with all of its reports, is at
+[outputs/gemma-2-2b/layer_01/](../../outputs/gemma-2-2b/layer_01/).
