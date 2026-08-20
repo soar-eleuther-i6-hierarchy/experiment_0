@@ -45,6 +45,7 @@ with no caches. The two that need `exp0_stats.pt` or the token cache say so.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import re
 import sys
@@ -857,6 +858,253 @@ def calibration_toy_tree_recovered(tt):
     # manages its own margins (see `_finish`).
     fig.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.11, wspace=0.05)
     return _finish(fig, axes, "calibration_toy_tree_recovered", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 7b. Tier 1, drawn. The scorecard figure grades each metric on its own
+#     pathology; this one asks the question a per-metric table cannot: which
+#     GATE removed which injected structure, on the world where the answer was
+#     fixed before any metric saw it. It is the only calibration figure whose
+#     data is computed rather than read from a JSON, because the candidate mask
+#     and the per-gate outcomes are not in `synthetic_toy_calibration.json` --
+#     that file carries the scorecard rows and nothing else.
+# ---------------------------------------------------------------------------
+# Role -> (colour, label). Okabe-Ito throughout, unlike the notebook's screen
+# palette: #2E9E5B beside #D98A3D is indistinguishable under protanopia, and in
+# print no tooltip can rescue the encoding. Seven roles, seven separable hues.
+TOY_ROLE = {
+    "genuine":     ("#009E73", "genuine tree"),
+    "superparent": ("#9AA3AD", "superparent (A)"),
+    "freq":        ("#E69F00", "frequency coincidence (B)"),
+    "split":       ("#CC79A7", "feature split (C)"),
+    "absorbed":    ("#D55E00", "absorption (D)"),
+    "topic":       ("#0072B2", "shared topic (E)"),
+    "in_block":    ("#56B4E9", "within-block (F)"),
+    "unused":      ("#D9DDE1", "declared but never fires"),
+}
+
+
+@functools.lru_cache(maxsize=1)
+def synthetic_toy_gates():
+    """Run the Tier-1 world through the production battery and keep the outcomes.
+
+    Imported lazily and returned as None on failure, so a missing torch skips one
+    figure with a printed reason rather than taking the whole generator down.
+    Cached because the figure and its caption both read it and the world costs a
+    couple of seconds to build.
+    """
+    try:
+        import torch
+
+        from validation.calibrate_on_synthetic_toy import _run_metrics
+        from validation.synthetic_toy_world import (
+            ABSORB_CHILD, ABSORB_PARENT, FREQ_CHILD, FREQ_PARENT, GENUINE_TREE,
+            IN_BLOCK_CHILD, IN_BLOCK_DUP, IN_BLOCK_PARENT, SPLIT_CHILDREN,
+            SPLIT_PARENT, SUPERPARENT, TOPIC_CHILD, TOPIC_PARENT, build_world,
+        )
+    except Exception as exc:                      # noqa: BLE001 -- reported, not raised
+        print(f"[figures] synthetic toy unavailable: {type(exc).__name__}: {exc}")
+        return None
+
+    stats, labels = build_world(seed=0)
+    m = _run_metrics(stats)
+    edge_mask = m["edge_mask"]
+    recon_ok = m["recon"]["passes"] & edge_mask
+    survival = m["fcov"]["survival"]
+    freq_ok = recon_ok & (survival >= C.FREQ_SURVIVAL_MIN)
+
+    def as_set(mask):
+        return {(int(a), int(b)) for a, b in torch.nonzero(mask).tolist()}
+
+    # The world's TRUE tree is not `labels.genuine`: the split parent's three
+    # children are real refinements (the pathology is that they duplicate each
+    # other), and the absorbed edge is one the module's own docstring calls a real
+    # refinement, held out of `genuine` so metrics 2-9 are not graded on a
+    # candidate coverage never hands them.
+    tree = {p: list(kids) for p, kids in GENUINE_TREE.items()}
+    tree[SPLIT_PARENT] = list(SPLIT_CHILDREN)
+    tree[ABSORB_PARENT] = [ABSORB_CHILD]
+    true_edges = sorted((p, c) for p, kids in tree.items() for c in kids)
+
+    survivors = as_set(freq_ok)
+    roles_p = {p: ("genuine" if p in GENUINE_TREE else
+                   {SPLIT_PARENT: "split", FREQ_PARENT: "freq",
+                    SUPERPARENT: "superparent", ABSORB_PARENT: "absorbed",
+                    TOPIC_PARENT: "topic"}[p])
+               for p in range(stats["P"])}
+    genuine_children = {c for kids in GENUINE_TREE.values() for c in kids}
+    roles_c = {}
+    for c in range(stats["C"]):
+        if c in genuine_children:
+            roles_c[c] = "genuine"
+        elif c in SPLIT_CHILDREN:
+            roles_c[c] = "split"
+        elif c in (IN_BLOCK_PARENT, IN_BLOCK_CHILD, *IN_BLOCK_DUP):
+            roles_c[c] = "in_block"
+        else:
+            roles_c[c] = {FREQ_CHILD: "freq", ABSORB_CHILD: "absorbed",
+                          TOPIC_CHILD: "topic"}.get(c, "unused")
+
+    verdict = {}
+    for p in range(stats["P"]):
+        parts = []
+        kept = int(freq_ok[p].sum())
+        cut_recon = int((edge_mask & ~m["recon"]["passes"])[p].sum())
+        cut_freq = int((recon_ok & ~(survival >= C.FREQ_SURVIVAL_MIN))[p].sum())
+        if kept:
+            parts.append(f"{kept} kept")
+        if cut_recon:
+            parts.append(f"{cut_recon} cut: reconstruction")
+        if cut_freq:
+            parts.append(f"{cut_freq} cut: frequency control")
+        if not int(edge_mask[p].sum()) and tree.get(p):
+            parts.append("never proposed: coverage")
+        if p == SPLIT_PARENT:
+            parts.append("parent flagged: redundancy")
+        if p == TOPIC_PARENT and kept:
+            parts.append("no gate tests this")
+        verdict[p] = ", ".join(parts) or "no candidates"
+
+    return {
+        "P": int(stats["P"]), "C": int(stats["C"]),
+        "true_edges": true_edges, "candidates": as_set(edge_mask),
+        "survivors": survivors,
+        "recovered": sorted(survivors & set(true_edges)),
+        "missed": sorted(set(true_edges) - survivors),
+        "spurious": sorted(survivors - set(true_edges)),
+        "roles_p": roles_p, "roles_c": roles_c, "verdict": verdict,
+        "genuine": sorted(labels.genuine),
+        "split_edges": [(SPLIT_PARENT, c) for c in SPLIT_CHILDREN],
+        "in_block": [((IN_BLOCK_PARENT, IN_BLOCK_CHILD), "-"),
+                     (tuple(IN_BLOCK_DUP), ":")],
+        "keys": {"superparent": SUPERPARENT, "split": SPLIT_PARENT,
+                 "freq": FREQ_PARENT, "absorbed": ABSORB_PARENT,
+                 "topic": TOPIC_PARENT},
+        "superparent_cut": sum(1 for p, _ in as_set(edge_mask) if p == SUPERPARENT),
+    }
+
+
+def calibration_toy_world_before_after(w):
+    """The declared world, and the same world after the three composed gates.
+
+    Same colours in both panels, because the question is not "how many edges came
+    back" -- `calibration_toy_tree_recovered` answers that for Tier 2 -- but which
+    injected structure ran into which gate. An outcome palette (recovered / missed /
+    false) cannot say that: it renders thirty superparent pairs and one frequency
+    coincidence in the same colour, and their whole difference is that one died at
+    reconstruction and the other survived it.
+    """
+    P, Cn = w["P"], w["C"]
+    py = {p: -(p + 0.5) * Cn / P for p in range(P)}
+    cy = {c: -(c + 0.5) for c in range(Cn)}
+    PX, CX = 0.0, 1.0
+    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6))}
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.6, 9.0))
+
+    for ax, is_truth in zip(axes, (True, False)):
+        def link(p, c, role, lw=1.6, alive=True):
+            colour = TOY_ROLE[role][0]
+            # Removed edges keep colour and dash -- the identity of the structure is
+            # the point -- so only alpha carries the outcome. It is per role because
+            # ink accumulates: thirty overlapping hairlines at the alpha that makes a
+            # single amber line readable print as strong a wash as the left panel.
+            ghost = 0.14 if role == "superparent" else 0.34
+            ax.plot([PX, CX], [py[p], cy[c]], lw=lw,
+                    color=colour, ls=dash_of.get(role, "-"),
+                    alpha=1.0 if (is_truth or alive) else ghost, zorder=1)
+
+        for c in range(Cn):                                   # (A) superparent
+            if is_truth or (w["keys"]["superparent"], c) in w["candidates"]:
+                link(w["keys"]["superparent"], c, "superparent", lw=0.7,
+                     alive=(w["keys"]["superparent"], c) in w["survivors"])
+        for (p, c) in w["genuine"]:
+            link(p, c, "genuine", lw=1.7, alive=(p, c) in w["survivors"])
+        for (p, c) in w["split_edges"]:
+            link(p, c, "split", lw=1.7, alive=(p, c) in w["survivors"])
+        for role in ("freq", "absorbed", "topic"):
+            p = w["keys"][role]
+            c = next(x for x in range(Cn) if w["roles_c"][x] == role)
+            link(p, c, role, lw=1.7, alive=(p, c) in w["survivors"])
+
+        # (F) is structure inside the child block: no parent-block edge can carry
+        # it, and this composition does not score it. Drawn so it is not silently
+        # absent from a figure that claims to show the whole world.
+        for (a, b), ls in w["in_block"]:
+            # A quadratic Bezier bowed out of the column: a straight line between two
+            # nodes in the same column runs through every node between them and reads
+            # as a chain of edges that does not exist.
+            y0, y1 = cy[a], cy[b]
+            ctrl = (CX + 0.42, (y0 + y1) / 2)
+            t = np.linspace(0, 1, 40)
+            ax.plot((1 - t) ** 2 * CX + 2 * (1 - t) * t * ctrl[0] + t ** 2 * CX,
+                    (1 - t) ** 2 * y0 + 2 * (1 - t) * t * ctrl[1] + t ** 2 * y1,
+                    ls=ls, lw=1.2, color=TOY_ROLE["in_block"][0],
+                    alpha=1.0 if is_truth else 0.5, zorder=1)
+
+        live_p = {p for p, _ in w["survivors"]}
+        live_c = {c for _, c in w["survivors"]}
+        for xs, ys, roles, live in ((PX, py, w["roles_p"], live_p),
+                                    (CX, cy, w["roles_c"], live_c)):
+            for i, y in ys.items():
+                colour = TOY_ROLE[roles[i]][0]
+                on = is_truth or i in live
+                ax.scatter([xs], [y], s=118, zorder=3,
+                           facecolor=colour if on else "white",
+                           edgecolor=colour, linewidths=1.3)
+                ax.text(xs, y, str(i), ha="center", va="center", fontsize=5.4,
+                        zorder=4, color=_text_on(colour) if on else MUTED)
+
+        if not is_truth:                       # which test each parent went through
+            for p in range(P):
+                ax.text(PX - 0.06, py[p], w["verdict"][p], ha="right", va="center",
+                        fontsize=5.6, color=TOY_ROLE[w["roles_p"][p]][0], zorder=4)
+
+        for x, lab in ((PX, "parent block"), (CX, "child block")):
+            ax.text(x, 0.9, lab, ha="center", va="bottom", fontsize=7.5, color=MUTED)
+        # One x-range for both panels: the verdict column needs room on the left,
+        # and giving it to only one panel would offset every node between before
+        # and after -- the one comparison this figure exists to make easy.
+        ax.set_xlim(-1.25, 1.35)
+        ax.set_ylim(-Cn - 0.6, 2.2)
+        ax.axis("off")
+
+    axes[0].set_title("declared — the six structures as injected",
+                      fontsize=10, loc="left", color=INK)
+    axes[1].set_title(f"after the battery — {len(w['recovered'])}/{len(w['true_edges'])} "
+                      f"true edges kept, "
+                      f"{len(w['candidates']) - len(w['survivors'])} candidates cut",
+                      fontsize=10, loc="left", color=INK)
+
+    # The key, in three named groups rather than one flat row: healthy, injected,
+    # and the ones nothing here catches. A flat legend orders itself by whichever
+    # edge was drawn first, and that ordering is the reading this figure is for.
+    # Four groups, not three. "nothing catches these" is true of the two negative
+    # controls and false of the within-block pair: no PARENT->CHILD edge can express
+    # structure inside one block, but `in_block_edges.directed_coverage` scores it
+    # and passes. Filing (F) under the blind spots reported a working metric as a
+    # gap in the battery.
+    groups = [
+        ("the genuine tree", ["genuine"], 0.02),
+        ("injected pathologies — a metric catches each",
+         ["superparent", "freq", "split"], 0.17),
+        ("blind spots — nothing catches these", ["absorbed", "topic"], 0.47),
+        ("scored by a different metric", ["in_block"], 0.72),
+    ]
+    for title, roles, x in groups:
+        handles = [Line2D([], [], color=TOY_ROLE[r][0], lw=2.0,
+                          ls=dash_of.get(r, "-"), marker="s", markersize=6.5,
+                          label=TOY_ROLE[r][1]) for r in roles]
+        leg = fig.legend(handles=handles, title=title, loc="upper left",
+                         bbox_to_anchor=(x, 0.105), frameon=False, fontsize=8,
+                         handlelength=2.4, labelspacing=0.35)
+        leg.get_title().set_fontsize(8.5)
+        leg.get_title().set_color(INK)
+        leg._legend_box.align = "left"
+        fig.add_artist(leg)
+
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.13, wspace=0.04)
+    return _finish(fig, axes, "calibration_toy_world_before_after", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -2016,6 +2264,14 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         else "needs outputs/synthetic_toy_calibration.json (validation.calibrate_on_synthetic_toy)",
         lambda: calibration_synthetic_toy_scorecard(toy))
 
+    # Computed, not read: the candidate mask and the per-gate outcomes are not in
+    # synthetic_toy_calibration.json, which carries the scorecard rows alone.
+    world = synthetic_toy_gates()
+    run("calibration_toy_world_before_after", bool(world),
+        "computed from validation/synthetic_toy_world.py (no cache needed)" if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_toy_world_before_after(world))
+
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     align = _json(C.OUT_DIR / "block_tree_alignment.json")
     run("calibration_trained_toy_recovery", bool(tt),
@@ -2373,6 +2629,40 @@ def _captions():
             "and a code change that made them catchable would fail them visibly. Passing "
             "this tier is what licenses running the same battery on real models, where no "
             "ground truth exists.")
+
+    # DRAFT CAPTION -- the prose is a draft and is meant to be rewritten by hand
+    # before submission; only the numbers in it are load-bearing. Every one of them
+    # is computed from the world the figure draws, per this module's rule that a
+    # caption cannot outlive its data.
+    world = synthetic_toy_gates()
+    if world:
+        n_sp = world["superparent_cut"]
+        miss = world["missed"][0] if world["missed"] else None
+        spur = world["spurious"][0] if world["spurious"] else None
+        d["calibration_toy_world_before_after"] = (
+            r"\textbf{Which gate caught which injected pathology.} "
+            "The same hand-built world as the previous figure, drawn twice in one "
+            r"palette: one colour per injected structure, in both panels. "
+            r"\emph{Left:} the world as declared --- "
+            f"{len(world['true_edges'])} true parent--child edges over "
+            f"{world['P'] + world['C']} features, plus the six structures planted to be "
+            r"caught or to demonstrate that nothing catches them. \emph{Right:} the same "
+            "world after the three composed gates (reverse coverage, the reconstruction "
+            "condition, the token-frequency control), where a faded edge is one the gates "
+            "removed and the note beside each parent names the gate that removed it. "
+            f"Coverage proposes {len(world['candidates'])} candidates; "
+            f"{len(world['candidates']) - len(world['survivors'])} are cut, and "
+            f"{len(world['recovered'])} of the {len(world['true_edges'])} true edges "
+            f"survive. The division of labour is the reading: all {n_sp} super-parent "
+            "pairs die at the reconstruction condition rather than at coverage, the "
+            "frequency-coincidence pair passes coverage and reconstruction and dies only "
+            "at the frequency control, and the feature-split edges are kept --- correctly, "
+            "since they are real refinements --- with the split reported against the "
+            "parent by a different metric. The two negative controls are the two colours "
+            "that come through unchanged: "
+            + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
+            + (f"and the shared-topic pair {spur} passes every gate here."
+               if spur else ""))
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     if tt:
@@ -2791,6 +3081,8 @@ TEX_ORDER = [
      "The same tree, after a real training run.", None),
     ("APP 0c", "calibration_toy_tree_recovered", True,
      "That tree drawn, before and after the battery.", None),
+    ("APP 0d", "calibration_toy_world_before_after", True,
+     "Which gate caught which injected pathology.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
      "The tangle lives in the coarsest block pair, on both sources.",
      "Appendix: what the battery finds"),
@@ -2934,6 +3226,7 @@ CLAIMS = {
     "multiparenting_by_layer": "the graph is not a tree — the one claim BOS exclusion left standing",
     "superparent_fanout_vs_firing": "the superparent gate reads fan-out; firing rate is handled per edge",
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
+    "calibration_toy_world_before_after": "which gate removed which injected pathology, on the world where the answer was fixed first",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "calibration_toy_tree_recovered": "the tree drawn: which edges the battery returned, and which features were never learned",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
