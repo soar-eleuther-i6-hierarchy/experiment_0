@@ -31,7 +31,8 @@ ROOT = HERE.parent
 sys.path.insert(0, str(ROOT))
 
 # Which checkpoint to grade. The default is the reference-model Matryoshka trained by
-# sae-training/scripts/train_saes_on_toy.ipynb (40k steps, seed 0): it is the only run
+# validation/notebooks/train_and_calibrate_on_toy.ipynb (40k steps, seed 0),
+# which lived in sae-training/scripts/ when this run was made: it is the only run
 # that learned all 20 features, so it grades the battery without the confound of edges
 # whose endpoints were never available to find.
 #

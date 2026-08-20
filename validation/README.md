@@ -77,6 +77,21 @@ PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py  # Tier 2, needs o
 python3 -m validation.qualitative_check                        # Tier 4, needs exp0_stats.pt + labels
 ```
 
+## The notebooks
+
+[`notebooks/`](notebooks/) holds the two runnable walk-throughs. Neither writes into `outputs/`.
+
+| Notebook | Tier | What it adds over the script beside it |
+| -------- | ---- | ------------------------------------- |
+| [`calibrate_on_synthetic_toy.ipynb`](notebooks/calibrate_on_synthetic_toy.ipynb) | 1 | the world and the scorecard figure by figure — what is in the world, which 55 candidates coverage proposes out of it, what each gate removes, the tree before and after, and the two negative controls — by calling `build_world`, `_run_metrics` and `_score` rather than reimplementing them. Plus a **seed sweep**: 14/14 rows over seeds 0–7, which is the sweep this page once claimed existed |
+| [`train_and_calibrate_on_toy.ipynb`](notebooks/train_and_calibrate_on_toy.ipynb) | 2 | trains the toy checkpoint itself — Matryoshka **and** a vanilla SAE differing in two config entries — then scores feature recovery and edge recovery on both. The vanilla contrast is the part `calibrate_on_trained_toy.py` does not have; that script grades one existing checkpoint |
+
+The Tier-2 notebook lived in `sae-training/scripts/` until 20 August. It trains against the
+`sae-training` checkout (found beside `metrics/`, or via `EXP0_SAE_TRAINING` — the same variable
+`calibrate_on_trained_toy.py` reads) and writes its checkpoints there, **not** into
+`outputs/toy_trained/`, so re-running it cannot overwrite the checkpoint the paper's Tier-2 numbers
+are read from.
+
 **The two tiers do not use the same toy.** This page said they did — "both tiers use the same toy,
 Bussmann's tree" — and that is wrong, as its own table two rows above shows. Tier 1's world is built
 by [`synthetic_toy_world.py`](synthetic_toy_world.py): a 5-parent tree over **42 features**
