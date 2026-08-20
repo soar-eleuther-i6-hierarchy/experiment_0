@@ -290,7 +290,7 @@
     An edge is kept when $P(\mathrm{parent} \mid \mathrm{child}) \geq \tau = 0.5$. Under
     independence that probability is simply the parent's firing rate $\rho$, so the enrichment
     a parent needs over chance is $\tau/\rho$, the grey curve. All 34 parents flagged as
-    superparents, across five layers and every block pair, lie on it. 26 of them fire on at
+    superparents, across six layers and every block pair, lie on it. 26 of them fire on at
     least 50\% of tokens and therefore clear the bar at $\leq 1\times$ enrichment: on base
     rate alone, with no association whatsoever between parent and child. A parent firing on
     1\% of tokens would need 50$\times$ enrichment for the same edge. This is the mechanism
@@ -309,7 +309,7 @@
   \includegraphics[width=\linewidth]{shared_input_moved_every_metric}
   \caption{%
     \textbf{Six metrics designed as independent detectors failed together.}
-    Change in each metric, averaged over the five layers, when a single contaminating token
+    Change in each metric, averaged over the six layers, when a single contaminating token
     position is excluded from the corpus. The beginning-of-sequence token is an attention sink
     on which effectively every feature fires; with 400 documents it handed every pair in the
     dictionary 400 joint firings against a support guard set at 30, so the guard admitted
@@ -457,8 +457,8 @@
   \includegraphics[width=\linewidth]{depth_profile_across_layers}
   \caption{%
     \textbf{No measure is monotonic in depth.}
-    Four quantities for block pair B0$\rightarrow$B1 across the five graded layers, each on
-    its own axis because they are not commensurable. The project previously reported that
+    Four quantities for block pair B0$\rightarrow$B1 across the six graded layers, each on its
+    own axis because they are not commensurable. The project previously reported that
     hierarchy quality degrades with depth. That claim came from caches in which the
     beginning-of-sequence position was counted, and it does not survive regeneration: the
     distinct-parent counts among survivors read 5, 7, 6, 7, 6. The figure is included because

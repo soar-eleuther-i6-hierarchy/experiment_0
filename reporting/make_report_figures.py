@@ -174,6 +174,17 @@ def _title(ax_or_fig, head: str, sub: str = "", width: int = 96):
     return txt.count("\n") + 1
 
 
+def _spell(n: int) -> str:
+    """Small counts as words, the way the prose around them is written.
+
+    These counts are derived rather than typed, so they have to render as English or
+    a caption reads "the 6 graded layers" in the middle of a sentence.
+    """
+    words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+             "nine", "ten", "eleven", "twelve"]
+    return words[n] if 0 <= n < len(words) else f"{n:,}"
+
+
 def _label_extremes(ax, xs, vals, fmt, color):
     """Label the first, last, min and max point only.
 
@@ -2255,12 +2266,13 @@ def _captions():
             "observation the bottleneck-hijacking hypothesis is built on (that the "
             "over-connected parents mostly track high-frequency tokens such as spaces, "
             r"punctuation and \emph{the}) and does not support it: the frequency control "
-            r"exonerates 98--99\% of edges while the base-rate null rejects most of them.")
+            rf"exonerates {100 - max(fq):.0f}--{100 - min(fq):.0f}\% of edges while the "
+            "base-rate null rejects most of them.")
         d["superparent_fanout_vs_firing"] = (
             r"An edge is kept when $P(\mathrm{parent} \mid \mathrm{child}) \geq \tau = "
             rf"{C.EDGE_TAU}$. Under independence that probability is simply the parent's firing "
             r"rate $\rho$, so the enrichment a parent needs over chance is $\tau/\rho$, the grey "
-            rf"curve. All {len(fires)} parents flagged as superparents, across five layers and "
+            rf"curve. All {len(fires)} parents flagged as superparents, across {_spell(len(lay))} layers and "
             rf"every block pair, lie on it. {free} of them fire on at least "
             rf"{100 * C.EDGE_TAU:.0f}\% of tokens and therefore clear the bar at "
             r"$\leq 1\times$ enrichment: on base rate alone, with no association whatsoever "
@@ -2268,7 +2280,8 @@ def _captions():
             rf"{C.EDGE_TAU / 0.01:.0f}$\times$ enrichment for the same edge. This is the "
             "mechanism behind the previous figure.")
         d["depth_profile_across_layers"] = (
-            r"Four quantities for block pair B0$\rightarrow$B1 across the five graded layers, "
+            rf"Four quantities for block pair B0$\rightarrow$B1 across the {_spell(len(lay))} graded "
+            "layers, "
             "each on its own axis because they are not commensurable. The project previously "
             "reported that hierarchy quality degrades with depth. That claim came from caches in "
             "which the beginning-of-sequence position was counted, and it does not survive "
@@ -2286,11 +2299,12 @@ def _captions():
     arch = sorted((C.HERE / "outputs_archive").glob("layer_*__v1__*/metrics_report.json"))
     if arch and lay:
         d["shared_input_moved_every_metric"] = (
-            "Change in each metric, averaged over the five layers, when a single contaminating "
+            f"Change in each metric, averaged over the {_spell(len(lay))} layers, when a single contaminating "
             "token position is excluded from the corpus. The beginning-of-sequence token is an "
-            "attention sink on which effectively every feature fires; with 400 documents it "
-            "handed every pair in the dictionary 400 joint firings against a support guard set "
-            "at 30, so the guard admitted pairs that never co-occur anywhere else. Five of these "
+            "attention sink on which effectively every feature fires; with "
+            f"{C.N_DOCS} documents it handed every pair in the dictionary {C.N_DOCS} joint "
+            f"firings against a support guard set at {C.MIN_JOINT}, so the guard admitted pairs "
+            "that never co-occur anywhere else. Five of these "
             "six quantities are computed from that one co-firing matrix, and all five moved. The "
             "sixth, multi-parenting, is a ratio over children that already have a parent, does "
             "not read the matrix, and did not move. Agreement among detectors that share an "
