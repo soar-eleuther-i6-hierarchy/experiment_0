@@ -164,6 +164,8 @@ SRES_MAX_CHILDREN_PER_PAIR = 4000   # cost guard; log when hit
 SRES_NEG_RATIO = 4            # negatives sampled per positive
 SRES_MAX_PROBE_TOKENS = 20000 # cap on (pos + neg) tokens per probe
 SRES_MIN_NEG = 10             # fewer negatives than this -> child untestable (no probe)
+SRES_STEPS = 300              # probe Adam steps (train_probe default; here for scoring<->gemma symmetry)
+SRES_LR = 0.05                # probe Adam lr (train_probe default)
 
 # --- Metric 3: sibling redundancy ------------------------------------------
 # Mean pairwise child-child co-activation (Jaccard) above this = feature

@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Sequence
 
 import torch
 
-from scoring.core.detectors import DetectorInputs, compute_all
+from scoring.core.detectors import DetectorInputs, compute_all, s_res_probe
 from scoring.core.grid import auroc_matrix
 from scoring.core.registry import CONSTANTS as _REGISTRY_CONSTANTS
 
@@ -145,17 +145,21 @@ def _excluded_detectors(routing: dict[str, str] | None) -> set[str]:
 
 
 def clean_detectors_merged(bundle: "WorldBundle", feats: list[int], realized_l0: float,
-                           routing: dict[str, str], constants: dict | None = None
-                           ) -> dict[str, torch.Tensor]:
+                           routing: dict[str, str], constants: dict | None = None,
+                           s_res_ceiling: str = "cosine") -> dict[str, torch.Tensor]:
     """Per-detector clean ceilings: run `compute_all` on BOTH the alpha-encoder and the true-A
     firing regimes, then assemble one `{name: matrix}` picking each detector from its routed regime.
 
     Both regimes are given FULL `DetectorInputs` (same unit/raw decoders = g, h, b_dec=0, tokens) —
     only the activations differ: the alpha-encoder's honest gated projections vs the oracle
-    coefficients A. `agnostic` detectors (s_res) read only W_unit, identical either way, so they are
-    taken from the alpha bundle. The recon_2a residual under true-A is noise + UNRECOVERED-feature
-    energy (A@g omits features outside `feats`), i.e. the honest generative ceiling — NOT distance
-    from a perfect reconstruction; its survival-Δ must be read that way.
+    coefficients A. The recon_2a residual under true-A is noise + UNRECOVERED-feature energy (A@g omits
+    features outside `feats`), i.e. the honest generative ceiling — read its survival-Δ that way.
+
+    `s_res_ceiling` selects the s_res ceiling: "cosine" (default) = the cheap analytic geometry oracle
+    (used by unit tests + the degeneracy check); "probe" = a LIKE-FOR-LIKE probe trained on the
+    alpha-encoder ORACLE firing over the true-g decoders, so the s_res survival-Δ compares probe-vs-probe
+    (isolating training degradation) instead of cosine-vs-probe (a cross-metric gap). "probe" trains R
+    probes on the ceiling — the real pipeline (run_retrieval) opts in; keep it off elsewhere.
     """
     constants = _REGISTRY_CONSTANTS if constants is None else constants
     idx = torch.tensor(feats, dtype=torch.long)
@@ -175,20 +179,25 @@ def clean_detectors_merged(bundle: "WorldBundle", feats: list[int], realized_l0:
     for name in alpha_det:                                  # all DETECTORS, in registry order
         regime = routing.get(name, "alpha_encoder")
         out[name] = by_regime[regime][name]
+    if s_res_ceiling == "probe":                            # like-for-like: probe on the oracle firing
+        out["s_res"] = s_res_probe(alpha_acts, bundle.h, W_unit, constants)
     return out
 
 
 def _clean_detectors(bundle: "WorldBundle", feats: list[int], realized_l0: float,
-                     constants: dict, routing: dict[str, str] | None) -> dict[str, torch.Tensor]:
+                     constants: dict, routing: dict[str, str] | None,
+                     s_res_ceiling: str = "cosine") -> dict[str, torch.Tensor]:
     """The clean detector matrices, minus those with no valid ceiling under the active oracle.
 
     routing None -> the single alpha-encoder oracle (legacy); a routing dict -> per-detector
     regimes (`clean_detectors_merged`). Regime-aware exclusion drops only detectors whose routed
-    firing cannot yield a ceiling (recon_2a on the alpha encoder)."""
+    firing cannot yield a ceiling (recon_2a on the alpha encoder). `s_res_ceiling` is forwarded to the
+    merged path (probe-on-oracle vs cosine s_res ceiling)."""
     if routing is None:
         detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
     else:
-        detectors = clean_detectors_merged(bundle, feats, realized_l0, routing, constants)
+        detectors = clean_detectors_merged(bundle, feats, realized_l0, routing, constants,
+                                           s_res_ceiling=s_res_ceiling)
     excluded = _excluded_detectors(routing)
     return {d: m for d, m in detectors.items() if d not in excluded}
 
@@ -196,16 +205,18 @@ def _clean_detectors(bundle: "WorldBundle", feats: list[int], realized_l0: float
 def clean_grid(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[int, int]],
                y_label: torch.Tensor, columns: Sequence[str],
                constants: dict, realized_l0: float,
-               routing: dict[str, str] | None = None) -> dict[str, dict[str, dict]]:
+               routing: dict[str, str] | None = None,
+               s_res_ceiling: str = "cosine") -> dict[str, dict[str, dict]]:
     """Stage-0 AUROC grid: the detectors on the perfect-decoder oracle dictionary, over the
     recovered pairs, read at the trained SAE's `realized_l0`.
 
     `routing=None` (default) reads every detector off the single alpha-encoder oracle (legacy).
     A `routing` dict (e.g. `DETECTOR_ORACLE_REGIME`) reads each detector off its property-correct
-    firing regime and keeps recon_2a (routed to true-A)."""
+    firing regime and keeps recon_2a (routed to true-A). `s_res_ceiling="probe"` makes the s_res
+    ceiling a like-for-like probe-on-oracle (default "cosine" keeps the cheap analytic ceiling)."""
     if not feats:
         return {}
-    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing)
+    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing, s_res_ceiling)
     return auroc_matrix(detectors, pairs, y_label, columns)
 
 
