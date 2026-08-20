@@ -3075,14 +3075,18 @@ TEX_ORDER = [
     # The whole calibration ladder sits in the appendix: it is what licenses the main
     # text's numbers rather than a finding of its own, and the three read as one
     # argument only when they are adjacent.
+    # Ordered by TIER, not by the order the figures were written: both Tier-1
+    # figures (the hand-built world, where the answer was fixed before any metric
+    # saw it) come before both Tier-2 ones (the same question after a real training
+    # run). The ladder is the argument, so the figures climb it in order.
     ("APP 0a", "calibration_synthetic_toy_scorecard", True,
      "Every metric scored against a known tree.", "Appendix: the instrument, calibrated"),
-    ("APP 0b", "calibration_trained_toy_recovery", True,
-     "The same tree, after a real training run.", None),
-    ("APP 0c", "calibration_toy_tree_recovered", True,
-     "That tree drawn, before and after the battery.", None),
-    ("APP 0d", "calibration_toy_world_before_after", True,
+    ("APP 0b", "calibration_toy_world_before_after", True,
      "Which gate caught which injected pathology.", None),
+    ("APP 0c", "calibration_trained_toy_recovery", True,
+     "The same tree, after a real training run.", None),
+    ("APP 0d", "calibration_toy_tree_recovered", True,
+     "That tree drawn, before and after the battery.", None),
     ("APP 1", "tangle_lives_in_top_block_pair", True,
      "The tangle lives in the coarsest block pair, on both sources.",
      "Appendix: what the battery finds"),

@@ -127,6 +127,30 @@
 % [APP 0b]
 \begin{figure}[tbp]
   \centering
+  \includegraphics[width=\linewidth]{calibration_toy_world_before_after}
+  \caption{%
+    \textbf{Which gate caught which injected pathology.} The same hand-built world as the
+    previous figure, drawn twice in one palette: one colour per injected structure, in both
+    panels. \emph{Left:} the world as declared --- 24 true parent--child edges over 42
+    features, plus the six structures planted to be caught or to demonstrate that nothing
+    catches them. \emph{Right:} the same world after the three composed gates (reverse
+    coverage, the reconstruction condition, the token-frequency control), where a faded edge
+    is one the gates removed and the note beside each parent names the gate that removed it.
+    Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges survive. The
+    division of labour is the reading: all 30 super-parent pairs die at the reconstruction
+    condition rather than at coverage, the frequency-coincidence pair passes coverage and
+    reconstruction and dies only at the frequency control, and the feature-split edges are
+    kept --- correctly, since they are real refinements --- with the split reported against
+    the parent by a different metric. The two negative controls are the two colours that come
+    through unchanged: the absorbed edge (8, 21) is never proposed at all, and the
+    shared-topic pair (9, 22) passes every gate here.
+  }
+  \label{fig:calibration-toy-world-before-after}
+\end{figure}
+
+% [APP 0c]
+\begin{figure}[tbp]
+  \centering
   \includegraphics[width=\linewidth]{calibration_trained_toy_recovery}
   \caption{%
     \textbf{The same world, after a real training run.} The toy world's ground truth is a
@@ -145,7 +169,7 @@
   \label{fig:calibration-trained-toy-recovery}
 \end{figure}
 
-% [APP 0c]
+% [APP 0d]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_toy_tree_recovered}
@@ -170,30 +194,6 @@
     false positives: it too returned every edge whose endpoints both existed (6 of 6).
   }
   \label{fig:calibration-toy-tree-recovered}
-\end{figure}
-
-% [APP 0d]
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\linewidth]{calibration_toy_world_before_after}
-  \caption{%
-    \textbf{Which gate caught which injected pathology.} The same hand-built world as the
-    previous figure, drawn twice in one palette: one colour per injected structure, in both
-    panels. \emph{Left:} the world as declared --- 24 true parent--child edges over 42
-    features, plus the six structures planted to be caught or to demonstrate that nothing
-    catches them. \emph{Right:} the same world after the three composed gates (reverse
-    coverage, the reconstruction condition, the token-frequency control), where a faded edge
-    is one the gates removed and the note beside each parent names the gate that removed it.
-    Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges survive. The
-    division of labour is the reading: all 30 super-parent pairs die at the reconstruction
-    condition rather than at coverage, the frequency-coincidence pair passes coverage and
-    reconstruction and dies only at the frequency control, and the feature-split edges are
-    kept --- correctly, since they are real refinements --- with the split reported against
-    the parent by a different metric. The two negative controls are the two colours that come
-    through unchanged: the absorbed edge (8, 21) is never proposed at all, and the
-    shared-topic pair (9, 22) passes every gate here.
-  }
-  \label{fig:calibration-toy-world-before-after}
 \end{figure}
 
 % -------------------------------------------------------------------------
