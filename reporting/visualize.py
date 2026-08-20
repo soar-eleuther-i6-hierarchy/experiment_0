@@ -1461,9 +1461,7 @@ def build_trained_calibration_dashboard(d, align=None):
         fig.update_xaxes(title_text="earliest Matryoshka block holding the feature",
                          dtick=1, row=4, col=2)
         fig.update_yaxes(title_text="features", row=4, col=2)
-        fig.update_layout(barmode="group",
-                          legend=dict(orientation="h", x=0.62, y=0.055,
-                                      bgcolor="rgba(255,255,255,0.7)"))
+        fig.update_layout(barmode="group")
 
     tp, fp2, fn = d["true_positives"], d["false_positives"], d["false_negatives"]
     F = d["n_features"]
@@ -1487,7 +1485,15 @@ def build_trained_calibration_dashboard(d, align=None):
         # a fourth row was added for this tier's own two results; without the
         # extra height every panel is squeezed and the rank bars lose their labels
         width=1180, height=(1560 if have_align else 1160) if pt else (1180 if have_align else 780),
-        margin=dict(l=40, r=40, t=150, b=30),
+        # The key sits BELOW the figure, not inside it. Placed in-figure it was
+        # pinned at (0.62, 0.055) -- coordinates that land on the bottom-left panel,
+        # which is a table. Eight entries wrapped leftward across its rows and hid
+        # the edge verdicts underneath a translucent box. Nothing in the layout
+        # reserved that space, so the collision was a matter of how many entries the
+        # run happened to produce.
+        legend=dict(orientation="h", x=0.01, xanchor="left", y=-0.045, yanchor="top",
+                    bgcolor="rgba(255,255,255,0.7)"),
+        margin=dict(l=40, r=40, t=150, b=90),
     )
     return fig
 
