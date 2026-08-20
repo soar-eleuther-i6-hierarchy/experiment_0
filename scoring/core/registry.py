@@ -26,7 +26,7 @@ SCORED_COLUMNS: tuple[str, ...] = (
 POSITIVE_LABEL: str = "is_a"
 
 # Detectors symmetric in (parent, child). A symmetric negative class counts (a,b) and (b,a) as two identical negatives.
-SYMMETRIC_DETECTORS: tuple[str, ...] = ("s_res", "pmi")
+SYMMETRIC_DETECTORS: tuple[str, ...] = ("pmi",)
 
 # The general-purpose is-a detectors in the fusion ensemble.
 ENSEMBLE_DETECTORS: tuple[str, ...] = (
@@ -49,4 +49,12 @@ CONSTANTS: dict[str, float] = {
     "freq_min_fire_low": 5,    # below this, the rare-token survival cell is underpowered
     "rho_star": 0.5,           # recovery threshold the recovered universe is built on
     "auroc_clamp": 1e-6,       # clamp AUROC to [clamp, 1-clamp] before the logit CI
+    # --- probe s_res, mirror config.py so compute_all is self-contained ---
+    "sres_rank_top_k": 5,      # both decoders in the top-k probe correlations (diagnostic rank rule)
+    "sres_min_probe_pos": 50,  # min child-firing tokens to train probe, below this the column is NaN
+    "sres_neg_ratio": 4,       # negatives sampled per positive
+    "sres_max_probe_tokens": 20000,  # cap on (pos + neg) tokens per probe
+    "sres_min_neg": 10,        # fewer negatives than this -> child untestable (no probe)
+    "sres_steps": 300,         # probe Adam steps (calibration knob)
+    "sres_lr": 0.05,           # probe Adam lr (calibration knob)
 }

@@ -41,6 +41,10 @@ class ToyConfig:
     branching: int = 3               # children per parent
     depth: int = 3                   # levels below each root (number of blocks = depth + 1)
     exclusive_siblings: bool = True  # siblings split the parent's tokens instead of overlapping
+    randomize_structure: bool = False  # opt-in: draw a seed-varied backbone (ragged branching/depth,
+                                     # stratified is-a/firing_only, mass-preserving edge probs) instead
+                                     # of the fixed lattice. Off = the exact deterministic tree as before.
+                                     # The confound battery is UNCHANGED and identical across seeds.
 
     # --- firing -------------------------------------------------------------
     root_p: float = 0.18             # a root fires on this fraction of tokens
@@ -79,6 +83,22 @@ class ToyConfig:
     n_topical_pairs: int = 12        # feature pairs lifted by a shared topic. Topics are assigned round-robin (z = i % Z), so with Z = 8 some topics carry more than one pair and form larger groups: 12 pairs = 24 features across 8 topic groups. Raise Z for uniform 2-feature groups.
     kappa: float = 7.2               # topic-modulation strength for the topical confound; higher lifts same-topic co-firing so the confound can propose a false edge. Bounded so per-topic firing rates stay in [0, 1] (validate_config enforces this).
     n_bind_ids: int = 2              # how many top-frequency token ids the token-bound features share. Must stay under the id set's Zipf mass (validate_config enforces this).
+
+
+# --- seed-varied backbone knobs (only read when randomize_structure=True) -------------
+# The structure RNG is seeded from cfg.seed + this offset + attempt, so it is reproducible
+# and disjoint from the geometry/sampling streams (both keyed on cfg.seed) without ever
+# advancing cfg.seed itself.
+STRUCTURE_SEED_OFFSET: int = 9973
+# A randomized draw is rejected-and-retried until it clears these floors (guards against a
+# shallow/narrow draw starving the scored classes or shrinking the dictionary):
+F_MIN: int = 120                     # minimum total feature count
+MIN_PAIRS_PER_CLASS: int = 5         # minimum ordered pairs per guarded scored class
+STRUCTURE_MAX_ATTEMPTS: int = 64     # deterministic retries before giving up (raises)
+# Backbone-derived scored classes whose pair count varies with structure and must stay
+# powered for the pilot. (superparent/frequency/topical are fixed-count confounds; unrelated
+# is always large; transitive/reversed are allowed to be small.)
+GUARDED_STRUCTURE_CLASSES: tuple[str, ...] = ("is_a", "firing_only", "sibling")
 
 
 def replace(cfg: ToyConfig, **kw) -> ToyConfig:

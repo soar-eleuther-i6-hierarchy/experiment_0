@@ -10,11 +10,12 @@ oracle-ceiling survival-Δ (`scoring.oracle.ceiling`), and writes the report.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 import torch
 
-from scoring.core.detectors import compute_all
+from scoring.core.detectors import compute_all, s_res_variants
 from scoring.core.grid import (
     _ensemble_macro_ci,
     _ensemble_pooled_auroc,
@@ -40,7 +41,7 @@ from toygen import labels
 
 
 def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | None = None,
-                  out: str | Path | None = None) -> dict:
+                  out: str | Path | None = None, s_res_diagnostics: bool = False) -> dict:
     """Score one checkpoint's Tier-B retrieval grid (matching in-sample, detectors held-out).
 
     Not unit-tested (loads a real checkpoint via `scoring.trained.loaders.load_sae`);
@@ -78,7 +79,10 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     feats, di, _ = reduce_to_recovered(
         acts_ho, oriented_ho, W_raw, res.match, res.recovered,
         h=ho.h, b_dec=loaded.b_dec, tokens=ho.tokens, vocab=ho.cfg.vocab)
-    detectors = compute_all(di, CONSTANTS)
+    # s_res_mode="probe": the trained retrieval detector uses the real Tree-SAE probe s_res (one
+    # probe per recovered child, self-label). Every CEILING path keeps the default "cosine" so
+    # Stage-0 never trains probes.
+    detectors = compute_all(di, CONSTANTS, s_res_mode="probe")
     pairs, y_label = pair_frame(feats, ho.pair_labels)
     all_columns = SCORED_COLUMNS
     grid = auroc_matrix(detectors, pairs, y_label, all_columns)
@@ -115,19 +119,27 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     # trained-vs-clean gap that attributes a low trained AUROC to metric-weak vs training-erased.
     # The oracle-ceiling toolkit reads `auroc_matrix` from `scoring.core.grid`, so this driver-local
     # import is only to defer the (light) module load, not to dodge a cycle.
-    from scoring.oracle.ceiling import (clean_grid, degenerate_clean_detectors, stage0_caveats,
+    from scoring.oracle.ceiling import (DETECTOR_ORACLE_REGIME, REGIME_CAVEAT, annotate_regime,
+                                        clean_grid, degenerate_clean_detectors, stage0_caveats,
                                         survival_delta)
     # A held-out draw whose realized L0 is 0 (a fully dead SAE) cannot calibrate the oracle-encoder
     # ceiling — the oracle_encode gate would have no positive projections to threshold. Refuse to
     # fabricate a Stage-0 ceiling in that case rather than emit a garbage 0.5 grid; the recovery
     # side already reports the dead SAE. (A partial-but-positive L0 is fine.)
     if ho_realized_l0 > 0 and feats:
-        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0)
+        # Per-detector oracle routing: each detector's ceiling is read off the firing regime that
+        # makes its property faithful (containment on the α-encoder, firing-structure/recon on true A).
+        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0,
+                            routing=DETECTOR_ORACLE_REGIME, s_res_ceiling="probe")
         # degenerate set computed BEFORE survival_delta so the Δ cells can be MARKED degenerate
         # (a constant clean ceiling is a meaningless ~0.5 that must not be read as an attribution).
-        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0)
+        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0,
+                                                       routing=DETECTOR_ORACLE_REGIME)
         survival = survival_delta(stage0, grid, all_columns,
                                   degenerate_detectors=stage0_degenerate)
+        # Stamp each cell with its oracle regime + whether that ceiling is idealized (true_A), so a
+        # true_A Δ is not misread as pure training-erasure and Δs are not compared across regimes.
+        annotate_regime(survival, DETECTOR_ORACLE_REGIME)
         stage0_caveat_cells = stage0_caveats(survival)
     else:
         stage0, survival, stage0_caveat_cells, stage0_degenerate = {}, {}, [], []
@@ -152,6 +164,15 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
         "stage0_clean_grid": stage0, "survival_delta": survival,
         "stage0_caveats": stage0_caveat_cells,
         "stage0_degenerate_detectors": stage0_degenerate,
+        "stage0_oracle_regime": dict(DETECTOR_ORACLE_REGIME),
+        "stage0_regime_caveat": REGIME_CAVEAT,
+        "s_res_note": ("s_res is now LIKE-FOR-LIKE: trained = probe on learned dict (self-label); clean "
+                       "ceiling = the SAME probe on the α-encoder ORACLE firing over true-g decoders "
+                       "(s_res_ceiling='probe'). So its survival-Δ = probe(oracle) − probe(trained) "
+                       "isolates TRAINING degradation, not a cosine-vs-probe cross-metric gap. The "
+                       "analytic cosine + self_label_bias decomposition remain available via "
+                       "s_res_diagnostics=True. FIDELITY (deferred to gemma): toy uses unit-cosine; "
+                       "gemma uses raw-dot + top-k rank."),
         "realized_l0": ho_realized_l0, "architecture": loaded.arch,
         "dispersion_mean": dispersion_mean,
         "ensemble_h6": ens_h6, "ensemble_h6_min_robustness": ens_h6_min,
@@ -163,6 +184,34 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     # detector (kept out of the DETECTORS grid).
     from scoring.trained.diagnostics import j_fallback_vs_exact
     report["j_supp_diagnostic"] = j_fallback_vs_exact(di, CONSTANTS)
+
+    # OPT-IN s_res 3-variant diagnostic (trains extra probes → off by default so a standard run is
+    # one-probe-per-child). Uses ground-truth g/A, so it is a DIAGNOSTIC, never a firewalled detector.
+    if s_res_diagnostics:
+        _TINY = 1e-12
+        idx = torch.tensor(feats, dtype=torch.long)
+        g_sel = ho.g[idx]
+        g_unit = g_sel / g_sel.norm(dim=1, keepdim=True).clamp_min(_TINY)
+        variants = s_res_variants(di.acts_rec, ho.h, di.W_unit, g_unit, ho.A[:, idx], CONSTANTS)
+
+        def _isa_row(mat: torch.Tensor) -> dict:
+            row = auroc_matrix({"s": mat}, pairs, y_label, all_columns)["s"]
+            return {c: row.get(c, {}).get("auroc") for c in all_columns}
+
+        aurocs = {name: _isa_row(mat) for name, mat in variants.items()}
+
+        def _fin(x) -> bool:
+            return isinstance(x, float) and math.isfinite(x)
+        bias = {c: (aurocs["probe_self_W"][c] - aurocs["probe_true_W"][c])
+                if (_fin(aurocs["probe_self_W"][c]) and _fin(aurocs["probe_true_W"][c]))
+                else float("nan") for c in all_columns}
+        report["s_res_diagnostics"] = {
+            "auroc": aurocs, "self_label_bias": bias,
+            "note": ("cosine_g = analytic geometry oracle; probe_true_g calibrates the probe "
+                     "machinery (≈ cosine_g once knobs are tuned); probe_self_W = the deployed "
+                     "detector; self_label_bias = probe_self_W − probe_true_W isolates the "
+                     "self-label circularity (measurable only on the toy)."),
+        }
     if out is not None:
         Path(out).write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
@@ -188,8 +237,11 @@ def main() -> None:
     ap.add_argument("ckpt", type=Path)
     ap.add_argument("--n-tokens", type=int, default=200_000)
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument("--s-res-diagnostics", action="store_true",
+                    help="also emit the s_res 3-variant diagnostic (trains extra probes)")
     args = ap.parse_args()
-    report = run_retrieval(args.ckpt, n_tokens=args.n_tokens, out=args.out)
+    report = run_retrieval(args.ckpt, n_tokens=args.n_tokens, out=args.out,
+                           s_res_diagnostics=args.s_res_diagnostics)
     print(json.dumps(report, indent=2))
 
 

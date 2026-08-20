@@ -26,8 +26,9 @@ from typing import TYPE_CHECKING, Sequence
 
 import torch
 
-from scoring.core.detectors import DetectorInputs, compute_all
+from scoring.core.detectors import DetectorInputs, compute_all, s_res_probe
 from scoring.core.grid import auroc_matrix
+from scoring.core.registry import CONSTANTS as _REGISTRY_CONSTANTS
 
 if TYPE_CHECKING:                       # WorldBundle is used only as a type hint here
     from scoring.core.world import WorldBundle
@@ -99,40 +100,141 @@ def clean_detector_inputs(bundle: "WorldBundle", feats: list[int],
     )
 
 
-# Detectors with NO valid Stage-0 clean ceiling. The oracle ENCODER (tied unit-g, no
-# least-squares inverse) does not reconstruct h (FVU > 1), so a reconstruction-ablation
-# detector on it measures noise, not a ceiling — it gets NO survival-Δ (its trained AUROC
-# is still reported in the trained grid). Firing/geometry detectors are unaffected.
+# Detectors with NO valid Stage-0 clean ceiling under the ALPHA-ENCODER oracle. The tied
+# unit-g encoder (no least-squares inverse) does not reconstruct h (FVU > 1), so a
+# reconstruction-ablation detector on it measures noise, not a ceiling — it is dropped in the
+# legacy single-oracle path (its trained AUROC is still reported in the trained grid). Under
+# per-detector routing recon_2a is sent to the true-A regime (real A@g reconstruction) instead,
+# so it IS kept there — see `_excluded_detectors`. Firing/geometry detectors are unaffected.
 NO_CLEAN_CEILING: tuple[str, ...] = ("recon_2a",)
+
+
+# Per-detector oracle firing regime: each detector's ground-truth ceiling must be read off the
+# firing that makes ITS property faithful, not one blanket oracle.
+#   alpha_encoder — α-leaked tied-g JumpReLU encoder (honest containment ceiling; true A gives
+#                   coverage ≡ 1, a degenerate ceiling). token_freq_survival MUST stay here: on
+#                   true A token-bound pairs fire exactly on their ids, with no frequency breakdown.
+#   true_A        — the oracle coefficients A (exact firing structure + the only faithful
+#                   reconstruction, since h = A@g + noise; least-squares would give min-norm coeffs,
+#                   not the semantic features, because F > D).
+#   agnostic      — geometry only (reads W_unit = unit-g, identical under either firing regime).
+DETECTOR_ORACLE_REGIME: dict[str, str] = {
+    "coverage_R": "alpha_encoder",
+    "asymmetry_R": "alpha_encoder",
+    "pmi": "alpha_encoder",
+    "token_freq_survival": "alpha_encoder",
+    "sibling_redundancy": "true_A",
+    "joint_child_J": "true_A",
+    "joint_child_mass": "true_A",
+    "outdegree": "true_A",
+    "recon_2a": "true_A",
+    "s_res": "agnostic",
+}
+
+
+def _excluded_detectors(routing: dict[str, str] | None) -> set[str]:
+    """Which detectors have NO valid clean ceiling and must be dropped from the grid.
+
+    Legacy (routing None): the fixed `NO_CLEAN_CEILING` set (recon_2a on the alpha encoder).
+    Routed: only the `NO_CLEAN_CEILING` detectors whose routed regime is still `alpha_encoder` —
+    recon_2a routed to `true_A` reconstructs via A@g and is kept.
+    """
+    if routing is None:
+        return set(NO_CLEAN_CEILING)
+    return {d for d in NO_CLEAN_CEILING if routing.get(d, "alpha_encoder") == "alpha_encoder"}
+
+
+def clean_detectors_merged(bundle: "WorldBundle", feats: list[int], realized_l0: float,
+                           routing: dict[str, str], constants: dict | None = None,
+                           s_res_ceiling: str = "cosine") -> dict[str, torch.Tensor]:
+    """Per-detector clean ceilings: run `compute_all` on BOTH the alpha-encoder and the true-A
+    firing regimes, then assemble one `{name: matrix}` picking each detector from its routed regime.
+
+    Both regimes are given FULL `DetectorInputs` (same unit/raw decoders = g, h, b_dec=0, tokens) —
+    only the activations differ: the alpha-encoder's honest gated projections vs the oracle
+    coefficients A. The recon_2a residual under true-A is noise + UNRECOVERED-feature energy (A@g omits
+    features outside `feats`), i.e. the honest generative ceiling — read its survival-Δ that way.
+
+    `s_res_ceiling` selects the s_res ceiling: "cosine" (default) = the cheap analytic geometry oracle
+    (used by unit tests + the degeneracy check); "probe" = a LIKE-FOR-LIKE probe trained on the
+    alpha-encoder ORACLE firing over the true-g decoders, so the s_res survival-Δ compares probe-vs-probe
+    (isolating training degradation) instead of cosine-vs-probe (a cross-metric gap). "probe" trains R
+    probes on the ceiling — the real pipeline (run_retrieval) opts in; keep it off elsewhere.
+    """
+    constants = _REGISTRY_CONSTANTS if constants is None else constants
+    idx = torch.tensor(feats, dtype=torch.long)
+    g_sel = bundle.g[idx]
+    W_unit = g_sel / g_sel.norm(dim=1, keepdim=True).clamp_min(_TINY)
+    common = dict(
+        W_unit=W_unit, W_raw=g_sel, h=bundle.h,
+        b_dec=torch.zeros(bundle.g.shape[1], dtype=bundle.g.dtype),
+        tokens=bundle.tokens, vocab=bundle.cfg.vocab,
+    )
+    alpha_acts = oracle_encode(bundle.h, bundle.g, realized_l0)[:, idx]
+    trueA_acts = bundle.A[:, idx]
+    alpha_det = compute_all(DetectorInputs(acts_rec=alpha_acts, **common), constants)
+    trueA_det = compute_all(DetectorInputs(acts_rec=trueA_acts, **common), constants)
+    by_regime = {"alpha_encoder": alpha_det, "true_A": trueA_det, "agnostic": alpha_det}
+    out: dict[str, torch.Tensor] = {}
+    for name in alpha_det:                                  # all DETECTORS, in registry order
+        regime = routing.get(name, "alpha_encoder")
+        out[name] = by_regime[regime][name]
+    if s_res_ceiling == "probe":                            # like-for-like: probe on the oracle firing
+        out["s_res"] = s_res_probe(alpha_acts, bundle.h, W_unit, constants)
+    return out
+
+
+def _clean_detectors(bundle: "WorldBundle", feats: list[int], realized_l0: float,
+                     constants: dict, routing: dict[str, str] | None,
+                     s_res_ceiling: str = "cosine") -> dict[str, torch.Tensor]:
+    """The clean detector matrices, minus those with no valid ceiling under the active oracle.
+
+    routing None -> the single alpha-encoder oracle (legacy); a routing dict -> per-detector
+    regimes (`clean_detectors_merged`). Regime-aware exclusion drops only detectors whose routed
+    firing cannot yield a ceiling (recon_2a on the alpha encoder). `s_res_ceiling` is forwarded to the
+    merged path (probe-on-oracle vs cosine s_res ceiling)."""
+    if routing is None:
+        detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
+    else:
+        detectors = clean_detectors_merged(bundle, feats, realized_l0, routing, constants,
+                                           s_res_ceiling=s_res_ceiling)
+    excluded = _excluded_detectors(routing)
+    return {d: m for d, m in detectors.items() if d not in excluded}
 
 
 def clean_grid(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[int, int]],
                y_label: torch.Tensor, columns: Sequence[str],
-               constants: dict, realized_l0: float) -> dict[str, dict[str, dict]]:
-    """Stage-0 AUROC grid: the detectors on the perfect-decoder oracle-ENCODER dictionary, over the
-    recovered pairs, read at the trained SAE's `realized_l0`."""
+               constants: dict, realized_l0: float,
+               routing: dict[str, str] | None = None,
+               s_res_ceiling: str = "cosine") -> dict[str, dict[str, dict]]:
+    """Stage-0 AUROC grid: the detectors on the perfect-decoder oracle dictionary, over the
+    recovered pairs, read at the trained SAE's `realized_l0`.
+
+    `routing=None` (default) reads every detector off the single alpha-encoder oracle (legacy).
+    A `routing` dict (e.g. `DETECTOR_ORACLE_REGIME`) reads each detector off its property-correct
+    firing regime and keeps recon_2a (routed to true-A). `s_res_ceiling="probe"` makes the s_res
+    ceiling a like-for-like probe-on-oracle (default "cosine" keeps the cheap analytic ceiling)."""
     if not feats:
         return {}
-    detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
-    detectors = {d: m for d, m in detectors.items() if d not in NO_CLEAN_CEILING}
+    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing, s_res_ceiling)
     return auroc_matrix(detectors, pairs, y_label, columns)
 
 
 def degenerate_clean_detectors(bundle: "WorldBundle", feats: list[int],
                                pairs: list[tuple[int, int]], constants: dict,
-                               realized_l0: float, tol: float = 1e-9) -> list[str]:
+                               realized_l0: float, tol: float = 1e-9,
+                               routing: dict[str, str] | None = None) -> list[str]:
     """Clean detectors whose scored values are constant within `tol` across the recovered pairs.
 
     A near-constant detector column produces a meaningless AUROC (~0.5 from ties), so its Stage-0
     ceiling must be flagged DEGENERATE, not read as "the metric is weak even clean". With the
     oracle ENCODER the co-firing detectors are non-degenerate by construction (α-leakage spreads
     them), so this is a guard: it surfaces any residual collapse instead of silently scoring 0.5.
-    Returns the sorted list of degenerate detector names.
-    """
+    `routing` selects the same single/per-detector oracle as `clean_grid`. Returns the sorted list
+    of degenerate detector names."""
     if not feats or not pairs:
         return []
-    detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
-    detectors = {d: m for d, m in detectors.items() if d not in NO_CLEAN_CEILING}
+    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing)
     return _constant_scored_detectors(detectors, pairs, tol)
 
 
@@ -265,3 +367,33 @@ def stage0_caveats(survival: dict) -> list[dict]:
                 out.append({"detector": det, "column": col,
                             "status": cell.get("support_status", "unknown")})
     return out
+
+
+# A ceiling read off the exact oracle coefficients A (the `true_A` regime) is IDEALIZED: with an
+# overcomplete dictionary (F > D) no linear encoder can recover A, and even a perfect-GEOMETRY SAE
+# projects through α-overlapping directions and cannot reach it. So a `true_A`-routed cell's
+# Δ = clean − trained is NOT pure training-erasure — it also folds in the unrecoverable-A gap — and
+# its magnitude is NOT comparable to an `alpha_encoder` (realistic-encoder) cell's Δ.
+IDEALIZED_REGIMES: tuple[str, ...] = ("true_A",)
+REGIME_CAVEAT: str = (
+    "Ceilings are per-detector: alpha_encoder cells use a realistic gated encoder (achievable), "
+    "true_A cells use the exact oracle coefficients A (IDEALIZED — unrecoverable when F>D, and "
+    "unreachable even by a perfect-geometry SAE). Read a true_A cell's delta as 'gap from the "
+    "idealized firing/recon oracle', not 'training erased a real signal', and do NOT compare delta "
+    "magnitudes across the two regimes.")
+
+
+def annotate_regime(survival: dict, routing: dict[str, str] | None) -> dict:
+    """Stamp every survival cell with the oracle regime its ceiling was read from and whether that
+    regime is idealized. In-place, and returns `survival` for chaining.
+
+    `routing=None` (legacy single alpha-encoder oracle) marks every cell `alpha_encoder`,
+    `idealized=False` — so a reader never has to know which path produced the grid.
+    """
+    for det, cols in survival.items():
+        regime = "alpha_encoder" if routing is None else routing.get(det, "alpha_encoder")
+        idealized = regime in IDEALIZED_REGIMES
+        for cell in cols.values():
+            cell["oracle_regime"] = regime
+            cell["oracle_idealized"] = idealized
+    return survival

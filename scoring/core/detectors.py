@@ -18,8 +18,11 @@ Conventions (see `scoring.core.registry`):
     bucket) are NaN — never a silently-imputed finite value, never +/-inf;
   - `compute_all` applies each detector's frozen sign so higher == more is-a-like.
 
-The scalars are implemented directly, not via `metrics/`, whose zero-denominator clamping
-would hide the undefined cells the scorer must drop - WILL FIX THIS IN LATER COMMITS
+The nine non-s_res scalars are implemented directly here, not via `metrics/`, whose zero-denominator
+clamping would hide the undefined cells the scorer must drop (the planned consolidation moves these to
+one canonical kernel). `s_res` is the exception: its probe variant delegates probe TRAINING to
+`metrics.sres.train_probe` (imported inside `s_res_probe`) — so the dependency boundary is:
+geometry/firing scalars local, s_res probe training in `metrics/`.
 """
 
 from __future__ import annotations
@@ -111,14 +114,88 @@ def pmi(cofire: torch.Tensor, fire: torch.Tensor, N: int, laplace: float) -> tor
     return _nan_diag(torch.log(num / den))
 
 
-def s_res(W_unit: torch.Tensor) -> torch.Tensor:
+def s_res_cosine(W_unit: torch.Tensor) -> torch.Tensor:
     """Decoder-geometry overlap = cos(d_c, d_p) between oriented unit decoders.
 
     For an is-a edge this is cos(g_c, g_p) = alpha_c * sqrt(1 - alpha_p^2); 0 for the
     orthogonal-geometry (firing_only) null. Symmetric, so orientation-blind by design.
+    This is the cheap ANALYTIC s_res — used as the clean geometry oracle/ceiling; the
+    trained retrieval detector uses `s_res_probe` (the real Tree-SAE probe metric).
     """
     W = W_unit.double()
     return _nan_diag(W @ W.transpose(0, 1))
+
+
+def s_res_probe(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor,
+                constants: dict, label_acts: torch.Tensor | None = None) -> torch.Tensor:
+    """Probe-based s_res (Tree-SAE Metric 2b): per child, train a linear probe on the residual
+    stream to predict the child's firing, then read s_res(p,c) = min over {parent, child} of the
+    probe's cosine with that latent's unit decoder.
+
+    Per child column c: `pos = label_acts[:,c] > 0`. `label_acts` defaults to `acts_rec` — the
+    SELF-label (the child's own firing), i.e. the deployed metric. The diagnostic passes the TRUE
+    firing (`bundle.A`) to get the probe-on-TRUE calibration variant. If the child fires fewer than
+    `sres_min_probe_pos` times (or the probe is untestable) the WHOLE column is NaN — an undefined
+    ceiling, never a fabricated 0. The probe direction (unit) is correlated against the UNIT
+    decoders `W_unit` (so `corr` is a cosine and s_res respects the ≤1 bound — raw decoders would
+    let it exceed 1 and bias the rank), and `out[p,c] = min(corr[p], corr[c])`. ASYMMETRIC (column c
+    uses child-c's probe). Seed = the recovered POSITION c → deterministic without any feature-id input.
+
+    FIDELITY NOTE: this scores the continuous unit-cosine `min` as an AUROC-able signal. The gemma
+    drivers (`run_token_metrics.py`, `in_block_edges.py`) instead correlate against the RAW decoder and
+    apply Tree-SAE's binary top-k RANK rule. So the toy characterizes the normalized min-cosine s_res
+    SIGNAL, not gemma's exact raw-dot top-k decision — aligning the two (normalize gemma, or add a
+    raw-dot toy variant) is a deliberate follow-up, not silently assumed here.
+    """
+    from metrics.sres import train_probe
+
+    n, R = acts_rec.shape
+    labels = acts_rec if label_acts is None else label_acts
+    Wu = W_unit.double()
+    out = torch.full((R, R), _NAN, dtype=DT, device=Wu.device)   # inherit device (GPU-safe)
+    min_pos = int(constants["sres_min_probe_pos"])
+    fire_thresh = constants["fire_thresh"]                        # same firing convention as compute_all
+    for c in range(R):
+        pos = labels[:, c] > fire_thresh
+        if int(pos.sum()) < min_pos:
+            continue                                        # untestable child -> column NaN
+        probe = train_probe(
+            h, pos, seed=c,
+            neg_ratio=int(constants["sres_neg_ratio"]),
+            max_tokens=int(constants["sres_max_probe_tokens"]),
+            steps=int(constants["sres_steps"]),
+            lr=float(constants["sres_lr"]),
+            min_neg=int(constants["sres_min_neg"]),
+        )
+        if probe is None:
+            continue                                        # too few negatives -> column NaN
+        probe = probe.to(Wu.device)                         # train_probe returns on h's device; align
+        corr = Wu @ probe.double()                          # [R] cosine of each decoder with the probe
+        out[:, c] = torch.minimum(corr, corr[c])
+    return _nan_diag(out)
+
+
+def s_res_variants(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor,
+                   g_unit: torch.Tensor, A_rec: torch.Tensor,
+                   constants: dict) -> dict[str, torch.Tensor]:
+    """The s_res variants for the toy calibration/diagnostic. USES GROUND TRUTH (`g_unit`, `A_rec`),
+    so this is a diagnostic, NOT a firewalled detector — never call it on the trained scoring path.
+
+      cosine_g     : analytic cos over the TRUE unit directions g (geometry ground truth).
+      probe_true_g : probe trained on the TRUE firing 1[A>0], correlated against g — calibrates the
+                     probe MACHINERY (should ≈ cosine_g once the knobs are tuned).
+      probe_self_W : probe on the SELF-label 1[acts>0], learned decoders — the DEPLOYED detector.
+      probe_true_W : probe on the TRUE firing 1[A>0], learned decoders.
+    The caller reports `self_label_bias = probe_self_W − probe_true_W` at the AUROC level (same learned
+    decoders, self vs true label → isolates the circularity cost of the self-label — the detector-
+    performance cost that gemma cannot measure). It is an AUROC difference, not a per-cell matrix diff.
+    """
+    return {
+        "cosine_g": s_res_cosine(g_unit),
+        "probe_true_g": s_res_probe(A_rec, h, g_unit, constants, label_acts=A_rec),
+        "probe_self_W": s_res_probe(acts_rec, h, W_unit, constants),
+        "probe_true_W": s_res_probe(acts_rec, h, W_unit, constants, label_acts=A_rec),
+    }
 
 
 def edge_mask(R_mat: torch.Tensor, fire: torch.Tensor, tau: float, min_fire: int,
@@ -279,16 +356,27 @@ def token_freq_survival(Fm: torch.Tensor, tokens: torch.Tensor, vocab: int,
 # --------------------------------------------------------------------------
 # the handoff
 # --------------------------------------------------------------------------
-def compute_all(inputs: DetectorInputs, constants: dict) -> dict[str, torch.Tensor]:
+def compute_all(inputs: DetectorInputs, constants: dict,
+                s_res_mode: str = "cosine") -> dict[str, torch.Tensor]:
     """Every detector as an oriented [R, R] matrix (higher == is-a-like), NaN diagonal.
 
     Applies each detector's frozen `DETECTOR_SIGN` exactly once. Any residual +/-inf is
     coerced to NaN so downstream means/sorts see only finite-or-NaN.
+
+    `s_res_mode` selects the s_res variant: "cosine" (default) is the cheap analytic geometry
+    oracle used by every CEILING caller (no probe training); "probe" is the real Tree-SAE probe
+    metric, used by the trained retrieval detector. Only s_res depends on the mode — the other
+    nine detectors are identical either way.
     """
+    if s_res_mode not in ("cosine", "probe"):
+        raise ValueError(f"s_res_mode must be 'cosine' or 'probe', got {s_res_mode!r}")
     if inputs.h is None or inputs.b_dec is None or inputs.tokens is None:
         missing = [n for n in ("h", "b_dec", "tokens") if getattr(inputs, n) is None]
+        readers = "recon_2a / token_freq_survival"
+        if s_res_mode == "probe":
+            readers += " / s_res_probe (trains on h)"
         raise ValueError(
-            f"compute_all needs {missing} (recon_2a / token_freq_survival read them); "
+            f"compute_all needs {missing} ({readers} read them); "
             f"reduce_to_recovered must be given h/b_dec/tokens before scoring")
     eps = constants["coverage_eps"]
     Fm = inputs.acts_rec > constants["fire_thresh"]
@@ -308,7 +396,8 @@ def compute_all(inputs: DetectorInputs, constants: dict) -> dict[str, torch.Tens
             constants["freq_high_mass"], constants["freq_mid_mass"],
             constants["freq_min_fire_low"]),
         "recon_2a": recon_2a(inputs.acts_rec, inputs.h, inputs.W_raw, inputs.b_dec, Fm),
-        "s_res": s_res(inputs.W_unit),
+        "s_res": (s_res_cosine(inputs.W_unit) if s_res_mode == "cosine"
+                  else s_res_probe(inputs.acts_rec, inputs.h, inputs.W_unit, constants)),
         "sibling_redundancy": sibling_redundancy(em, cofire, fire),
         "joint_child_mass": joint_child_mass(inputs.acts_rec, Fm, em),
         "outdegree": outdegree(em, fire, N),
