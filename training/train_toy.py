@@ -80,6 +80,9 @@ def main() -> None:
     ap.add_argument("--world-tokens", type=int, default=WORLD_TOKENS)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--randomize-structure", action="store_true",
+                    help="draw a seed-varied backbone (ragged branching/depth) instead of the fixed "
+                         "lattice, so --seed also varies STRUCTURE; the confound battery stays locked.")
     ap.add_argument("--out", default="checkpoints")
     args = ap.parse_args()
 
@@ -90,11 +93,13 @@ def main() -> None:
     # Resolve powered-confound overrides up front so the persisted config is the exact one
     # that trained (the scorer regenerates the world from it).
     overrides = {name: getattr(args, name) for name in CONFOUND_OVERRIDES if getattr(args, name) is not None}
-    # --seed varies the GEOMETRY draw (via cfg.seed) and the SAMPLING draw only. The tree
-    # itself (F, k, firing structure) is a deterministic function of the config -- build_tree
-    # has no RNG -- so all seeds share ONE hierarchy: across-seed captures direction + sampling
-    # variance, NOT structural variance. It is not a fully independent world.
-    cfg = spec.replace(resolve_config(args.config, **overrides), seed=args.seed)
+    # --seed varies the GEOMETRY draw (via cfg.seed) and the SAMPLING draw. With the default fixed
+    # lattice the tree (F, k, firing structure) is seed-invariant, so all seeds share ONE hierarchy
+    # and across-seed captures direction + sampling variance only. With --randomize-structure the
+    # backbone is drawn per seed too, so each seed is a genuinely different controlled hierarchy
+    # (the confound battery stays locked across seeds as a fixed control group).
+    cfg = spec.replace(resolve_config(args.config, **overrides),
+                       seed=args.seed, randomize_structure=args.randomize_structure)
 
     t0 = time.time()
     h, tree, cfg = build_world(args.config, args.world_tokens, args.seed, device, config=cfg)

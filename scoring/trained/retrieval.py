@@ -115,19 +115,27 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     # trained-vs-clean gap that attributes a low trained AUROC to metric-weak vs training-erased.
     # The oracle-ceiling toolkit reads `auroc_matrix` from `scoring.core.grid`, so this driver-local
     # import is only to defer the (light) module load, not to dodge a cycle.
-    from scoring.oracle.ceiling import (clean_grid, degenerate_clean_detectors, stage0_caveats,
+    from scoring.oracle.ceiling import (DETECTOR_ORACLE_REGIME, REGIME_CAVEAT, annotate_regime,
+                                        clean_grid, degenerate_clean_detectors, stage0_caveats,
                                         survival_delta)
     # A held-out draw whose realized L0 is 0 (a fully dead SAE) cannot calibrate the oracle-encoder
     # ceiling — the oracle_encode gate would have no positive projections to threshold. Refuse to
     # fabricate a Stage-0 ceiling in that case rather than emit a garbage 0.5 grid; the recovery
     # side already reports the dead SAE. (A partial-but-positive L0 is fine.)
     if ho_realized_l0 > 0 and feats:
-        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0)
+        # Per-detector oracle routing: each detector's ceiling is read off the firing regime that
+        # makes its property faithful (containment on the α-encoder, firing-structure/recon on true A).
+        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0,
+                            routing=DETECTOR_ORACLE_REGIME)
         # degenerate set computed BEFORE survival_delta so the Δ cells can be MARKED degenerate
         # (a constant clean ceiling is a meaningless ~0.5 that must not be read as an attribution).
-        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0)
+        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0,
+                                                       routing=DETECTOR_ORACLE_REGIME)
         survival = survival_delta(stage0, grid, all_columns,
                                   degenerate_detectors=stage0_degenerate)
+        # Stamp each cell with its oracle regime + whether that ceiling is idealized (true_A), so a
+        # true_A Δ is not misread as pure training-erasure and Δs are not compared across regimes.
+        annotate_regime(survival, DETECTOR_ORACLE_REGIME)
         stage0_caveat_cells = stage0_caveats(survival)
     else:
         stage0, survival, stage0_caveat_cells, stage0_degenerate = {}, {}, [], []
@@ -152,6 +160,8 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
         "stage0_clean_grid": stage0, "survival_delta": survival,
         "stage0_caveats": stage0_caveat_cells,
         "stage0_degenerate_detectors": stage0_degenerate,
+        "stage0_oracle_regime": dict(DETECTOR_ORACLE_REGIME),
+        "stage0_regime_caveat": REGIME_CAVEAT,
         "realized_l0": ho_realized_l0, "architecture": loaded.arch,
         "dispersion_mean": dispersion_mean,
         "ensemble_h6": ens_h6, "ensemble_h6_min_robustness": ens_h6_min,

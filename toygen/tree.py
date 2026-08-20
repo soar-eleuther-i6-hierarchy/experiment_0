@@ -16,7 +16,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .spec import ToyConfig
+import torch
+
+from .spec import (
+    GUARDED_STRUCTURE_CLASSES,
+    F_MIN,
+    MIN_PAIRS_PER_CLASS,
+    STRUCTURE_MAX_ATTEMPTS,
+    STRUCTURE_SEED_OFFSET,
+    ToyConfig,
+)
 
 
 @dataclass
@@ -73,6 +82,47 @@ def _close(parents: dict[int, list[tuple[int, float, float]]], F: int
 
 
 def build_tree(cfg: ToyConfig) -> Tree:
+    """Build the feature forest, then reject-and-return only a config the sampler can honour.
+
+    `randomize_structure=False` (default) reproduces the fixed lattice exactly. When True the
+    backbone is drawn per `cfg.seed` and retried deterministically until it clears the structural
+    floors AND `validate_config`; the confound battery is identical in both modes.
+    """
+    from .validate import validate_config     # lazy: avoid a tree <-> strengths import cycle
+
+    if not cfg.randomize_structure:
+        tree = _assemble_tree(cfg, gen=None)
+        validate_config(cfg, tree)
+        return tree
+
+    _check_randomize_feasible(cfg)     # fail fast on params no draw could satisfy
+    last_reason = "(no attempt ran)"
+    for attempt in range(STRUCTURE_MAX_ATTEMPTS):
+        # Multiplied (not additive) sub-seed so two seeds' attempt-streams never overlap by a small
+        # integer shift — cfg.seed itself (the geometry/sample seed) is never advanced.
+        gen = torch.Generator().manual_seed(cfg.seed * 1_000_003 + STRUCTURE_SEED_OFFSET + attempt)
+        tree = _assemble_tree(cfg, gen=gen)
+        ok, last_reason = _structure_guards_pass(tree)
+        if not ok:
+            continue
+        try:
+            validate_config(cfg, tree)
+        except ValueError as e:            # an infeasible draw: retry with the next sub-seed
+            last_reason = f"validate_config: {e}"
+            continue
+        return tree
+    raise ValueError(
+        f"randomize_structure: no feasible backbone in {STRUCTURE_MAX_ATTEMPTS} attempts "
+        f"(seed={cfg.seed}); last rejection: {last_reason}. Loosen F_MIN / "
+        f"MIN_PAIRS_PER_CLASS or the branching-depth ranges.")
+
+
+def _assemble_tree(cfg: ToyConfig, gen: "torch.Generator | None") -> Tree:
+    """Construct one tree (backbone + confounds + closure) WITHOUT validation.
+
+    `gen is None` -> the deterministic lattice backbone; otherwise the seed-varied backbone
+    drawn from `gen`. The confound layer and closure are identical either way.
+    """
     parents: dict[int, list[tuple[int, float, float]]] = {}
     children: dict[int, list[int]] = {}
     exclusive: dict[int, bool] = {}
@@ -96,26 +146,17 @@ def build_tree(cfg: ToyConfig) -> Tree:
         return k
 
     # --- backbone forest --------------------------------------------------
-    edge_i = 0
-    frontier = []
-    for _ in range(cfg.n_roots):
-        r = new()
-        root_p[r] = cfg.root_p
-        frontier.append(r)
-    for _ in range(cfg.depth):
-        nxt_frontier = []
-        for p in frontier:
-            exclusive[p] = cfg.exclusive_siblings
-            for _ in range(cfg.branching):
-                c = new()
-                a = 0.0 if (edge_i % cfg.alpha_zero_every == 0) else cfg.alpha
-                edge_i += 1
-                parents[c] = [(p, cfg.child_p_edge, a)]
-                children[p].append(c)
-                nxt_frontier.append(c)
-        frontier = nxt_frontier
+    if gen is None:
+        _backbone_lattice(cfg, new, parents, children, exclusive, root_p)
+    else:
+        _backbone_random(cfg, gen, new, parents, children, exclusive, root_p)
 
     # --- confounds (archetype rates are tuned constants; see DESIGN.md) ----
+    # LOCKED: identical counts/rates in both backbone modes, so a randomized run varies only
+    # the backbone and keeps the confound columns as a fixed control group. (Under randomization
+    # the confound features take DIFFERENT absolute ids across seeds — they are appended after a
+    # ragged backbone — but their counts/rates/topic+token assignments are seed-invariant, which
+    # is the control property that matters; nothing downstream assumes stable confound ids.)
     if cfg.confounds:
         # superparent: an always-on childless feature, with a broad parent as its foil.
         for _ in range(cfg.n_superparent):
@@ -153,12 +194,132 @@ def build_tree(cfg: ToyConfig) -> Tree:
     F = nxt
     ancestors, descendents, topology_ordering = _close(parents, F)
 
-    result = Tree(
+    return Tree(
         F=F, parents=parents, children=children, exclusive=exclusive,
         ancestors=ancestors, descendents=descendents, topology_ordering=topology_ordering,
         root_p=root_p, kappa=kappa, topic=topic, token_bound=token_bound, tags=tags,
     )
-    # Reject infeasible configs at build time (imported lazily to avoid a tree <-> strengths import cycle).
-    from .validate import validate_config
-    validate_config(cfg, result)
-    return result
+
+
+def _backbone_lattice(cfg, new, parents, children, exclusive, root_p) -> None:
+    """The fixed lattice backbone: `n_roots` roots, uniform `branching`, uniform `depth`,
+    firing_only on every `alpha_zero_every`-th edge counted across the forest."""
+    edge_i = 0
+    frontier = []
+    for _ in range(cfg.n_roots):
+        r = new()
+        root_p[r] = cfg.root_p
+        frontier.append(r)
+    for _ in range(cfg.depth):
+        nxt_frontier = []
+        for p in frontier:
+            exclusive[p] = cfg.exclusive_siblings
+            for _ in range(cfg.branching):
+                c = new()
+                a = 0.0 if (edge_i % cfg.alpha_zero_every == 0) else cfg.alpha
+                edge_i += 1
+                parents[c] = [(p, cfg.child_p_edge, a)]
+                children[p].append(c)
+                nxt_frontier.append(c)
+        frontier = nxt_frontier
+
+
+def _backbone_random(cfg, gen, new, parents, children, exclusive, root_p) -> None:
+    """A seed-varied backbone: ragged per-root depth and per-parent child count, mass-preserving
+    per-parent edge probabilities, and a stratified is-a/firing_only split.
+
+    Edge probs are drawn Dirichlet(1) (normalized Exp(1)) and scaled to a fixed per-parent budget
+    `P_TOT`, so the per-parent firing mass — hence the world's L0 — stays ~constant regardless of
+    how many children a parent gets, and the exclusive-sibling budget (sum p_edge <= 1) holds by
+    construction. alpha is assigned AFTER the whole backbone is built so exactly a 1/alpha_zero_every
+    fraction of edges are firing_only (no clustering).
+    """
+    max_branch = max(1, int(1.0 / cfg.child_p_edge))    # floor(1/p_edge): the exclusive-budget cap
+    lo_branch = max(1, max_branch - 1)
+    lo_depth = max(1, cfg.depth - 1)
+    p_tot = min(1.0 - 1e-9, cfg.branching * cfg.child_p_edge)
+
+    edge_parent: dict[int, int] = {}
+    edge_pedge: dict[int, float] = {}
+    edge_order: list[int] = []                          # child ids in creation order
+
+    roots = []
+    for _ in range(cfg.n_roots):
+        r = new()
+        root_p[r] = cfg.root_p
+        roots.append(r)
+    for r in roots:
+        depth_r = int(torch.randint(lo_depth, cfg.depth + 1, (1,), generator=gen).item())
+        frontier = [r]
+        for _ in range(depth_r):
+            nxt_frontier = []
+            for p in frontier:
+                n_c = int(torch.randint(lo_branch, max_branch + 1, (1,), generator=gen).item())
+                exclusive[p] = cfg.exclusive_siblings
+                w = torch.empty(n_c, dtype=torch.float64).exponential_(generator=gen)
+                pe = (w / w.sum() * p_tot)
+                # guard the realized sum against float drift so validate_config's budget holds
+                s = float(pe.sum())
+                if s > 1.0 - 1e-9:
+                    pe = pe * ((1.0 - 1e-9) / s)
+                for j in range(n_c):
+                    c = new()
+                    edge_parent[c] = p
+                    edge_pedge[c] = float(pe[j])
+                    edge_order.append(c)
+                    children[p].append(c)
+                    nxt_frontier.append(c)
+            frontier = nxt_frontier
+
+    # stratified is-a / firing_only: exactly round(n_edges / alpha_zero_every) edges get alpha=0.
+    n_edges = len(edge_order)
+    n_zero = round(n_edges / cfg.alpha_zero_every) if n_edges else 0
+    zero_children: set[int] = set()
+    if n_zero > 0:
+        perm = torch.randperm(n_edges, generator=gen)
+        zero_children = {edge_order[int(i)] for i in perm[:n_zero]}
+    for c in edge_order:
+        a = 0.0 if c in zero_children else cfg.alpha
+        parents[c] = [(edge_parent[c], edge_pedge[c], a)]
+
+
+def _structure_guards_pass(tree: Tree) -> tuple[bool, str]:
+    """Reject a randomized draw that would starve the dictionary or a scored class.
+
+    Returns (ok, reason). `reason` is empty on success. Checks the total feature count against
+    `F_MIN` and every `GUARDED_STRUCTURE_CLASSES` class against `MIN_PAIRS_PER_CLASS` ORDERED
+    pairs (via `labels.pair_label`) — a stronger, class-aware guard than validate_config's
+    global budget check.
+    """
+    if tree.F < F_MIN:
+        return False, f"F={tree.F} < F_MIN={F_MIN}"
+    from .labels import _index, pair_label
+    pl = pair_label(tree)
+    # pair_label fills the diagonal with 0 == is_a's index, so count OFF-DIAGONAL cells only —
+    # otherwise the is_a floor would be trivially met by the F self-cells.
+    off_diag = ~torch.eye(tree.F, dtype=torch.bool)
+    for name in GUARDED_STRUCTURE_CLASSES:
+        n = int(((pl == _index(name)) & off_diag).sum())
+        if n < MIN_PAIRS_PER_CLASS:
+            return False, f"class {name!r} has {n} ordered pairs < MIN_PAIRS_PER_CLASS={MIN_PAIRS_PER_CLASS}"
+    return True, ""
+
+
+def _check_randomize_feasible(cfg: ToyConfig) -> None:
+    """Reject randomize params NO draw could satisfy — fail fast with the real cause instead of
+    burning all STRUCTURE_MAX_ATTEMPTS and raising a misdirecting 'loosen the floors' message.
+
+    `child_p_edge >= 0.5` caps children-per-parent at 1 (floor(1/p_edge)), so no parent ever has
+    siblings; while 'sibling' is a guarded class that is unreachable. `depth < 1` gives an empty
+    randint range for the per-root depth draw.
+    """
+    max_branch = max(1, int(1.0 / cfg.child_p_edge))
+    if "sibling" in GUARDED_STRUCTURE_CLASSES and max_branch < 2:
+        raise ValueError(
+            f"randomize_structure needs child_p_edge < 0.5 so a parent can have >= 2 children "
+            f"(siblings); got child_p_edge={cfg.child_p_edge} -> max children/parent = {max_branch}. "
+            f"Lower child_p_edge, or drop 'sibling' from GUARDED_STRUCTURE_CLASSES.")
+    if cfg.depth < 1:
+        raise ValueError(
+            f"randomize_structure needs depth >= 1 for a non-empty per-root depth draw; got "
+            f"depth={cfg.depth}.")

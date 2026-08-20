@@ -253,7 +253,19 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     # (a known route to a false headline: a collapsed high-λ SAE drops many edges here).
     unclassified_edges: list[dict] = []
     unclassified_children: set[int] = set()
+    # BELOW-RHO gate: an endpoint that was ASSIGNED (Hungarian match>=0) but NOT RECOVERED
+    # (matched_corr < rho). On an overcomplete SAE (d_sae>=F) every true feature is assigned, so
+    # match>=0 is NOT recovery -- a below-rho latent is an arbitrary weak match, and classifying it
+    # as a real mechanism inflates absorbed/multiplicity/composed. Excluded from every mechanism
+    # bucket (consistent with `clean`, which was already recovered-gated) and reported separately.
+    below_rho_edges: list[dict] = []
+    below_rho_children: set[int] = set()
     for (p, c) in cont_edges:
+        if not (bool(recovered[int(p)]) and bool(recovered[int(c)])):
+            below_rho_children.add(int(c))
+            below_rho_edges.append({"parent": int(p), "child": int(c),
+                                    "is_a": bool(isa_child.get(int(c), False))})
+            continue
         sig = absorption_signals(g, W_dec, acts, A, match, int(p), int(c), eps, constants)
         if sig["absorbed"]:
             absorbed_children.add(int(c))
@@ -261,14 +273,13 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
                                    "theta_hat": sig["theta_hat"], "R_P": sig["R_P"],
                                    "is_a": bool(isa_child.get(int(c), False))})
         elif not math.isfinite(sig["R_P"]) or not math.isfinite(sig["R_solo"]):
-            reason = ("unrecovered" if int(match[c]) < 0 or int(match[p]) < 0
-                      else "no_child_fire" if not math.isfinite(sig["R_P"])
-                      else "no_parent_solo")
+            reason = ("no_child_fire" if not math.isfinite(sig["R_P"]) else "no_parent_solo")
             unclassified_children.add(int(c))
             unclassified_edges.append({"parent": int(p), "child": int(c), "reason": reason,
                                        "is_a": bool(isa_child.get(int(c), False))})
-    # an edge absorbed via one parent overrides an unclassified edge via another
+    # an edge absorbed via one parent overrides an unclassified/below-rho edge via another
     unclassified_children -= absorbed_children
+    below_rho_children -= (absorbed_children | unclassified_children)
 
     # Inline the multiplicity count with the once-computed eps/expected_null. BEST-MATCH attribution (a latent counts
     # toward feature f only if f is its argmax feature) — essential on the overcomplete non-orthogonal
@@ -279,6 +290,8 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     above = cosmat > eps
     multiplicity_features: list[dict] = []
     for f in range(F):
+        if not bool(recovered[f]):        # recovered-gated (parity with absorbed/clean)
+            continue
         M_P = int((above[f] & (best_f == f)).sum())
         excess = M_P - expected_null
         if excess >= constants["multiplicity_excess_min"]:
@@ -286,6 +299,8 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
 
     composed_pairs: list[dict] = []
     for (a, b) in sibling_pairs:
+        if not (bool(recovered[int(a)]) and bool(recovered[int(b)])):   # recovered-gated
+            continue
         cs = conjunction_strength(g, W_dec, int(a), int(b))
         if cs["K"] > constants["conj_min"]:
             composed_pairs.append({"a": int(a), "b": int(b), "K": cs["K"], "latent": cs["latent"]})
@@ -300,10 +315,12 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
         "decoder_multiplicity": multiplicity_features,
         "composed_pairs": composed_pairs,
         "unclassified_edges": unclassified_edges,
+        "below_rho_edges": below_rho_edges,
         "counts": {"absorbed": len(absorbed_children),
                    "decoder_multiplicity": len(multiplicity_features),
                    "composed": len(composed_pairs), "clean": clean,
-                   "unclassified": len(unclassified_children)},
+                   "unclassified": len(unclassified_children),
+                   "below_rho": len(below_rho_children)},
         "absorbed_by_relation": {
             "is_a": sum(1 for e in absorbed_edges if e["is_a"]),
             "firing_only": sum(1 for e in absorbed_edges if not e["is_a"]),
