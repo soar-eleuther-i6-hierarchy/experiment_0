@@ -1289,20 +1289,35 @@ def build_trained_calibration_dashboard(d, align=None):
     # latents, and the conflation the sibling metric found) lived only in table
     # cells while three charts described something else.
     pt = d.get("per_token") or {}
+    # The nesting control owns row 3's right half and all of row 4. When its file is
+    # absent or stale those panels are not drawn, and a fixed four-row grid then
+    # printed three titles over empty space and left a blank band at the bottom --
+    # the layout claiming results the page does not have. So the grid is built to
+    # fit what will actually be plotted: the edge-recovery table widens to the full
+    # row and the figure ends there.
+    if have_align:
+        specs = [[{"type": "table", "colspan": 2}, None],
+                 [{}, {}],
+                 [{"type": "table"}, {}],
+                 [{"type": "table"}, {}]]
+        titles = ("", "Probe S_res on LEARNED latents: where the true parent ranks",
+                  "Children the tree keeps apart, and what the SAE did with them",
+                  "Edge recovery vs the known tree",
+                  "Matryoshka nesting: parent block vs child block",
+                  "Nesting, edge by edge", "Where the tree landed in the blocks")
+        row_heights = [0.28, 0.24, 0.24, 0.24]
+    else:
+        specs = [[{"type": "table", "colspan": 2}, None],
+                 [{}, {}],
+                 [{"type": "table", "colspan": 2}, None]]
+        titles = ("", "Probe S_res on LEARNED latents: where the true parent ranks",
+                  "Children the tree keeps apart, and what the SAE did with them",
+                  "Edge recovery vs the known tree", "")
+        row_heights = [0.34, 0.30, 0.36]
+
     fig = make_subplots(
-        rows=4, cols=2,
-        specs=[[{"type": "table", "colspan": 2}, None],
-               [{}, {}],
-               [{"type": "table"}, {}],
-               [{"type": "table"}, {}]],
-        subplot_titles=("",
-                        "Probe S_res on LEARNED latents: where the true parent ranks",
-                        "Children the tree keeps apart, and what the SAE did with them",
-                        "Edge recovery vs the known tree",
-                        "Matryoshka nesting: parent block vs child block",
-                        "Nesting, edge by edge", "Where the tree landed in the blocks"),
-        vertical_spacing=0.06, horizontal_spacing=0.08,
-        row_heights=[0.28, 0.24, 0.24, 0.24],
+        rows=len(row_heights), cols=2, specs=specs, subplot_titles=titles,
+        vertical_spacing=0.06, horizontal_spacing=0.08, row_heights=row_heights,
     )
 
     # (row 2, left) rank of the true parent per edge, against the two lines that

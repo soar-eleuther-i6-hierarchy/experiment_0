@@ -40,7 +40,7 @@ from panel_fingerprint import VISUALIZE, panel_sources  # noqa: E402
 EXPECTED = {
     "build_dashboard": "ced8575ee9d06670",
     "build_calibration_dashboard": "2555919128e62357",
-    "build_trained_calibration_dashboard": "5b7daa7d2134576a",
+    "build_trained_calibration_dashboard": "abdcf3ccede1b582",
     "build_qualitative_dashboard": "4af54320d4270f07",
     "build_in_block_dashboard": "87b810c72878b199",
 }
