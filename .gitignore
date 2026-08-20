@@ -29,7 +29,7 @@ outputs/**/token_cache/
 
 # Generated proof-figures (rebuilt by reporting/make_report_figures.py into each
 # run dir's figures/; never tracked)
-figures/
+# figures/
 
 # Generated toy-world visualization (rebuilt from the generator; a viz artifact, not source)
 toygen/*.html
