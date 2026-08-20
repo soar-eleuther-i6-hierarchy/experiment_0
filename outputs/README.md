@@ -63,6 +63,30 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
   two. Its Page row is five wide rather than seven: the two qualitative pages read Neuronpedia
   labels, which exist for gemma's dictionary and no other.
 
+### Publishing a source that is not gemma
+
+Stages 02–04 read the block structure, the model and the dictionary out of the stats file, so an SAE
+of a different shape needs an **adapter and no metric code** — `adapters/from_pcfg.py` in the
+umbrella repo, which also writes the `token_cache/` stage 03 reads and the `w_dec.pt` it scores
+`S_res` with.
+
+- `EXP0_RUN=pcfg-matryoshka/layer_01` names the output directory and publishes at
+  [`outputs/pcfg-matryoshka/layer_01/`](pcfg-matryoshka/layer_01/README.md). Any depth works — every
+  page derives its distance to the site root and its link to the shared plotly bundle from its own
+  path — but the **last component** decides how the page reads: a directory named `layer_NN` gets the
+  layer nav, anything else gets the site-wide one.
+- Give the directory an index with `python3 -m reporting.layer_index --run`, and the source its own
+  with `--source <name>`, **or those URLs 404 on GitHub Pages**.
+- Register the source in `config.SOURCES` (label, layers, which page kinds it actually has) and it
+  appears in the nav with its own layer row. Each source is one entry in `NAV_GLOBAL` — a place you
+  go, not a row that follows you: the layer pills belong to gemma and appear only inside
+  `outputs/gemma-2-2b/`, because offering to "switch layer" from a PCFG dashboard means switching to
+  a different model entirely.
+- Adding to `NAV_GLOBAL` makes every already-generated bar wrong, and regenerating a dashboard needs
+  that layer's ~700 MB cache. `python3 -m reporting.refresh_nav` re-renders the bar in place instead,
+  deriving each page's identity from its path; `--check` reports without writing. It changes
+  navigation and nothing else, so it is not a way to freshen stale numbers.
+
 ## Moved pages
 
 The five layer directories were at `outputs/layer_NN/` until 7 August, so **every URL of that shape
