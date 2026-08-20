@@ -1505,6 +1505,23 @@ def run_trained_calibration():
         print("note: outputs/block_tree_alignment.json not found - "
               "run `python3 -m validation.block_tree_alignment` for the nesting panels")
     d = json.loads(path.read_text())
+
+    # Absent is handled above; STALE was not, and stale is worse -- it renders. The
+    # control ran on 9 August against a checkpoint that learned 17 of 20 features, so
+    # its panel said "6 of 9 edges testable, the rest have an endpoint the SAE never
+    # learned" on a page whose other half says all 20 were learned. One page, two
+    # checkpoints, contradicting each other. The two files record which features were
+    # recovered, so they can be asked whether they describe the same run.
+    if align is not None:
+        aligned_feats = {int(k) for k in align.get("first_block_of_feature", {})}
+        graded_feats = set(d.get("recovered_features", []))
+        if aligned_feats != graded_feats:
+            print(f"note: block_tree_alignment.json describes a different checkpoint "
+                  f"({len(aligned_feats)} features recovered, this run has "
+                  f"{len(graded_feats)}) - the nesting panels are dropped rather than "
+                  f"shown against numbers they do not belong to. Re-run "
+                  f"`python3 -m validation.block_tree_alignment` to restore them.")
+            align = None
     fig = build_trained_calibration_dashboard(d, align)
     out = C.OUT_DIR / "trained_toy_calibration.html"
     write_page(fig, out, captions=captions_trained_calibration(d, align))
