@@ -48,7 +48,7 @@ Link to the `.html` form, not `.md`: GitHub Pages serves `.md` as raw markdown t
 ## Across all layers
 
 - [**Synthetic toy calibration scorecard**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/synthetic_toy_calibration.html) — Tier 1, synthetic ground truth (14/14 rows).
-- [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on Bussmann's tree (precision 1.00, recall 0.67).
+- [**Trained-toy calibration**](https://soar-eleuther-i6-hierarchy.github.io/metrics/outputs/trained_toy_calibration.html) — Tier 2, edge recovery on a Matryoshka SAE trained on the known tree (precision 1.00, recall 1.00).
 
 ## Other sources
 
@@ -171,38 +171,47 @@ erase the previous numbers, `collect_statistics.py` copies the current artifacts
 `token_cache/` and `figures/`: the caches are on the Hub and rebuildable, and copying them per
 run would fill the disk. Archives are gitignored — they are history, not results.
 
-## How the metrics are validated: four tiers
+## How the metrics are validated: three tiers
 
-The same metrics are checked at four tiers of increasing realism. Each tier gives up one guarantee
-and gains one dose of reality; a metric we trust has to hold across all four. ("Tier", not "layer",
+The same metrics are checked at three tiers of increasing realism. Each tier gives up one guarantee
+and gains one dose of reality; a metric we trust has to hold across all three. ("Tier", not "layer",
 to avoid confusion with the model's residual-stream layers.)
+
+The PCFG SAE **was** the third rung and is not one any more. A tier earns its place by scoring the
+battery against a known answer; that run has none, so it moved to
+[Other sources](#other-sources) as a control on corpus complexity — see below.
 
 | Tier | What it is | Ground truth? | What it proves |
 | ---- | ---------- | ------------- | -------------- |
 | **1. Synthetic toy** | [`validation/synthetic_toy_world.py`](../validation/synthetic_toy_world.py): a known 5-parent tree plus six injected structures, reduced to the statistics the metrics read *and* to the per-token residuals the probes need | yes, by construction | the maths is right — **14/14 scorecard rows**, covering 21/21 metric functions; the last two rows are negative controls that pass when nothing catches them |
-| **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 0.67** (6/9 edges, 0 false positives) — and the probe functions now run here too: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy catches a conflation the SAE itself introduced (0.958 against 0.000 for the other parents) |
-| **3. PCFG SAE** | `adapters/from_pcfg.py` in the umbrella repo (an adapter joins two repos and belongs to neither, so it is not in this one) on a 4-layer PCFG base transformer, zipf 1.5, 1792 latents in 8 blocks | grammar known, **not yet used** — nothing maps a latent to a grammar symbol | the battery runs on a source that has a base model — layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
-| **4. Released SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a checkpoint we did not train |
+| **2. Trained toy** | [`validation/calibrate_on_trained_toy.py`](../validation/calibrate_on_trained_toy.py): a Matryoshka SAE actually trained on Bussmann's tree, metrics run on the *learned* features | yes, the tree is known | the metrics survive a real training run — **precision 1.00, recall 1.00** (9/9 edges, 0 false positives, all 20 features learned) — and the probe functions run here too: `S_res` accepts **9/9** testable true edges against a chance rate of 0.25. On the checkpoint graded until 19 August, parent-conditioned redundancy caught a conflation the SAE itself introduced (0.958 against 0.000); on this one it reports 0.000 for all three parents, because there is none |
+| **3. Released SAE** | [`validation/qualitative_check.py`](../validation/qualitative_check.py) on `gemma-2-2b / NN-res-matryoshka-dc`, read against Neuronpedia labels | no, human judgement stands in | the metrics mean something on a checkpoint we did not train |
 
-Tier 1 is certain but artificial; Tier 4 is realistic but has no ground truth and is a published
-checkpoint we did not train — which is what *released* names, since Tier 3 is a real SAE too, really
-trained over a really trained transformer. Tier 2 is the only rung with both a trained SAE and a
-known answer.
+Tier 1 is certain but artificial; Tier 3 is realistic but has no ground truth and is a published
+checkpoint we did not train — which is what *released* names, since the rungs below it are real SAEs
+too. Tier 2 is the only rung with both a trained SAE and a known answer.
 
-**Neither middle rung isolates the variable it is named for.** Tier 2 runs on Bussmann's 20-feature
-tree while Tier 1 grades a larger pathology-injected world, so the toy changes along with the
-statistics. Tier 3 changes the grammar, the base model, the corpus and the dictionary size together,
-so it *bounds* base-model dependence rather than isolating it — isolating it would mean training a
-transformer on Bussmann's own tree, which nothing here does. What Tier 2 does isolate cleanly is
-**blame**: a missed edge counts against a metric only if the SAE learned both endpoints.
+**Tier 2 does not isolate the variable it is named for.** It runs on a clean 20-feature tree while
+Tier 1 grades a larger pathology-injected world, so the toy changes along with the statistics. What
+it does isolate cleanly is **blame**: a missed edge counts against a metric only if the SAE learned
+both endpoints.
 
-Tier 3's ground truth is available but unconsumed. The PCFG repo's
+### The PCFG SAE: a control, not a rung
+
+It has a base model between the concepts and the SAE, which neither toy has, and it runs the same
+battery unchanged — but it cannot license anything above it, because it has no recovery score. Its
+ground truth is available and unconsumed: the PCFG repo's
 `pcfg_bridge.grammar.vocab.role_of(token_id)` returns the grammar role of any token id
 (subject/verb/object/connector/eos/section/paragraph/document) and its `analysis/README.md` names it
-for exactly this purpose, but no latent→symbol mapping is built yet, so Tier 3 reports the same
-battery outputs as Tier 4 rather than a recovery score. Note also that both published PCFG layers
-are a **single grammar configuration** (zipf 1.5, EOS the only delimiter) — one point of the
-three-axis sweep Exp 2 specifies, not a sweep.
+for exactly this purpose, but no latent→symbol mapping is built yet, so the run reports the same
+battery outputs as Tier 3 rather than a recovery score.
+
+It also changes the grammar, the base model, the corpus and the dictionary size all at once against
+the toys, so it *bounds* base-model dependence rather than isolating it — isolating it would mean
+training a transformer on the toy's own tree, which nothing here does. And both published layers are
+a **single grammar configuration** (zipf 1.5, EOS the only delimiter): one point of the three-axis
+sweep Exp 2 specifies, not a sweep. Its numbers are in [Other sources](#other-sources) —
+layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res.
 
 **What the tiers do and do not cover.** Tier 1 scores **14/14 rows**, covering
 **21/21 metric functions**. Until 7 August this paragraph said `S_res` was "calibrated in Tier 2,
@@ -227,9 +236,11 @@ gemma's 32768. An `S_res` pass rate is only comparable between dictionaries of s
 **Tier 1 detail.** The per-metric scorecard is not copied here any more. It was, and it drifted: it still read 9 rows and "28 non-genuine" after the toy had grown to 14 rows and 35. The live table is [`synthetic_toy_calibration.md`](synthetic_toy_calibration.md), written by the calibration itself on every run, so it cannot say something the run did not.
 
 **Tier 2 detail** — on the trained toy the metrics keep **every** edge whose two endpoints the SAE
-actually recovered, with **no false positives**. The three missed edges are exactly the three child
-features the SAE never learned (it recovered 17 of 20), so 0.67 recall is a limit of the trained SAE,
-not of the metrics. The loop:
+actually recovered, with **no false positives**. The current checkpoint recovered all 20 features, so
+all 9 edges were testable and all 9 came back. The rule that a miss counts against a metric only when
+the SAE learned both endpoints did its work on the checkpoint graded until 19 August: that one
+recovered 17 of 20, and its three missed edges were exactly the three whose child was among the
+missing — a limit of the trained SAE, not of the metrics. The loop:
 
 1. **Rebuild the toy** — Bussmann's compositional tree from the team's
    [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo
@@ -253,8 +264,8 @@ python3 -m reporting.visualize --calibration                # Tier 1 dashboard
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py    # Tier 2 (needs outputs/toy_trained/)
 python3 -m reporting.visualize --trained-calibration        # Tier 2 dashboard
 
-python3 -m validation.qualitative_check                     # Tier 4
-python3 -m reporting.visualize --qualitative                # Tier 4 dashboard
+python3 -m validation.qualitative_check                     # Tier 3
+python3 -m reporting.visualize --qualitative                # Tier 3 dashboard
 ```
 
 ## The finding these outputs support

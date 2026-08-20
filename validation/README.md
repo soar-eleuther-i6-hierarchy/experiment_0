@@ -39,42 +39,45 @@ generator. [`tests/`](../tests/) now holds real unit tests.)
 
 Tiers 1–2 live here. They have a ground-truth tree and run offline.
 
-**Tier 3 — the PCFG SAE — does not live here.** It has no calibration script, because it is not
-scored against a known answer: it runs the ordinary pipeline over statistics built by
-`adapters/from_pcfg.py` in the umbrella repo (outside this one) and reports the same
-battery outputs as Tier 4. Its grammar *is* known, and the PCFG repo ships
-`pcfg_bridge.grammar.vocab.role_of(token_id)` for building a latent→symbol mapping from it, but
-nothing consumes that yet. A `calibrate_on_pcfg.py` beside the other two is what closing that would
-look like.
-
-**Tier 4 is the odd one that does live here** — [`qualitative_check.py`](qualitative_check.py)
+**Tier 3 is the odd one that does live here** — [`qualitative_check.py`](qualitative_check.py)
 needs the real `exp0_stats.pt`, needs the network for labels, is judged by human reading rather
 than against a known answer, and writes a published artifact into `RUN_DIR`.
 
-This numbering matches [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-four-tiers)
-and the paper's tier table. It used to be the other way round here — 3 for the qualitative pass and
-4 for PCFG — which is worth stating because a reader who saw the old order has the two swapped.
+**The PCFG SAE is a control, not a tier.** It used to be Tier 3, and it never met the bar the column
+headings promise: a rung licenses the one above it by scoring the battery against a known answer, and
+this run has none. Its grammar *is* known, and the PCFG repo ships
+`pcfg_bridge.grammar.vocab.role_of(token_id)` for building a latent→symbol mapping from it, but
+nothing consumes that yet, so it reports the same battery outputs as Tier 3 rather than a recovery
+score. What it does answer is a different question — what corpus complexity does to the same battery,
+between a hand-built world and natural language — which is why it is a control. It has no calibration
+script here: the statistics come from `adapters/from_pcfg.py` in the umbrella repo. A
+`calibrate_on_pcfg.py` beside the other two is what closing the gap would look like, and would make
+it a rung.
 
-Full results and the four-tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-four-tiers)
+The numbering has moved twice, which is worth stating because a reader of an older page has it
+differently: it was once 3 for the qualitative pass and 4 for PCFG, then 3 for PCFG and 4 for
+qualitative, and it is now three tiers with the qualitative pass at 3 and PCFG off the ladder.
+
+Full results and the tier table: [outputs/README.md](../outputs/README.md#how-the-metrics-are-validated-three-tiers)
 
 | File | Tier | Runs on | Scored against | What it does |
 | ---- | ---- | ------- | -------------- | ------------ |
 | [`synthetic_toy_world.py`](synthetic_toy_world.py) | 1 | — | — | builds the synthetic world: a known 5-parent tree plus **six** injected structures (superparent, feature-split parent, frequency-coincidence edge, an absorbed child, a shared-topic pair, and a within-block containment + duplicate pair), reduced to the statistics the metrics read **and** to the per-token view the probes need |
 | [`calibrate_on_synthetic_toy.py`](calibrate_on_synthetic_toy.py) | 1 | hand-built statistics + per-token residuals | **known tree** | runs every metric on that world and scores it on the job it claims — **14/14 pass**, covering **21/21 metric functions**. One seed: `calibrate(seed=0)`, called once. `build_world` takes a seed so the run can be varied, but nothing loops over one, and this page claimed a 0–7 sweep that has never existed |
-| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 0.67** — and, since 7 Aug, runs the probe functions on the **learned** latents: `S_res` accepts **5/5** testable true edges at parent rank 0–1, and parent-conditioned redundancy **catches a real defect the SAE introduced** (see below) |
-| `adapters/from_pcfg.py` *(umbrella repo, not this one)* | 3 | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **nothing yet** — the grammar is known but no latent→symbol mapping exists | same battery as Tier 4, on a source that has a base model; layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
-| [`qualitative_check.py`](qualitative_check.py) | 4 | the released `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+| [`calibrate_on_trained_toy.py`](calibrate_on_trained_toy.py) | 2 | a Matryoshka SAE *actually trained* on that tree | **known tree** | matches learned latents back to true features, scores edge recovery — **precision 1.00, recall 1.00** (9/9 edges, 0 false positives, all 20 features learned) — and runs the probe functions on the **learned** latents: `S_res` accepts **9/9** testable true edges against a chance rate of 0.25 |
+| [`qualitative_check.py`](qualitative_check.py) | 3 | the released `gemma-2-2b` SAE | **nothing — no ground truth** | contrasts survivor vs rejected edges and reads both endpoint labels against Neuronpedia. Also pipeline stage 02b |
+| `adapters/from_pcfg.py` *(umbrella repo, not this one)* | control | a PCFG-trained Matryoshka SAE (zipf 1.5, 1792 latents, 8 blocks) | **nothing yet** — the grammar is known but no latent→symbol mapping exists | same battery as Tier 3, on a source that has a base model; layer 01: 327 candidates, 100% recon, 0/327 S_res; layer 03: 781 candidates, 95% recon, 4/772 S_res |
 
-**Why Tier 4 is not named `calibrate_*`.** The first two score metrics against an answer we know.
-Tier 4 has no such answer: it is judged by reading labels that are themselves model-generated
+**Why Tier 3 is not named `calibrate_*`.** The first two score metrics against an answer we know.
+Tier 3 has no such answer: it is judged by reading labels that are themselves model-generated
 (Neuronpedia's autointerp). Calling it a calibration would claim a ground truth that does not exist,
-so the verb differs on purpose. Tier 3 is not a `calibrate_*` either, for a different reason — it
-*has* an answer available and does not use it yet.
+so the verb differs on purpose. The PCFG control is not a `calibrate_*` either, for a different
+reason — it *has* an answer available and does not use it yet.
 
 ```bash
 python3 validation/calibrate_on_synthetic_toy.py               # Tier 1
 PYTHONPATH=src python3 validation/calibrate_on_trained_toy.py  # Tier 2, needs outputs/toy_trained/
-python3 -m validation.qualitative_check                        # Tier 4, needs exp0_stats.pt + labels
+python3 -m validation.qualitative_check                        # Tier 3, needs exp0_stats.pt + labels
 ```
 
 ## The notebooks
@@ -101,30 +104,37 @@ features, 9 edges, no injected pathologies**.
 
 So the step from Tier 1 to Tier 2 changes the world as well as where the statistics come from, and
 does not isolate "the SAE had to learn it" as a single moving part. What it does isolate cleanly is
-**blame** — a missed edge counts against a metric only if the SAE learned both endpoints, and all
-three of Tier 2's misses trace to the three features it never learned.
+**blame** — a missed edge counts against a metric only if the SAE learned both endpoints. On the
+current checkpoint there is nothing to attribute: it learned all 20 features and the battery returned
+all 9 edges. That rule mattered on the checkpoint graded until 19 August, which learned 17 of 20 and
+whose three misses were exactly the three features it never learned.
 
-Tier 2 needs a checkpoint in `outputs/toy_trained/`, trained via `sae-training/scripts/train_toy.py`
-from the team's [`sae-training`](https://github.com/soar-eleuther-i6-hierarchy/sae-training) repo. It
-also reads that repo's `configs/tree.json` for the ground-truth tree, and expects the clone **beside**
-`metrics/` (`../sae-training/`); set `EXP0_SAE_TRAINING` if yours lives elsewhere.
+Tier 2 needs a checkpoint in `outputs/toy_trained/`. The reference one is trained by
+[`notebooks/train_and_calibrate_on_toy.ipynb`](notebooks/train_and_calibrate_on_toy.ipynb) in this
+directory, which writes `cfg.json` + `sae_weights.safetensors` there directly;
+`sae-training/scripts/train_toy.py` in the team repo trains the same world with that repo's own
+trainer. Either way the ground-truth tree is read from `sae-training/configs/tree.json`, expected
+**beside** `metrics/` (`../sae-training/`); set `EXP0_SAE_TRAINING` if your clone lives elsewhere.
 
 Both tiers write into [`outputs/`](../outputs/) (`synthetic_toy_calibration.json`,
 `trained_toy_calibration.json`) and have a dashboard: `python3 -m reporting.visualize --calibration`
 and `python3 -m reporting.visualize --trained-calibration`.
 
-## What Tier 2 found in the SAE itself
+## What Tier 2 found in the SAE itself — and what the current checkpoint does not
 
-The tree declares all three parents `mutually_exclusive_children`, and in 200,000 draws true
-features 5 and 7 co-fire **zero** times. The latents that recovered them co-fire **27,592** times,
-and the one matched to feature 5 **never fires alone**. The trained SAE conflated two concepts the
-grammar keeps apart.
+**On the checkpoint graded until 19 August**, the sibling metric caught a defect nobody injected.
+The tree declares all three parents `mutually_exclusive_children`, and in 200,000 draws true features
+5 and 7 co-fired **zero** times, while the latents that recovered them co-fired **27,592** times — the
+one matched to feature 5 never firing alone. That SAE had conflated two concepts the grammar keeps
+apart, `parent_conditioned_redundancy` reported **0.958** for that parent against 0.000 for the other
+two, and edge recovery still called both of its edges recovered: the sibling metric was adding a
+column coverage and reconstruction do not have, exactly as the properties matrix claims.
 
-`parent_conditioned_redundancy` reports 0.958 for that parent against 0.000 for the other two, so it
-catches a defect **nobody injected** — which is the thing Tier 1 structurally cannot do, since there
-every pathology is one we put in. Edge recovery calls both of that parent's edges recovered, and
-precision stays 1.00: the sibling metric is adding a column the coverage and reconstruction metrics
-do not have, exactly as the properties matrix claims.
+**The checkpoint graded now has no such defect.** `parent_conditioned_redundancy` reports **0.000
+for all three parents** and the recovered latents co-fire zero times, matching the ground truth. The
+metric is doing the same thing in both cases — reporting what is there — so the demonstration above
+is kept as what it was: evidence that this metric can find a defect Tier 1 structurally cannot,
+because there every pathology is one we put in. It is not a claim about the current SAE.
 
 ## What Tier 1 did not cover until 7 August
 
@@ -151,18 +161,20 @@ worth carrying into any cross-source comparison of S_res pass rates.
 Tier 1 is certain but artificial — it proves the arithmetic is right, and nothing about whether an
 SAE would ever learn such a structure. Tier 2 closes exactly that gap: the toy passes through a real
 training run first, so only what the SAE actually learned reaches the metrics. That is also what lets
-it attribute a miss: a missed edge counts against a metric only if the SAE learned both endpoints
-(it recovered 17 of 20 features, and all three misses trace to the three it did not).
+it attribute a miss: a missed edge counts against a metric only if the SAE learned both endpoints.
+The current checkpoint learned all 20 and missed nothing, so the rule has nothing to do; it did the
+work on the checkpoint graded until 19 August, which learned 17 and missed exactly the three edges
+whose child was among the missing.
 
 ## The lateral control
 
-The four tiers are a ladder along one axis: ground truth traded against realism, all answering
+The three tiers are a ladder along one axis: ground truth traded against realism, all answering
 *are the metrics trustworthy?* A control answers a different question — one that has to be closed
 before the gemma result means what we say it means.
 
 | File | Question | Result |
 | ---- | -------- | ------ |
-| [`block_tree_alignment.py`](block_tree_alignment.py) | does the **Matryoshka nesting itself** put a parent in an earlier block than its children? | **6/6 testable edges respected**; mean block 1.7 for parents, 4.5 for children |
+| [`block_tree_alignment.py`](block_tree_alignment.py) | does the **Matryoshka nesting itself** put a parent in an earlier block than its children? | **6/6 testable edges respected**; mean block 1.7 for parents, 4.5 for children — **on the 9 August checkpoint; not re-run since, see below** |
 
 ```bash
 python3 -m validation.block_tree_alignment                       # needs outputs/toy_trained/
@@ -170,10 +182,20 @@ python3 -m reporting.visualize --trained-calibration             # renders it on
 ```
 
 It writes `outputs/block_tree_alignment.json`, which the Tier-2 dashboard picks up if it is there
-and skips if it is not — the two are separate questions and separate scripts, but they share a page
-because a reader comparing **6/6 respected** against **6/9 recovered** will otherwise assume the two
-sixes count different edges. They do not: the three edges the nesting cannot test are exactly the
-three whose child the SAE never learned.
+and skips if it is not — the two are separate questions and separate scripts, sharing a page.
+
+**The result above is stale, and the script no longer runs.** `block_tree_alignment.json` is dated
+9 August against a `trained_toy_calibration.json` of 19 August: it describes the checkpoint that
+learned 17 of 20 features, where the three untestable edges were exactly the three whose child was
+never learned. Re-running it on the current checkpoint raises `KeyError: 'latent_sizes'` — the
+`cfg.json` the notebook now writes carries `notebook_config` (`n_prefixes`, `n_latents`) instead.
+
+That is not only a key rename. The 9 August file assumed ten equal blocks,
+`[2, 4, … , 20]`, and upstream's `sample_prefixes` **draws prefix lengths at random every step**
+(Pareto-biased toward short ones); it has no fixed block boundaries at all. What makes latent order
+meaningful is `permute_latents` pushing high-contribution latents toward the front, not a partition.
+So the control needs its discretisation stated and defended before it is re-run, rather than an
+even split restored to make the script pass.
 
 The page also states what the 6/6 costs. Three true features were recovered by more than one latent,
 and the check takes the **earliest** block for each — the reading most favourable to the
@@ -189,13 +211,14 @@ distribution does to it, which is exactly what Exp 2 sweeps.
 
 **Why it is answerable here and nowhere else.** Tier 2 indexes by ground truth rather than by block
 on purpose: mixing the two would confound "is the metric right?" with "did Matryoshka order the
-features right?", and that separation is what lets it report recall 0.67 as the SAE's ceiling rather
+features right?", and that separation is what let it report the SAE's recall as the SAE's ceiling rather
 than the metrics'. So the second question stayed open. The toy can answer it because it has ten
 Matryoshka blocks *and* a known tree. On gemma it cannot be asked at all — the correct ordering is
 unknown, so a violation is indistinguishable from a concept we misread.
 
-The 3 untestable edges are the same 3 children the SAE never learned, the same ceiling recall 0.67
-reports. Feature splitting does show up: 3 true features are recovered by two latents each.
+On that 9 August checkpoint the 3 untestable edges were the same 3 children the SAE never learned,
+the same ceiling its recall reported. Feature splitting did show up: 3 true features recovered by two
+latents each.
 
 ## What is *not* here
 
