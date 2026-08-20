@@ -2279,15 +2279,52 @@ def _captions():
             r"between parent and child. A parent firing on 1\% of tokens would need "
             rf"{C.EDGE_TAU / 0.01:.0f}$\times$ enrichment for the same edge. This is the "
             "mechanism behind the previous figure.")
+        # The withdrawal is stated from the four series the figure plots, not from five
+        # numbers typed into the sentence. Those read "5, 7, 6, 7, 6"; no field in any
+        # committed report reproduces them over any five of the graded layers, and they
+        # predate the sixth layer, so they were replaced rather than re-pinned.
+        prof = {
+            "candidate edges": [rp(L)["n_candidate_edges"] for L, _ in lay],
+            "the share improving reconstruction":
+                [rp(L)["reconstruction"]["frac_pass"] for L, _ in lay],
+            "the frequency-driven share":
+                [rp(L)["freq_control"]["frac_freq_driven"] for L, _ in lay],
+            "mean frequency survival":
+                [rp(L)["freq_control"]["mean_survival"] for L, _ in lay],
+        }
+
+        def _monotone(v):
+            return all(b >= a for a, b in zip(v, v[1:])) or all(b <= a for a, b in zip(v, v[1:]))
+
+        n_mono = sum(_monotone(v) for v in prof.values())
+
+        def _interior_turn(v):
+            """The index of a max or min that falls strictly inside the layer range.
+
+            An extreme at either end is consistent with a monotone trend and proves
+            nothing; only an interior one is a turning point. Picking the extreme
+            farthest from the middle, as this first did, selects exactly the wrong
+            thing and produced "peaks at layer 1 rather than at either end".
+            """
+            for i, word in ((v.index(max(v)), "peaks"), (v.index(min(v)), "bottoms out")):
+                if 0 < i < len(v) - 1:
+                    return i, word
+            return None
+
+        turn = next(((k, _interior_turn(v)) for k, v in prof.items() if _interior_turn(v)),
+                    None)
         d["depth_profile_across_layers"] = (
-            rf"Four quantities for block pair B0$\rightarrow$B1 across the {_spell(len(lay))} graded "
-            "layers, "
-            "each on its own axis because they are not commensurable. The project previously "
-            "reported that hierarchy quality degrades with depth. That claim came from caches in "
-            "which the beginning-of-sequence position was counted, and it does not survive "
-            "regeneration: the distinct-parent counts among survivors read 5, 7, 6, 7, 6. The "
-            "figure is included because the withdrawal is itself a result about how easily a "
-            "depth trend can be manufactured.")
+            rf"Four quantities for block pair B0$\rightarrow$B1 across the {_spell(len(lay))} "
+            "graded layers, each on its own axis because they are not commensurable. The "
+            "project previously reported that hierarchy quality degrades with depth. That "
+            "claim came from caches in which the beginning-of-sequence position was counted, "
+            "and it does not survive regeneration: "
+            + (f"{_spell(n_mono)} of the four measures is monotonic in depth"
+               if n_mono else "not one of the four measures is monotonic in depth")
+            + (f", and {turn[0]} {turn[1][1]} at layer {lay[turn[1][0]][0]}, "
+               "inside the range rather than at either end." if turn else ".")
+            + " The figure is included because the withdrawal is itself a result about how "
+            "easily a depth trend can be manufactured.")
         d["edge_survival_by_block_pair"] = (
             r"\emph{Left:} the share of candidate edges whose reconstruction improves when the "
             r"parent is ablated. \emph{Right:} the share the token-frequency control judges to be "
