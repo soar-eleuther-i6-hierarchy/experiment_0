@@ -1,0 +1,197 @@
+"""
+Tier-B retrieval driver — score one real checkpoint's detector x confound AUROC grid.
+
+Matching is on the IN-SAMPLE draw; the detector statistics run on a HELD-OUT draw
+(disjoint seed, same geometry). The reusable AUROC/CI/ensemble toolkit lives in
+`scoring.core.grid`; this module only wires a loaded checkpoint through it, adds the
+oracle-ceiling survival-Δ (`scoring.oracle.ceiling`), and writes the report.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import torch
+
+from scoring.core.detectors import compute_all
+from scoring.core.grid import (
+    _ensemble_macro_ci,
+    _ensemble_pooled_auroc,
+    auroc_matrix,
+    class_members,
+    dispersion_split,
+    held_out_sample_seed,
+    mean_percentile_ensemble,
+    min_percentile_ensemble,
+    pair_frame,
+    random_scalar_control,
+    redundancy_map,
+    reduce_to_recovered,
+    shuffled_label_control,
+)
+from scoring.core.registry import (
+    CONSTANTS,
+    ENSEMBLE_DETECTORS,
+    POSITIVE_LABEL,
+    SCORED_COLUMNS,
+)
+from toygen import labels
+
+
+def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | None = None,
+                  out: str | Path | None = None) -> dict:
+    """Score one checkpoint's Tier-B retrieval grid (matching in-sample, detectors held-out).
+
+    Not unit-tested (loads a real checkpoint via `scoring.trained.loaders.load_sae`);
+    validated on the server.
+    """
+    # Driver-local imports: `load_sae` pulls the heavy `sae_training` backend, so keep it out of
+    # module import (this file must stay importable in the CPU test env). The rest are grouped with
+    # it — the module-level toolkit above is all `scoring.core`, so there is no import cycle to dodge.
+    from scoring.trained.loaders import load_sae
+    from scoring.core.world import regenerate_world, signed_normalized_decoder
+    from scoring.core.recovery import (activation_corr, child_direction_dispersion,
+                                       match_features, realized_l0)
+
+    rho = CONSTANTS["rho_star"] if rho is None else rho
+    loaded = load_sae(ckpt_dir)
+    meta = loaded.meta
+    W_raw = loaded.W_dec
+
+    # 1. Tier-A match on the IN-SAMPLE draw.
+    in_world = regenerate_world(meta["resolved_config"], sample_seed=meta["train_seed"],
+                                n_tokens=n_tokens)
+    acts_in = loaded.encode(in_world.h)
+    oriented_in = signed_normalized_decoder(W_raw, acts_in, in_world.h)
+    res = match_features(activation_corr(in_world.A, acts_in), in_world.g, oriented_in, rho=rho)
+
+    # 2. HELD-OUT draw for the detector statistics (disjoint seed, same geometry).
+    ho_seed = held_out_sample_seed(int(meta["train_seed"]))
+    ho = regenerate_world(meta["resolved_config"], sample_seed=ho_seed, n_tokens=n_tokens)
+    acts_ho = loaded.encode(ho.h)
+    oriented_ho = signed_normalized_decoder(W_raw, acts_ho, ho.h)
+    # Realized L0 on the HELD-OUT draw — the sparsity the Stage-0 oracle encoder is calibrated to,
+    # so the clean ceiling is read at the SAME L0 as the trained metric (not the nominal top-k).
+    ho_realized_l0 = realized_l0(acts_ho)
+
+    feats, di, _ = reduce_to_recovered(
+        acts_ho, oriented_ho, W_raw, res.match, res.recovered,
+        h=ho.h, b_dec=loaded.b_dec, tokens=ho.tokens, vocab=ho.cfg.vocab)
+    detectors = compute_all(di, CONSTANTS)
+    pairs, y_label = pair_frame(feats, ho.pair_labels)
+    all_columns = SCORED_COLUMNS
+    grid = auroc_matrix(detectors, pairs, y_label, all_columns)
+    per_class_rec = _per_class_recovery(res.recovered, ho.pair_labels, feats)
+
+    # Ensemble vs class-balanced pooled negatives (H6). Over the GENERAL is-a detectors
+    # only (ENSEMBLE_DETECTORS) — a per-parent specialist inside the gate vetoes every is-a
+    # pair. MEAN-percentile is H6's primary (min is fragile to a single dead gate); the min
+    # is reported as a robustness number.
+    ens_subset = {d: detectors[d] for d in ENSEMBLE_DETECTORS}
+    ens_mean = mean_percentile_ensemble(ens_subset, pairs)
+    ens_min = min_percentile_ensemble(ens_subset, pairs)
+    ens_h6 = _ensemble_pooled_auroc(ens_mean, pairs, y_label)
+    ens_h6["ci_lo"], ens_h6["ci_hi"] = _ensemble_macro_ci(ens_mean, y_label)   # H6 variance bound
+    ens_h6_min = _ensemble_pooled_auroc(ens_min, pairs, y_label)
+
+    # dispersion-conditioned is-a readout: r_disp over the FULL held-out dictionary,
+    # indexed by true feature id; a truth-g DIAGNOSTIC on the readout, never a detector.
+    r_disp_vec = child_direction_dispersion(oriented_ho, ho.g, res.match, feats,
+                                            m=CONSTANTS["r_disp_m"])
+    isa_m = class_members(y_label, POSITIVE_LABEL).tolist()
+    fo_m = class_members(y_label, "firing_only").tolist()
+    isa_pairs = [pr for pr, inside in zip(pairs, isa_m) if inside]
+    fo_pairs = [pr for pr, inside in zip(pairs, fo_m) if inside]
+    r_disp = {b: float(r_disp_vec[b]) for _, b in isa_pairs}   # b == child position == feats index
+    disp = (dispersion_split(isa_pairs, r_disp, detectors["s_res"], neg_pairs=fo_pairs)
+            if isa_pairs and fo_pairs else None)
+    # Mean over the IS-A CHILDREN (r_disp is already keyed to them), NOT all recovered features
+    # (roots are well-recovered and would pull it down) — so the sweep's dispersion axis matches
+    # Tier-A's dispersion_mean and the clean floor (~0.33) it is read against.
+    dispersion_mean = float(sum(r_disp.values()) / len(r_disp)) if r_disp else float("nan")
+
+    # Stage-0 survival-Δ: the clean (perfect-dict) ceiling on the SAME recovered pairs, and the
+    # trained-vs-clean gap that attributes a low trained AUROC to metric-weak vs training-erased.
+    # The oracle-ceiling toolkit reads `auroc_matrix` from `scoring.core.grid`, so this driver-local
+    # import is only to defer the (light) module load, not to dodge a cycle.
+    from scoring.oracle.ceiling import (clean_grid, degenerate_clean_detectors, stage0_caveats,
+                                        survival_delta)
+    # A held-out draw whose realized L0 is 0 (a fully dead SAE) cannot calibrate the oracle-encoder
+    # ceiling — the oracle_encode gate would have no positive projections to threshold. Refuse to
+    # fabricate a Stage-0 ceiling in that case rather than emit a garbage 0.5 grid; the recovery
+    # side already reports the dead SAE. (A partial-but-positive L0 is fine.)
+    if ho_realized_l0 > 0 and feats:
+        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0)
+        # degenerate set computed BEFORE survival_delta so the Δ cells can be MARKED degenerate
+        # (a constant clean ceiling is a meaningless ~0.5 that must not be read as an attribution).
+        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0)
+        survival = survival_delta(stage0, grid, all_columns,
+                                  degenerate_detectors=stage0_degenerate)
+        stage0_caveat_cells = stage0_caveats(survival)
+    else:
+        stage0, survival, stage0_caveat_cells, stage0_degenerate = {}, {}, [], []
+
+    rng = torch.Generator().manual_seed(0)
+    controls = {
+        "random_scalar_firing_only": random_scalar_control(pairs, y_label, "firing_only", rng),
+        "shuffled_s_res_firing_only": shuffled_label_control(
+            detectors["s_res"], pairs, y_label, "firing_only", rng),
+    }
+    report = {
+        "checkpoint": str(ckpt_dir),
+        "meta": {k: meta[k] for k in ("config", "variant", "k", "train_seed", "overrides")
+                 if k in meta},
+        "n_recovered": len(feats), "n_pairs": len(pairs),
+        "ci_note": ("per-cell grid ci_lo/ci_hi are logit CIs under a pair-INDEPENDENCE "
+                    "assumption (anticonservative: pairs derive from ~F features, not n_pairs "
+                    "independent draws); the reportable interval is the across-seed Student-t "
+                    "from aggregate_seeds, not a single seed's cell CI."),
+        "ensemble_detectors": list(ENSEMBLE_DETECTORS),
+        "grid": grid, "per_class_recovery": per_class_rec,
+        "stage0_clean_grid": stage0, "survival_delta": survival,
+        "stage0_caveats": stage0_caveat_cells,
+        "stage0_degenerate_detectors": stage0_degenerate,
+        "realized_l0": ho_realized_l0, "architecture": loaded.arch,
+        "dispersion_mean": dispersion_mean,
+        "ensemble_h6": ens_h6, "ensemble_h6_min_robustness": ens_h6_min,
+        "dispersion_split": disp,
+        "redundancy": redundancy_map(detectors, pairs, y_label, SCORED_COLUMNS, grid=grid),
+        "controls": controls,
+    }
+    # J(p) fallback-vs-exact diagnostic: a readout on joint_child_J's accuracy, never a scored
+    # detector (kept out of the DETECTORS grid).
+    from scoring.trained.diagnostics import j_fallback_vs_exact
+    report["j_supp_diagnostic"] = j_fallback_vs_exact(di, CONSTANTS)
+    if out is not None:
+        Path(out).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return report
+
+
+def _per_class_recovery(recovered: torch.Tensor, pair_labels: torch.Tensor,
+                        feats: list[int]) -> dict[str, list[int]]:
+    F = pair_labels.shape[0]
+    eye = torch.eye(F, dtype=torch.bool)
+    both = recovered[:, None] & recovered[None, :]
+    out = {}
+    for name in labels.LABELS:
+        # Single-label equality; mask the diagonal because is_a is index 0 == the diagonal.
+        in_cls = (pair_labels == labels._index(name)) & ~eye
+        out[name] = [int((in_cls & both).sum()), int(in_cls.sum())]
+    return out
+
+
+def main() -> None:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Tier-B retrieval scorer for a toy SAE checkpoint.")
+    ap.add_argument("ckpt", type=Path)
+    ap.add_argument("--n-tokens", type=int, default=200_000)
+    ap.add_argument("--out", type=Path, default=None)
+    args = ap.parse_args()
+    report = run_retrieval(args.ckpt, n_tokens=args.n_tokens, out=args.out)
+    print(json.dumps(report, indent=2))
+
+
+if __name__ == "__main__":
+    main()
