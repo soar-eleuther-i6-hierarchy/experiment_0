@@ -234,54 +234,57 @@ def t_matrix():
     cols = ["Parent$\\rightarrow$child", "Absorption", "Splitting", "Superparent",
             "Multi-parenting", "Siblings", "Frequency", "Topic"]
     rows = [[r[0]] + [GLYPH[c] for c in r[1:]] for r in MATRIX]
+    # HUMAN-WRITTEN CAPTION. Transcribed from the manuscript, where it was rewritten
+    # by hand after the machine draft: shorter, with a sentence on how the row
+    # numbers relate to the battery, and with the two open columns left to the body
+    # text instead of argued here. The draft it replaced also cited
+    # Table~\ref{tab:tier1}, which the paper no longer has -- regenerating over the
+    # manuscript would have reintroduced a dangling reference. Edit the paper and
+    # this string together, or neither.
     return table(
         "matrix", r"\textbf{What each metric can separate.} A candidate pair can look like an "
-        "edge for eight reasons and only one is hierarchy, so the question per metric is which "
-        r"column it adds, not whether it is correct. $\bullet$ detects, $\circ$ partial "
-        "(necessary but not sufficient, or only in some regimes), -- blind. \\textbf{These cells "
-        "are read off each metric's construction and are not a measured accuracy}; every one is "
-        r"exercised by a row of Table~\ref{tab:tier1}. \emph{Superparent} and "
-        r"\emph{multi-parenting} are separate columns because they are separate pathologies: the "
-        "first is an out-degree failure, one parent claiming most of the child block, and the "
-        "second an in-degree failure, one child claimed by several parents. Only the out-degree "
-        "metric reads in-degree at all; the two filters marked partial there earn it by removing "
-        "the edges that produce the tangle, the base-rate hubs and the geometrically unrelated "
-        "pairs, rather than by measuring a child's parent count. "
-        r"Two columns are open and stay open. "
-        r"\emph{Absorption} is unreachable because coverage gates the candidate set and an "
-        "absorbed child has low $R$ by construction. \\emph{Topic} --- two specific, unrelated "
-        "features sharing a latent subject --- passes coverage, reconstruction, the frequency "
-        "control and PMI alike; closing it needs a model-based topic null rather than another "
-        "threshold.",
+        r"edge for eight reasons and only one of them is hierarchy. $\bullet$ detects, "
+        r"$\circ$ partial, -- blind. Row numbers follow the battery above (coverage appears "
+        "as its two legs); the in-block measurement is unnumbered because it grades "
+        "same-level pairs, not candidate edges. The cells are read off each metric's "
+        r"construction, not measured. \emph{Superparent} and \emph{multi-parenting} are "
+        "separate columns because they are separate pathologies: the first is an out-degree "
+        "failure, one parent claiming most of the child block, and the second an in-degree "
+        "failure, one child claimed by several parents. Only the out-degree metric reads "
+        "in-degree at all; the filters marked partial there earn it by removing the edges "
+        "that produce the tangle rather than by measuring a child's parent count. The two "
+        "open columns, absorption and topic, are discussed in the text.",
         [""] + cols, rows, align="l" + "c" * len(cols), star=True)
 
 
 # ---------------------------------------------------------------------------
 # 4. The tiers.
 # ---------------------------------------------------------------------------
-def t_tiers(toy, tt, align_json, pcfg=None):
-    r"""The ladder, with Tier 3 described as what it is rather than as what it was meant to be.
+def t_tiers(toy, tt, align_json):
+    r"""The ladder: three rungs, ground truth traded against realism.
 
-    Two things this row used to assert and no longer does.
+    **The PCFG SAE is not a rung here.** It used to be Tier 3, and it was the one
+    row that could not do what the column headings promise: the ladder's argument
+    is that each rung licenses the one above it by scoring the battery against a
+    known answer, and the PCFG run has no such score. Its grammar is known, but
+    nothing maps a latent to a grammar symbol, so its result cell reported the same
+    battery outputs as the released-SAE rung -- a row that consumed a quarter of
+    the table to say "same as the rung below, without the ground truth".
 
-    It claimed Tier 3 "keeps the known tree". It does not: Tier 2's tree is
-    Bussmann's -- 20 features, 9 edges, exclusive siblings, from the team repo's
-    `configs/tree.json` -- and Tier 3's is a PCFG whose hierarchy is
-    document/section/paragraph/sentence over S-V-O roles. Different structures,
-    and the word "tree" doing double duty is what let the claim through.
+    Two claims it made before that had already been withdrawn, kept here because a
+    reader of an older draft has them: it did NOT "keep the known tree" (Tier 2's
+    tree is a clean 20-feature, 9-edge hierarchy; the PCFG's is
+    document/section/paragraph/sentence over S-V-O roles -- different structures,
+    with the word "tree" doing double duty), and it did NOT "isolate base-model
+    dependence" (grammar, base model, corpus and dictionary size all move together,
+    so it bounds that contribution rather than isolating it).
 
-    It also claimed Tier 3 "isolates base-model dependence". Isolation needs one
-    variable to move. Between Tiers 2 and 3 the grammar, the base model, the
-    corpus and the dictionary size all move together, so the tier BOUNDS the
-    base model's contribution rather than isolating it. Isolating it would mean
-    training a transformer on Bussmann's own tree, which nothing here does.
-
-    And the ground-truth cell promised a measurement the result cell does not
-    deliver: the grammar is known, but nothing maps a latent to a grammar symbol,
-    so Tier 3 reports the same battery outputs as Tier 4. The helper that would
-    close it exists -- `pcfg_bridge.grammar.vocab.role_of` in the PCFG repo,
-    named in its `analysis/README.md` for exactly this -- so the cell says "not
-    yet" rather than implying the tier is inherently blind.
+    The PCFG runs have not left the paper: Table~\ref{tab:sources} and
+    Table~\ref{tab:layers} carry them, which is where a source without a ground
+    truth belongs -- beside the other source the battery is run on, not on a ladder
+    of things scored against known answers. The helper that would give it a score
+    exists (`pcfg_bridge.grammar.vocab.role_of` in the PCFG repo), so this is a
+    rung that could be built, not one that is ruled out.
     """
     n_pass = sum(r["pass"] for r in toy) if toy else None
     # Counted from the qualitative reports, not written down: it was "40" from
@@ -291,27 +294,9 @@ def t_tiers(toy, tt, align_json, pcfg=None):
         rep = _json(q) or {}
         n_surv += sum(1 for rows in rep.values() for r in rows
                       if r.get("category") == "survivor")
-    pcfg_result, pcfg_runs_on, pcfg_detail = "---", "a Matryoshka SAE on a PCFG corpus", None
-    if pcfg:
-        parts, cands = [], []
-        for name, r, sp in pcfg:
-            p = _pair(r)
-            recon = rf"{100 * p['reconstruction']['frac_pass']:.0f}\%"
-            sr = sp["0->1"]["sres"] if sp and "0->1" in sp else None
-            sres = rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"
-            cands.append(p["n_candidate_edges"])
-            parts.append(rf"{name.replace('layer_', 'layer~')}: {p['n_candidate_edges']:,} "
-                         rf"candidates, {recon} recon, {sres} $S_\mathrm{{res}}$")
-        # The cell summarises and the note carries the per-layer detail: four
-        # measurements inline overflowed the text block, and a table that runs
-        # off the page is not a table.
-        pcfg_result = (rf"{len(pcfg)} layers, {min(cands):,}--{max(cands):,} candidates; "
-                       r"\emph{no ground-truth score} --- same battery outputs as Tier~4")
-        pcfg_detail = "Tier~3, per layer: " + "; ".join(parts) + "."
-        nl = ((pcfg[0][1].get("config") or {}).get("base_model") or {}).get("n_layers")
-        pcfg_runs_on = ("a Matryoshka SAE over a "
-                        + (f"{nl}-layer " if nl else "small ")
-                        + "transformer trained on a PCFG corpus")
+    # The PCFG runs are still gathered by the caller and still reported -- in
+    # Table~\ref{tab:sources} and Table~\ref{tab:layers} -- but they no longer build
+    # a row here, so nothing is computed for one.
     # Columns 2-4 hold sentences, so each is a \parbox rather than an l column
     # that would run off the page. Fractions sum to 0.65, leaving 0.35 for the
     # Tier column and the eight \tabcolsep gaps.
@@ -319,25 +304,20 @@ def t_tiers(toy, tt, align_json, pcfg=None):
     rows = [
         ("1 Synthetic toy", "hand-built statistics", "by construction",
          rf"{n_pass}/{len(toy)} rows, 21/21 functions" if toy else "---"),
-        ("2 Trained toy", "an SAE trained on Bussmann's tree", "Bussmann's tree is known",
+        ("2 Trained toy", "an SAE trained on a known tree", "the tree is known",
          rf"precision {tt['precision']:.2f}, recall {tt['recall']:.2f}" if tt else "---"),
-        ("3 PCFG SAE", pcfg_runs_on,
-         r"the grammar is known; no latent$\leftrightarrow$symbol mapping yet", pcfg_result),
-        # "Released", not "Real": Tier 3 is a real SAE too -- really trained, over
-        # a really trained transformer -- and calling only this rung real reads as
-        # demoting it, which is the confusion the Tier 3 row was just rewritten to
-        # remove. What actually sets this rung apart is that we did not train it.
-        # The release id lives in the note, not the cell. In \texttt it is a single
-        # unbreakable 29-character token, wider than any sensible column, and TeX
-        # does not shrink an overfull box -- it prints it straight across the next
-        # column. Which is what it did.
-        ("4 Released SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
+        # "Released", not "Real": every rung here is a real SAE, and calling only
+        # this one real would demote the others. What sets it apart is that we did
+        # not train it. The release id lives in the note, not the cell: in \texttt
+        # it is a single unbreakable 29-character token, wider than any sensible
+        # column, and TeX does not shrink an overfull box -- it prints it straight
+        # across the next column. Which is what it did.
+        ("3 Released SAE", rf"\texttt{{{esc(C.MODEL_NAME)}}}", "none --- human reading",
          f"{n_surv} survivors read against autointerp labels" if n_surv else "---"),
     ]
     rows = [[r[0]] + [wrap(c, w) for c, w in zip(r[1:], W)] for r in rows]
     note = " ".join(t for t in [
-        rf"Tier~4's dictionary is the released \texttt{{{esc(C.SAE_RELEASE)}}}.",
-        pcfg_detail,
+        rf"Tier~3's dictionary is the released \texttt{{{esc(C.SAE_RELEASE)}}}.",
         (rf"Lateral control (not a tier): {align_json['n_respected']}/"
          rf"{align_json['n_testable']} testable true edges run early block "
          r"$\rightarrow$ late on the trained toy." if align_json else None),
@@ -350,30 +330,25 @@ def t_tiers(toy, tt, align_json, pcfg=None):
     # carried by one word rather than asserted.
     tier2 = ("on a simpler toy"
              if not tt else
-             rf"on Bussmann's {tt['n_features']}-feature tree with "
+             rf"on a clean {tt['n_features']}-feature tree with "
              rf"{len(tt['true_edges'])} edges and no injected pathologies")
     return table(
-        "tiers", r"\textbf{Four tiers, trading ground truth against realism.} Each rung "
+        "tiers", r"\textbf{Three tiers, trading ground truth against realism.} Each rung "
         "licenses the one above it: Tier~1 proves the arithmetic and nothing about whether "
         rf"an SAE would learn such a structure. Tier~2 attacks that gap, but {tier2} rather "
         "than on the pathology-injected world Tier~1 grades, so it changes the world as well "
         "as the statistics and does not isolate training as the single moving part either. "
         "What it does isolate cleanly is blame: only what the SAE actually learned reaches the "
         "metrics, so a missed edge counts against a metric only if the SAE learned both "
-        "endpoints. Tier~3 inserts a base model between the concepts and the SAE, which "
-        "Tiers~1 and~2 do not have at all. It is \\textbf{not} a controlled swap from Tier~2: "
-        "the grammar, the base model, the corpus and the dictionary size all change together, "
-        "so it \\emph{bounds} the base model's contribution rather than isolating it --- "
-        "isolating it would mean training a transformer on Bussmann's own tree. Its grammar is "
-        "known but nothing yet maps a latent to a grammar symbol, so its result column reports "
-        "the same battery outputs as Tier~4 rather than a recovery score; the helper that would "
-        r"close the gap (\texttt{role\_of} in the PCFG repo) already exists. Tier~4 is named "
-        r"\emph{released} rather than \emph{real} --- Tier~3 is a real SAE too, really trained "
-        "over a really trained transformer, and the distinction that matters is that Tier~4 is a "
-        "published checkpoint we did not train. That is also a constraint and not only a label: "
-        "we do not control its dictionary, which is why the "
-        r"$S_\mathrm{res}$ column of Table~\ref{tab:gemma} exists for one layer only. It has no "
-        "known answer at all.",
+        r"endpoints. Tier~3 is named \emph{released} rather than \emph{real}: the rungs below "
+        "are real SAEs too, really trained, and what sets this one apart is that it is a "
+        "published checkpoint we did not train. That is a constraint and not only a label --- "
+        r"we do not control its dictionary, which is why the $S_\mathrm{res}$ column of "
+        r"Table~\ref{tab:gemma} exists for one layer only. It has no known answer at all. "
+        "A fourth source, a Matryoshka SAE over a transformer trained on a PCFG corpus, runs "
+        "through the same battery but is not a rung: its grammar is known and nothing yet maps "
+        "a latent to a grammar symbol, so it has no recovery score to license anything. It is "
+        r"reported beside gemma in Table~\ref{tab:sources} and Table~\ref{tab:layers}.",
         ["Tier", "Runs on", "Ground truth", "Result"], rows,
         # p{} rather than l: Tier 3's cells are sentences, and in an l column a
         # sentence does not wrap -- it runs off the page edge, and LaTeX only
@@ -697,8 +672,23 @@ def t_bos(matched):
         ["Quantity", "Reads co-fire", "Before", "After", "Change"], rows, star=True)
 
 
+# Tables the manuscript no longer carries, on the mentor's reading: their content
+# belongs in prose, where a reader gets the reasoning rather than a grid to decode.
+# Section 2.5 now states the battery and its thresholds in text, Section 3.1 names
+# the three tiers in three lines, and Section 3.1.1 walks the Tier-1 scorecard as a
+# numbered procedure. They are still buildable with --internal, because they remain
+# useful for reading a run at a glance; what they are not is paper material, and a
+# regeneration that silently put them back would undo an editorial decision.
+WITHDRAWN = {
+    "setup":   "withdrawn from the paper — Section 2.5 states the setup in prose (--internal to build)",
+    "battery": "withdrawn from the paper — Section 2.5 states the battery in prose (--internal to build)",
+    "tiers":   "withdrawn from the paper — Section 3.1 names the three tiers in text (--internal to build)",
+    "tier1":   "withdrawn from the paper — Section 3.1.1 walks the scorecard as a procedure (--internal to build)",
+}
+
+
 # ---------------------------------------------------------------------------
-def build(dry: bool):
+def build(dry: bool, internal: bool = False):
     written, skipped, parts = [], [], []
     G = C.OUT_DIR / C.SOURCE_NAME
     layers = gemma_layers()
@@ -724,6 +714,9 @@ def build(dry: bool):
     has_bos = len(matched) >= 2
 
     def add(slot, name, ok, why, fn, section=None):
+        if name in WITHDRAWN and not internal:
+            skipped.append((name, WITHDRAWN[name]))
+            return
         if not ok:
             skipped.append((name, why))
             return
@@ -731,16 +724,17 @@ def build(dry: bool):
         if not dry:
             parts.append((slot, section, fn()))
 
-    add("MAIN 1", "setup", bool(layers), "config + a graded layer's token count",
-        lambda: t_setup(layers, has_bos), "The instrument")
-    add("MAIN 2", "battery", True, "config thresholds", t_battery)
-    add("MAIN 3", "matrix", True, "argued, not measured -- see the module docstring", t_matrix)
-    add("MAIN 4", "tiers", bool(toy and tt), "toy + trained-toy calibration JSON"
+    add("INT 1", "setup", bool(layers), "config + a graded layer's token count",
+        lambda: t_setup(layers, has_bos), "Internal (withdrawn from the paper)")
+    add("INT 2", "battery", True, "config thresholds", t_battery)
+    add("MAIN 1", "matrix", True, "argued, not measured -- see the module docstring",
+        t_matrix, "The instrument")
+    add("INT 3", "tiers", bool(toy and tt), "toy + trained-toy calibration JSON"
         if (toy and tt) else "needs both calibration JSONs",
-         lambda: t_tiers(toy, tt, align, pcfg), "Validation")
-    add("MAIN 5", "tier1", bool(toy), f"{len(toy) if toy else 0} scorecard rows"
+         lambda: t_tiers(toy, tt, align), "Internal (withdrawn from the paper)")
+    add("INT 4", "tier1", bool(toy), f"{len(toy) if toy else 0} scorecard rows"
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
-    add("MAIN 6", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
+    add("MAIN 2", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
         if layers else "needs gemma metrics_report.json",
         lambda: t_gemma(layers, second, has_bos), "The result")
     add("APP 1", "sources", bool(layers and pcfg), f"gemma + {len(pcfg)} PCFG runs"
@@ -805,10 +799,13 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT, help="directory for tables.tex")
     ap.add_argument("--twocolumn", action="store_true",
                     help="emit table* full-width floats (needs a twocolumn class)")
+    ap.add_argument("--internal", action="store_true",
+                    help="also build the tables the paper withdrew (setup, battery, "
+                         "tiers, tier1) — useful for reading a run, not paper material")
     args = ap.parse_args()
     globals()["TWOCOLUMN"] = args.twocolumn
 
-    written, skipped, parts = build(args.list)
+    written, skipped, parts = build(args.list, internal=args.internal)
     if not args.list:
         args.out.mkdir(parents=True, exist_ok=True)
         L, seen = [HEAD], set()
