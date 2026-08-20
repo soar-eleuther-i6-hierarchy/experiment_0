@@ -4,7 +4,7 @@ For each seed the driver runs the three scorers on one checkpoint:
 
   * ``run_recovery``   — Hungarian feature matching + realized-L0 / architecture provenance;
   * ``run_retrieval``  — the relationship-retrieval AUROC grid, the Stage-0 clean-ceiling
-                          survival map, and the confirmatory-hypothesis verdicts (H1..H6);
+                          survival map, and the class-balanced ensemble pooled AUROC;
   * ``run_absorption`` — the absorption / decoder-multiplicity / composition decomposition.
 
 Every per-seed report is written to ``<out>/`` as JSON, then ``aggregate_seeds`` combines the
@@ -14,7 +14,7 @@ A compact summary is printed for quick reading; the JSON files hold the full det
 Usage (from the experiment_0 directory)::
 
     python -m scoring.run_scoring \
-        --ckpt-glob "/path/checkpoints/seed{seed}/full-unfolded-k12-x4-pow-sp6" \
+        --ckpt-glob "/path/checkpoints/seed{seed}/full-matryoshka-k13-x4-pow-sp5" \
         --seeds 0 1 2 3 4 --out outputs_local/final
 """
 
@@ -25,10 +25,11 @@ import json
 import time
 from pathlib import Path
 
-from scoring.absorption import run_absorption
-from scoring.harness import run_recovery
-from scoring.registry import DETECTORS, SCORED_COLUMNS
-from scoring.retrieval import aggregate_seeds, run_retrieval
+from scoring.trained.absorption import run_absorption
+from scoring.trained.recovery import run_recovery
+from scoring.core.registry import DETECTORS, SCORED_COLUMNS
+from scoring.core.grid import aggregate_seeds
+from scoring.trained.retrieval import run_retrieval
 
 
 def score_seeds(ckpt_glob: str, seeds: list[int], out: Path, n_tokens: int) -> dict:

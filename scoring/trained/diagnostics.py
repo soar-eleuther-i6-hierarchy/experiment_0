@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import torch
 
-from scoring.detectors import _forward_F, cofiring, coverage_R, edge_mask
-from scoring.retrieval import _spearman
+from scoring.core.detectors import _forward_F, cofiring, coverage_R, edge_mask
+from scoring.core.grid import _spearman
 
 DT = torch.float64
 _NAN = float("nan")

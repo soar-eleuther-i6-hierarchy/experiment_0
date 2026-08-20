@@ -26,11 +26,11 @@ from typing import TYPE_CHECKING, Sequence
 
 import torch
 
-from scoring.detectors import DetectorInputs, compute_all
-from scoring.retrieval import auroc_matrix
+from scoring.core.detectors import DetectorInputs, compute_all
+from scoring.core.grid import auroc_matrix
 
-if TYPE_CHECKING:                       # avoid a runtime import cycle (scoring.harness is heavy)
-    from scoring.harness import WorldBundle
+if TYPE_CHECKING:                       # WorldBundle is used only as a type hint here
+    from scoring.core.world import WorldBundle
 
 _TINY = 1e-12
 
@@ -49,9 +49,9 @@ def oracle_encode(h: torch.Tensor, g: torch.Tensor, realized_l0: float) -> torch
         g_unit = g / ‖g‖ ;  proj = h @ g_unitᵀ  (linear, tied, NO per-token pseudo-inverse) ;
         θ = uniform JumpReLU threshold s.t. mean row-L0 == realized_l0 ;  acts = proj · 1[proj > θ].
 
-    `realized_l0` MUST be the trained SAE's realized L0 on real `h` (scoring.recovery.realized_l0),
+    `realized_l0` MUST be the trained SAE's realized L0 on real `h` (scoring.core.recovery.realized_l0),
     NOT the nominal top-k: the ceiling is only comparable to the trained metric if both are read at
-    the same sparsity. A uniform (single-θ) gate mirrors the checkpoint's saved JumpReLU, whose
+    the same sparsity. A uniform (single-θ) gate mirrors the checkpoint's inference-time scalar-threshold gate, whose
     threshold is uniform across latents.
     """
     target = float(realized_l0)
@@ -99,6 +99,13 @@ def clean_detector_inputs(bundle: "WorldBundle", feats: list[int],
     )
 
 
+# Detectors with NO valid Stage-0 clean ceiling. The oracle ENCODER (tied unit-g, no
+# least-squares inverse) does not reconstruct h (FVU > 1), so a reconstruction-ablation
+# detector on it measures noise, not a ceiling — it gets NO survival-Δ (its trained AUROC
+# is still reported in the trained grid). Firing/geometry detectors are unaffected.
+NO_CLEAN_CEILING: tuple[str, ...] = ("recon_2a",)
+
+
 def clean_grid(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[int, int]],
                y_label: torch.Tensor, columns: Sequence[str],
                constants: dict, realized_l0: float) -> dict[str, dict[str, dict]]:
@@ -107,6 +114,7 @@ def clean_grid(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[int, i
     if not feats:
         return {}
     detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
+    detectors = {d: m for d, m in detectors.items() if d not in NO_CLEAN_CEILING}
     return auroc_matrix(detectors, pairs, y_label, columns)
 
 
@@ -124,6 +132,7 @@ def degenerate_clean_detectors(bundle: "WorldBundle", feats: list[int],
     if not feats or not pairs:
         return []
     detectors = compute_all(clean_detector_inputs(bundle, feats, realized_l0), constants)
+    detectors = {d: m for d, m in detectors.items() if d not in NO_CLEAN_CEILING}
     return _constant_scored_detectors(detectors, pairs, tol)
 
 

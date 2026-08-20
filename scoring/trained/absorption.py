@@ -33,7 +33,7 @@ from typing import Sequence
 
 import torch
 
-from scoring.recovery import activation_corr
+from scoring.core.recovery import activation_corr
 
 DT = torch.float64
 _TINY = 1e-12
@@ -235,10 +235,10 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     # absorbed-angle floor (resid_parent = sin θ̂). Pre-registered shallow cells (e.g. θ*≈19° at
     # ratio_sd=0.8/λ=0.02) can fall just under it and read CLEAN. A principled per-checkpoint floor was
     # attempted (effect-size sin θ*) and REJECTED under review: θ* is not computable for these
-    # checkpoints — the SAEs are jumprelu with λ=0.001 (below the pre-reg λ grid and not the ReLU+L1 regime
+    # checkpoints — the SAEs are BatchTopK (not the ReLU+L1 regime
     # that θ* is derived for), and `resolved_config` stores neither `ratio_sd` nor an effective λ, so no
     # per-checkpoint θ* lookup is possible. Unblocking this needs (1) persisting ratio_sd/λ_eff per
-    # checkpoint, (2) a θ* derivation for the deployed activation (jumprelu/top-k), and (3) a
+    # checkpoint, (2) a θ* derivation for the deployed activation (BatchTopK), and (3) a
     # TRAINED-CLEAN null (an SAE trained on a no-absorption world) to bound the false positives any
     # lowered floor admits — the clean-dict W_dec=g control (resid≡0) cannot see trained-noise leakage.
     q_eff = 1.0 - constants["null_target_exceedances"] / max(d_sae, 1)
@@ -316,14 +316,15 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
 
 
 def run_absorption(ckpt_dir, n_tokens: int = 200_000, rho: float | None = None) -> dict:
-    """Orchestrator (server; needs sae_lens): decompose one checkpoint's dictionary damage.
+    """Orchestrator (server; needs sae_training): decompose one checkpoint's dictionary damage.
 
     Not unit-tested (loads a real checkpoint); the pure functions above carry the coverage.
     Uses the SAME in-sample match as run_recovery, then classifies against truth.
     """
-    from scoring.harness import load_sae, regenerate_world, signed_normalized_decoder
-    from scoring.registry import CONSTANTS
-    from scoring.recovery import match_features
+    from scoring.trained.loaders import load_sae
+    from scoring.core.world import regenerate_world, signed_normalized_decoder
+    from scoring.core.registry import CONSTANTS
+    from scoring.core.recovery import match_features
 
     rho = CONSTANTS["rho_star"] if rho is None else rho
     loaded = load_sae(ckpt_dir)

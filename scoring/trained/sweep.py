@@ -17,7 +17,7 @@ from itertools import permutations
 
 import torch
 
-from scoring.retrieval import _spearman
+from scoring.core.grid import _spearman
 
 DT = torch.float64
 

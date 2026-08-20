@@ -1,25 +1,25 @@
 """
-Tier-B detectors — the ten per-ordered-pair scalars, from SAE outputs ONLY.
+detectors — the ten per-ordered-pair scalars, from SAE outputs ONLY.
 
 Each detector reads the held-out activations and the (oriented, unit) decoders of the
 recovered latents and produces an `[R, R]` matrix whose entry `[p, c]` scores the
 ordered pair parent=p, child=c. LABELS NEVER ENTER HERE — the
-firewall keeps relationship truth on the scoring side (`scoring.retrieval`).
+firewall keeps relationship truth on the scoring side (`scoring.core.grid`).
 
-Conventions (see `scoring.registry`):
+Conventions (see `scoring.core.registry`):
   - firing := activation > 0 (BatchTopK's nonzero set is its top-k);
   - the diagonal is NaN (no self-pairs);
-  - the co-firing detectors (coverage_R, asymmetry_R, pmi) carry the pre-registered
+  - the co-firing detectors (coverage_R, asymmetry_R, pmi) carry the fixed
     smoothing (coverage +1e-6, PMI +1 Laplace), so a zero-fire endpoint gives a finite
     smoothed value, by design — NOT a hidden imputation;
   - the energy / reconstruction / frequency detectors (recon_2a, joint_child_mass,
-    token_freq_survival) and the per-parent graph detectors have no pre-registered
+    token_freq_survival) and the per-parent graph detectors have no fixed
     smoothing, so their genuine 0/0 cells (never-firing child, dead parent, underpowered
     bucket) are NaN — never a silently-imputed finite value, never +/-inf;
   - `compute_all` applies each detector's frozen sign so higher == more is-a-like.
 
-The scalars are implemented directly, not via `metrics/*`, whose zero-denominator clamping
-would hide the undefined cells the scorer must drop.
+The scalars are implemented directly, not via `metrics/`, whose zero-denominator clamping
+would hide the undefined cells the scorer must drop - WILL FIX THIS IN LATER COMMITS
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from dataclasses import dataclass
 
 import torch
 
-from scoring.registry import DETECTOR_SIGN, DETECTORS
+from scoring.core.registry import DETECTOR_SIGN, DETECTORS
 
 DT = torch.float64
 _NAN = float("nan")
@@ -67,9 +67,6 @@ def _broadcast_parent(vec: torch.Tensor, R: int) -> torch.Tensor:
     return _nan_diag(vec.reshape(R, 1).expand(R, R).clone())
 
 
-# --------------------------------------------------------------------------
-# co-firing primitives
-# --------------------------------------------------------------------------
 def cofiring(Fm: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, int]:
     """(cofire[R,R], fire[R], N) from a boolean firing mask `Fm` [n, R]."""
     F = Fm.double()

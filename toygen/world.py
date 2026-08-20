@@ -140,6 +140,39 @@ def checkpoint_dirname(config_name: str, variant: str, k: int, expansion: int,
     return stem
 
 
+# A confound is only a real distractor if it clears the scorer's edge cut: a token-bound
+# (frequency) pair whose reverse coverage falls below edge_tau forms NO inferred edge, so the
+# 'frequency' negative class is empty and the detector gets a free pass. validate_config checks
+# the Zipf mass but NOT this, so an approved n_bind_ids override can silently un-power the confound
+# (measured: n_bind_ids=2 -> R~0.508, n_bind_ids=3 -> R~0.419 < edge_tau, yet validate_config passes).
+_EDGE_TAU_REFERENCE = 0.5   # mirrors scoring.core.registry CONSTANTS["edge_tau"]
+# The confound-power check is a POPULATION property; it needs a real-scale draw to estimate the
+# reverse coverage reliably. Tiny smoke/test builds (n_tokens ~ hundreds) can't, so skip them —
+# real training (8M) and scoring (200k) draws are far above this.
+_MIN_TOKENS_FOR_CONFOUND_CHECK = 100_000
+
+
+def _assert_confounds_powered(A: torch.Tensor, tree: tree_mod.Tree) -> None:
+    """Refuse a powered world whose frequency confound sits below edge_tau (would form no edges)."""
+    from toygen import labels
+    pl = labels.pair_label(tree)
+    freq = labels._index("frequency")
+    fp = (pl == freq).nonzero()
+    if fp.numel() == 0:
+        return
+    firing = A > 0
+    fire = firing.double().sum(0)
+    rs = [float((firing[:, p] & firing[:, c]).double().sum()) / max(float(fire[c]), 1.0)
+          for p, c in fp.tolist()]
+    med = float(torch.tensor(rs).median())
+    if med <= _EDGE_TAU_REFERENCE:
+        raise ValueError(
+            f"frequency confound is un-powered: median reverse coverage {med:.3f} <= edge_tau "
+            f"{_EDGE_TAU_REFERENCE} -> the token-bound pairs form no inferred edges, so the "
+            f"'frequency' negative class is empty and the detector is not actually challenged. "
+            f"LOWER n_bind_ids (a larger id set dilutes R) so the frequency pairs clear edge_tau.")
+
+
 def build_world(cfg_name: str, n_tokens: int, seed: int, device: str,
                 config: spec.ToyConfig | None = None,
                 ) -> tuple[torch.Tensor, tree_mod.Tree, spec.ToyConfig]:
@@ -165,4 +198,6 @@ def build_world(cfg_name: str, n_tokens: int, seed: int, device: str,
     strength = strengths.build_strengths(cfg, tree)
     geo = geometry.build_directions(cfg, tree, seed=cfg.seed)
     world = sample.sample_world(cfg, tree, strength, geo, n_tokens=n_tokens, seed=seed)
+    if cfg.confounds and n_tokens >= _MIN_TOKENS_FOR_CONFOUND_CHECK:
+        _assert_confounds_powered(world.A, tree)
     return world.h.to(device=device, dtype=torch.float32), tree, cfg

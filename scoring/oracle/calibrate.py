@@ -10,10 +10,10 @@ from __future__ import annotations
 import dataclasses
 import math
 
-from scoring.registry import CONSTANTS, DETECTORS, SCORED_COLUMNS
-from scoring.stage0 import clean_grid
-from scoring.harness import regenerate_world
-from scoring.retrieval import pair_frame
+from scoring.core.registry import CONSTANTS, DETECTORS, SCORED_COLUMNS
+from scoring.oracle.ceiling import clean_grid
+from scoring.core.world import regenerate_world
+from scoring.core.grid import pair_frame
 from toygen import spec, strengths
 from toygen.world import resolve_config
 
