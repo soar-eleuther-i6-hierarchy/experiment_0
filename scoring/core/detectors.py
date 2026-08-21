@@ -1,28 +1,20 @@
 """
-detectors — the ten per-ordered-pair scalars, from SAE outputs ONLY.
+detectors — the ten per-ordered-pair scalars, computed from SAE outputs only.
 
-Each detector reads the held-out activations and the (oriented, unit) decoders of the
-recovered latents and produces an `[R, R]` matrix whose entry `[p, c]` scores the
-ordered pair parent=p, child=c. LABELS NEVER ENTER HERE — the
-firewall keeps relationship truth on the scoring side (`scoring.core.grid`).
+Reads held-out activations and oriented unit decoders of the recovered latents; returns an
+`[R, R]` matrix per detector, entry `[p, c]` = score for ordered pair parent=p, child=c.
+Labels never enter here — truth lives only in `scoring.core.grid`.
 
 Conventions (see `scoring.core.registry`):
-  - firing := activation > 0 (BatchTopK's nonzero set is its top-k);
-  - the diagonal is NaN (no self-pairs);
-  - the co-firing detectors (coverage_R, asymmetry_R, pmi) carry the fixed
-    smoothing (coverage +1e-6, PMI +1 Laplace), so a zero-fire endpoint gives a finite
-    smoothed value, by design — NOT a hidden imputation;
-  - the energy / reconstruction / frequency detectors (recon_2a, joint_child_mass,
-    token_freq_survival) and the per-parent graph detectors have no fixed
-    smoothing, so their genuine 0/0 cells (never-firing child, dead parent, underpowered
-    bucket) are NaN — never a silently-imputed finite value, never +/-inf;
+  - firing = activation > 0 (BatchTopK: nonzero set is its top-k); diagonal is always NaN;
+  - co-firing detectors (coverage_R, asymmetry_R, pmi) use fixed smoothing, so a zero-fire
+    endpoint gives a finite value on purpose;
+  - energy/reconstruction/frequency detectors and per-parent graph detectors use no
+    smoothing, so a true 0/0 cell is NaN — never a filled-in value, never +/-inf;
   - `compute_all` applies each detector's frozen sign so higher == more is-a-like.
 
-The nine non-s_res scalars are implemented directly here, not via `metrics/`, whose zero-denominator
-clamping would hide the undefined cells the scorer must drop (the planned consolidation moves these to
-one canonical kernel). `s_res` is the exception: its probe variant delegates probe TRAINING to
-`metrics.sres.train_probe` (imported inside `s_res_probe`) — so the dependency boundary is:
-geometry/firing scalars local, s_res probe training in `metrics/`.
+Implemented directly here (not in `metrics/`) so undefined cells aren't hidden by
+zero-denominator clamping. `s_res`'s probe variant trains via `metrics.sres.train_probe`.
 """
 
 from __future__ import annotations
@@ -81,10 +73,8 @@ def cofiring(Fm: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, int]:
 def coverage_R(cofire: torch.Tensor, fire: torch.Tensor, eps: float) -> torch.Tensor:
     """Reverse coverage R(p|c) = cofire[p,c] / fire[c] = P(parent fires | child fires).
 
-    CONDITIONAL denominator (no additive eps): a child that never fires (fire[c]==0) is
-    UNDEFINED (0/0) -> NaN, never a fabricated 0 that would rank a dead child as "never
-    contained". `eps` is retained in the signature for back-compat but no longer perturbs a
-    defined cell.
+    A never-firing child gives 0/0 -> NaN, not a fake 0. `eps` is kept for signature
+    compatibility only; it no longer affects a defined cell.
     """
     fire_c = fire.reshape(1, -1)
     denom = torch.where(fire_c > 0, fire_c, torch.full_like(fire_c, _NAN))
@@ -94,8 +84,8 @@ def coverage_R(cofire: torch.Tensor, fire: torch.Tensor, eps: float) -> torch.Te
 def _forward_F(cofire: torch.Tensor, fire: torch.Tensor, eps: float) -> torch.Tensor:
     """Forward coverage F(p|c) = cofire[p,c] / fire[p] = P(child fires | parent fires).
 
-    Same conditional denominator as `coverage_R`: a dead parent (fire[p]==0) is NaN
-    (consistent with `joint_child_J`); no additive eps perturbs a live parent.
+    Same convention as `coverage_R`: a dead parent (fire[p]==0) gives NaN, not an
+    epsilon-smoothed value.
     """
     fire_p = fire.reshape(-1, 1)
     denom = torch.where(fire_p > 0, fire_p, torch.full_like(fire_p, _NAN))
@@ -117,10 +107,9 @@ def pmi(cofire: torch.Tensor, fire: torch.Tensor, N: int, laplace: float) -> tor
 def s_res_cosine(W_unit: torch.Tensor) -> torch.Tensor:
     """Decoder-geometry overlap = cos(d_c, d_p) between oriented unit decoders.
 
-    For an is-a edge this is cos(g_c, g_p) = alpha_c * sqrt(1 - alpha_p^2); 0 for the
-    orthogonal-geometry (firing_only) null. Symmetric, so orientation-blind by design.
-    This is the cheap ANALYTIC s_res — used as the clean geometry oracle/ceiling; the
-    trained retrieval detector uses `s_res_probe` (the real Tree-SAE probe metric).
+    Equals cos(g_c, g_p) = alpha_c * sqrt(1 - alpha_p^2) for an is-a edge, 0 for the
+    orthogonal null. Symmetric. Cheap analytic geometry oracle; the trained path uses
+    `s_res_probe` instead.
     """
     W = W_unit.double()
     return _nan_diag(W @ W.transpose(0, 1))
@@ -128,24 +117,20 @@ def s_res_cosine(W_unit: torch.Tensor) -> torch.Tensor:
 
 def s_res_probe(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor,
                 constants: dict, label_acts: torch.Tensor | None = None) -> torch.Tensor:
-    """Probe-based s_res (Tree-SAE Metric 2b): per child, train a linear probe on the residual
-    stream to predict the child's firing, then read s_res(p,c) = min over {parent, child} of the
-    probe's cosine with that latent's unit decoder.
+    """Probe-based s_res (Tree-SAE's probe metric). Trains a linear probe per child on the
+    residual stream to predict its firing, then returns
+    s_res(p,c) = min over {parent, child} of the probe's cosine with that latent's unit decoder.
 
-    Per child column c: `pos = label_acts[:,c] > 0`. `label_acts` defaults to `acts_rec` — the
-    SELF-label (the child's own firing), i.e. the deployed metric. The diagnostic passes the TRUE
-    firing (`bundle.A`) to get the probe-on-TRUE calibration variant. If the child fires fewer than
-    `sres_min_probe_pos` times (or the probe is untestable) the WHOLE column is NaN — an undefined
-    ceiling, never a fabricated 0. The probe direction (unit) is correlated against the UNIT
-    decoders `W_unit` (so `corr` is a cosine and s_res respects the ≤1 bound — raw decoders would
-    let it exceed 1 and bias the rank), and `out[p,c] = min(corr[p], corr[c])`. ASYMMETRIC (column c
-    uses child-c's probe). Seed = the recovered POSITION c → deterministic without any feature-id input.
+    Positives for child c are `label_acts[:,c] > 0` (`label_acts` defaults to `acts_rec`, the
+    deployed self-label; the diagnostic passes true firing instead). A child with too few
+    positives (or an untestable probe) gives an all-NaN column, never a fake 0.
 
-    FIDELITY NOTE: this scores the continuous unit-cosine `min` as an AUROC-able signal. The gemma
-    drivers (`run_token_metrics.py`, `in_block_edges.py`) instead correlate against the RAW decoder and
-    apply Tree-SAE's binary top-k RANK rule. So the toy characterizes the normalized min-cosine s_res
-    SIGNAL, not gemma's exact raw-dot top-k decision — aligning the two (normalize gemma, or add a
-    raw-dot toy variant) is a deliberate follow-up, not silently assumed here.
+    Probe direction is correlated against UNIT decoders so `corr` is a cosine (<=1 bound);
+    then `out[p,c] = min(corr[p], corr[c])`, asymmetric since column c uses child-c's probe.
+    Seed is the recovered position c, so it's deterministic.
+
+    Note: this scores a normalized min-cosine signal, not gemma's raw-dot top-k rule — the
+    two are not yet aligned.
     """
     from metrics.sres import train_probe
 
@@ -178,17 +163,16 @@ def s_res_probe(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor,
 def s_res_variants(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor,
                    g_unit: torch.Tensor, A_rec: torch.Tensor,
                    constants: dict) -> dict[str, torch.Tensor]:
-    """The s_res variants for the toy calibration/diagnostic. USES GROUND TRUTH (`g_unit`, `A_rec`),
-    so this is a diagnostic, NOT a firewalled detector — never call it on the trained scoring path.
+    """s_res variants for toy calibration/diagnostics. Reads ground truth (`g_unit`, `A_rec`),
+    so this is a diagnostic, NOT a firewalled detector — never call on the trained scoring path.
 
-      cosine_g     : analytic cos over the TRUE unit directions g (geometry ground truth).
-      probe_true_g : probe trained on the TRUE firing 1[A>0], correlated against g — calibrates the
-                     probe MACHINERY (should ≈ cosine_g once the knobs are tuned).
-      probe_self_W : probe on the SELF-label 1[acts>0], learned decoders — the DEPLOYED detector.
-      probe_true_W : probe on the TRUE firing 1[A>0], learned decoders.
-    The caller reports `self_label_bias = probe_self_W − probe_true_W` at the AUROC level (same learned
-    decoders, self vs true label → isolates the circularity cost of the self-label — the detector-
-    performance cost that gemma cannot measure). It is an AUROC difference, not a per-cell matrix diff.
+      cosine_g     : analytic cosine over the TRUE unit directions g.
+      probe_true_g : probe on TRUE firing, correlated against g — calibrates the probe machinery.
+      probe_self_W : probe on the SELF-label, learned decoders — the deployed detector.
+      probe_true_W : probe on TRUE firing, learned decoders.
+
+    Caller reports `self_label_bias = probe_self_W - probe_true_W` (AUROC-level) to isolate
+    the self-label's circularity cost.
     """
     return {
         "cosine_g": s_res_cosine(g_unit),
@@ -201,12 +185,10 @@ def s_res_variants(acts_rec: torch.Tensor, h: torch.Tensor, W_unit: torch.Tensor
 def edge_mask(R_mat: torch.Tensor, fire: torch.Tensor, tau: float, min_fire: int,
               cofire: torch.Tensor | None = None, min_joint: int = 0) -> torch.Tensor:
     """Inferred edge set: R(p|c) >= tau, both endpoints fire >= min_fire, and (when
-    `cofire`/`min_joint` are given) at least `min_joint` co-firing tokens. Bool [R,R].
+    `cofire`/`min_joint` given) at least `min_joint` co-firing tokens. Bool [R,R].
 
-    The joint-support gate kills chance edges — a child firing `min_fire` times inside a
-    near-always-on parent reaches R=1 with no evidence beyond base rate (this is the
-    `metrics.coverage.keep_edges` guard, MIN_JOINT=30). The NaN diagonal of `R_mat`
-    compares False, so self-edges are excluded automatically.
+    The joint-support gate kills chance edges from a rarely-firing child inside a
+    near-always-on parent; NaN diagonal compares False so self-edges drop out automatically.
     """
     keep = R_mat >= tau                                  # NaN >= tau -> False
     enough = fire >= min_fire
@@ -217,9 +199,9 @@ def edge_mask(R_mat: torch.Tensor, fire: torch.Tensor, tau: float, min_fire: int
 
 
 def outdegree(em: torch.Tensor, fire: torch.Tensor, N: int) -> torch.Tensor:
-    """Per-parent out-degree (# kept children), broadcast across columns. Raw (+); the
-    frozen sign (-1) is applied in `compute_all` so a wide superparent scores LOW. A dead
-    parent (never fires on this draw) is evidence-free -> NaN, not a confident 0."""
+    """Per-parent out-degree (kept-children count), broadcast across columns. Raw direction
+    (higher = more children); `compute_all` flips sign so a wide superparent scores LOW. A
+    dead parent has no evidence, so NaN rather than a confident 0."""
     R = em.shape[0]
     outdeg = em.double().sum(dim=1)
     outdeg = torch.where(fire > 0, outdeg, torch.full_like(outdeg, _NAN))
@@ -227,8 +209,8 @@ def outdegree(em: torch.Tensor, fire: torch.Tensor, N: int) -> torch.Tensor:
 
 
 def joint_child_J(F_mat: torch.Tensor, em: torch.Tensor, fire: torch.Tensor) -> torch.Tensor:
-    """Per-parent J(p) = sum_c forward-coverage(p,c) over kept children, capped at 1.
-    A dead parent (never fires) is undefined -> NaN."""
+    """Per-parent J(p) = sum over kept children of forward-coverage(p,c), capped at 1.
+    A dead parent (never fires) is undefined, so NaN."""
     R = F_mat.shape[0]
     contrib = torch.where(em, F_mat, torch.zeros_like(F_mat))
     J = contrib.sum(dim=1).clamp(max=1.0)
@@ -237,9 +219,8 @@ def joint_child_J(F_mat: torch.Tensor, em: torch.Tensor, fire: torch.Tensor) -> 
 
 
 def joint_child_mass(acts_rec: torch.Tensor, Fm: torch.Tensor, em: torch.Tensor) -> torch.Tensor:
-    """Per-parent r_mass(p) = sum_t f_p^2 * 1[>=1 kept child fires] / sum_t f_p^2.
-
-    A dead parent (zero activation energy) gives 0/0 -> NaN (never 0 or 0.5).
+    """Per-parent r_mass(p) = share of the parent's activation energy landing on tokens where
+    >=1 kept child also fires. Dead parent (zero energy) gives 0/0 -> NaN, never 0 or 0.5.
     """
     R = acts_rec.shape[1]
     energy = (acts_rec.double() ** 2)                    # [n, R]
@@ -258,11 +239,9 @@ def joint_child_mass(acts_rec: torch.Tensor, Fm: torch.Tensor, em: torch.Tensor)
 
 
 def sibling_redundancy(em: torch.Tensor, cofire: torch.Tensor, fire: torch.Tensor) -> torch.Tensor:
-    """Per-parent mean pairwise sibling Jaccard over its kept children, broadcast.
-
-    Jaccard(i,j) = cofire[i,j] / (fire[i]+fire[j]-cofire[i,j]). Parents with <2 kept
-    children are undefined -> NaN. Raw (high == redundant); frozen sign (-1) flips it so
-    a redundant/splitting parent scores LOW.
+    """Per-parent mean pairwise Jaccard over its kept children (sibling overlap), broadcast
+    across columns. Undefined (NaN) for <2 kept children. Raw direction (higher = more
+    redundant); frozen sign flips it so a splitting parent scores LOW.
     """
     R = em.shape[0]
     red = torch.full((R,), _NAN, dtype=DT, device=em.device)  # match input device (CUDA-safe)
@@ -285,11 +264,12 @@ def sibling_redundancy(em: torch.Tensor, cofire: torch.Tensor, fire: torch.Tenso
 
 def recon_2a(acts_rec: torch.Tensor, h: torch.Tensor, W_raw: torch.Tensor,
              b_dec: torch.Tensor, Fm: torch.Tensor) -> torch.Tensor:
-    """Reconstruction-ablation parent gain.
+    """Reconstruction-ablation parent gain: how much removing the parent would worsen
+    reconstruction, over tokens where the child fires.
 
-    Over tokens where the child fires: parent_gain[p,c] = sum g[t,p] / sum ||err[t]||^2,
-    where err = h - (acts @ W_raw + b_dec) and g[t,f] = 2 a_f <d_f, err_t> + a_f^2 ||d_f||^2.
-    A never-firing child gives a 0 denominator -> NaN (undefined, dropped downstream).
+    parent_gain[p,c] = sum(g[t,p]) / sum(||err[t]||^2) over tokens where child c fires, with
+    err = h - (acts @ W_raw + b_dec) and g[t,f] = 2 a_f<d_f,err_t> + a_f^2||d_f||^2. A
+    never-firing child gives 0 denominator -> NaN.
     """
     a = acts_rec.double()
     W = W_raw.double()
@@ -309,15 +289,13 @@ def recon_2a(acts_rec: torch.Tensor, h: torch.Tensor, W_raw: torch.Tensor,
 def token_freq_survival(Fm: torch.Tensor, tokens: torch.Tensor, vocab: int,
                         min_joint: int, high_mass: float, mid_mass: float,
                         min_fire_low: int) -> torch.Tensor:
-    """Frequency-controlled coverage survival.
+    """Frequency-controlled coverage survival: does an edge hold up once common tokens are
+    removed?
 
-    survival(p,c) = R(p|c) over rare-token buckets {1,2} / R(p|c) over all buckets.
-    An edge that survives on rare tokens (~1) is a real relationship; a frequency-driven
-    coincidence collapses (~0). NaN where unmeasurable: the child never co-fires with the
-    parent (R_all==0), fires too rarely (< min_fire_low), or has too few JOINT co-fires
-    (< min_joint) to trust the ratio. NOT gated on being a kept edge: the shared-token
-    confound caps reverse-coverage at ~0.18 (it co-fires only on shared top-frequency ids),
-    so an edge-mask gate would NaN exactly the shared-token pairs this detector must score.
+    survival(p,c) = R(p|c) over rare-token buckets {1,2} divided by R(p|c) over all buckets;
+    ~1 means a real relationship, ~0 means common-token coincidence. NaN where unmeasurable
+    (no co-firing, too-rare firing, or too few joint co-fires). Deliberately NOT gated on
+    being a kept edge, since that would NaN exactly the shared-token pairs this needs to score.
     """
     counts = torch.bincount(tokens, minlength=vocab).double()
     order = torch.argsort(counts, descending=True)
@@ -340,19 +318,11 @@ def token_freq_survival(Fm: torch.Tensor, tokens: torch.Tensor, vocab: int,
 
     R_all = cofire_all / fire_all.clamp_min(1.0).reshape(1, -1)
     R_rest = cofire_rest / fire_rest.clamp_min(1.0).reshape(1, -1)
-    # Monotone squash of the survival ratio to [0, 1) instead of a hard `.clamp(max=1.5)`
-    # (KNOWN_BUGS 6.7): the clamp pinned every ratio ≥ 1.5 to exactly 1.5, manufacturing ties that
-    # depress AUROC separation. `x/(1+x)` is strictly increasing, so it bounds the tail WITHOUT tying
-    # it — rank-preserving, hence AUROC and the cascade percentiles are unchanged except the >1 tail is
-    # now ordered instead of tied. (0→0, ratio 1→0.5, large→→1; higher still == more is-a-like.)
+    # Squash ratio into [0,1) via x/(1+x): rank-preserving, avoids tying the >1 tail like a hard clamp would.
     ratio = R_rest / R_all.clamp_min(1e-12)
     survival = ratio / (1.0 + ratio)
 
-    # Support floor on TOTAL child firing (not the rare-bucket count): a shared-token
-    # child fires almost entirely in bucket 0, so gating on fire_rest would NaN it — but a
-    # zero rare-bucket rate is the SIGNAL (survival -> 0), not missing data. The min_joint
-    # floor on the actual co-fire count kills chance pairs (a 1-cofire ratio is not a
-    # measurement), mirroring edge_mask's joint-support guard without requiring R >= tau.
+    # Floor support on TOTAL child firing (not rare-bucket count), since zero rare-bucket rate is the signal, not missing data; min_joint kills chance pairs.
     undefined = ((fire_all.reshape(1, -1) < min_fire_low) | (R_all <= 0)
                  | (cofire_all < min_joint))
     survival = torch.where(undefined, torch.full_like(survival, _NAN), survival)
@@ -364,18 +334,14 @@ def token_freq_survival(Fm: torch.Tensor, tokens: torch.Tensor, vocab: int,
 # --------------------------------------------------------------------------
 def compute_all(inputs: DetectorInputs, constants: dict,
                 s_res_mode: str = "cosine") -> dict[str, torch.Tensor]:
-    """Every detector as an oriented [R, R] matrix (higher == is-a-like), NaN diagonal.
+    """Return every detector as an oriented [R, R] matrix (higher == is-a-like), NaN diagonal.
 
-    Applies each detector's frozen `DETECTOR_SIGN` exactly once. Any residual +/-inf is
-    coerced to NaN so downstream means/sorts see only finite-or-NaN.
+    Applies each detector's frozen `DETECTOR_SIGN`; any leftover +/-inf becomes NaN.
 
     `s_res_mode` selects the s_res variant:
-      "probe"  -- the real Tree-SAE probe metric; the SOLE mode that may feed a REPORTED s_res cell
-                  (the trained retrieval detector).
-      "cosine" -- the cheap analytic geometry oracle. A DIAGNOSTIC / calibration reference and the
-                  cheap default used by unit tests; it must NEVER be the s_res of a reported grid
-                  (the report path passes "probe" explicitly and asserts the probe regime).
-    Only s_res depends on the mode — the other nine detectors are identical in every mode.
+      "probe"  -- the real Tree-SAE probe metric; only mode allowed for a REPORTED s_res cell.
+      "cosine" -- cheap analytic geometry oracle; diagnostic/test default, never for a reported grid.
+    Only s_res depends on the mode; the other nine detectors are unaffected.
     """
     if s_res_mode not in ("cosine", "probe"):
         raise ValueError(f"s_res_mode must be 'cosine' or 'probe', got {s_res_mode!r}")

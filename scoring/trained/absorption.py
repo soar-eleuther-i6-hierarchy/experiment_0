@@ -1,29 +1,23 @@
 """
-Dictionary-damage decomposition — Chanin absorption, splitting, composition (merging).
+Decompose the damage a trained dictionary does to the true features — absorption, splitting,
+and composition (merging).
 
-Follows the canonical, null-calibrated definitions from the literature (Chanin arXiv:2409.14507 and
-arXiv:2505.11756, Bricken 2023, Bussmann arXiv:2503.17547), measured against the toy's ground-truth
-match — the thing that lets us say how much of the damage is each mechanism:
+Uses standard, null-calibrated definitions measured against the toy's ground-truth match:
 
-  - ABSORPTION (Chanin): a SPECIFIC child latent absorbs the GENERAL parent's direction. The
-    child's matched latent decoder carries the PARENT direction (`cos(W_dec[c*], g_p) > eps`, reported
-    as the signed absorbed angle `theta_hat = atan2(parent_comp, child_comp)`, atan2 not arcsin),
-    AND the parent latent develops a firing HOLE (`R_P = P(parent latent fires | child fires) < 1`)
-    — its "seemingly arbitrary exception cases where it fails to fire". The hole is what distinguishes
-    absorption from hedging WITHOUT measuring hedging (hedging keeps the parent firing, R_P ~ 1).
-  - DECODER MULTIPLICITY (Chanin calls this "splitting"): the general feature's direction is
-    tracked by MULTIPLE latents — `M_P = #{j : |cos(W_dec[j], g_f)| > eps}`, reported as EXCESS over
-    the null (`M_P - E[M_P|null]`), never a raw count (a fixed eps manufactures multiplicity in
-    exactly the wide-SAE cell where it is predicted). Reported under `decoder_multiplicity`.
-  - COMPOSITION / MERGING: a conjunction latent for a co-hyponym pair — `K = cos(W_dec[j*],
-    (g_a+g_b)/sqrt(2)) - 1/sqrt(2) > 0` ("red triangle", Bussmann).
+  - ABSORPTION: a specific child latent soaks up its general parent's direction (child decoder
+    carries the parent direction) AND the parent develops a firing hole. Reported as the signed
+    absorbed angle `theta_hat`.
+  - DECODER MULTIPLICITY ("splitting"): one feature's direction tracked by several latents,
+    reported as EXCESS over the null count, never a raw count.
+  - COMPOSITION / MERGING: a single conjunction latent for a co-hyponym pair (the "red triangle"
+    case).
 
-`eps` is null-calibrated: the q-quantile of |cos| between random directions IN THE DECODER
-SIGNAL SPAN and the trained decoders — the heavy null there, not the R^D null. Report the EXCESS.
+`eps` is null-calibrated: the q-quantile of |cos| between random directions in the decoder
+signal span and the trained decoders. Always report the EXCESS, not the raw count.
 
-FIREWALL: a FIDELITY diagnostic. Uses truth `g`/`A`/match + the containment/sibling TREE structure
-(identity side); NEVER `pair_labels` (relationship SCORING labels); never a detector or AUROC input.
-The is_a/firing_only split and the sibling candidate pairs are the reporting breakdown only.
+FIREWALL: this is a fidelity diagnostic, not a detector. It uses ground truth (`g`/`A`/match)
+plus the containment/sibling tree structure; it never touches `pair_labels` and is never a
+detector or an AUROC input.
 """
 
 from __future__ import annotations
@@ -39,19 +33,12 @@ DT = torch.float64
 _TINY = 1e-12
 
 ABSORPTION_CONSTANTS: dict[str, float] = {
-    "hole_min": 0.15,        # parent recall must drop this far below 1 to count as a Chanin hole
-    # R_solo: fraction of PARENT-SOLO tokens the parent latent must still fire on for absorption.
-    # Absorption keeps R_solo ~ 0.6-0.7; a conjunction/merging latent ~ 0.
-    "solo_min": 0.10,
-    "conj_min": 0.05,        # excess conjunction cos (K) above 1/sqrt(2) to count as composition
-    # Bonferroni target on the EXPECTED number of chance latents across the whole dictionary
-    # (q = 1 - null_target_exceedances/d_sae), not a fixed quantile: a fixed p95 lets ~56 chance
-    # latents through (~46% of clean features flagged by noise). At 0.01, E[chance]~0.02.
-    "null_target_exceedances": 0.01,
-    "n_null_perm": 1000,     # random in-span directions; large so the extreme tail quantile is stable
-    # A clean feature scores excess ~1 (its own latent), a k-latent feature ~k-0.4; 1.5 catches a
-    # genuine 2-way multiplicity while rejecting a single-latent clean feature.
-    "multiplicity_excess_min": 1.5,
+    "hole_min": 0.15,        # parent recall must drop this far below 1 to count as a hole
+    "solo_min": 0.10,        # min parent recall on parent-solo tokens for absorption (vs ~0 for merging)
+    "conj_min": 0.05,        # excess conjunction cos (K) above baseline to count as composition
+    "null_target_exceedances": 0.01,  # Bonferroni target on expected chance latents dictionary-wide
+    "n_null_perm": 1000,     # random in-span directions for a stable tail quantile
+    "multiplicity_excess_min": 1.5,   # excess needed to flag genuine multiplicity over a clean latent
 }
 
 
@@ -62,8 +49,7 @@ def _unit(x: torch.Tensor) -> torch.Tensor:
 def _decoder_span_basis(W_dec: torch.Tensor) -> torch.Tensor:
     """Orthonormal basis [r, D] of the trained decoders' row space (the signal span).
 
-    The cosine null must be computed here, not in R^D: decoders concentrate in the N_true-dim
-    signal span where random |cos| is far heavier.
+    Computed here, not in R^D: decoders concentrate in the signal span where random |cos| is heavier.
     """
     Wu = _unit(W_dec.double())
     _, S, Vh = torch.linalg.svd(Wu, full_matrices=False)
@@ -73,10 +59,9 @@ def _decoder_span_basis(W_dec: torch.Tensor) -> torch.Tensor:
 
 def null_cos_threshold(W_dec: torch.Tensor, g: torch.Tensor, n_perm: int = 200,
                        q: float = 0.95, seed: int = 0) -> float:
-    """eps = the q-quantile of |cos| between random IN-SPAN unit directions and the decoders.
+    """eps = the q-quantile of |cos| between random in-span unit directions and the decoders.
 
-    Deterministic (fixed generator). `g` is accepted for signature parity / future span options;
-    the null lives in the decoder span, independent of any single true direction.
+    Deterministic (fixed generator). `g` is accepted for signature parity only.
     """
     basis = _decoder_span_basis(W_dec)                     # [r, D]
     Wu = _unit(W_dec.double())
@@ -90,8 +75,8 @@ def null_cos_threshold(W_dec: torch.Tensor, g: torch.Tensor, n_perm: int = 200,
 
 def _expected_null_count(W_dec: torch.Tensor, eps: float, n_perm: int = 200,
                          seed: int = 1) -> float:
-    """E[ #{j : |cos(v, W_dec[j])| > eps} ] for a random in-span direction v — the chance
-    inflation that `parent_multiplicity_excess` subtracts so `excess` recovers the genuine count."""
+    """E[ #{j : |cos(v, W_dec[j])| > eps} ] for a random in-span direction v — the chance count
+    that `parent_multiplicity_excess` subtracts off to recover the genuine count."""
     basis = _decoder_span_basis(W_dec)
     Wu = _unit(W_dec.double())
     gen = torch.Generator().manual_seed(int(seed))
@@ -108,12 +93,9 @@ def parent_multiplicity_excess(g: torch.Tensor, W_dec: torch.Tensor, f: int, eps
     """`M_P = #{j : |cos(W_dec[j], g[f])| > eps AND f = argmax_f' |cos(W_dec[j], g[f'])|}`, and
     `excess = M_P - E[M_P|null]`.
 
-    A latent counts toward feature f's multiplicity ONLY if f is that latent's BEST-matching true
-    feature. This is essential on an OVERCOMPLETE toy (F>D): the true features are non-orthogonal by
-    design (an is-a child sits at cos≈alpha≈0.55 with its parent, above eps), so a naive
-    `|cos| > eps` count miscounts a parent's own latent into every child's multiplicity — reporting
-    ~100% splitting on a perfectly clean dictionary. Best-match attribution gives each latent to one
-    feature, so a clean feature scores M_P=1 (its own latent) and a real split scores >=2.
+    A latent counts toward feature f only if f is that latent's best-matching true feature — needed
+    on this overcomplete, non-orthogonal toy so a parent's latent isn't miscounted into every
+    correlated child's multiplicity. A clean feature scores M_P=1, a real split scores >=2.
     """
     Wu = _unit(W_dec.double())
     cosmat = (_unit(g.double()) @ Wu.transpose(0, 1)).abs()   # [F, d_sae]
@@ -130,23 +112,17 @@ def absorption_signals(g: torch.Tensor, W_dec: torch.Tensor, acts: torch.Tensor,
                        match: torch.Tensor, p: int, c: int, eps: float, constants: dict) -> dict:
     """Chanin absorption for a containment edge parent=p, child=c.
 
-    `absorbed = (child latent carries the RESIDUAL parent direction beyond the null) AND (the parent
-    latent has a firing HOLE on the child's tokens) AND (a standalone parent latent survives on
-    parent-solo tokens)`. The three gates are, in order:
+    `absorbed = (child latent carries the residual parent direction beyond the null) AND (parent has
+    a firing hole on the child's tokens) AND (a standalone parent latent survives on parent-solo
+    tokens)`. Three gates:
 
-      - `resid_parent = cos(W_dec[c*], unit(g_p − (g_p·ĝ_c)ĝ_c))` — the child decoder's overlap with
-        the part of the parent direction ORTHOGONAL to the child's own direction. The subtraction is
-        the fix for the toy's designed is-a overlap `cos(g_c, g_p) = α ≈ 0.55`: the bare
-        `cos(dec_c, g_p)` fires on every clean is-a child (α > eps), but resid_dir ⟂ g_c by
-        construction, so a clean child decoder (dec_c = g_c) gives `resid_parent = 0` EXACTLY. A
-        planted absorbed child at angle θ into the residual gives `resid_parent = sin θ`. This is the
-        geometry gate. `parent_component`/`child_component`/`theta_hat` (atan2, signed) are still
-        reported as the raw absorbed-angle decomposition.
-      - `R_P`: parent recall on child-firing tokens; `hole = R_P < 1 − hole_min` distinguishes
-        absorption (a hole) from hedging (parent keeps firing, R_P ~ 1).
-      - `R_solo`: parent-latent recall on PARENT-SOLO tokens (parent active, child absent). A merging
-        (conjunction) latent has no standalone parent latent → `R_solo ≈ 0`, so `R_solo > solo_min`
-        vetoes merging without measuring merging directly.
+      - `resid_parent`: child decoder's overlap with the parent direction orthogonal to the child's
+        own direction (removes the toy's designed is-a overlap so a clean child scores exactly 0).
+        `parent_component`/`child_component`/`theta_hat` are also reported as the raw decomposition.
+      - `R_P`: parent recall on child-firing tokens; a hole (`R_P` well below 1) means absorption,
+        not hedging (which keeps the parent firing).
+      - `R_solo`: parent recall on parent-solo tokens; near-zero means a merging latent, not
+        absorption, so `R_solo > solo_min` vetoes merging.
 
     A `match[c] < 0` or `match[p] < 0` (child/parent unrecovered) gives `absorbed=False`.
     """
@@ -161,9 +137,7 @@ def absorption_signals(g: torch.Tensor, W_dec: torch.Tensor, acts: torch.Tensor,
     parent_component = float(dec_c @ gp_u)                         # absorbed-angle numerator (signed, raw)
     child_component = float(dec_c @ gc_u)                          # absorbed-angle denominator (signed)
     theta_hat = math.atan2(parent_component, child_component)
-    # Residual-parent projection: parent direction with the child's designed overlap removed. A clean
-    # is-a child reads 0 here (resid_dir ⟂ g_c); only a child carrying the parent BEYOND its own
-    # designed overlap scores > 0. Degenerate g_p ∥ g_c → no residual to carry.
+    # Parent direction with the child's designed overlap removed; a clean is-a child reads 0 here.
     resid_dir = gp_u - (gp_u @ gc_u) * gc_u
     if float(resid_dir.norm()) < _TINY:
         resid_parent = 0.0
@@ -193,13 +167,10 @@ def absorption_signals(g: torch.Tensor, W_dec: torch.Tensor, acts: torch.Tensor,
 def conjunction_strength(g: torch.Tensor, W_dec: torch.Tensor, a: int, b: int) -> dict:
     """`K = max_j cos(W_dec[j], unit(g_a+g_b)) - baseline`; composed iff `K > conj_min`.
 
-    A conjunction latent for (a AND b) points along the normalized SUM of the two true directions.
-    The baseline is what a pure SINGLE-feature latent already scores against that sum — for
-    ORTHONORMAL features that is exactly `1/sqrt(2)` (the orthonormal-case form), but this toy is
-    OVERCOMPLETE (F > D, features non-orthogonal), where a single-feature latent scores
-    `sqrt((1+rho)/2) > 1/sqrt(2)`. Hardcoding `1/sqrt(2)` would fabricate composition on positively
-    correlated features, so the baseline is computed from the ACTUAL geometry: the larger of the two
-    single-feature cosines onto the sum direction. Composition is the EXCESS over that.
+    A conjunction latent points along the normalized sum of the two true directions. The baseline
+    is the larger of the two single-feature cosines onto that sum, computed from actual geometry
+    rather than hardcoded `1/sqrt(2)` (this toy is overcomplete, non-orthogonal). Composition is
+    the excess over that baseline.
     """
     conj = _unit((g[a].double() + g[b].double()))
     cosj = _unit(W_dec.double()) @ conj                    # [d_sae], signed
@@ -217,47 +188,32 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
                         cont_edges: Sequence[tuple[int, int]],
                         sibling_pairs: Sequence[tuple[int, int]],
                         isa_child: dict[int, bool], constants: dict | None = None) -> dict:
-    """Per-mechanism tallies (coexistence expected — NOT a forced single label per feature).
+    """Per-mechanism tallies (coexistence expected — not a forced single label per feature).
 
-    Absorption per containment edge, decoder multiplicity per feature, composition per sibling pair —
-    all null-calibrated. `cont_edges`/`sibling_pairs`/`isa_child` come from the TREE (identity truth);
-    `pair_labels` is deliberately NOT a parameter (firewall).
+    Absorption per containment edge, decoder multiplicity per feature, composition per sibling
+    pair — all null-calibrated. `cont_edges`/`sibling_pairs`/`isa_child` come from the tree
+    (identity truth); `pair_labels` is deliberately not a parameter (firewall).
     """
     constants = ABSORPTION_CONSTANTS if constants is None else constants
     F = int(g.shape[0])
     d_sae = int(W_dec.shape[0])
-    # Bonferroni-adaptive quantile: target a small EXPECTED chance count across the whole dictionary
-    # (not a fixed p95, which is fatally noisy at large d_sae — see ABSORPTION_CONSTANTS). This
-    # dictionary-wide null gates BOTH the DECODER-MULTIPLICITY count and the ABSORPTION resid gate.
-    #
-    # KNOWN LIMIT (open, tracked): the absorption gate reuses this dictionary-wide multiplicity eps,
-    # which is over-conservative for a targeted per-EDGE test — on real data eps≈0.35–0.38, a ~20–22°
-    # absorbed-angle floor (resid_parent = sin θ̂). Pre-registered shallow cells (e.g. θ*≈19° at
-    # ratio_sd=0.8/λ=0.02) can fall just under it and read CLEAN. A principled per-checkpoint floor was
-    # attempted (effect-size sin θ*) and REJECTED under review: θ* is not computable for these
-    # checkpoints — the SAEs are BatchTopK (not the ReLU+L1 regime
-    # that θ* is derived for), and `resolved_config` stores neither `ratio_sd` nor an effective λ, so no
-    # per-checkpoint θ* lookup is possible. Unblocking this needs (1) persisting ratio_sd/λ_eff per
-    # checkpoint, (2) a θ* derivation for the deployed activation (BatchTopK), and (3) a
-    # TRAINED-CLEAN null (an SAE trained on a no-absorption world) to bound the false positives any
-    # lowered floor admits — the clean-dict W_dec=g control (resid≡0) cannot see trained-noise leakage.
+    # Bonferroni-adaptive quantile targeting a small expected chance count dictionary-wide (a fixed
+    # p95 is too noisy at large d_sae); gates both the multiplicity count and the absorption resid gate.
+    # KNOWN LIMIT: this dictionary-wide eps is over-conservative for a targeted per-edge test, so some
+    # shallow absorbed cells can read clean; a principled per-checkpoint floor is not yet derivable
+    # for the deployed BatchTopK activation.
     q_eff = 1.0 - constants["null_target_exceedances"] / max(d_sae, 1)
     eps = null_cos_threshold(W_dec, g, n_perm=int(constants["n_null_perm"]), q=q_eff)
     expected_null = _expected_null_count(W_dec, eps, n_perm=int(constants["n_null_perm"]))
 
     absorbed_edges: list[dict] = []
     absorbed_children: set[int] = set()
-    # UNCLASSIFIED (catch-all): a containment edge whose absorption gates could NOT be evaluated —
-    # `match<0` (unrecovered), `n_cf==0` (child never fires → R_P undefined), or `n_solo==0` (no
-    # parent-solo tokens → R_solo undefined). Such an edge must NOT be silently folded into `clean`
-    # (a known route to a false headline: a collapsed high-λ SAE drops many edges here).
+    # Unclassified (catch-all): an edge whose absorption gates couldn't be evaluated (unrecovered,
+    # child never fires, or no parent-solo tokens); must not be silently folded into `clean`.
     unclassified_edges: list[dict] = []
     unclassified_children: set[int] = set()
-    # BELOW-RHO gate: an endpoint that was ASSIGNED (Hungarian match>=0) but NOT RECOVERED
-    # (matched_corr < rho). On an overcomplete SAE (d_sae>=F) every true feature is assigned, so
-    # match>=0 is NOT recovery -- a below-rho latent is an arbitrary weak match, and classifying it
-    # as a real mechanism inflates absorbed/multiplicity/composed. Excluded from every mechanism
-    # bucket (consistent with `clean`, which was already recovered-gated) and reported separately.
+    # Below-rho: an endpoint assigned by the Hungarian match but not recovered (matched_corr < rho)
+    # is an arbitrary weak match, not a real mechanism — excluded from every bucket, reported separately.
     below_rho_edges: list[dict] = []
     below_rho_children: set[int] = set()
     for (p, c) in cont_edges:
@@ -281,10 +237,7 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     unclassified_children -= absorbed_children
     below_rho_children -= (absorbed_children | unclassified_children)
 
-    # Inline the multiplicity count with the once-computed eps/expected_null. BEST-MATCH attribution (a latent counts
-    # toward feature f only if f is its argmax feature) — essential on the overcomplete non-orthogonal
-    # toy, else a parent's latent is miscounted into every correlated child (see
-    # parent_multiplicity_excess). The orchestrator shares the null across all F features.
+    # Inline multiplicity count with the once-computed eps/expected_null; best-match attribution as in parent_multiplicity_excess.
     cosmat = (_unit(g.double()) @ _unit(W_dec.double()).transpose(0, 1)).abs()   # [F, d_sae]
     best_f = cosmat.argmax(dim=0)                                                # [d_sae]
     above = cosmat > eps
@@ -334,16 +287,13 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
 
 def latent_pair_masks(classification: dict, feats: list[int],
                       pairs: list[tuple[int, int]]) -> dict[str, torch.Tensor]:
-    """Boolean masks over `pairs` (POSITIONS into `feats`) for the latent-side scoring columns.
+    """Boolean masks over `pairs` (positions into `feats`) for the latent-side scoring columns.
 
-      absorbed — per ORDERED recovered pair (parent, child) that is a Chanin-absorbed containment
-                 edge (`classification['absorbed_edges']`, directional).
-      merged   — per SYMMETRIC recovered pair that is a composed / merged sibling conjunction
-                 (`classification['composed_pairs']`, stored once as (a,b); marked in BOTH orders).
+      absorbed — per ordered recovered (parent, child) pair that is a Chanin-absorbed edge.
+      merged   — per symmetric recovered pair that is a composed sibling conjunction.
 
-    `absorbed_edges`/`composed_pairs` carry TRUE feature ids; `feats[pos]` maps a pair position back
-    to its true id. FIREWALL: these are truth+trained-derived labels used ONLY for scoring (like
-    `pair_labels`) — the 10 detectors never see them.
+    `feats[pos]` maps a pair position back to its true feature id. FIREWALL: these are scoring-only
+    labels — the 10 detectors never see them.
     """
     absorbed_set = {(int(e["parent"]), int(e["child"])) for e in classification["absorbed_edges"]}
     merged_set: set[tuple[int, int]] = set()
@@ -352,21 +302,17 @@ def latent_pair_masks(classification: dict, feats: list[int],
         merged_set.add((a, b))
         merged_set.add((b, a))                         # symmetric: both orderings are merged
     ids = [(feats[a], feats[b]) for (a, b) in pairs]
-    # CPU masks (the whole toy scoring path is CPU — load_sae pins device="cpu"). If a real
-    # non-toy checkpoint ever runs on CUDA, these must move to the detector device before
-    # property_vs_rest_grid indexes with them (`.to(vals_all.device)`); moot today.
+    # CPU masks (the whole toy scoring path is CPU); would need `.to(device)` for a real CUDA checkpoint.
     absorbed = torch.tensor([pid in absorbed_set for pid in ids], dtype=torch.bool)
     merged = torch.tensor([pid in merged_set for pid in ids], dtype=torch.bool)
     return {"absorbed": absorbed, "merged": merged}
 
 
 def split_readout(classification: dict, feats: list[int]) -> dict:
-    """Per-LATENT split readout (decoder multiplicity) — NOT a pair column.
+    """Per-latent split readout (decoder multiplicity) — not a pair column.
 
-    `split` is per-FEATURE (a feature's direction tracked by multiple latents), not a relation over a
-    pair, so it cannot be a property-vs-rest column; it is reported as a side readout instead: the
-    recovered features whose decoder-multiplicity EXCESS cleared the null, with that excess. Scoped to
-    the recovered universe `feats` for parity with the grid.
+    `split` is per-feature, not a relation over a pair, so it's reported as a side readout: the
+    recovered features whose multiplicity excess cleared the null. Scoped to `feats` for grid parity.
     """
     recovered_ids = {int(f) for f in feats}
     out = [{"feature": int(d["feature"]), "M_P": int(d["M_P"]), "excess": float(d["excess"])}
@@ -376,12 +322,11 @@ def split_readout(classification: dict, feats: list[int]) -> dict:
 
 def tree_edges_and_siblings(tree) -> tuple[list[tuple[int, int]], list[tuple[int, int]],
                                            dict[int, bool]]:
-    """`(cont_edges, sibling_pairs, isa_child)` derived from the TREE (identity truth).
+    """`(cont_edges, sibling_pairs, isa_child)` derived from the tree (identity truth).
 
-    Shared by `run_absorption` and `run_retrieval` so the two driver reports cannot silently drift if
-    the `tree.parents`/`tree.children` schema changes. `cont_edges` are ordered (parent, child)
-    containment edges; `isa_child[c]` is True iff child c's edge carries a non-zero overlap (is_a, not
-    firing_only); `sibling_pairs` are the unordered co-hyponym pairs.
+    Shared by `run_absorption` and `run_retrieval` so the two reports can't drift on schema changes.
+    `cont_edges` are ordered (parent, child) pairs; `isa_child[c]` is True iff non-zero overlap;
+    `sibling_pairs` are unordered co-hyponym pairs.
     """
     cont_edges = [(p, c) for c in range(tree.F) for p, _, _ in tree.parents.get(c, [])]
     isa_child = {c: (tree.alpha_of(c) > 0.0) for _, c in cont_edges}

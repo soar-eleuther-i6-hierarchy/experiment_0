@@ -1,10 +1,8 @@
 """Fallback-vs-exact diagnostic for the joint-child coverage J(p).
 
-`detectors.joint_child_J` reports the capped sum of forward coverages -- an UPPER BOUND on the
-true joint coverage. This compares it against the exact reverse-support
-`r_supp(p) = P(>=1 kept child fires | parent fires)`, computed from the in-memory firing matrix,
-so the fallback's tightness can be measured on the toy. A DIAGNOSTIC only -- never a scored
-detector, never a member of the frozen `DETECTORS` grid.
+`detectors.joint_child_J` reports capped forward-coverage sum, an upper bound on the true joint
+coverage. This compares it against the exact reverse-support `r_supp(p)` so the fallback's
+tightness can be measured. A diagnostic only — never a scored detector.
 """
 from __future__ import annotations
 
@@ -20,10 +18,9 @@ _NAN = float("nan")
 def j_fallback_vs_exact(di, constants: dict) -> dict:
     """Per-parent fallback J(p) vs exact r_supp(p), and their agreement.
 
-    Recomputes `Fm`/`cofire`/`fire`/`F_mat`/`em` exactly as `compute_all` does (only
-    `di.acts_rec` is needed), so the fallback mirrors `joint_child_J`. Dead parents are NaN on
-    both sides. Returns per-parent lists plus `mean_gap`/`max_gap`/`spearman`/`n_parents` over
-    the parents finite on both sides.
+    Recomputes the same intermediates as `compute_all` so the fallback mirrors `joint_child_J`.
+    Dead parents are NaN on both sides. Returns per-parent lists plus
+    `mean_gap`/`max_gap`/`spearman`/`n_parents` over parents finite on both sides.
     """
     eps = constants["coverage_eps"]
     Fm = di.acts_rec > constants["fire_thresh"]

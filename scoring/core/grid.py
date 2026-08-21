@@ -1,22 +1,18 @@
 """
-The detector x confound AUROC grid and its statistics — the reusable, checkpoint-free
+The detector-by-confound AUROC grid and its statistics — the reusable, checkpoint-free
 toolkit behind retrieval scoring.
 
-Labels enter ONLY here (AUROC scoring + the dispersion readout); the detectors in
-`scoring.core.detectors` never saw them. Everything is threshold-free: each cell asks
-"does detector D rank a random recovered is-a pair above a random recovered class-C
-pair?" — an AUROC, which is prevalence-independent, so the thin confound columns are
-handled by honest wide CIs, not by tuning.
+Labels enter only here; detectors in `scoring.core.detectors` never see them. Threshold-free:
+each cell asks "does detector D rank a random is-a pair above a random class-C pair?" — an
+AUROC, prevalence-independent so thin columns get wide CIs rather than tuning.
 
-Statistics invariants realised here:
-  - orientation is fixed in `scoring.core.registry` — the scorer reads it, never argmaxes over sign;
-  - AUROC CIs are computed on the logit scale with an [clamp, 1-clamp] guard so perfect
-    separation gives a finite interval inside [0, 1];
-  - the within-seed CI is a cluster bootstrap BY FEATURE (resample features, form pairs
-    only among sampled features), never a pair bootstrap;
+Statistics rules enforced here:
+  - orientation is fixed in `scoring.core.registry`, never flipped to maximize score;
+  - AUROC CIs use the logit scale with a [clamp, 1-clamp] guard for finite intervals;
+  - within-seed CI is a cluster bootstrap BY FEATURE, never a bootstrap over pairs;
   - the two controls (random scalar, shuffled label) must land at AUROC ~0.5.
 
-The trained driver that feeds real checkpoint activations through this toolkit lives in
+The trained driver feeding real checkpoint activations through this toolkit lives in
 `scoring.trained.retrieval`.
 """
 
@@ -55,9 +51,9 @@ def reduce_to_recovered(held_acts: torch.Tensor, oriented: torch.Tensor, raw: to
                         ) -> tuple[list[int], DetectorInputs, dict[int, int]]:
     """Gather the matched latent's columns/rows for every recovered feature.
 
-    A feature is in the universe iff it is recovered and has a match (>=0). The returned
-    `DetectorInputs` is indexed by recovered-feature POSITION k (0..R-1); `index_map`
-    maps the true feature id -> k.
+    A feature is in the universe only if it is recovered and has a match (>=0). The returned
+    `DetectorInputs` is indexed by recovered-feature POSITION k (0..R-1); `index_map` maps the
+    true feature id to k.
     """
     feats = [int(f) for f in range(int(match.shape[0]))
              if bool(recovered[f]) and int(match[f]) >= 0]
@@ -71,15 +67,11 @@ def reduce_to_recovered(held_acts: torch.Tensor, oriented: torch.Tensor, raw: to
 
 def pair_frame(recovered_feats: list[int], pair_labels: torch.Tensor
                ) -> tuple[list[tuple[int, int]], torch.Tensor]:
-    """All ordered off-diagonal pairs (positions), with the single class INDEX per pair.
+    """All ordered off-diagonal pairs (as positions), each with its single class INDEX.
 
-    Pairs are POSITIONS into `recovered_feats`; the label is read straight off
-    `pair_labels[feat_a, feat_b]` (the only place truth enters the pipeline).
-
-    Returns one class INDEX per pair (not a bitmask): every ordered pair carries exactly
-    one class. Self-pairs (a == b) are EXCLUDED — the answer-key diagonal is 0, which
-    equals the is_a index, so a self-pair would be miscounted as is_a. Use `class_members`
-    to test membership.
+    Pairs are POSITIONS into `recovered_feats`; label comes from `pair_labels[feat_a, feat_b]`
+    (the only place truth enters the pipeline). Self-pairs are excluded: the diagonal label 0
+    equals is_a's index, so a self-pair would be miscounted. Use `class_members` for membership.
     """
     R = len(recovered_feats)
     pairs, ys = [], []
@@ -102,9 +94,7 @@ def split_scores(vals: torch.Tensor, y_label: torch.Tensor,
                  ) -> tuple[torch.Tensor, torch.Tensor]:
     """Split per-pair scores into the positive and negative populations of one cell.
 
-    Single-label is mutually exclusive: a pair carries exactly one class, so the positive
-    (`pos_name`) and negative (`col_name`) populations are disjoint by construction — no
-    overlap to exclude.
+    Classes are mutually exclusive, so positive and negative populations never overlap.
     """
     return vals[class_members(y_label, pos_name)], vals[class_members(y_label, col_name)]
 
@@ -126,13 +116,11 @@ def _tie_averaged_ranks(x: torch.Tensor) -> torch.Tensor:
 
 
 def auroc(scores_pos: torch.Tensor, scores_neg: torch.Tensor) -> float:
-    """AUROC of positives vs negatives, honouring the FROZEN orientation (never argmaxed).
+    """AUROC of positives vs negatives, using the FROZEN orientation (never flipped).
 
-    Mann-Whitney U form (tie-averaged ranks) — identical to sklearn's `roc_auc_score` but
-    torch-only, so the scorer needs no extra dependency in the measurement env. NaN-scored
-    pairs are dropped (undefined cells). Higher score == the detector calls it is-a-like; if
-    the positives genuinely score lower, the AUROC is < 0.5 and that is reported, not
-    flipped. Returns NaN if either class is empty after the NaN drop.
+    Computed via the Mann-Whitney U form with tie-averaged ranks (matches sklearn's
+    `roc_auc_score`, torch-only). NaN-scored pairs are dropped. An AUROC < 0.5 is reported
+    as-is, not flipped. Returns NaN if either class is empty after the drop.
     """
     pos = scores_pos[~torch.isnan(scores_pos)].double()
     neg = scores_neg[~torch.isnan(scores_neg)].double()
@@ -146,9 +134,9 @@ def auroc(scores_pos: torch.Tensor, scores_neg: torch.Tensor) -> float:
 
 def logit_ci(auroc_value: float, n_pos: int, n_neg: int, clamp: float,
              z: float = 1.96) -> tuple[float, float]:
-    """95% CI for AUROC on the logit scale (Hanley-McNeil SE), back-transformed to [0,1].
+    """95% CI for AUROC, computed on the logit scale (Hanley-McNeil SE) then mapped back to [0,1].
 
-    Clamping to [clamp, 1-clamp] keeps the logit finite at perfect separation, so the
+    Clamping the AUROC to [clamp, 1-clamp] keeps the logit finite at perfect separation, so the
     interval stays inside (0, 1) instead of blowing past 1.
     """
     if not math.isfinite(auroc_value) or n_pos <= 0 or n_neg <= 0:
@@ -179,21 +167,16 @@ def _split_scores(mat: torch.Tensor, pairs: list[tuple[int, int]], y_label: torc
 
 def auroc_matrix(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
                  y_label: torch.Tensor, columns: tuple[str, ...]) -> dict[str, dict[str, dict]]:
-    """AUROC(D, C) for every detector x column, with n_pos/n_neg/logit-CI/n_dropped.
+    """AUROC(D, C) for every detector-by-column cell, with n_pos/n_neg/logit-CI/n_dropped.
 
-    Class membership is by single-label equality: every pair carries exactly one class, so
-    it contributes to exactly one column (its own). The per-cell logit CI assumes pair
-    INDEPENDENCE and is anticonservative for clustered pairs (~F features); the reportable
-    across-seed interval comes from `aggregate_seeds` (Student-t), not a single cell's CI.
-    (`cluster_bootstrap_auroc` gives a feature-resampling CI if a per-seed cell CI is needed.)
+    Each pair contributes to exactly one column. The per-cell logit CI assumes independent
+    pairs, so it's too narrow for clustered pairs; the reportable across-seed interval comes
+    from `aggregate_seeds` instead (`cluster_bootstrap_auroc` gives a per-seed CI if needed).
     """
     out: dict[str, dict[str, dict]] = {}
     for det, mat in detectors.items():
         symmetric = det in SYMMETRIC_DETECTORS
-        # The positive (is_a) effective n depends only on the detector, not the column, so
-        # hoist it out of the column loop. is_a is directional (its reverse is `reversed`),
-        # so a symmetric detector does not double-count it — but we still route it through
-        # _effective_n for symmetric detectors to stay consistent.
+        # is_a effective n depends only on the detector, so compute once outside the column loop.
         n_pos_ci_hoist = _effective_n(mat, pairs, y_label, POSITIVE_LABEL) if symmetric else None
         out[det] = {}
         for col in columns:
@@ -202,20 +185,13 @@ def auroc_matrix(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]
             a = auroc(pos, neg)
             n_pos = int((~torch.isnan(pos)).sum())
             n_neg = int((~torch.isnan(neg)).sum())
-            # A symmetric detector gives (a,b) and (b,a) identical values, so a symmetric
-            # negative class double-counts each independent comparison; the CI's honest n is
-            # the UNORDERED count. The AUROC point estimate is unaffected. The effective
-            # n is stored (n_pos_ci/n_neg_ci) so aggregate_seeds' clamp uses the same honest n.
+            # Symmetric detectors double-count (a,b)/(b,a); CI's honest n is the unordered count (point estimate unaffected).
             if symmetric:
                 n_pos_ci = n_pos_ci_hoist
                 n_neg_ci = _effective_n(mat, pairs, y_label, col)
             else:
                 n_pos_ci, n_neg_ci = n_pos, n_neg
-            # N-AWARE clamp: a saturated cell (AUROC 1.0) must not be clamped to 1-1e-6 and
-            # blow the logit CI out to ~(0, 1). Clamp each cell to [1/(2n), 1-1/(2n)] from its
-            # own smaller class (the same rule aggregate_seeds applies on the logit mean), so a
-            # perfect-separation cell reports a finite, n-tight interval instead of a degenerate
-            # one that silently cancels the symmetric-n correction.
+            # N-aware clamp: saturated cells (AUROC 1.0) clamp to [1/(2n), 1-1/(2n)] using the smaller class, for a finite n-tight interval.
             n_ci = (max(1, min(int(n_pos_ci), int(n_neg_ci)))
                     if (n_pos_ci is not None and n_neg_ci is not None) else 1)
             cell_clamp = max(CONSTANTS["auroc_clamp"], 1.0 / (2.0 * n_ci))
@@ -228,8 +204,8 @@ def auroc_matrix(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]
 
 def _effective_n(mat: torch.Tensor, pairs: list[tuple[int, int]], y_label: torch.Tensor,
                  name: str) -> int:
-    """Unordered count of finite-scored pairs in a class — the independent-comparison n for
-    a symmetric detector (collapses (a,b) and (b,a) that share a value AND a class)."""
+    """Unordered count of finite-scored pairs in a class — the independent-comparison n for a
+    symmetric detector (collapses (a,b) and (b,a), which share both a value and a class)."""
     member = class_members(y_label, name).tolist()
     seen = set()
     for (a, b), inside in zip(pairs, member):
@@ -240,9 +216,8 @@ def _effective_n(mat: torch.Tensor, pairs: list[tuple[int, int]], y_label: torch
 
 def _effective_n_mask(mat: torch.Tensor, pairs: list[tuple[int, int]],
                       mask: torch.Tensor) -> int:
-    """Unordered count of finite-scored pairs selected by a boolean `mask` over pairs —
-    the mask-based twin of `_effective_n` (which keys off a single class NAME). Needed for
-    property-vs-rest, whose negative population is "everything else", not one class."""
+    """Unordered count of finite-scored pairs selected by a boolean `mask` — the mask-based
+    version of `_effective_n`, needed for property-vs-rest's "everything else" negative class."""
     seen = set()
     for (a, b), inside in zip(pairs, mask.tolist()):
         if inside and not math.isnan(float(mat[a, b])):
@@ -254,35 +229,24 @@ def property_vs_rest_grid(detectors: dict[str, torch.Tensor], pairs: list[tuple[
                           y_label: torch.Tensor, columns: tuple[str, ...],
                           label_masks: dict[str, torch.Tensor] | None = None
                           ) -> dict[str, dict[str, dict]]:
-    """AUROC(D, C-vs-rest) for every detector x column: column C = positives, EVERYTHING
-    ELSE off-diagonal = negatives.
+    """AUROC(D, C-vs-rest) for every detector-by-column cell: column C's pairs are the
+    positives, everything else off-diagonal is the negatives.
 
-    The property-vs-rest generalization of `auroc_matrix` (which locks the positive to
-    `is_a`). Each column is scored as its own class against the union of all other classes,
-    so a detector that isolates, say, `frequency` shows up on the `frequency` column even
-    though it is useless for `is_a`. Orientation stays FROZEN (never argmaxed): an AUROC
-    below 0.5 is a real INVERTED isolator and is reported as-is — the both-tails cascade
-    downstream reads it, so flipping it here would hide half the signal.
+    Generalizes `auroc_matrix` (which always uses `is_a` as positive) so a detector that
+    isolates, say, `frequency` shows up on the `frequency` column too. Orientation stays
+    FROZEN — an AUROC below 0.5 is a real inverted isolator, reported as-is.
 
-    A generative column's positives come from the single-label `y_label` (`class_members`).
-    A column named in `label_masks` instead takes its positives from the given boolean mask
-    over `pairs` — for the LATENT-side columns (`absorbed`, `merged`) whose truth OVERLAPS a
-    generative class (an absorbed edge is also an is_a edge), so they cannot live in the
-    single-label `y_label`. Their "rest" is genuinely everything-not-that-mask, is_a pairs
-    included — the correct property-vs-rest semantics.
+    A generative column's positives come from `y_label` (`class_members`); a column named in
+    `label_masks` instead takes positives from the given boolean mask, needed for latent-side
+    columns (`absorbed`, `merged`) whose truth overlaps a generative class.
 
-    NaN/empty-column discipline: a column with 0 positive (or 0 negative) pairs yields an
-    all-NaN cell (auroc/ci NaN, n_pos or n_neg 0) and is logged once — never a crash. This
-    is the SUCCESS path for an over-parameterized SAE with no `absorbed`/`merged` edges,
-    not a failure. The per-cell schema matches `auroc_matrix` (auroc/n_pos/n_neg/n_pos_ci/
-    n_neg_ci/ci_lo/ci_hi/n_dropped) so `aggregate_seeds` consumes either grid unchanged.
+    Empty-column handling: 0 positive or negative pairs yields an all-NaN cell, logged once —
+    the success path for an SAE with no such edges, not a failure.
     """
     label_masks = label_masks or {}
     pa = torch.tensor([a for a, _ in pairs], dtype=torch.long)
     pb = torch.tensor([b for _, b in pairs], dtype=torch.long)
-    # Column membership is detector-independent; compute the masks once and log empties once
-    # (not F times inside the detector loop). A column in `label_masks` uses its explicit mask;
-    # otherwise the single-label y_label decides membership.
+    # Column membership is detector-independent; compute masks once (not per detector) and log empties once.
     col_masks: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
     for col in columns:
         if col in label_masks:
@@ -308,16 +272,13 @@ def property_vs_rest_grid(detectors: dict[str, torch.Tensor], pairs: list[tuple[
             a = auroc(pos, neg)
             n_pos = int((~torch.isnan(pos)).sum())
             n_neg = int((~torch.isnan(neg)).sum())
-            # Symmetric detectors give (a,b) and (b,a) identical values, so BOTH the column
-            # and its rest can double-count independent comparisons; the honest CI n is the
-            # UNORDERED count on each side. The AUROC point estimate is unaffected.
+            # Symmetric detectors double-count (a,b)/(b,a) on both sides; honest CI n is the unordered count each side.
             if symmetric:
                 n_pos_ci = _effective_n_mask(mat, pairs, pos_mask)
                 n_neg_ci = _effective_n_mask(mat, pairs, neg_mask)
             else:
                 n_pos_ci, n_neg_ci = n_pos, n_neg
-            # N-aware clamp from the smaller class (same rule as auroc_matrix/aggregate_seeds),
-            # so a saturated cell reports a finite, n-tight CI instead of a degenerate one.
+            # N-aware clamp from the smaller class (same rule as auroc_matrix), for a finite n-tight CI.
             n_ci = (max(1, min(int(n_pos_ci), int(n_neg_ci)))
                     if (n_pos_ci is not None and n_neg_ci is not None) else 1)
             cell_clamp = max(CONSTANTS["auroc_clamp"], 1.0 / (2.0 * n_ci))
@@ -337,26 +298,21 @@ def cluster_bootstrap_auroc(detector_scalar: torch.Tensor, recovered_feats: list
     """Percentile CI for one cell by resampling FEATURES (never pairs).
 
     Each replicate draws R features with replacement and forms pairs among the sampled
-    MULTISET (a feature drawn twice contributes its pairs twice — the with-replacement
-    multiplicity is what makes this a bootstrap and not a 63%-subsample; using `set()`
-    undercounts the variance and gives a ~32%-too-narrow CI). `y_label_fn(pos_a, pos_b) ->
-    scalar class name` supplies the truth (positions 0..R-1). Returns (nan, nan) for R < 2
-    (no off-diagonal pairs / `torch.randint` would reject an empty range).
+    MULTISET — a feature drawn twice contributes its pairs twice, which is what makes this a
+    real bootstrap rather than a 63% subsample. `y_label_fn(pos_a, pos_b)` returns the class
+    name for a pair of positions. Returns (nan, nan) for R < 2.
     """
     R = len(recovered_feats)
     if R < 2:
         return (float("nan"), float("nan"))
-    # Lazily-filled ordered-pair label code (-2 unfilled, 1 is_a, 0 column, -1 other).
-    # y_label_fn is called only for SAMPLED feature pairs (preserving the feature-resampling
-    # contract) and each (i,j) at most once (cached across replicates), then bucketed vectorized.
+    # Ordered-pair label code, filled lazily (-2 unfilled/1 is_a/0 column/-1 other); y_label_fn called once per sampled pair, cached across replicates.
     lab = torch.full((R, R), -2, dtype=torch.long)
 
     def _fill(uniq: list[int]) -> None:
         for a in uniq:
             for b in uniq:
                 if a != b and int(lab[a, b]) == -2:
-                    # Single-label: each pair carries exactly one class name; is_a -> 1,
-                    # the column -> 0, anything else -> -1 (ignored by this cell).
+                    # Each pair carries exactly one class: is_a -> 1, the column -> 0, else -1 (ignored).
                     nm = y_label_fn(a, b)
                     lab[a, b] = 1 if nm == POSITIVE_LABEL else (0 if nm == column else -1)
 
@@ -385,9 +341,9 @@ def cluster_bootstrap_auroc(detector_scalar: torch.Tensor, recovered_feats: list
 # --------------------------------------------------------------------------
 def component_percentiles(detectors: dict[str, torch.Tensor],
                           pairs: list[tuple[int, int]]) -> dict[str, torch.Tensor]:
-    """Per-detector percentile rank of each pair against ONE global pool (all recovered
-    pairs, unlabeled). Percentile = fraction of finite scores <= this pair's score. NaN
-    where the pair's score is NaN."""
+    """Per-detector percentile rank of each pair against ONE global pool (all recovered pairs,
+    unlabeled). Percentile = fraction of finite scores <= this pair's score. NaN where the
+    pair's own score is NaN."""
     pa = torch.tensor([a for a, _ in pairs], dtype=torch.long)
     pb = torch.tensor([b for _, b in pairs], dtype=torch.long)
     out: dict[str, torch.Tensor] = {}
@@ -409,7 +365,7 @@ def component_percentiles(detectors: dict[str, torch.Tensor],
 # --------------------------------------------------------------------------
 def random_scalar_control(pairs: list[tuple[int, int]], y_label: torch.Tensor,
                           column: str, rng: torch.Generator) -> float:
-    """A random per-pair scalar cannot separate any class -> AUROC ~0.5 (CI-machinery check)."""
+    """A random per-pair scalar cannot separate any class, so AUROC ~0.5 (checks the CI machinery)."""
     scores = torch.rand(len(pairs), generator=rng, dtype=DT)
     pos, neg = split_scores(scores, y_label, POSITIVE_LABEL, column)
     return auroc(pos, neg)
@@ -417,7 +373,7 @@ def random_scalar_control(pairs: list[tuple[int, int]], y_label: torch.Tensor,
 
 def shuffled_label_control(detector_scalar: torch.Tensor, pairs: list[tuple[int, int]],
                            y_label: torch.Tensor, column: str, rng: torch.Generator) -> float:
-    """Permute annotations on the SAME recovered universe -> a real detector's signal must
+    """Permute the labels on the SAME recovered universe; a real detector's signal must then
     vanish (AUROC ~0.5). Catches a pipeline that manufactures signal from the label map."""
     perm = torch.randperm(y_label.numel(), generator=rng)
     shuffled = y_label[perm]
@@ -430,8 +386,8 @@ def shuffled_label_control(detector_scalar: torch.Tensor, pairs: list[tuple[int,
 # held-out seed / dispersion-conditioned readout / redundancy
 # --------------------------------------------------------------------------
 def held_out_sample_seed(train_seed: int, offset: int = HELD_OUT_SEED_OFFSET) -> int:
-    """The disjoint sampling seed for the held-out detector draw. offset==0 is refused
-    (it would collapse held-out onto in-sample, defeating the held-out firewall)."""
+    """The disjoint sampling seed for the held-out detector draw. An offset of 0 is refused: it
+    would make the held-out draw identical to the in-sample one, defeating the firewall."""
     if offset == 0:
         raise ValueError("held_out offset must be non-zero: a 0 offset reuses the training draw")
     return int(train_seed) + int(offset)
@@ -440,11 +396,11 @@ def held_out_sample_seed(train_seed: int, offset: int = HELD_OUT_SEED_OFFSET) ->
 def dispersion_split(isa_pairs: list[tuple[int, int]], r_disp: dict[int, float],
                      detector_scalar: torch.Tensor,
                      neg_pairs: list[tuple[int, int]] | None = None) -> dict:
-    """Median-split the is-a pairs by the CHILD's r_disp and report each half.
+    """Split the is-a pairs at the median of the CHILD's r_disp and report each half.
 
-    r_disp is child-direction dispersion (uses truth g) — a READOUT DIAGNOSTIC, never a
-    detector. With `neg_pairs` given, each half's value is the is-a-vs-neg AUROC; without
-    it, the mean oriented detector score over the half (a monotone summary).
+    r_disp is child-direction dispersion (uses truth g) — a readout diagnostic, never a
+    detector. If `neg_pairs` is given, each half's value is the is-a-vs-neg AUROC; otherwise it
+    is the mean oriented detector score over the half (a monotone summary).
     """
     disps = torch.tensor([r_disp[c] for _, c in isa_pairs], dtype=DT)
     median = float(disps.median())
@@ -469,12 +425,11 @@ def dispersion_split(isa_pairs: list[tuple[int, int]], r_disp: dict[int, float],
 def redundancy_map(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
                    y_label: torch.Tensor, columns: tuple[str, ...],
                    grid: dict | None = None) -> dict:
-    """Pairwise detector rank-correlation + each detector's marginal added AUROC per column.
+    """Pairwise detector rank-correlation, plus each detector's marginal added AUROC per column.
 
-    Marginal = AUROC(D on C) - max over the OTHER detectors of AUROC(other on C): a near-zero
-    marginal is measured domination (exploratory). When no other detector has a defined
-    AUROC for a column, the marginal is NaN (`no comparison`), NOT a fabricated `a - 0.5`.
-    `grid` may be passed in to avoid recomputing the AUROC matrix.
+    Marginal = AUROC(D on C) - max over other detectors' AUROC(other on C); near-zero means
+    this detector is dominated. NaN (not a fake `a - 0.5`) when no comparison is possible.
+    Pass `grid` to reuse an already-computed AUROC matrix.
     """
     names = list(detectors)
     comps = component_percentiles(detectors, pairs)
@@ -495,19 +450,18 @@ def redundancy_map(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, in
                       and math.isfinite(grid[o][col]["auroc"])]
             a = grid[det][col]["auroc"]
             if not others or not math.isfinite(a):
-                marginal[det][col] = float("nan")        # no valid comparison -> undefined
+                marginal[det][col] = float("nan")        # no valid comparison, so undefined
             else:
                 marginal[det][col] = a - max(others)
     return {"rank_corr": rank_corr, "marginal_auroc": marginal}
 
 
 def _spearman(a: torch.Tensor, b: torch.Tensor) -> float:
-    """Spearman rank correlation with TIE-AVERAGED ranks (scipy `spearmanr` semantics).
+    """Spearman rank correlation with TIE-AVERAGED ranks (matches scipy's `spearmanr`).
 
-    `argsort().argsort()` breaks ties by position, which fabricates a correlation for the
-    per-parent broadcast detectors (constant across a parent's columns → many ties). Tie
-    averaging fixes that; a constant (zero-variance) vector carries no rank information and
-    returns NaN, not a spurious ±1. Precondition: NaN-free inputs (callers filter).
+    Plain `argsort().argsort()` breaks ties by position, fabricating correlation for the
+    per-parent broadcast detectors (many ties). A zero-variance vector returns NaN, not a
+    spurious +/-1. Requires NaN-free inputs (callers filter first).
     """
     if a.numel() < 2 or torch.isnan(a).any() or torch.isnan(b).any():
         return float("nan")
@@ -524,11 +478,7 @@ def _spearman(a: torch.Tensor, b: torch.Tensor) -> float:
 # --------------------------------------------------------------------------
 # across-seed aggregation
 # --------------------------------------------------------------------------
-# Student-t 97.5% critical values by df (=n_seeds-1). The across-seed CI has only n_seeds
-# replicates, so the multiplier is t_{.975,df}, NOT the normal 1.96 (its df->inf limit): at n=5
-# that is 2.7764 vs 1.96, a 29%-too-narrow interval. Hardcoded (dependency-free — aggregate_seeds
-# may run in an env without scipy) through df=30, covering the reportable 15-20-seed regime; beyond
-# df=30 the z-limit is within ~4% so 1.96 is an acceptable fallback.
+# Student-t 97.5% critical values by df (n_seeds-1); hardcoded so aggregate_seeds needs no scipy, covers df<=30, falls back to 1.96 beyond that.
 _T_CRIT_975: dict[int, float] = {
     1: 12.7062, 2: 4.3027, 3: 3.1824, 4: 2.7764, 5: 2.5706, 6: 2.4469, 7: 2.3646, 8: 2.3060,
     9: 2.2622, 10: 2.2281, 11: 2.2010, 12: 2.1788, 13: 2.1604, 14: 2.1448, 15: 2.1314, 16: 2.1199,
@@ -538,30 +488,25 @@ _T_CRIT_975: dict[int, float] = {
 
 
 def _t_crit_975(n_seeds: int) -> float:
-    """Two-sided 97.5% Student-t multiplier for `n_seeds` replicates (df = n_seeds-1). Falls back
-    to the normal 1.96 for df<1 (undefined spread) or df>30 (within ~4% of the z-limit)."""
+    """Two-sided 97.5% Student-t multiplier for `n_seeds` replicates (df = n_seeds - 1). Falls
+    back to the normal 1.96 for df < 1 (undefined spread) or df > 30 (within ~4% of the z-limit)."""
     return _T_CRIT_975.get(int(n_seeds) - 1, 1.96)
 
 
 def aggregate_seeds(reports: list[dict]) -> dict:
-    """Across-seed AUROC per cell on the logit scale + a Student-t CI (t_{.975,n-1}, not z:
-    at n=5 the multiplier is 2.7764). Preliminary at 3-5 seeds; the reportable regime is ~15-20."""
+    """Across-seed AUROC per cell, averaged on the logit scale, with a Student-t CI (t_{.975,n-1},
+    not z: at n=5 the multiplier is 2.7764). Treat 3-5 seeds as preliminary; the reportable regime
+    is ~15-20 seeds."""
     if not reports:
         return {}
-    # Guard: refuse a report set with a DUPLICATED train_seed — a checkpoint_dirname collision (or
-    # a re-scored duplicate) would otherwise be aggregated as if independent, halving the effective n
-    # and fabricating a too-tight across-seed CI. Lenient on reports that carry no seed (old schema):
-    # the guard fires only on an actual duplicate among the seeds that ARE present.
+    # Guard: refuse repeated train_seed(s) — a duplicate would be aggregated as independent, giving a too-tight CI. Reports with no seed (old schema) are allowed.
     seeds = [r["meta"]["train_seed"] for r in reports
              if isinstance(r.get("meta"), dict) and r["meta"].get("train_seed") is not None]
     if len(set(seeds)) < len(seeds):
         dupes = sorted({s for s in seeds if seeds.count(s) > 1})
         raise ValueError(f"aggregate_seeds: non-distinct train_seed(s) {dupes} in the report set — "
                          "seeds must be distinct (a checkpoint_dirname collision or a duplicate report)")
-    # Guard: refuse a set whose reports disagree on (config, variant, k) — a --out directory that mixes
-    # two experiments (e.g. a partial re-run over the same seed numbers with a different config) would
-    # otherwise be aggregated as one, silently combining incomparable worlds (KNOWN_BUGS 6.5). Lenient
-    # on reports with no meta (old schema): a signature is collected only where meta is present.
+    # Guard: refuse reports that disagree on (config, variant, k) — mixing two experiments would silently combine incomparable runs. Reports with no meta (old schema) are allowed.
     sigs = {(m.get("config"), m.get("variant"), m.get("k"))
             for r in reports if isinstance((m := r.get("meta")), dict)}
     if len(sigs) > 1:
@@ -581,15 +526,10 @@ def aggregate_seeds(reports: list[dict]) -> dict:
                                  "ci_hi": float("nan"), "median": float("nan"), "n_seeds": 0}
                 continue
             vals = [c["auroc"] for c in cells]
-            # SAMPLE-SIZE-AWARE clamp: a seed with finite n cannot legitimately act as
-            # AUROC 1-1e-6 (logit ±13.8) and dominate the logit-mean. Clamp each seed to
-            # [1/(2n), 1-1/(2n)] from its own smaller class, so a single saturated seed can't
-            # swamp the others (one saturated seed must not dominate the across-seed CI).
+            # Sample-size-aware clamp: clamp each seed to [1/(2n), 1-1/(2n)] from its smaller class, so one saturated seed can't swamp the across-seed CI.
             logits = []
             for c in cells:
-                # Prefer the CI-basis (effective) n so a symmetric detector's clamp matches
-                # its honest CI. Missing sample sizes -> flat clamp (NEVER default to n=1,
-                # which would force cl=0.5 and collapse every AUROC to a fabricated 0.5 null).
+                # Prefer the CI-basis (effective) n so symmetric detectors' clamp matches their CI; never default to n=1, which would collapse AUROC to a fake 0.5.
                 np_ = c.get("n_pos_ci", c.get("n_pos"))
                 nn_ = c.get("n_neg_ci", c.get("n_neg"))
                 if np_ is None or nn_ is None:
@@ -607,11 +547,7 @@ def aggregate_seeds(reports: list[dict]) -> dict:
             median = svals[len(svals) // 2] if len(svals) % 2 else \
                 0.5 * (svals[len(svals) // 2 - 1] + svals[len(svals) // 2])
             if sd == 0.0 and len(logits) > 1:
-                # All seeds clamped to the SAME logit (every seed saturated, e.g. AUROC 1.0 on H2/H4):
-                # the between-seed variance is 0 and a Student-t interval collapses to [mean, mean], a
-                # fabricated zero-width CI. Fall back to the ENVELOPE of the per-seed cell CIs (each cell
-                # carries its own finite-n logit CI) — the aggregate cannot honestly claim more certainty
-                # than any single seed already has.
+                # All seeds clamped to the same logit (e.g. every seed saturated): variance is 0, so fall back to the envelope of per-seed CIs rather than a fake zero-width interval.
                 lo_env = min((c["ci_lo"] for c in cells if c.get("ci_lo") is not None),
                              default=_sigmoid(mean_l))
                 hi_env = max((c["ci_hi"] for c in cells if c.get("ci_hi") is not None),

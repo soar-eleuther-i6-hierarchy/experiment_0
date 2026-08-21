@@ -1,14 +1,12 @@
 """
-The firing and strength model of the normal toy generator.
+Firing rates and activation strengths for the toy generator.
 
-Two designed choices live here, both deliberately flat:
-  - firing rate p_k walks the forest downward, p_child = p_parent * p_edge;
-  - every feature is equally loud (mean active strength = q * sqrt(E0)), so a feature's
-    residual energy varies only through its firing rate, never a designed loudness
-    ladder.
+Two deliberately flat design choices: firing rate walks down the forest (p_child = p_parent
+* p_edge), and every feature is equally loud (mean strength = q * sqrt(E0)) -- there is no
+built-in loudness ladder.
 
-`topic_rates` is the per-topic firing profile used by the topical confounds; it
-marginalises back to exactly the feature's overall rate.
+`topic_rates` is the per-topic firing profile used by the topical confounds; it averages
+back to exactly the feature's overall rate.
 """
 
 from __future__ import annotations
@@ -43,22 +41,19 @@ def firing_rates(tree: Tree) -> torch.Tensor:
 def target_l0(tree: Tree) -> float:
     """The world's expected L0 = mean active features per token = sum of firing rates.
 
-    This is the true sparsity of the sampled world, and the number the SAE's top-k must
-    match: a dictionary with `k` far below it is structurally unable to represent an
-    average token, so every recovery/AUROC number would be measured through a starved
-    dictionary. Callers derive the SAE's `k` from this rather than a declared constant,
-    because the true L0 moves with the tree (e.g. adding superparents raises it).
+    This is the number the SAE's top-k should match -- a starved `k` can't represent an
+    average token, so callers derive `k` from this rather than a fixed constant.
     """
     return float(firing_rates(tree).sum())
 
 
 def topic_rates(p_i: float | torch.Tensor, kappa: float, z_i: int | None,
                 pi: torch.Tensor) -> torch.Tensor:
-    """Per-topic firing rate that marginalises back to `p_i` under a uniform prior.
+    """Per-topic firing rate that averages back to `p_i` under a uniform topic prior.
 
-    The `- pi[z_i]` centring makes the marginal exact when `pi` is uniform — which is
-    what `build_strengths` always constructs. Without it the rate integrates to
-    `p_i (1 + kappa pi)` while still looking like a valid probability.
+    The `- pi[z_i]` centring makes that average exact when `pi` is uniform (as
+    `build_strengths` always builds); without it the average would drift while still
+    looking like a valid probability.
     """
     Z = pi.numel()
     if z_i is None or kappa == 0.0:
@@ -71,9 +66,9 @@ def topic_rates(p_i: float | torch.Tensor, kappa: float, z_i: int | None,
 def build_strengths(cfg: ToyConfig, tree: Tree) -> StrengthSpec:
     """Firing rates, a flat loudness, and a uniform topic prior.
 
-    mean_strength = q * sqrt(E0) with q = 1 / sqrt(1 + strength_spread^2), identical
-    for every feature: the toy has no designed energy ladder, so the only energy
-    spread is the one feature firing already creates.
+    mean_strength = q * sqrt(E0) with q = 1 / sqrt(1 + strength_spread^2), the same for every
+    feature: the toy has no designed energy ladder, so the only energy spread is whatever
+    firing itself produces.
     """
     p = firing_rates(tree)
     q = 1.0 / math.sqrt(1.0 + cfg.strength_spread ** 2)

@@ -1,20 +1,13 @@
 """The ground-truth pair-label table.
 
-Annotations are per ORDERED pair `(a, b)`, read as "a is the candidate parent, b the
-candidate child". Direction matters: `is_a`, `firing_only`, `transitive` and `reversed`
-are antisymmetric; `sibling`, `superparent`, `frequency` and `topical` are symmetric.
+Labels are per ordered pair `(a, b)`: "a is the candidate parent, b the candidate child".
+`is_a`, `firing_only`, `transitive`, `reversed` are directional; `sibling`, `superparent`,
+`frequency`, `topical` are symmetric. Each pair carries exactly one class -- classes can't
+overlap by construction, and `pair_label` enforces this with a disjointness check.
 
-Each pair carries EXACTLY ONE class. The relationship classes are non-intersecting by
-construction: every confound feature is created for a single archetype and sits as a
-parentless, childless root, so no ordered pair can satisfy two class predicates.
-`pair_label` enforces this with a disjointness check — if a pair ever matched two
-classes it raises rather than silently picking one.
-
-Only DATA-SIDE properties appear here. Absorption, splitting and merging are
-dictionary-side — induced by training and measured against the learned latents, never
-injected. Every annotation is read off the generator's declared structure (`CONT`, the
-topic and token-binding tags), never inferred from co-firing statistics, so the answer
-key is independent of the metrics under test.
+Only data-side properties appear here (never absorption/splitting/merging, which are
+dictionary-side). Every label is read off the generator's declared structure, never
+inferred from co-firing statistics, so the answer key is independent of the metrics under test.
 """
 
 from __future__ import annotations
@@ -47,13 +40,10 @@ def _index(name: str) -> int:
 def pair_label(tree: Tree) -> torch.Tensor:
     """`[F, F]` int8 answer key: the single class index of each ordered pair.
 
-    Class `LABELS[i]` -> the cell holds index `i`. The diagonal is the `_UNSET` sentinel `-1` (a
-    self-pair is not a relation of any class: NOT index-0 is_a — so a consumer that forgets to mask
-    self-pairs can't read a self-pair as an is_a positive — and NOT `unrelated` either, which is
-    reserved for the genuine off-diagonal nulls). `unrelated` is assigned off-diagonal exactly where
-    no other class applies. Each predicate is checked independently and
-    written through `assign`, which RAISES if a cell is claimed by two different classes
-    — the non-intersecting invariant the single-label key depends on.
+    Cell (a, b) holds `i` where the pair's class is `LABELS[i]`. The diagonal holds the
+    `_UNSET` sentinel `-1`, deliberately neither index-0 `is_a` nor `unrelated` -- so code
+    that forgets to mask self-pairs can't misread one. `unrelated` is assigned off-diagonal
+    wherever nothing else applies; `assign` raises if a cell is claimed by two classes.
     """
     F = tree.F
     _UNSET = -1
@@ -78,8 +68,7 @@ def pair_label(tree: Tree) -> torch.Tensor:
                     and tree.topic[a] is not None and tree.topic[a] == tree.topic[b]):
                 assign(a, b, "topical")
             if tree.token_bound[a] and tree.token_bound[b]:
-                # all token-bound features share one high-frequency id set, so any such
-                # ordered pair is a frequency confound
+                # all token-bound features share one high-frequency id set, so any such pair is a frequency confound
                 assign(a, b, "frequency")
 
     # siblings: any two features sharing a direct parent (exclusive or not)
@@ -89,8 +78,7 @@ def pair_label(tree: Tree) -> torch.Tensor:
                 assign(x, z, "sibling")
                 assign(z, x, "sibling")
 
-    # superparent: both orderings of every pair touching a declared superparent (it fires
-    # on most tokens, so both directions are contaminated by its base rate)
+    # superparent: both orderings of every pair touching a declared superparent, since its high base rate contaminates the pair either way
     for a in range(F):
         if "superparent" not in tree.tags[a]:
             continue
@@ -99,9 +87,7 @@ def pair_label(tree: Tree) -> torch.Tensor:
                 assign(a, b, "superparent")
                 assign(b, a, "superparent")
 
-    # declared ancestry (forward direction) and its reverse. `is_a` vs `firing_only` is
-    # decided by the PER-EDGE overlap of the specific a->b containment edge (alpha > 0),
-    # not a feature-level alpha — a feature may sit on both kinds of edge.
+    # declared ancestry (forward) and its reverse. is_a vs firing_only is decided per-edge (alpha > 0), not per-feature -- one feature can sit on both kinds of edge.
     for b in range(F):
         parent_alpha = {p: alpha for p, _, alpha in tree.parents.get(b, [])}
         for a in tree.ancestors[b]:
@@ -112,10 +98,7 @@ def pair_label(tree: Tree) -> torch.Tensor:
             assign(a, b, name)
             assign(b, a, "reversed")
 
-    # the null: every off-diagonal pair with no declared property becomes `unrelated`. The diagonal
-    # is left at the `_UNSET` sentinel (-1): a self-pair has no relation class — keeping it -1 (never
-    # index-0 is_a, and distinct from the off-diagonal `unrelated` nulls) means a consumer that
-    # forgets to mask self-pairs cannot mistake one for an is_a positive.
+    # the null: every off-diagonal pair with no declared property becomes `unrelated`. The diagonal stays at `_UNSET` (-1), so code that forgets to mask self-pairs can't mistake one for an is_a positive.
     off_diag = ~torch.eye(F, dtype=torch.bool)
     y[(y == _UNSET) & off_diag] = _index("unrelated")
     y.fill_diagonal_(_UNSET)
