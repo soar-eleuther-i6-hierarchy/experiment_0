@@ -89,6 +89,19 @@ def print_summary(res: dict) -> None:
         print(f"  seed{s}: counts={ab['counts']} by_relation={ab['absorbed_by_relation']} "
               f"n_split={sp.get('n_split', '--')}")
 
+    print("\n[4] is_a deployment cascade per seed (greedy both-tails Boolean rule)")
+    for s in seeds:
+        isa = res["retrieval"][s].get("cascade", {}).get("is_a", {})
+        if "skipped" in isa or not isa:
+            print(f"  seed{s}: {isa.get('skipped', 'no cascade')}")
+            continue
+        hn = isa.get("hard_negative", {})
+        trivial = "  (no filter found — base-rate only)" if isa.get("trivial") else ""
+        print(f"  seed{s}: prec={isa['final_precision']:.2f} survival={isa['final_survival']:.2f} "
+              f"enrich={isa['enrichment']:.1f}x hard_neg_prec={hn.get('precision', float('nan')):.2f} "
+              f"n_metrics={isa['n_metrics']}{trivial}")
+        print(f"          rule: {isa['final_rule']}")
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Score trained toy-SAE checkpoints across seeds.")

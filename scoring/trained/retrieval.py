@@ -36,6 +36,7 @@ from scoring.core.registry import (
     POSITIVE_LABEL,
     SCORED_COLUMNS,
 )
+from scoring.trained.cascade import cascade_grid
 from toygen import labels
 
 # The probe is the SOLE s_res mode that may feed a reported cell (the trained detector). The cheap
@@ -108,6 +109,13 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     grid = property_vs_rest_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
     per_class_rec = _per_class_recovery(res.recovered, ho.pair_labels, feats)
 
+    # Greedy both-tails Boolean cascade over the grid: per column a readable percentile rule that
+    # isolates that class among survivors. is_a's rule is the deployment cascade; its readout carries
+    # enrichment-over-base-rate + the hard-negative precision vs {transitive, reversed, firing_only}
+    # (a pooled vs-rest AUROC hides those confusable cousins). 0-positive columns are skipped, not
+    # crashed. Reads only the firewalled detectors + the answer key (+ latent masks for absorbed/merged).
+    cascade = cascade_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
+
     # dispersion-conditioned is-a readout: r_disp over the FULL held-out dictionary,
     # indexed by true feature id; a truth-g DIAGNOSTIC on the readout, never a detector.
     r_disp_vec = child_direction_dispersion(oriented_ho, ho.g, res.match, feats,
@@ -145,6 +153,13 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
                       "Generative columns come from pair_labels; latent columns (absorbed/merged) "
                       "from the absorption classification."),
         "grid": grid, "per_class_recovery": per_class_rec,
+        "cascade": cascade,
+        "cascade_note": ("greedy forward-selection of percentile filters (one per detector, BOTH "
+                         "tails tried at each step) maximizing F1 of the column among survivors; "
+                         "distribution-free global-pool thresholds. is_a's rule is the deployment "
+                         "cascade — its readout adds enrichment (final precision / base rate) and a "
+                         "hard-negative precision vs {transitive, reversed, firing_only}. 0-positive "
+                         "columns are skipped."),
         "latent_columns": list(LATENT_COLUMNS),
         # NOT re-reporting the absorption `counts` here: `run_absorption` is the single source of truth
         # for the full decomposition, and the grid's absorbed/merged n_pos already carries the
