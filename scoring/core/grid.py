@@ -22,9 +22,12 @@ The trained driver that feeds real checkpoint activations through this toolkit l
 
 from __future__ import annotations
 
+import logging
 import math
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 from scoring.core.detectors import DetectorInputs
 from scoring.core.registry import (
@@ -235,6 +238,96 @@ def _effective_n(mat: torch.Tensor, pairs: list[tuple[int, int]], y_label: torch
     return len(seen)
 
 
+def _effective_n_mask(mat: torch.Tensor, pairs: list[tuple[int, int]],
+                      mask: torch.Tensor) -> int:
+    """Unordered count of finite-scored pairs selected by a boolean `mask` over pairs —
+    the mask-based twin of `_effective_n` (which keys off a single class NAME). Needed for
+    property-vs-rest, whose negative population is "everything else", not one class."""
+    seen = set()
+    for (a, b), inside in zip(pairs, mask.tolist()):
+        if inside and not math.isnan(float(mat[a, b])):
+            seen.add(frozenset((a, b)))
+    return len(seen)
+
+
+def property_vs_rest_grid(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
+                          y_label: torch.Tensor, columns: tuple[str, ...],
+                          label_masks: dict[str, torch.Tensor] | None = None
+                          ) -> dict[str, dict[str, dict]]:
+    """AUROC(D, C-vs-rest) for every detector x column: column C = positives, EVERYTHING
+    ELSE off-diagonal = negatives.
+
+    The property-vs-rest generalization of `auroc_matrix` (which locks the positive to
+    `is_a`). Each column is scored as its own class against the union of all other classes,
+    so a detector that isolates, say, `frequency` shows up on the `frequency` column even
+    though it is useless for `is_a`. Orientation stays FROZEN (never argmaxed): an AUROC
+    below 0.5 is a real INVERTED isolator and is reported as-is — the both-tails cascade
+    downstream reads it, so flipping it here would hide half the signal.
+
+    A generative column's positives come from the single-label `y_label` (`class_members`).
+    A column named in `label_masks` instead takes its positives from the given boolean mask
+    over `pairs` — for the LATENT-side columns (`absorbed`, `merged`) whose truth OVERLAPS a
+    generative class (an absorbed edge is also an is_a edge), so they cannot live in the
+    single-label `y_label`. Their "rest" is genuinely everything-not-that-mask, is_a pairs
+    included — the correct property-vs-rest semantics.
+
+    NaN/empty-column discipline: a column with 0 positive (or 0 negative) pairs yields an
+    all-NaN cell (auroc/ci NaN, n_pos or n_neg 0) and is logged once — never a crash. This
+    is the SUCCESS path for an over-parameterized SAE with no `absorbed`/`merged` edges,
+    not a failure. The per-cell schema matches `auroc_matrix` (auroc/n_pos/n_neg/n_pos_ci/
+    n_neg_ci/ci_lo/ci_hi/n_dropped) so `aggregate_seeds` consumes either grid unchanged.
+    """
+    label_masks = label_masks or {}
+    pa = torch.tensor([a for a, _ in pairs], dtype=torch.long)
+    pb = torch.tensor([b for _, b in pairs], dtype=torch.long)
+    # Column membership is detector-independent; compute the masks once and log empties once
+    # (not F times inside the detector loop). A column in `label_masks` uses its explicit mask;
+    # otherwise the single-label y_label decides membership.
+    col_masks: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
+    for col in columns:
+        if col in label_masks:
+            pos_mask = label_masks[col].to(torch.bool)
+        else:
+            pos_mask = class_members(y_label, col)
+        neg_mask = ~pos_mask                         # everything else (pairs are all off-diagonal)
+        if int(pos_mask.sum()) == 0:
+            logger.warning("property_vs_rest_grid: column %r has 0 positive pairs — NaN cell", col)
+        elif int(neg_mask.sum()) == 0:
+            logger.warning("property_vs_rest_grid: column %r has 0 negative pairs — NaN cell", col)
+        col_masks[col] = (pos_mask, neg_mask)
+
+    out: dict[str, dict[str, dict]] = {}
+    for det, mat in detectors.items():
+        symmetric = det in SYMMETRIC_DETECTORS
+        vals_all = mat[pa, pb].double()              # vectorized gather, once per detector
+        out[det] = {}
+        for col in columns:
+            pos_mask, neg_mask = col_masks[col]
+            pos, neg = vals_all[pos_mask], vals_all[neg_mask]
+            n_dropped = int(torch.isnan(pos).sum() + torch.isnan(neg).sum())
+            a = auroc(pos, neg)
+            n_pos = int((~torch.isnan(pos)).sum())
+            n_neg = int((~torch.isnan(neg)).sum())
+            # Symmetric detectors give (a,b) and (b,a) identical values, so BOTH the column
+            # and its rest can double-count independent comparisons; the honest CI n is the
+            # UNORDERED count on each side. The AUROC point estimate is unaffected.
+            if symmetric:
+                n_pos_ci = _effective_n_mask(mat, pairs, pos_mask)
+                n_neg_ci = _effective_n_mask(mat, pairs, neg_mask)
+            else:
+                n_pos_ci, n_neg_ci = n_pos, n_neg
+            # N-aware clamp from the smaller class (same rule as auroc_matrix/aggregate_seeds),
+            # so a saturated cell reports a finite, n-tight CI instead of a degenerate one.
+            n_ci = (max(1, min(int(n_pos_ci), int(n_neg_ci)))
+                    if (n_pos_ci is not None and n_neg_ci is not None) else 1)
+            cell_clamp = max(CONSTANTS["auroc_clamp"], 1.0 / (2.0 * n_ci))
+            lo, hi = logit_ci(a, n_pos_ci, n_neg_ci, cell_clamp)
+            out[det][col] = {"auroc": a, "n_pos": n_pos, "n_neg": n_neg,
+                             "n_pos_ci": n_pos_ci, "n_neg_ci": n_neg_ci,
+                             "ci_lo": lo, "ci_hi": hi, "n_dropped": n_dropped}
+    return out
+
+
 # --------------------------------------------------------------------------
 # within-seed cluster bootstrap BY FEATURE
 # --------------------------------------------------------------------------
@@ -309,28 +402,6 @@ def component_percentiles(detectors: dict[str, torch.Tensor],
             pct[finite] = torch.searchsorted(sorted_fv, fv, right=True).double() / fv.numel()
         out[name] = pct
     return out
-
-
-def min_percentile_ensemble(detectors: dict[str, torch.Tensor],
-                            pairs: list[tuple[int, int]]) -> torch.Tensor:
-    """Per-pair min across the DEFINED detector percentiles: high only if every gate that
-    has an opinion ranks it is-a-like. NaN-aware — a pair is NaN only if EVERY detector is
-    undefined for it (mirrors `mean_percentile_ensemble`); a single undefined gate must not
-    poison an otherwise-agreeing pair (which would silently shrink and bias the ensemble)."""
-    comps = component_percentiles(detectors, pairs)
-    stacked = torch.stack([comps[k] for k in detectors], dim=0)
-    all_nan = torch.isnan(stacked).all(dim=0)
-    filled = torch.where(torch.isnan(stacked), torch.full_like(stacked, float("inf")), stacked)
-    out = filled.min(dim=0).values
-    return torch.where(all_nan, torch.full_like(out, float("nan")), out)
-
-
-def mean_percentile_ensemble(detectors: dict[str, torch.Tensor],
-                             pairs: list[tuple[int, int]]) -> torch.Tensor:
-    """Robustness check: per-pair mean across detector percentiles (nan-aware)."""
-    comps = component_percentiles(detectors, pairs)
-    stacked = torch.stack([comps[k] for k in detectors], dim=0)
-    return torch.nanmean(stacked, dim=0)
 
 
 # --------------------------------------------------------------------------
@@ -451,125 +522,6 @@ def _spearman(a: torch.Tensor, b: torch.Tensor) -> float:
 
 
 # --------------------------------------------------------------------------
-# class-balanced pooled ensemble (macro-average is-a-vs-negatives)
-# --------------------------------------------------------------------------
-def _ensemble_pooled_auroc(ens: torch.Tensor, pairs: list[tuple[int, int]],
-                           y_label: torch.Tensor) -> dict:
-    """is-a vs the scored negative classes, weighted EQUALLY per class — DETERMINISTIC.
-
-    The macro-average of the per-class is-a-vs-C AUROCs: each scored negative class C
-    contributes AUROC(is_a, all finite pairs in C), and the reported `auroc` is the unweighted
-    mean over classes. This gives every class equal weight WITHOUT discarding data — the old
-    subsample-to-the-thinnest-class approach threw away ~all of the wide classes (topical ~12
-    capped every class to 12) and, being a single `manual_seed(0)` draw, made the pooled metric
-    a bare point estimate with ~0.02 draw-to-draw sd. A macro-average is equal-weight, uses every
-    pair, and has no RNG, so it rests on the whole surviving pool (effect size + n, never a lossy draw).
-
-    Returns `{auroc (macro-mean), per_class {C: auroc}, n_pos, n_neg (total finite negs used),
-    n_classes, n_dropped}`.
-    """
-    pos_mask = class_members(y_label, POSITIVE_LABEL)
-    pos_all = torch.tensor([float(v) for v in ens[pos_mask]], dtype=DT)
-    pos = pos_all[~torch.isnan(pos_all)]
-    # Grouped by class INDEX; each pair carries exactly one class, so the is_a positives and
-    # every negative class are disjoint by construction (no is_a pair can also be a negative).
-    neg_by_cls: dict[str, list[float]] = {}
-    for col in SCORED_COLUMNS:
-        if col == POSITIVE_LABEL:
-            continue
-        m = class_members(y_label, col)
-        vals = [float(v) for v in ens[m] if not math.isnan(float(v))]
-        if vals:
-            neg_by_cls[col] = vals
-    # n_dropped counts NaN pairs from the population that FEEDS this metric (is_a + scored negs),
-    # NOT the whole universe: a NaN in an out-of-scope (exploratory) class was never eligible
-    # here, so counting it would overstate the loss this number labels.
-    eligible = pos_mask.clone()
-    for col in SCORED_COLUMNS:
-        eligible |= class_members(y_label, col)
-    n_dropped = int(sum(1 for v in ens[eligible] if math.isnan(float(v))))
-    n_neg_total = sum(len(v) for v in neg_by_cls.values())
-    nan_loo = {"min": float("nan"), "max": float("nan"),
-               "dropped_for_min": None, "dropped_for_max": None}
-    if not neg_by_cls or pos.numel() == 0:
-        return {"auroc": float("nan"), "per_class": {}, "per_class_n": {}, "loo_range": nan_loo,
-                "n_pos": int(pos.numel()), "n_neg": n_neg_total,
-                "n_classes": len(neg_by_cls), "n_dropped": n_dropped}
-    per_class: dict[str, float] = {}
-    per_class_n: dict[str, int] = {}
-    for name, v in neg_by_cls.items():        # keyed by class NAME
-        per_class[name] = auroc(pos, torch.tensor(v, dtype=DT))
-        per_class_n[name] = len(v)
-    finite = {k: a for k, a in per_class.items() if math.isfinite(a)}
-    macro = sum(finite.values()) / len(finite) if finite else float("nan")
-    # Leave-one-class-out sensitivity: recompute the macro dropping each finite class in turn, so a
-    # single thin/noisy class that swings the equal-weight mean is VISIBLE in the report (a thin
-    # class carries full 1/n_classes weight, and one flipped pair in it can move the macro across the bar).
-    loo = dict(nan_loo)
-    if len(finite) >= 2:
-        names = list(finite)
-        loo_vals = {drop: (sum(a for k, a in finite.items() if k != drop) / (len(finite) - 1))
-                    for drop in names}
-        lo_name = min(loo_vals, key=loo_vals.get)   # dropping this class LOWERS the macro most
-        hi_name = max(loo_vals, key=loo_vals.get)
-        loo = {"min": loo_vals[lo_name], "max": loo_vals[hi_name],
-               "dropped_for_min": lo_name, "dropped_for_max": hi_name}
-    return {"auroc": macro, "per_class": per_class, "per_class_n": per_class_n, "loo_range": loo,
-            "n_pos": int(pos.numel()), "n_neg": n_neg_total,
-            "n_classes": len(neg_by_cls), "n_dropped": n_dropped}
-
-
-def _ensemble_macro_ci(ens: torch.Tensor, y_label: torch.Tensor, n_boot: int = 1000,
-                       rng_seed: int = 0) -> tuple[float, float]:
-    """Stratified-bootstrap 95% CI for the macro-mean ensemble AUROC (kept SEPARATE from the
-    RNG-free `_ensemble_pooled_auroc` so that point estimate stays deterministic and RNG-free).
-
-    The macro-mean is an equal-weight mean over per-class is-a-vs-C AUROCs, so a THIN class (e.g.
-    topical ~12) carries full 1/n_classes weight and dominates the variance — a bare point estimate
-    0.84 a hair above the 0.80 bar is not quotable without bounding that variance (effect size +
-    n). Each iteration resamples the shared is_a positives ONCE (preserving the cross-class
-    correlation — the same is_a pairs are scored against every negative class) and each class's
-    negatives independently, recomputes every finite per-class AUROC and their macro-mean, and the CI
-    is the 2.5/97.5 percentile over `n_boot` resamples. Deterministic via a fixed generator.
-    """
-    pos_mask = class_members(y_label, POSITIVE_LABEL)
-    pos_all = torch.tensor([float(v) for v in ens[pos_mask]], dtype=DT)
-    pos = pos_all[~torch.isnan(pos_all)]
-    # Grouped by class INDEX; each pair carries exactly one class, so the is_a positives and
-    # every negative class are disjoint by construction (no is_a pair can also be a negative).
-    neg_by_cls: dict[str, list[float]] = {}
-    for col in SCORED_COLUMNS:
-        if col == POSITIVE_LABEL:
-            continue
-        m = class_members(y_label, col)
-        vals = [float(v) for v in ens[m] if not math.isnan(float(v))]
-        if vals:
-            neg_by_cls[col] = vals
-    neg_tensors = [torch.tensor(v, dtype=DT) for v in neg_by_cls.values() if v]
-    if pos.numel() == 0 or not neg_tensors:
-        return (float("nan"), float("nan"))
-    gen = torch.Generator().manual_seed(int(rng_seed))
-    npos = int(pos.numel())
-    macros: list[float] = []
-    for _ in range(int(n_boot)):
-        pos_b = pos[torch.randint(npos, (npos,), generator=gen)]
-        per = []
-        for negt in neg_tensors:
-            nn = int(negt.numel())
-            a = auroc(pos_b, negt[torch.randint(nn, (nn,), generator=gen)])
-            if math.isfinite(a):
-                per.append(a)
-        if per:
-            macros.append(sum(per) / len(per))
-    if not macros:
-        return (float("nan"), float("nan"))
-    macros.sort()
-    lo = macros[int(0.025 * len(macros))]
-    hi = macros[min(len(macros) - 1, int(0.975 * len(macros)))]
-    return (float(lo), float(hi))
-
-
-# --------------------------------------------------------------------------
 # across-seed aggregation
 # --------------------------------------------------------------------------
 # Student-t 97.5% critical values by df (=n_seeds-1). The across-seed CI has only n_seeds
@@ -645,7 +597,19 @@ def aggregate_seeds(reports: list[dict]) -> dict:
             svals = sorted(vals)
             median = svals[len(svals) // 2] if len(svals) % 2 else \
                 0.5 * (svals[len(svals) // 2 - 1] + svals[len(svals) // 2])
-            agg[det][col] = {"mean": _sigmoid(mean_l), "ci_lo": _sigmoid(mean_l - t_crit * se),
-                             "ci_hi": _sigmoid(mean_l + t_crit * se), "median": median,
-                             "n_seeds": len(vals)}
+            if sd == 0.0 and len(logits) > 1:
+                # All seeds clamped to the SAME logit (every seed saturated, e.g. AUROC 1.0 on H2/H4):
+                # the between-seed variance is 0 and a Student-t interval collapses to [mean, mean], a
+                # fabricated zero-width CI. Fall back to the ENVELOPE of the per-seed cell CIs (each cell
+                # carries its own finite-n logit CI) — the aggregate cannot honestly claim more certainty
+                # than any single seed already has.
+                lo_env = min((c["ci_lo"] for c in cells if c.get("ci_lo") is not None),
+                             default=_sigmoid(mean_l))
+                hi_env = max((c["ci_hi"] for c in cells if c.get("ci_hi") is not None),
+                             default=_sigmoid(mean_l))
+                ci_lo, ci_hi = lo_env, hi_env
+            else:
+                ci_lo, ci_hi = _sigmoid(mean_l - t_crit * se), _sigmoid(mean_l + t_crit * se)
+            agg[det][col] = {"mean": _sigmoid(mean_l), "ci_lo": ci_lo, "ci_hi": ci_hi,
+                             "median": median, "n_seeds": len(vals)}
     return agg

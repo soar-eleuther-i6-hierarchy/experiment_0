@@ -295,8 +295,8 @@ def _structure_guards_pass(tree: Tree) -> tuple[bool, str]:
         return False, f"F={tree.F} < F_MIN={F_MIN}"
     from .labels import _index, pair_label
     pl = pair_label(tree)
-    # pair_label fills the diagonal with 0 == is_a's index, so count OFF-DIAGONAL cells only —
-    # otherwise the is_a floor would be trivially met by the F self-cells.
+    # Count OFF-DIAGONAL cells only — self-pairs are never a real relation (the diagonal is the -1
+    # sentinel), so class floors must be measured over genuine ordered pairs, not the F self-cells.
     off_diag = ~torch.eye(tree.F, dtype=torch.bool)
     for name in GUARDED_STRUCTURE_CLASSES:
         n = int(((pl == _index(name)) & off_diag).sum())

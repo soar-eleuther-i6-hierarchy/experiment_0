@@ -332,6 +332,64 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     }
 
 
+def latent_pair_masks(classification: dict, feats: list[int],
+                      pairs: list[tuple[int, int]]) -> dict[str, torch.Tensor]:
+    """Boolean masks over `pairs` (POSITIONS into `feats`) for the latent-side scoring columns.
+
+      absorbed — per ORDERED recovered pair (parent, child) that is a Chanin-absorbed containment
+                 edge (`classification['absorbed_edges']`, directional).
+      merged   — per SYMMETRIC recovered pair that is a composed / merged sibling conjunction
+                 (`classification['composed_pairs']`, stored once as (a,b); marked in BOTH orders).
+
+    `absorbed_edges`/`composed_pairs` carry TRUE feature ids; `feats[pos]` maps a pair position back
+    to its true id. FIREWALL: these are truth+trained-derived labels used ONLY for scoring (like
+    `pair_labels`) — the 10 detectors never see them.
+    """
+    absorbed_set = {(int(e["parent"]), int(e["child"])) for e in classification["absorbed_edges"]}
+    merged_set: set[tuple[int, int]] = set()
+    for e in classification["composed_pairs"]:
+        a, b = int(e["a"]), int(e["b"])
+        merged_set.add((a, b))
+        merged_set.add((b, a))                         # symmetric: both orderings are merged
+    ids = [(feats[a], feats[b]) for (a, b) in pairs]
+    # CPU masks (the whole toy scoring path is CPU — load_sae pins device="cpu"). If a real
+    # non-toy checkpoint ever runs on CUDA, these must move to the detector device before
+    # property_vs_rest_grid indexes with them (`.to(vals_all.device)`); moot today.
+    absorbed = torch.tensor([pid in absorbed_set for pid in ids], dtype=torch.bool)
+    merged = torch.tensor([pid in merged_set for pid in ids], dtype=torch.bool)
+    return {"absorbed": absorbed, "merged": merged}
+
+
+def split_readout(classification: dict, feats: list[int]) -> dict:
+    """Per-LATENT split readout (decoder multiplicity) — NOT a pair column.
+
+    `split` is per-FEATURE (a feature's direction tracked by multiple latents), not a relation over a
+    pair, so it cannot be a property-vs-rest column; it is reported as a side readout instead: the
+    recovered features whose decoder-multiplicity EXCESS cleared the null, with that excess. Scoped to
+    the recovered universe `feats` for parity with the grid.
+    """
+    recovered_ids = {int(f) for f in feats}
+    out = [{"feature": int(d["feature"]), "M_P": int(d["M_P"]), "excess": float(d["excess"])}
+           for d in classification["decoder_multiplicity"] if int(d["feature"]) in recovered_ids]
+    return {"n_split": len(out), "features": out}
+
+
+def tree_edges_and_siblings(tree) -> tuple[list[tuple[int, int]], list[tuple[int, int]],
+                                           dict[int, bool]]:
+    """`(cont_edges, sibling_pairs, isa_child)` derived from the TREE (identity truth).
+
+    Shared by `run_absorption` and `run_retrieval` so the two driver reports cannot silently drift if
+    the `tree.parents`/`tree.children` schema changes. `cont_edges` are ordered (parent, child)
+    containment edges; `isa_child[c]` is True iff child c's edge carries a non-zero overlap (is_a, not
+    firing_only); `sibling_pairs` are the unordered co-hyponym pairs.
+    """
+    cont_edges = [(p, c) for c in range(tree.F) for p, _, _ in tree.parents.get(c, [])]
+    isa_child = {c: (tree.alpha_of(c) > 0.0) for _, c in cont_edges}
+    sibling_pairs = [(kids[i], kids[j]) for kids in tree.children.values()
+                     for i in range(len(kids)) for j in range(i + 1, len(kids))]
+    return cont_edges, sibling_pairs, isa_child
+
+
 def run_absorption(ckpt_dir, n_tokens: int = 200_000, rho: float | None = None) -> dict:
     """Orchestrator (server; needs sae_training): decompose one checkpoint's dictionary damage.
 
@@ -352,11 +410,7 @@ def run_absorption(ckpt_dir, n_tokens: int = 200_000, rho: float | None = None) 
     oriented = signed_normalized_decoder(loaded.W_dec, acts, world.h)
     res = match_features(activation_corr(world.A, acts), world.g, oriented, rho=rho)
 
-    tree = world.tree
-    cont_edges = [(p, c) for c in range(tree.F) for p, _, _ in tree.parents.get(c, [])]
-    isa_child = {c: (tree.alpha_of(c) > 0.0) for _, c in cont_edges}
-    sibling_pairs = [(kids[i], kids[j]) for kids in tree.children.values()
-                     for i in range(len(kids)) for j in range(i + 1, len(kids))]
+    cont_edges, sibling_pairs, isa_child = tree_edges_and_siblings(world.tree)
     report = classify_dictionary(world.g, oriented, world.A, acts, res.match, res.matched_corr,
                                  res.recovered, cont_edges, sibling_pairs, isa_child)
     report["meta"] = {k: meta[k] for k in ("config", "variant", "k", "train_seed", "overrides")

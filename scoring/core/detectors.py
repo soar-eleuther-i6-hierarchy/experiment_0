@@ -244,7 +244,7 @@ def joint_child_mass(acts_rec: torch.Tensor, Fm: torch.Tensor, em: torch.Tensor)
     R = acts_rec.shape[1]
     energy = (acts_rec.double() ** 2)                    # [n, R]
     energy_total = energy.sum(dim=0)                     # [R]
-    r_mass = torch.full((R,), _NAN, dtype=DT)
+    r_mass = torch.full((R,), _NAN, dtype=DT, device=acts_rec.device)  # match input device (CUDA-safe)
     for p in range(R):
         kids = em[p].nonzero(as_tuple=True)[0]
         if float(energy_total[p]) <= 0.0:
@@ -265,7 +265,7 @@ def sibling_redundancy(em: torch.Tensor, cofire: torch.Tensor, fire: torch.Tenso
     a redundant/splitting parent scores LOW.
     """
     R = em.shape[0]
-    red = torch.full((R,), _NAN, dtype=DT)
+    red = torch.full((R,), _NAN, dtype=DT, device=em.device)  # match input device (CUDA-safe)
     for p in range(R):
         kids = em[p].nonzero(as_tuple=True)[0]
         k = int(kids.numel())
@@ -363,10 +363,13 @@ def compute_all(inputs: DetectorInputs, constants: dict,
     Applies each detector's frozen `DETECTOR_SIGN` exactly once. Any residual +/-inf is
     coerced to NaN so downstream means/sorts see only finite-or-NaN.
 
-    `s_res_mode` selects the s_res variant: "cosine" (default) is the cheap analytic geometry
-    oracle used by every CEILING caller (no probe training); "probe" is the real Tree-SAE probe
-    metric, used by the trained retrieval detector. Only s_res depends on the mode — the other
-    nine detectors are identical either way.
+    `s_res_mode` selects the s_res variant:
+      "probe"  -- the real Tree-SAE probe metric; the SOLE mode that may feed a REPORTED s_res cell
+                  (the trained retrieval detector).
+      "cosine" -- the cheap analytic geometry oracle. A DIAGNOSTIC / calibration reference and the
+                  cheap default used by unit tests; it must NEVER be the s_res of a reported grid
+                  (the report path passes "probe" explicitly and asserts the probe regime).
+    Only s_res depends on the mode — the other nine detectors are identical in every mode.
     """
     if s_res_mode not in ("cosine", "probe"):
         raise ValueError(f"s_res_mode must be 'cosine' or 'probe', got {s_res_mode!r}")

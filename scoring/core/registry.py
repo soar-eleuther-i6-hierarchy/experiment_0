@@ -17,21 +17,22 @@ DETECTOR_SIGN: dict[str, int] = {
     "sibling_redundancy": -1, "joint_child_mass": 1, "outdegree": -1,
 }
 
-# The confound columns scored against is_a 
+# The confound columns scored against is_a
 SCORED_COLUMNS: tuple[str, ...] = (
     "firing_only", "sibling", "superparent", "frequency", "topical",
     "transitive", "reversed", "unrelated",
 )
 
+# Latent-side (dictionary-damage) scoring columns — NOT generative pair_label classes. Their
+# positives come from the absorption classification (truth+trained-derived), not the single-label
+# answer key, because they OVERLAP the generative classes (an absorbed edge is also an is_a edge).
+# `split` is per-latent (per-feature), so it is a side readout, not a pair column.
+LATENT_COLUMNS: tuple[str, ...] = ("absorbed", "merged")
+
 POSITIVE_LABEL: str = "is_a"
 
 # Detectors symmetric in (parent, child). A symmetric negative class counts (a,b) and (b,a) as two identical negatives.
 SYMMETRIC_DETECTORS: tuple[str, ...] = ("pmi",)
-
-# The general-purpose is-a detectors in the fusion ensemble.
-ENSEMBLE_DETECTORS: tuple[str, ...] = (
-    "coverage_R", "asymmetry_R", "pmi", "recon_2a", "s_res", "token_freq_survival",
-)
 
 # Numeric knobs the detectors and scorer read by name.
 CONSTANTS: dict[str, float] = {

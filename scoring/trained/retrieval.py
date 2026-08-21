@@ -1,10 +1,12 @@
 """
-Tier-B retrieval driver — score one real checkpoint's detector x confound AUROC grid.
+Trained retrieval driver — score one real checkpoint's property-vs-rest AUROC grid.
 
 Matching is on the IN-SAMPLE draw; the detector statistics run on a HELD-OUT draw
-(disjoint seed, same geometry). The reusable AUROC/CI/ensemble toolkit lives in
-`scoring.core.grid`; this module only wires a loaded checkpoint through it, adds the
-oracle-ceiling survival-Δ (`scoring.oracle.ceiling`), and writes the report.
+(disjoint seed, same geometry). The reusable AUROC/CI toolkit lives in
+`scoring.core.grid`; this module only wires a loaded checkpoint through it and writes the
+report. Every generative class is scored property-vs-rest (that class = positives vs every
+other off-diagonal pair) by the 10 firewalled detectors; the greedy Boolean cascade over
+this grid is applied downstream.
 """
 
 from __future__ import annotations
@@ -17,15 +19,12 @@ import torch
 
 from scoring.core.detectors import compute_all, s_res_variants
 from scoring.core.grid import (
-    _ensemble_macro_ci,
-    _ensemble_pooled_auroc,
     auroc_matrix,
     class_members,
     dispersion_split,
     held_out_sample_seed,
-    mean_percentile_ensemble,
-    min_percentile_ensemble,
     pair_frame,
+    property_vs_rest_grid,
     random_scalar_control,
     redundancy_map,
     reduce_to_recovered,
@@ -33,11 +32,16 @@ from scoring.core.grid import (
 )
 from scoring.core.registry import (
     CONSTANTS,
-    ENSEMBLE_DETECTORS,
+    LATENT_COLUMNS,
     POSITIVE_LABEL,
     SCORED_COLUMNS,
 )
+from scoring.trained.cascade import cascade_grid
 from toygen import labels
+
+# The probe is the SOLE s_res mode that may feed a reported cell (the trained detector). The cheap
+# cosine geometry oracle is a diagnostic/calibration variant only, never a reported detector.
+_REPORT_S_RES_MODE = "probe"
 
 
 def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | None = None,
@@ -72,32 +76,45 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     ho = regenerate_world(meta["resolved_config"], sample_seed=ho_seed, n_tokens=n_tokens)
     acts_ho = loaded.encode(ho.h)
     oriented_ho = signed_normalized_decoder(W_raw, acts_ho, ho.h)
-    # Realized L0 on the HELD-OUT draw — the sparsity the Stage-0 oracle encoder is calibrated to,
-    # so the clean ceiling is read at the SAME L0 as the trained metric (not the nominal top-k).
+    # Realized L0 on the HELD-OUT draw — reported provenance for the sparsity the detectors see.
     ho_realized_l0 = realized_l0(acts_ho)
 
     feats, di, _ = reduce_to_recovered(
         acts_ho, oriented_ho, W_raw, res.match, res.recovered,
         h=ho.h, b_dec=loaded.b_dec, tokens=ho.tokens, vocab=ho.cfg.vocab)
-    # s_res_mode="probe": the trained retrieval detector uses the real Tree-SAE probe s_res (one
-    # probe per recovered child, self-label). Every CEILING path keeps the default "cosine" so
-    # Stage-0 never trains probes.
-    detectors = compute_all(di, CONSTANTS, s_res_mode="probe")
+    # The trained retrieval detector uses the real Tree-SAE probe s_res (one probe per recovered
+    # child, self-label); the cheap cosine geometry oracle is a diagnostic only, never reported.
+    detectors = compute_all(di, CONSTANTS, s_res_mode=_REPORT_S_RES_MODE)
     pairs, y_label = pair_frame(feats, ho.pair_labels)
-    all_columns = SCORED_COLUMNS
-    grid = auroc_matrix(detectors, pairs, y_label, all_columns)
+
+    # Latent-side labels (absorbed / merged / split): the Chanin dictionary-damage classification on
+    # the SAME in-sample match, joined onto the recovered pair universe. FIREWALL: truth+trained-
+    # derived labels used ONLY for scoring — the 10 detectors never see them. Absorption is a property
+    # of the dictionary + in-sample firing, so it is measured on the in-sample draw (as run_absorption
+    # does), not the held-out detector draw.
+    from scoring.trained.absorption import (classify_dictionary, latent_pair_masks, split_readout,
+                                            tree_edges_and_siblings)
+    cont_edges, sibling_pairs, isa_child = tree_edges_and_siblings(in_world.tree)
+    classification = classify_dictionary(in_world.g, oriented_in, in_world.A, acts_in,
+                                         res.match, res.matched_corr, res.recovered,
+                                         cont_edges, sibling_pairs, isa_child)
+    latent_masks = latent_pair_masks(classification, feats, pairs)
+
+    # Property-vs-rest over EVERY generative class + the latent-side columns (each class = positives
+    # vs every other off-diagonal pair), scored by the 10 firewalled detectors. Replaces the is_a-
+    # locked auroc_matrix: a detector that isolates, say, `frequency` now shows on the frequency
+    # column even though it is useless for is_a. Orientation stays frozen (AUROC<0.5 is a reported
+    # inverted isolator). The greedy Boolean cascade reads this grid downstream.
+    grid_columns = tuple(labels.LABELS) + LATENT_COLUMNS
+    grid = property_vs_rest_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
     per_class_rec = _per_class_recovery(res.recovered, ho.pair_labels, feats)
 
-    # Ensemble vs class-balanced pooled negatives (H6). Over the GENERAL is-a detectors
-    # only (ENSEMBLE_DETECTORS) — a per-parent specialist inside the gate vetoes every is-a
-    # pair. MEAN-percentile is H6's primary (min is fragile to a single dead gate); the min
-    # is reported as a robustness number.
-    ens_subset = {d: detectors[d] for d in ENSEMBLE_DETECTORS}
-    ens_mean = mean_percentile_ensemble(ens_subset, pairs)
-    ens_min = min_percentile_ensemble(ens_subset, pairs)
-    ens_h6 = _ensemble_pooled_auroc(ens_mean, pairs, y_label)
-    ens_h6["ci_lo"], ens_h6["ci_hi"] = _ensemble_macro_ci(ens_mean, y_label)   # H6 variance bound
-    ens_h6_min = _ensemble_pooled_auroc(ens_min, pairs, y_label)
+    # Greedy both-tails Boolean cascade over the grid: per column a readable percentile rule that
+    # isolates that class among survivors. is_a's rule is the deployment cascade; its readout carries
+    # enrichment-over-base-rate + the hard-negative precision vs {transitive, reversed, firing_only}
+    # (a pooled vs-rest AUROC hides those confusable cousins). 0-positive columns are skipped, not
+    # crashed. Reads only the firewalled detectors + the answer key (+ latent masks for absorbed/merged).
+    cascade = cascade_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
 
     # dispersion-conditioned is-a readout: r_disp over the FULL held-out dictionary,
     # indexed by true feature id; a truth-g DIAGNOSTIC on the readout, never a detector.
@@ -115,35 +132,6 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     # Tier-A's dispersion_mean and the clean floor (~0.33) it is read against.
     dispersion_mean = float(sum(r_disp.values()) / len(r_disp)) if r_disp else float("nan")
 
-    # Stage-0 survival-Δ: the clean (perfect-dict) ceiling on the SAME recovered pairs, and the
-    # trained-vs-clean gap that attributes a low trained AUROC to metric-weak vs training-erased.
-    # The oracle-ceiling toolkit reads `auroc_matrix` from `scoring.core.grid`, so this driver-local
-    # import is only to defer the (light) module load, not to dodge a cycle.
-    from scoring.oracle.ceiling import (DETECTOR_ORACLE_REGIME, REGIME_CAVEAT, annotate_regime,
-                                        clean_grid, degenerate_clean_detectors, stage0_caveats,
-                                        survival_delta)
-    # A held-out draw whose realized L0 is 0 (a fully dead SAE) cannot calibrate the oracle-encoder
-    # ceiling — the oracle_encode gate would have no positive projections to threshold. Refuse to
-    # fabricate a Stage-0 ceiling in that case rather than emit a garbage 0.5 grid; the recovery
-    # side already reports the dead SAE. (A partial-but-positive L0 is fine.)
-    if ho_realized_l0 > 0 and feats:
-        # Per-detector oracle routing: each detector's ceiling is read off the firing regime that
-        # makes its property faithful (containment on the α-encoder, firing-structure/recon on true A).
-        stage0 = clean_grid(ho, feats, pairs, y_label, all_columns, CONSTANTS, ho_realized_l0,
-                            routing=DETECTOR_ORACLE_REGIME, s_res_ceiling="probe")
-        # degenerate set computed BEFORE survival_delta so the Δ cells can be MARKED degenerate
-        # (a constant clean ceiling is a meaningless ~0.5 that must not be read as an attribution).
-        stage0_degenerate = degenerate_clean_detectors(ho, feats, pairs, CONSTANTS, ho_realized_l0,
-                                                       routing=DETECTOR_ORACLE_REGIME)
-        survival = survival_delta(stage0, grid, all_columns,
-                                  degenerate_detectors=stage0_degenerate)
-        # Stamp each cell with its oracle regime + whether that ceiling is idealized (true_A), so a
-        # true_A Δ is not misread as pure training-erasure and Δs are not compared across regimes.
-        annotate_regime(survival, DETECTOR_ORACLE_REGIME)
-        stage0_caveat_cells = stage0_caveats(survival)
-    else:
-        stage0, survival, stage0_caveat_cells, stage0_degenerate = {}, {}, [], []
-
     rng = torch.Generator().manual_seed(0)
     controls = {
         "random_scalar_firing_only": random_scalar_control(pairs, y_label, "firing_only", rng),
@@ -159,25 +147,36 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
                     "assumption (anticonservative: pairs derive from ~F features, not n_pairs "
                     "independent draws); the reportable interval is the across-seed Student-t "
                     "from aggregate_seeds, not a single seed's cell CI."),
-        "ensemble_detectors": list(ENSEMBLE_DETECTORS),
+        "grid_note": ("property-vs-rest: each column = that class as positives vs EVERY other "
+                      "off-diagonal pair as negatives, scored by the 10 firewalled detectors; "
+                      "orientation frozen (AUROC<0.5 = an inverted isolator, reported as-is). "
+                      "Generative columns come from pair_labels; latent columns (absorbed/merged) "
+                      "from the absorption classification."),
         "grid": grid, "per_class_recovery": per_class_rec,
-        "stage0_clean_grid": stage0, "survival_delta": survival,
-        "stage0_caveats": stage0_caveat_cells,
-        "stage0_degenerate_detectors": stage0_degenerate,
-        "stage0_oracle_regime": dict(DETECTOR_ORACLE_REGIME),
-        "stage0_regime_caveat": REGIME_CAVEAT,
-        "s_res_note": ("s_res is now LIKE-FOR-LIKE: trained = probe on learned dict (self-label); clean "
-                       "ceiling = the SAME probe on the α-encoder ORACLE firing over true-g decoders "
-                       "(s_res_ceiling='probe'). So its survival-Δ = probe(oracle) − probe(trained) "
-                       "isolates TRAINING degradation, not a cosine-vs-probe cross-metric gap. The "
-                       "analytic cosine + self_label_bias decomposition remain available via "
-                       "s_res_diagnostics=True. FIDELITY (deferred to gemma): toy uses unit-cosine; "
-                       "gemma uses raw-dot + top-k rank."),
+        "cascade": cascade,
+        "cascade_note": ("greedy forward-selection of percentile filters (one per detector, BOTH "
+                         "tails tried at each step) maximizing F1 of the column among survivors; "
+                         "distribution-free global-pool thresholds. is_a's rule is the deployment "
+                         "cascade — its readout adds enrichment (final precision / base rate) and a "
+                         "hard-negative precision vs {transitive, reversed, firing_only}. 0-positive "
+                         "columns are skipped."),
+        "latent_columns": list(LATENT_COLUMNS),
+        # NOT re-reporting the absorption `counts` here: `run_absorption` is the single source of truth
+        # for the full decomposition, and the grid's absorbed/merged n_pos already carries the
+        # recovered-universe count. Duplicating it would risk a silent cross-report divergence if the
+        # two drivers were ever run with different n_tokens/rho. `split_readout` IS reported here — it is
+        # the per-latent readout scoped to the recovered `feats`, not part of run_absorption's report.
+        "split_readout": split_readout(classification, feats),
+        "latent_firewall_note": ("absorbed/merged/split are truth+trained-derived labels (the Chanin "
+                                 "classification) used ONLY for scoring — the 10 detectors never see "
+                                 "them; resid_parent/K DEFINE these labels but are NOT detectors."),
         "realized_l0": ho_realized_l0, "architecture": loaded.arch,
         "dispersion_mean": dispersion_mean,
-        "ensemble_h6": ens_h6, "ensemble_h6_min_robustness": ens_h6_min,
         "dispersion_split": disp,
         "redundancy": redundancy_map(detectors, pairs, y_label, SCORED_COLUMNS, grid=grid),
+        "redundancy_note": ("marginal_auroc is computed from the property-vs-rest `grid`, so it is each "
+                            "detector's added COLUMN-vs-rest AUROC (NOT the legacy is_a-vs-C marginal); "
+                            "rank_corr is grid-independent (detector-detector percentile correlation)."),
         "controls": controls,
     }
     # J(p) fallback-vs-exact diagnostic: a readout on joint_child_J's accuracy, never a scored
@@ -195,8 +194,9 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
         variants = s_res_variants(di.acts_rec, ho.h, di.W_unit, g_unit, ho.A[:, idx], CONSTANTS)
 
         def _isa_row(mat: torch.Tensor) -> dict:
-            row = auroc_matrix({"s": mat}, pairs, y_label, all_columns)["s"]
-            return {c: row.get(c, {}).get("auroc") for c in all_columns}
+            # is_a-vs-column diagnostic (auroc_matrix is is_a-locked), over the confound columns.
+            row = auroc_matrix({"s": mat}, pairs, y_label, SCORED_COLUMNS)["s"]
+            return {c: row.get(c, {}).get("auroc") for c in SCORED_COLUMNS}
 
         aurocs = {name: _isa_row(mat) for name, mat in variants.items()}
 
@@ -204,7 +204,7 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
             return isinstance(x, float) and math.isfinite(x)
         bias = {c: (aurocs["probe_self_W"][c] - aurocs["probe_true_W"][c])
                 if (_fin(aurocs["probe_self_W"][c]) and _fin(aurocs["probe_true_W"][c]))
-                else float("nan") for c in all_columns}
+                else float("nan") for c in SCORED_COLUMNS}
         report["s_res_diagnostics"] = {
             "auroc": aurocs, "self_label_bias": bias,
             "note": ("cosine_g = analytic geometry oracle; probe_true_g calibrates the probe "
