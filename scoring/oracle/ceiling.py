@@ -28,6 +28,11 @@ import torch
 from scoring.core.detectors import DetectorInputs, compute_all, s_res_cosine, s_res_probe
 from scoring.core.grid import auroc_matrix
 from scoring.core.registry import CONSTANTS as _REGISTRY_CONSTANTS
+# Relocated to validate_metrics.py (Phase 4) so Stage-1 can depend on them after this module is
+# deleted (Phase 5). Re-exported here so existing `from scoring.oracle.ceiling import ...` imports
+# keep resolving. oracle_encode NOW carries the gated ridge-least-squares shrinkage (KNOWN_BUGS 4.4).
+from scoring.oracle.validate_metrics import (OracleEncodeInfeasible,  # noqa: F401
+                                             _constant_scored_detectors, oracle_encode)
 
 if TYPE_CHECKING:                       # WorldBundle is used only as a type hint here
     from scoring.core.world import WorldBundle
@@ -35,67 +40,15 @@ if TYPE_CHECKING:                       # WorldBundle is used only as a type hin
 _TINY = 1e-12
 
 
-class OracleEncodeInfeasible(ValueError):
-    """The oracle encoder cannot produce a Stage-0 ceiling for this draw (bad realized_l0, or the
-    checkpoint is denser than a tied-unit-g JumpReLU can mirror). A SUBCLASS of ValueError so existing
-    `except ValueError` callers (calibrate) still catch it, but narrow enough that run_retrieval can
-    catch ONLY this — not a compute_all config error (bad s_res_mode / missing inputs), which must
-    surface loudly instead of being mislabeled `stage0_unavailable`."""
-
-
-def oracle_encode(h: torch.Tensor, g: torch.Tensor, realized_l0: float) -> torch.Tensor:
-    """The perfect-DECODER SAE's activations: a linear encoder tied to unit-`g` + a JumpReLU gate.
-
-    This is the honest Stage-0 ceiling — what a perfect-GEOMETRY SAE (decoder rows = the true
-    directions) could reconstruct through a REAL encoding step, NOT the oracle coefficients `A`.
-    The encoder is the standard tied init `W_enc = g_unit`, so a child's projection carries a real
-    component of its PARENT's coefficient via the designed overlap cos(g_child,g_parent)=α (the
-    α-leakage). This is the whole point: `acts = A` gives exact containment (every is-a child fires
-    ⟺ its parent does → coverage_R ≡ 1, a degenerate ceiling that inverted the H5 headline), whereas
-    the oracle ENCODER leaks α and gives an honest, non-degenerate ceiling (~0.78 is-a coverage).
-
-        g_unit = g / ‖g‖ ;  proj = h @ g_unitᵀ  (linear, tied, NO per-token pseudo-inverse) ;
-        θ = uniform JumpReLU threshold s.t. mean row-L0 == realized_l0 ;  acts = proj · 1[proj > θ].
-
-    `realized_l0` MUST be the trained SAE's realized L0 on real `h` (scoring.core.recovery.realized_l0),
-    NOT the nominal top-k: the ceiling is only comparable to the trained metric if both are read at
-    the same sparsity. A uniform (single-θ) gate mirrors the checkpoint's inference-time scalar-threshold gate, whose
-    threshold is uniform across latents.
-    """
-    target = float(realized_l0)
-    if not (target > 0) or not math.isfinite(target):
-        raise OracleEncodeInfeasible(
-            f"oracle_encode: realized_l0 must be a positive finite number, got {target}")
-    g_unit = g.double() / g.double().norm(dim=1, keepdim=True).clamp_min(_TINY)
-    proj = h.double() @ g_unit.transpose(0, 1)              # [n, F] linear pre-activation
-    n, F = proj.shape
-    # A JumpReLU gate is NON-NEGATIVE, and "firing" everywhere downstream is `acts > 0`
-    # (fire_thresh=0), so ONLY positive projections can fire. Calibrate θ over the POSITIVE
-    # projections so θ stays strictly positive and the achieved row-L0 actually tracks the target.
-    # (Selecting θ over all entries let θ drift ≤ 0 once the target exceeded the positive budget,
-    # silently plateauing the achieved L0 — a landmine precisely for the dense/pathological
-    # checkpoints Stage-0 exists to diagnose.)
-    pos = proj[proj > 0]                                    # [P] the fireable projections
-    k = int(round(target * n))                              # total firing entries wanted (== l0·n)
-    P = int(pos.numel())
-    if k >= P:
-        raise OracleEncodeInfeasible(
-            f"oracle_encode: mean L0={target:.2f} needs {k} firing entries but only {P} projections "
-            f"are positive (~{P / max(n, 1):.1f}/row); a non-negative JumpReLU gate cannot reach it "
-            f"(the tied-unit-g encoder fires ≲ F/2 latents/row). The checkpoint is denser than this "
-            f"oracle encoder can mirror — do not silently plateau the ceiling.")
-    theta = torch.kthvalue(pos, P - k + 1).values           # k-th largest POSITIVE value (> 0)
-    return proj * (proj > theta)
-
-
 def clean_detector_inputs(bundle: "WorldBundle", feats: list[int],
                           realized_l0: float) -> DetectorInputs:
     """The perfect-DECODER detector inputs for the recovered features, on the held-out draw.
 
     Decoder rows are the true directions `g[f]`; activations come from `oracle_encode` (the tied
-    JumpReLU encoder at the trained SAE's `realized_l0`) — NOT the oracle coefficients `A`. Using
-    `A` gave every is-a child exact containment (coverage_R ≡ 1, degenerate) and inverted the
-    survival-Δ headline; the oracle encoder leaks the designed α and yields the honest ceiling.
+    JumpReLU gate for the firing support + a per-token ridge least-squares for the magnitudes, at the
+    trained SAE's `realized_l0` — see its docstring) — NOT the oracle coefficients `A`. Using `A` gave
+    every is-a child exact containment (coverage_R ≡ 1, degenerate) and inverted the survival-Δ headline;
+    the oracle encoder's gate leaks the designed α and yields the honest ceiling.
     """
     idx = torch.tensor(feats, dtype=torch.long)             # copy (parity with reduce_to_recovered)
     g_sel = bundle.g[idx]                                    # [R, D] true concept directions
@@ -280,22 +233,6 @@ def clean_grid_and_degenerate(bundle: "WorldBundle", feats: list[int],
     grid = auroc_matrix(detectors, pairs, y_label, columns)
     degenerate = _constant_scored_detectors(detectors, pairs, tol) if pairs else []
     return grid, degenerate
-
-
-def _constant_scored_detectors(detectors: dict[str, torch.Tensor],
-                               pairs: list[tuple[int, int]], tol: float = 1e-9) -> list[str]:
-    """Pure core of `degenerate_clean_detectors`: names of detectors whose scored ceiling over
-    `pairs` cannot produce a meaningful AUROC — either FEWER than 2 finite values (undefined /
-    all-NaN column: the MAXIMAL degeneracy) or a finite range below `tol` (a constant column → a
-    meaningless ~0.5 from ties). Both cases are flagged (an all-NaN detector is strictly more broken
-    than a constant one, so it must not be silently exempted). Sorted."""
-    degen: list[str] = []
-    for det, mat in detectors.items():
-        vals = torch.tensor([float(mat[p, c]) for (p, c) in pairs], dtype=torch.float64)
-        vals = vals[~torch.isnan(vals)]
-        if vals.numel() < 2 or float(vals.max() - vals.min()) < tol:
-            degen.append(det)
-    return sorted(degen)
 
 
 def stage0_caveats(clean_grid: dict) -> list[dict]:
