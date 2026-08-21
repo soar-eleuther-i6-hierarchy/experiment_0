@@ -109,6 +109,31 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     grid = property_vs_rest_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
     per_class_rec = per_class_recovery(res.recovered, ho.pair_labels, list(labels.LABELS))
 
+    # 4.3 nuisance floor: a pure firing-count proxy already clears chance on some columns
+    # (frequency/reversed/transitive score ~0.85-0.90 for -child_fire / -parent_fire), so the HONEST
+    # bar a detector must beat THERE is this floor, not 0.5. Score the per-latent firing count as a
+    # child-broadcast and parent-broadcast matrix, property-vs-rest, and report the direction-agnostic
+    # max(auroc, 1-auroc) per column (the best a firing-count-only rule can do, either orientation).
+    _fire = (di.acts_rec > 0).double().sum(0)                        # [R] firing count per latent
+    _R = int(_fire.numel())
+
+    def _row_const(v: torch.Tensor) -> torch.Tensor:                 # child_fire[p,c] = fire[c]
+        m = v.reshape(1, _R).expand(_R, _R).clone(); m.fill_diagonal_(float("nan")); return m
+
+    def _col_const(v: torch.Tensor) -> torch.Tensor:                 # parent_fire[p,c] = fire[p]
+        m = v.reshape(_R, 1).expand(_R, _R).clone(); m.fill_diagonal_(float("nan")); return m
+
+    _fire_grid = property_vs_rest_grid(
+        {"child_fire": _row_const(_fire), "parent_fire": _col_const(_fire)},
+        pairs, y_label, grid_columns, label_masks=latent_masks)
+
+    def _floor(a) -> float:
+        return max(a, 1.0 - a) if isinstance(a, float) and math.isfinite(a) else float("nan")
+
+    nuisance_baselines = {
+        col: {b: _floor(_fire_grid[b][col].get("auroc")) for b in ("child_fire", "parent_fire")}
+        for col in grid_columns}
+
     # Greedy both-tails Boolean cascade over the grid: per column a readable percentile rule that
     # isolates that class among survivors. is_a's rule is the deployment cascade; its readout carries
     # enrichment-over-base-rate + the hard-negative precision vs {transitive, reversed, firing_only}
@@ -153,6 +178,10 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
                       "Generative columns come from pair_labels; latent columns (absorbed/merged) "
                       "from the absorption classification."),
         "grid": grid, "per_class_recovery": per_class_rec,
+        "nuisance_baselines": nuisance_baselines,
+        "nuisance_note": ("firing-count-only floor per column = max(auroc, 1-auroc) of the child/parent "
+                          "firing count scored property-vs-rest; a detector must beat THIS bar, not 0.5, "
+                          "wherever it reads high (KNOWN_BUGS 4.3 — ~0.85-0.90 on frequency/reversed)."),
         "cascade": cascade,
         "cascade_note": ("greedy forward-selection of percentile filters (one per detector, BOTH "
                          "tails tried at each step) maximizing F1 of the column among survivors; "

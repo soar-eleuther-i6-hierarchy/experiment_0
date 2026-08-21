@@ -558,6 +558,15 @@ def aggregate_seeds(reports: list[dict]) -> dict:
         dupes = sorted({s for s in seeds if seeds.count(s) > 1})
         raise ValueError(f"aggregate_seeds: non-distinct train_seed(s) {dupes} in the report set — "
                          "seeds must be distinct (a checkpoint_dirname collision or a duplicate report)")
+    # Guard: refuse a set whose reports disagree on (config, variant, k) — a --out directory that mixes
+    # two experiments (e.g. a partial re-run over the same seed numbers with a different config) would
+    # otherwise be aggregated as one, silently combining incomparable worlds (KNOWN_BUGS 6.5). Lenient
+    # on reports with no meta (old schema): a signature is collected only where meta is present.
+    sigs = {(m.get("config"), m.get("variant"), m.get("k"))
+            for r in reports if isinstance((m := r.get("meta")), dict)}
+    if len(sigs) > 1:
+        raise ValueError(f"aggregate_seeds: reports disagree on (config, variant, k) {sorted(sigs)} — "
+                         "a --out directory mixing two experiments; aggregate each run separately")
     dets = list(reports[0]["grid"].keys())
     cols = list(reports[0]["grid"][dets[0]].keys())
     agg: dict[str, dict[str, dict]] = {}

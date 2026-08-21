@@ -84,6 +84,9 @@ def main() -> None:
                     help="draw a seed-varied backbone (ragged branching/depth) instead of the fixed "
                          "lattice, so --seed also varies STRUCTURE; the confound battery stays locked.")
     ap.add_argument("--out", default="checkpoints")
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite an already-completed checkpoint dir (default: refuse — different "
+                         "training hparams can resolve to the SAME dirname, KNOWN_BUGS 6.4)")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -141,6 +144,13 @@ def main() -> None:
     out = Path(args.out) / checkpoint_dirname(
         args.config, "matryoshka", k, args.expansion, overrides, seed=args.seed,
         randomize_structure=args.randomize_structure)
+    # Refuse to silently overwrite a completed run: the dirname omits training hparams (n_steps/lr/
+    # tokens), so two different-hparam runs collide on it and the second would replace the first's
+    # weights + toy_meta.json (KNOWN_BUGS 6.4). `toy_meta.json` is written only on a completed run.
+    if (out / "toy_meta.json").exists() and not args.force:
+        raise SystemExit(
+            f"refusing to overwrite the completed checkpoint at {out}: a different-hparam run resolves "
+            f"to the same dirname and would replace it (KNOWN_BUGS 6.4). Pass --force to overwrite.")
     out.mkdir(parents=True, exist_ok=True)
 
     # train_sae drives BatchTopK during training, EMA-calibrates the scalar threshold, and writes

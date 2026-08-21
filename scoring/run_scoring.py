@@ -94,6 +94,22 @@ def print_summary(res: dict) -> None:
             ci = f"[{lo:.2f}, {hi:.2f}]" if isinstance(lo, float) and lo == lo else "[--, --]"
             print(f"  {det:20s} {m:.2f}  {ci}  (n_seeds={ns})")
 
+    # A pure firing-count proxy already clears chance on some columns, so a detector below this floor
+    # there is not beating a firing-count baseline (KNOWN_BUGS 4.3). Max over child/parent, mean/seeds.
+    def _col_floor(c: str) -> float:
+        vals = []
+        for s in seeds:
+            nb = res["retrieval"][s].get("nuisance_baselines", {}).get(c, {})
+            cand = [v for v in nb.values() if isinstance(v, float) and v == v]
+            if cand:
+                vals.append(max(cand))
+        return sum(vals) / len(vals) if vals else float("nan")
+
+    print("\n[2c] firing-count nuisance floor per column (mean across seeds; beat THIS, not 0.5)")
+    print("  " + " " * 20 + "".join(f"{c[:7]:>8}" for c in _GRID_COLS))
+    floors = "".join((f"{f:>8.2f}" if (f := _col_floor(c)) == f else f"{'--':>8}") for c in _GRID_COLS)
+    print(f"  {'nuisance_floor':20s}{floors}")
+
     print("\n[3] absorption decomposition + split readout per seed")
     for s in seeds:
         ab = res["absorption"][s]
