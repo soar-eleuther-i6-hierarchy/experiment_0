@@ -8,7 +8,8 @@ loadings — and nothing a metric could read as a shortcut.
 The activations `h` and `noise` are not stored (they are `[n, D]` and dominate the
 file). Instead the full `config` and the `sample_seed` are saved, and the noise draw
 is seeded, so `sample_world` regenerates the exact same world — including noise — from
-`truth.pt` alone. `coherence_ok` records whether the geometry hit its coherence target.
+`truth.pt` alone. `coherence_ok` records whether the geometry hit its coherence TARGET — a soft flag,
+expected False at F≫D (see `geometry.Geometry`), not a health check.
 """
 
 from __future__ import annotations

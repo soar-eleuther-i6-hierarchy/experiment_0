@@ -31,8 +31,13 @@ class Geometry:
     coherence: float           # realised max |cos(u_a, u_b)| after orthogonalisation
     # build_directions is best-effort: it returns the lowest of 8 draws rather than
     # raising, so the F/D sweep survives even when the target coherence is missed.
-    # coherence_ok records whether the target was met on this draw, carried on the
-    # object so a caller can read it directly.
+    # coherence_ok = (coherence <= max_unrelated_cos): a SOFT "target met" flag, NOT a
+    # health check. At F ≫ D it is EXPECTED False — the repel (`_repel`) only pushes pairs
+    # already ABOVE the cap, so realised coherence lands just ABOVE the cap (on `full`:
+    # cap 0.12→0.156, 0.30→0.316) — it overshoots the cap, which is exactly why the flag is
+    # False. LOWERING the cap gives cleaner unrelated directions, RAISING it does the opposite
+    # (KNOWN_BUGS 5.1). A False flag means "the cap is tighter than the F≫D packing allows in
+    # 60 repel steps", not "the geometry is bad".
     coherence_ok: bool
 
 

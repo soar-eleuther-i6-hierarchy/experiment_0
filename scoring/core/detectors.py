@@ -340,7 +340,13 @@ def token_freq_survival(Fm: torch.Tensor, tokens: torch.Tensor, vocab: int,
 
     R_all = cofire_all / fire_all.clamp_min(1.0).reshape(1, -1)
     R_rest = cofire_rest / fire_rest.clamp_min(1.0).reshape(1, -1)
-    survival = (R_rest / R_all.clamp_min(1e-12)).clamp(max=1.5)
+    # Monotone squash of the survival ratio to [0, 1) instead of a hard `.clamp(max=1.5)`
+    # (KNOWN_BUGS 6.7): the clamp pinned every ratio ≥ 1.5 to exactly 1.5, manufacturing ties that
+    # depress AUROC separation. `x/(1+x)` is strictly increasing, so it bounds the tail WITHOUT tying
+    # it — rank-preserving, hence AUROC and the cascade percentiles are unchanged except the >1 tail is
+    # now ordered instead of tied. (0→0, ratio 1→0.5, large→→1; higher still == more is-a-like.)
+    ratio = R_rest / R_all.clamp_min(1e-12)
+    survival = ratio / (1.0 + ratio)
 
     # Support floor on TOTAL child firing (not the rare-bucket count): a shared-token
     # child fires almost entirely in bucket 0, so gating on fire_rest would NaN it — but a

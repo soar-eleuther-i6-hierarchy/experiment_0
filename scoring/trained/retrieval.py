@@ -57,7 +57,7 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     from scoring.trained.loaders import load_sae
     from scoring.core.world import regenerate_world, signed_normalized_decoder
     from scoring.core.recovery import (activation_corr, child_direction_dispersion,
-                                       match_features, realized_l0)
+                                       match_features, per_class_recovery, realized_l0)
 
     rho = CONSTANTS["rho_star"] if rho is None else rho
     loaded = load_sae(ckpt_dir)
@@ -107,7 +107,7 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     # inverted isolator). The greedy Boolean cascade reads this grid downstream.
     grid_columns = tuple(labels.LABELS) + LATENT_COLUMNS
     grid = property_vs_rest_grid(detectors, pairs, y_label, grid_columns, label_masks=latent_masks)
-    per_class_rec = _per_class_recovery(res.recovered, ho.pair_labels, feats)
+    per_class_rec = per_class_recovery(res.recovered, ho.pair_labels, list(labels.LABELS))
 
     # Greedy both-tails Boolean cascade over the grid: per column a readable percentile rule that
     # isolates that class among survivors. is_a's rule is the deployment cascade; its readout carries
@@ -215,19 +215,6 @@ def run_retrieval(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float | No
     if out is not None:
         Path(out).write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
-
-
-def _per_class_recovery(recovered: torch.Tensor, pair_labels: torch.Tensor,
-                        feats: list[int]) -> dict[str, list[int]]:
-    F = pair_labels.shape[0]
-    eye = torch.eye(F, dtype=torch.bool)
-    both = recovered[:, None] & recovered[None, :]
-    out = {}
-    for name in labels.LABELS:
-        # Single-label equality; mask the diagonal because is_a is index 0 == the diagonal.
-        in_cls = (pair_labels == labels._index(name)) & ~eye
-        out[name] = [int((in_cls & both).sum()), int(in_cls.sum())]
-    return out
 
 
 def main() -> None:

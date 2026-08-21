@@ -82,6 +82,18 @@ def print_summary(res: dict) -> None:
             for c in _GRID_COLS)
         print(f"  {det:20s}{cells}")
 
+    # The HEADLINE interval is the across-seed Student-t CI (aggregate_seeds); the per-cell logit CIs
+    # in the JSON assume pair-independence and are anticonservative, so they are NOT quoted (KNOWN_BUGS
+    # 1.4). Surfaced here for is_a, the deployment column; the full CI grid is in aggregate_seeds.json.
+    print("\n[2b] is_a column — across-seed AUROC [Student-t 95% CI] (the reportable interval)")
+    for det in DETECTORS:
+        cell = agg.get(det, {}).get("is_a", {})
+        m, lo, hi = cell.get("mean"), cell.get("ci_lo"), cell.get("ci_hi")
+        ns = cell.get("n_seeds", 0)
+        if isinstance(m, float) and m == m:
+            ci = f"[{lo:.2f}, {hi:.2f}]" if isinstance(lo, float) and lo == lo else "[--, --]"
+            print(f"  {det:20s} {m:.2f}  {ci}  (n_seeds={ns})")
+
     print("\n[3] absorption decomposition + split readout per seed")
     for s in seeds:
         ab = res["absorption"][s]
