@@ -1,5 +1,8 @@
 """
-Scoring configuration for the retrieval scorer. The detector set and their orientation, the scored confound columns, and the numeric constants the detectors read by name. 
+Configuration for the retrieval scorer.
+
+Defines the detector set and their orientation, the confound columns scored
+against is-a, and the numeric constants the detectors look up by name.
 """
 
 from __future__ import annotations
@@ -10,7 +13,7 @@ DETECTORS: tuple[str, ...] = (
     "recon_2a", "s_res", "sibling_redundancy", "joint_child_mass", "outdegree",
 )
 
-# Orientation: +1 if the raw scalar already reads "higher == more is-a-like", -1 if it must be negated. It must be chosen up front and left alone
+# Orientation per detector: +1 if higher raw value already means "more is-a-like", -1 if negated.
 DETECTOR_SIGN: dict[str, int] = {
     "coverage_R": 1, "asymmetry_R": 1, "joint_child_J": 1, "pmi": 1,
     "token_freq_survival": 1, "recon_2a": 1, "s_res": 1,
@@ -23,15 +26,12 @@ SCORED_COLUMNS: tuple[str, ...] = (
     "transitive", "reversed", "unrelated",
 )
 
-# Latent-side (dictionary-damage) scoring columns — NOT generative pair_label classes. Their
-# positives come from the absorption classification (truth+trained-derived), not the single-label
-# answer key, because they OVERLAP the generative classes (an absorbed edge is also an is_a edge).
-# `split` is per-latent (per-feature), so it is a side readout, not a pair column.
+# Latent-side scoring columns (dictionary damage), not generative pair_label classes; positives come from absorption classification, not the answer key. `split` is per-latent, so it's a side readout, not a pair column.
 LATENT_COLUMNS: tuple[str, ...] = ("absorbed", "merged")
 
 POSITIVE_LABEL: str = "is_a"
 
-# Detectors symmetric in (parent, child). A symmetric negative class counts (a,b) and (b,a) as two identical negatives.
+# Detectors symmetric in (parent, child): a symmetric negative class counts (a,b) and (b,a) as two identical negatives.
 SYMMETRIC_DETECTORS: tuple[str, ...] = ("pmi",)
 
 # Numeric knobs the detectors and scorer read by name.

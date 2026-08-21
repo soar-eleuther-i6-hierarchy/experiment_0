@@ -1,5 +1,5 @@
 """
-Tier-A recovery driver — score one real checkpoint's feature recovery in both true bases.
+Score one trained checkpoint's feature recovery in both true bases.
 
 Loads the SAE (`scoring.trained.loaders`), regenerates the matching world
 (`scoring.core.world`), checks the world invariants, and runs the pure recovery math
@@ -40,10 +40,8 @@ from toygen import labels
 def _prefix_depth_rankcorr(meta: dict, bundle: WorldBundle, match: torch.Tensor, recovered: torch.Tensor) -> float | None:
     """Spearman rank correlation of true depth vs the matched latent's matryoshka prefix.
 
-    Diagnostic: does the hierarchy sort itself into the nested prefixes?
-    Restricted to RECOVERED features — an unrecovered feature's matched latent is a
-    meaningless best-of-a-bad-lot, so it must not enter the rank. Returns None when it
-    cannot be computed (no steps recorded, or too few recovered features / no variance).
+    Diagnostic: does the hierarchy sort itself into the nested prefixes? Restricted to recovered
+    features. Returns None when it can't be computed (no steps, or too few/no-variance points).
     """
     steps = meta.get("matryoshka_steps")
     if not steps:
@@ -74,11 +72,9 @@ def _prefix_depth_rankcorr(meta: dict, bundle: WorldBundle, match: torch.Tensor,
 def _match_confusion(bundle: WorldBundle, match: torch.Tensor, oriented: torch.Tensor, recovered: torch.Tensor) -> dict:
     """Parent/child swap rate over recovered is-a edges (a swap sign-flips asymmetric detectors).
 
-    For each is-a edge with both endpoints recovered, check that each endpoint's matched
-    (oriented, unit-norm) decoder row aligns at least as well with its OWN concept
-    direction as with the other endpoint's. Report the fraction that fail. Gated on
-    `recovered` (not merely assigned): a below-rho Hungarian assignment is a feature the
-    SAE never learned, and scoring its orientation is meaningless.
+    For each is-a edge with both endpoints recovered, checks that each endpoint's matched decoder
+    row aligns at least as well with its own direction as with the other's. Gated on `recovered`,
+    not merely assigned, since a below-rho match is a feature the SAE never learned.
     """
     gn = bundle.g / bundle.g.norm(dim=1, keepdim=True).clamp_min(1e-12)
     checked = swapped = 0
@@ -98,15 +94,13 @@ def _match_confusion(bundle: WorldBundle, match: torch.Tensor, oriented: torch.T
 def run_recovery(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float = 0.5,
                  rhos: tuple[float, ...] = (0.3, 0.5, 0.7),
                  out: str | Path | None = None) -> dict:
-    """Score one checkpoint's Tier-A recovery in both the g-basis (A) and u-basis (Atilde).
+    """Score one checkpoint's feature recovery in both the g-basis (A) and u-basis (Atilde).
 
-    Regenerates the matching world (a fresh `n_tokens` draw — see `regenerate_world`),
-    loads the SAE, checks the world invariants, then reports recovery curves, per-class
-    recovery, splitting, child-direction dispersion (over RECOVERED children only),
-    reconstruction FVU, dead latents, and the hierarchy/prefix and swap diagnostics
-    (also recovered-only). `A` is primary (labels live in the g-basis); the `Atilde`
-    recovery is the hedging diagnostic — the A-vs-Atilde gap is a result. `n_tokens`
-    (default 200k) is the matching draw, not the training `world_tokens`; both are reported.
+    Regenerates the matching world, loads the SAE, checks invariants, then reports recovery
+    curves, per-class recovery, splitting, child-direction dispersion, reconstruction FVU, dead
+    latents, and the hierarchy/swap diagnostics (all recovered-only). `A` is primary; the
+    `Atilde` recovery is the hedging diagnostic. `n_tokens` is the matching draw, reported
+    alongside the training `world_tokens`.
     """
     loaded = load_sae(ckpt_dir)
     meta = loaded.meta
@@ -132,9 +126,7 @@ def run_recovery(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float = 0.5
         match_by_basis[basis_name] = res.match
         recovered_by_basis[basis_name] = res.recovered
         curve = recovery_rate_curve(corr, rhos=rhos)
-        # dispersion over recovered children only: an unrecovered child has match == -1
-        # and r_disp == 1.0, which would conflate recovery attrition with genuine
-        # absorption/splitting dispersion.
+        # dispersion over recovered children only, else attrition conflates with real dispersion.
         recovered_children = [c for c in isa_children if bool(res.recovered[c])]
         disp = child_direction_dispersion(oriented, bundle.g, res.match, recovered_children, m=5)
         splits = match_one_to_many(corr, rho=rho)
@@ -155,9 +147,7 @@ def run_recovery(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float = 0.5
 
     report["fvu"] = reconstruction_fvu(bundle.h, acts, loaded.W_dec, loaded.b_dec)
     report["dead_latents"] = count_dead(acts, thresh=0.0)
-    # REALIZED L0 on the ACTUAL h (not a randn probe): the honest sparsity the co-firing
-    # detectors and the dispersion axis are read against. Inference gates with a scalar
-    # threshold (use_threshold), so measure it rather than assume it equals the nominal k.
+    # Realized L0 on the actual h: the honest sparsity, measured rather than assumed to equal k.
     report["realized_l0"] = realized_l0(acts)
     report["architecture"] = loaded.arch
     _floor = dispersion_clean_floor(bundle)
@@ -175,7 +165,7 @@ def run_recovery(ckpt_dir: str | Path, n_tokens: int = 200_000, rho: float = 0.5
 def main() -> None:
     import argparse
 
-    ap = argparse.ArgumentParser(description="Tier-A recovery scorer for a toy SAE checkpoint.")
+    ap = argparse.ArgumentParser(description="Recovery scorer for a toy SAE checkpoint.")
     ap.add_argument("ckpt", type=Path, help="checkpoint dir (holds SAE files + toy_meta.json)")
     ap.add_argument("--n-tokens", type=int, default=200_000)
     ap.add_argument("--rho", type=float, default=0.5)

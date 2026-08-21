@@ -1,13 +1,12 @@
 """
-Feature directions, built in constructive order.
+Feature directions, built in a fixed constructive order.
 
-The order matters and cannot be inverted: `u` is drawn first and `g` is built from it.
-Deriving `u` from `g` while also drawing `u` under a coherence bound is circular, and
-the two per-feature steps must interleave: orthogonalising `u_k` against its ancestor
-span needs `g` for every ancestor, which the earlier features have already built.
+`u` (residual directions) is drawn first; `g` (concept directions) is built from it -- the
+order can't reverse since orthogonalising `u_k` against its ancestor span needs `g` for
+every ancestor already built.
 
-The `Lambda` returned here is read off the construction, not `U^T G` (the two differ
-once siblings are involved). See `tests_local/test_toygen.py::test_gram_route_is_not_lambda`.
+`Lam` is read off this construction, not computed as `U^T G` -- the two differ once siblings
+are involved.
 """
 
 from __future__ import annotations
@@ -29,20 +28,17 @@ class Geometry:
     g: torch.Tensor            # [F, D] concept directions
     Lam: torch.Tensor          # [F, F] constructive change of basis
     coherence: float           # realised max |cos(u_a, u_b)| after orthogonalisation
-    # build_directions is best-effort: it returns the lowest of 8 draws rather than
-    # raising, so the F/D sweep survives even when the target coherence is missed.
-    # coherence_ok records whether the target was met on this draw, carried on the
-    # object so a caller can read it directly.
+    # build_directions is best-effort: returns the lowest of 8 draws rather than raising.
+    # coherence_ok = (coherence <= max_unrelated_cos): a SOFT flag, not a health check --
+    # expected False when F >> D, since a lower cap actually yields cleaner directions.
     coherence_ok: bool
 
 
 def _repel(x: torch.Tensor, max_unrelated_cos: float, steps: int = 60) -> torch.Tensor:
     """Push unit vectors apart until pairwise coherence approaches `max_unrelated_cos`.
 
-    Plain rejection sampling is hopeless at F >> D — random unit vectors in R^D have
-    max pairwise |cos| around sqrt(2 log F^2 / D), which already exceeds a tight max_unrelated_cos.
-    A few steps of repulsion gets much closer, and the realised value is reported
-    rather than asserted.
+    Plain rejection sampling fails when F >> D (random unit vectors already exceed a tight
+    cap); a few repulsion steps get much closer, and the realised value is reported, not asserted.
     """
     x = x / x.norm(dim=1, keepdim=True)
     for _ in range(steps):
@@ -61,10 +57,7 @@ def build_directions(cfg: ToyConfig, tree: Tree, seed: int | None = None) -> Geo
     gen = torch.Generator().manual_seed(cfg.seed if seed is None else seed)
     F, D = tree.F, cfg.D
 
-    # `max_unrelated_cos` is a target, not a hard bound: orthogonalising against ancestor
-    # spans moves the vectors, so the realised coherence isn't controllable from the draw
-    # (and a tight bound is unreachable by rejection at F >> D; see DESIGN.md). Best-effort
-    # over 8 draws, keep the lowest, and record whether the target was met in `coherence_ok`.
+    # `max_unrelated_cos` is a target, not a hard limit -- orthogonalising nudges the vectors, so we try 8 draws and keep the lowest-coherence one.
     best: Geometry | None = None
     for _ in range(8):
         # --- step 1: draw low-coherence seed directions -----------------------
@@ -76,9 +69,7 @@ def build_directions(cfg: ToyConfig, tree: Tree, seed: int | None = None) -> Geo
         Lam = torch.zeros(F, F, dtype=DT)
 
         # --- step 2: build u and g together, in topological order -------------
-        # For each feature (parents before children): orthogonalise its drawn
-        # direction against its ancestors' concept directions to get u_k, then
-        # form g_k from u_k plus its parent's direction.
+        # For each feature (parents before children): orthogonalise against ancestors' concept directions to get u_k, then form g_k from u_k plus the parent's direction.
         for k in tree.topology_ordering:
             anc = sorted(tree.ancestors[k])
             if anc:
@@ -90,14 +81,14 @@ def build_directions(cfg: ToyConfig, tree: Tree, seed: int | None = None) -> Geo
                 raise ValueError(f"u_{k} undefined: the drawn direction lies in its ancestor span")
             u[k] = r / r.norm()
 
-            # w_k loads on the immediate parent's residual direction, weight 1.
+            # g_k mixes the parent's residual direction (weight alpha) with u_k.
             par = tree.parent_of(k)
             a_k = float(tree.alpha_of(k))
             if par is None or a_k == 0.0:
-                g[k] = u[k]                                   # the w_k = 0 branch
+                g[k] = u[k]                                   # root, or firing_only edge: no parent mix
                 Lam[k, k] = 1.0
             else:
-                w = u[par]                                    # ||w|| = 1, single unit loading
+                w = u[par]                                    # unit-norm parent residual direction
                 g[k] = a_k * w + math.sqrt(1.0 - a_k ** 2) * u[k]
                 Lam[par, k] = a_k
                 Lam[k, k] = math.sqrt(1.0 - a_k ** 2)

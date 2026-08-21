@@ -1,11 +1,10 @@
 """
 Feasibility guards for a built toy.
 
-Reject a config whose sampled world would silently disagree with the ground-truth
-answer key. These are the structural checks that used to live in the removed energy
-feasibility apparatus; each raises `ValueError` at build time rather than letting an
-infeasible config produce a wrong `truth.pt` without erroring. The energy-specific
-constraints (band overlap, ladder solvability, ASI thinness) are intentionally gone.
+Reject any config whose sampled world would silently disagree with the ground-truth answer
+key. Each check raises `ValueError` at build time, so an infeasible config fails loudly
+instead of producing a wrong `truth.pt` without erroring. These are structural checks only;
+the old energy-feasibility constraints are gone.
 """
 
 from __future__ import annotations
@@ -26,11 +25,10 @@ DT = torch.float64
 def validate_config(cfg: ToyConfig, tree: Tree) -> None:
     """Raise `ValueError` if the built tree/config is infeasible; return None if OK.
 
-    Called at the end of `build_tree`. Checks only the structural feasibility the
-    sampler and the answer key both rely on.
+    Called at the end of `build_tree`. Checks only the structural feasibility that the sampler
+    and the answer key both rely on.
     """
-    # Basic config sanity -- fail fast on obviously-degenerate values before any
-    # per-feature work (Z=0, for instance, would otherwise divide by zero below).
+    # Basic config sanity -- fail fast on degenerate values before any per-feature work (e.g. Z=0 would divide by zero below).
     if cfg.Z < 1:
         raise ValueError(f"Z (number of topics) must be >= 1 (got {cfg.Z})")
     if cfg.vocab < cfg.n_bind_ids:
@@ -52,8 +50,7 @@ def validate_config(cfg: ToyConfig, tree: Tree) -> None:
             f"strength_spread must be in (0, 0.5) (got {cfg.strength_spread}); "
             f"outside it the firing-strength floor goes non-positive")
 
-    # Per-edge firing probability and per-feature loading bounds (reactivates the
-    # eps_p / eps_alpha margins the removed feasibility checker used to enforce).
+    # Per-edge firing probability and per-feature loading bounds, keeping the eps_p / eps_alpha safety margins.
     for k in range(tree.F):
         if tree.parent_of(k) is None:
             continue
@@ -68,11 +65,7 @@ def validate_config(cfg: ToyConfig, tree: Tree) -> None:
                 f"alpha must be <= 1 - eps_alpha = {1.0 - cfg.eps_alpha:.4f}; "
                 f"feature {k} has alpha {a}")
 
-    # Exclusive siblings partition one uniform draw over [0, 1) by p_edge, so their
-    # per-edge probs must sum to <= 1. Above that the sampler truncates the last
-    # sibling's realized rate while firing_rates keeps the nominal rate -- truth.pt
-    # then disagrees with the sampled world, silently. Non-exclusive parents (e.g. a
-    # broad parent) share tokens and carry no such budget, so are skipped.
+    # Exclusive siblings split one draw by p_edge, so per-edge probs must sum to <= 1 -- above that the sampler truncates the realized rate while firing_rates keeps the nominal one. Non-exclusive parents carry no such budget and are skipped.
     for par, kids in tree.children.items():
         if not tree.exclusive.get(par, False) or not kids:
             continue
@@ -86,9 +79,7 @@ def validate_config(cfg: ToyConfig, tree: Tree) -> None:
                 f"firing_rates keeps the nominal rate, so truth.pt would disagree "
                 f"with the sampled world")
 
-    # Topical admissibility: every per-topic firing rate must stay in [0, 1]. A rate
-    # outside the range does not crash -- `rand < rate` just never/always fires -- so
-    # the "marginalises back to exactly p_i" guarantee breaks without any error.
+    # Topical admissibility: per-topic firing rate must stay in [0, 1], or the "averages back to exactly p_i" guarantee breaks silently (`rand < rate` just never/always fires).
     p = firing_rates(tree)
     pi = torch.full((cfg.Z,), 1.0 / cfg.Z, dtype=DT)
     for k in range(tree.F):
@@ -101,10 +92,7 @@ def validate_config(cfg: ToyConfig, tree: Tree) -> None:
                 f"outside [0, 1] (min {float(rates.min()):.4f}, "
                 f"max {float(rates.max()):.4f}); reduce kappa or increase Z")
 
-    # Token-bound admissibility: token-bound roots fire only on the top n_bind_ids
-    # token ids, so their firing rate cannot exceed that id set's Zipf mass. Above it
-    # the sampler silently caps the realized rate (r = min(1, p_k / frac)) while
-    # firing_rates keeps the nominal p_k -- another silent truth.pt divergence.
+    # Token-bound admissibility: firing rate can't exceed the top-n_bind_ids id set's Zipf mass, or the sampler silently caps the realized rate while firing_rates keeps the nominal p_k.
     if any(tree.token_bound[k] for k in range(tree.F)):
         ranks = torch.arange(1, cfg.vocab + 1, dtype=DT)
         w = ranks ** (-cfg.zipf_s)

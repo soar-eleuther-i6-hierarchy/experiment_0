@@ -1,22 +1,16 @@
 """
 Greedy Boolean cascade over the property-vs-rest grid.
 
-Per column, forward-select percentile-threshold filters — one per detector, BOTH TAILS
-tried at each step — that isolate that class among the surviving pairs. Thresholds are
-distribution-free percentiles from one global pool (`grid.component_percentiles`); the
-greedy objective is F1 of the target. Because orientation is frozen (a property-vs-rest
-AUROC near 0 is a strong INVERTED isolator), each step tries `pct >= level` AND
-`pct <= level` and keeps whichever helps — an upper-tail-only search would blind the
-cascade to half the metrics.
+For each column, forward-select percentile-threshold filters (one per detector, both tails
+tried) that isolate that class among survivors, using F1 as the greedy objective. Thresholds are
+distribution-free percentiles from one global pool.
 
-For is_a the readout adds an enrichment-over-base-rate figure (final precision / base rate)
-and a hard-negative precision against the structurally confusable classes
-{transitive, reversed, firing_only}: a pooled vs-rest precision reads pessimistically on a
-rare positive and hides the hard negatives that actually cap is_a (user decision 2026-08-21).
+For is_a the readout adds enrichment over base rate and a precision against the hard negatives
+(structurally confusable classes {transitive, reversed, firing_only}), since a pooled vs-rest
+precision hides exactly those confusions.
 
-Inputs are the 10 firewalled detectors and the answer-key labels only (plus the
-truth+trained-derived latent masks, for the absorbed/merged columns) — no truth beyond that
-enters the rule. `is_a`'s rule is the deployment cascade.
+Inputs are only the 10 firewalled detectors, the answer-key labels, and the latent masks for
+absorbed/merged — no other truth enters the rule. The is_a rule is the deployment cascade.
 """
 
 from __future__ import annotations
@@ -42,8 +36,7 @@ _SKIP_ZERO_POS = "0 positive pairs"
 
 
 class _Candidate(NamedTuple):
-    """One greedy-step candidate filter. Named (not a positional tuple) so a future reorder
-    binds by field, not by position."""
+    """One greedy-step candidate filter."""
     f1: float
     precision: float
     recall: float
@@ -57,17 +50,15 @@ class _Candidate(NamedTuple):
 def _target_mask(y_label: torch.Tensor, target: str,
                  label_masks: dict[str, torch.Tensor] | None) -> torch.Tensor:
     """Positive mask for `target`: a supplied latent mask (absorbed/merged) takes precedence,
-    otherwise the generative answer-key class. Latent columns are not in `y_label`, so their
-    positives must come from `label_masks` (matching `property_vs_rest_grid`)."""
+    otherwise the generative answer-key class."""
     if label_masks and target in label_masks:
         return label_masks[target].to(torch.bool)
     return class_members(y_label, target)
 
 
 def _filter_masks(percentiles: dict[str, torch.Tensor]) -> dict[tuple[str, float, str], torch.Tensor]:
-    """Every candidate (detector, level, tail) keep-mask. A NaN percentile (detector undefined
-    for that pair) is EXCLUDED from the keep-set in BOTH tails — a pair a filter cannot score
-    does not survive that filter."""
+    """Every candidate (detector, level, tail) keep-mask. A NaN percentile is excluded from the
+    keep-set in both tails."""
     masks: dict[tuple[str, float, str], torch.Tensor] = {}
     for det, pct in percentiles.items():
         defined = ~torch.isnan(pct)
@@ -90,10 +81,8 @@ def _prf1(pos_mask: torch.Tensor, surv: torch.Tensor) -> tuple[float, float, flo
 
 def _hard_negative_readout(surv: torch.Tensor, pos_mask: torch.Tensor, y_label: torch.Tensor,
                            hard_negatives: tuple[str, ...]) -> dict:
-    """Precision of is_a restricted to {is_a} ∪ hard-negatives among the survivors, plus the
-    per-class leak counts. Answers 'of the surviving pairs that are is_a OR a structurally
-    confusable cousin, what fraction are is_a?' — the confusion a pooled vs-rest precision
-    hides. Denominator is the survivors in that restricted universe only."""
+    """Precision of is_a restricted to {is_a} ∪ hard-negatives among survivors, plus per-class
+    leak counts — answers "of is_a or a confusable cousin, what fraction is is_a?"."""
     tp = int((pos_mask & surv).sum())
     leak: dict[str, int] = {}
     hard_surv = 0
@@ -115,18 +104,15 @@ def greedy_cascade(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, in
     """Greedy forward-selection of percentile filters (one per detector, both tails tried)
     maximizing F1 of `target` among the surviving pairs.
 
-    Returns the trajectory + final rule + base-rate + enrichment; when `hard_negatives` is
-    given, also the hard-negative readout. A 0-positive target returns a `{"skipped": ...}`
-    marker (a SUCCESS, not a crash) — the same shape `cascade_grid` emits — so the function is
-    safe to call standalone, not only behind `cascade_grid`'s pre-filter. `percentiles` may be
-    passed in to avoid recomputing the global-pool ranks per column.
+    Returns the trajectory + final rule + base-rate + enrichment, plus the hard-negative readout
+    when `hard_negatives` is given. A 0-positive target returns a `{"skipped": ...}` marker (a
+    success, not a crash). `percentiles` may be passed in to avoid recomputing per column.
     """
     pos_mask = _target_mask(y_label, target, label_masks)
     n_pos = int(pos_mask.sum())
     if n_pos == 0:
-        # A 0-positive target is a SUCCESS (e.g. an over-parameterized SAE with no absorbed
-        # edges), not a failure. The single skip guard lives HERE so a direct caller is as safe
-        # as one going through cascade_grid — no duplicated check to drift.
+        # A 0-positive target is a success, not a failure; the skip guard lives here so a direct
+        # caller is as safe as one going through cascade_grid.
         logger.warning("greedy_cascade: target %r has 0 positive pairs — skipped", target)
         return {"target": target, "skipped": _SKIP_ZERO_POS, "n_pos": 0}
 
@@ -152,16 +138,14 @@ def greedy_cascade(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, in
                 continue
             cand = surv & m
             n_surv = int(cand.sum())
-            if n_surv == 0:                          # a wipe-out filter is never useful — reject
-                continue                             # explicitly (do not lean on F1==0 + MIN_F1_GAIN)
+            if n_surv == 0:                          # a wipe-out filter is never useful — reject explicitly
+                continue
             f1, prec, rec, _ = _prf1(pos_mask, cand)
             if best is None or f1 > best.f1:
                 best = _Candidate(f1, prec, rec, n_surv, det, lvl, tail, cand)
         if best is None or best.f1 - prev_f1 < MIN_F1_GAIN:
             break
-        # NaN accounting: how many of the pre-filter survivors this detector could not score
-        # (dropped for lack of an opinion, NOT for failing the threshold) — parity with the
-        # grid's `n_dropped`, so a low survival is not misread as pure discrimination loss.
+        # How many pre-filter survivors this detector couldn't score (dropped, not thresholded out).
         n_nan = int((surv & torch.isnan(percentiles[best.detector])).sum())
         surv = best.mask
         used.add(best.detector)
@@ -190,10 +174,9 @@ def greedy_cascade(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, in
 def cascade_grid(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
                  y_label: torch.Tensor, columns: tuple[str, ...],
                  label_masks: dict[str, torch.Tensor] | None = None) -> dict:
-    """Greedy cascade for every column. A column with 0 positive pairs is skipped by
-    `greedy_cascade` itself (a SUCCESS — e.g. an over-parameterized SAE with no absorbed edges —
-    not a crash); the is_a column carries the hard-negative readout. The global-pool percentiles
-    are computed ONCE and shared across columns (they do not depend on the target)."""
+    """Greedy cascade for every column. A 0-positive column is skipped by `greedy_cascade` itself
+    (a success, not a crash); the is_a column carries the hard-negative readout. Percentiles are
+    computed once and shared across columns."""
     percentiles = component_percentiles(detectors, pairs)
     out: dict[str, dict] = {}
     for col in columns:

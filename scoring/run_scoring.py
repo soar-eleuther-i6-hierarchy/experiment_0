@@ -1,15 +1,9 @@
-"""Score a set of trained toy-SAE checkpoints end to end and aggregate across seeds.
+"""Score trained toy-SAE checkpoints (one per seed) and aggregate the results.
 
-For each seed the driver runs the three scorers on one checkpoint:
-
-  * ``run_recovery``   — Hungarian feature matching + realized-L0 / architecture provenance;
-  * ``run_retrieval``  — the property-vs-rest relationship-retrieval AUROC grid (each
-                          generative class vs the rest, scored by the 10 firewalled detectors);
-  * ``run_absorption`` — the absorption / decoder-multiplicity / composition decomposition.
-
-Every per-seed report is written to ``<out>/`` as JSON, then ``aggregate_seeds`` combines the
-retrieval reports into across-seed AUROC point estimates with Student-t confidence intervals.
-A compact summary is printed for quick reading; the JSON files hold the full detail.
+Runs three scorers per seed: ``run_recovery`` (feature matching + realized L0/arch),
+``run_retrieval`` (per-class detector AUROC grid), ``run_absorption`` (absorption/decoder
+multiplicity decomposition). Each report is saved as JSON; ``aggregate_seeds`` then combines
+retrieval into across-seed AUROC with Student-t CIs, and a compact summary is printed.
 
 Usage (from the experiment_0 directory)::
 
@@ -32,13 +26,15 @@ from scoring.core.grid import aggregate_seeds
 from scoring.trained.retrieval import run_retrieval
 from toygen import labels
 
-# The property-vs-rest grid columns: the generative classes plus the latent-side ones.
+# Retrieval grid columns: generative classes plus latent-side columns.
 _GRID_COLS = tuple(labels.LABELS) + LATENT_COLUMNS
 
 
 def score_seeds(ckpt_glob: str, seeds: list[int], out: Path, n_tokens: int) -> dict:
-    """Run all three scorers on every seed's checkpoint, save each report, and return the
-    per-seed reports plus the across-seed aggregate. ``ckpt_glob`` must contain ``{seed}``."""
+    """Run all three scorers per seed, save each report as JSON, and aggregate across seeds.
+
+    ``ckpt_glob`` must contain a ``{seed}`` placeholder.
+    """
     out.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
     recovery, retrieval, absorption = {}, {}, {}
@@ -66,12 +62,14 @@ def print_summary(res: dict) -> None:
     print(f"SCORING SUMMARY — {len(seeds)} seeds")
     print("=" * 88)
 
+    # [1] Per seed: realized L0, source architecture, and how many features were recovered.
     print("\n[1] per-seed provenance")
     for s in seeds:
         rec, ret = res["recovery"][s], res["retrieval"][s]
         print(f"  seed{s}: L0={rec.get('realized_l0'):.2f} arch={rec.get('architecture')} "
               f"n_recovered={ret.get('n_recovered')}")
 
+    # [2] The retrieval grid: mean AUROC across seeds for each detector x column (column vs. the rest).
     print("\n[2] across-seed property-vs-rest AUROC (mean; each column vs the rest)")
     print("  " + " " * 20 + "".join(f"{c[:7]:>8}" for c in _GRID_COLS))
     for det in DETECTORS:
@@ -82,6 +80,32 @@ def print_summary(res: dict) -> None:
             for c in _GRID_COLS)
         print(f"  {det:20s}{cells}")
 
+    # [2b] Reportable interval = across-seed Student-t CI; per-cell logit CIs assume independence and read too tight, so we skip them.
+    print("\n[2b] is_a column — across-seed AUROC [Student-t 95% CI] (the reportable interval)")
+    for det in DETECTORS:
+        cell = agg.get(det, {}).get("is_a", {})
+        m, lo, hi = cell.get("mean"), cell.get("ci_lo"), cell.get("ci_hi")
+        ns = cell.get("n_seeds", 0)
+        if isinstance(m, float) and m == m:
+            ci = f"[{lo:.2f}, {hi:.2f}]" if isinstance(lo, float) and lo == lo else "[--, --]"
+            print(f"  {det:20s} {m:.2f}  {ci}  (n_seeds={ns})")
+
+    # [2c] Firing-count floor: trivial baseline from firing rate alone (max over child/parent variants, averaged over seeds) — beat this, not 0.5.
+    def _col_floor(c: str) -> float:
+        vals = []
+        for s in seeds:
+            nb = res["retrieval"][s].get("nuisance_baselines", {}).get(c, {})
+            cand = [v for v in nb.values() if isinstance(v, float) and v == v]
+            if cand:
+                vals.append(max(cand))
+        return sum(vals) / len(vals) if vals else float("nan")
+
+    print("\n[2c] firing-count nuisance floor per column (mean across seeds; beat THIS, not 0.5)")
+    print("  " + " " * 20 + "".join(f"{c[:7]:>8}" for c in _GRID_COLS))
+    floors = "".join((f"{f:>8.2f}" if (f := _col_floor(c)) == f else f"{'--':>8}") for c in _GRID_COLS)
+    print(f"  {'nuisance_floor':20s}{floors}")
+
+    # [3] Per seed: absorption counts (overall and by relation) and how many features split.
     print("\n[3] absorption decomposition + split readout per seed")
     for s in seeds:
         ab = res["absorption"][s]
@@ -89,6 +113,7 @@ def print_summary(res: dict) -> None:
         print(f"  seed{s}: counts={ab['counts']} by_relation={ab['absorbed_by_relation']} "
               f"n_split={sp.get('n_split', '--')}")
 
+    # [4] Per seed: the is_a deployment cascade — a greedy Boolean rule built from both tails.
     print("\n[4] is_a deployment cascade per seed (greedy both-tails Boolean rule)")
     for s in seeds:
         isa = res["retrieval"][s].get("cascade", {}).get("is_a", {})

@@ -29,9 +29,9 @@ class LoadedSAE:
 def load_sae(ckpt_dir: str | Path) -> LoadedSAE:
     """Load a trained sae-training Matryoshka checkpoint and its `toy_meta.json`.
 
-    `sae_training` is imported here, not at module top, so the rest of the package runs
-    without it. Returns an `encode` callable (float64 acts), the decoder rows, the decoder
-    bias, and the training metadata the scorer regenerates the world from.
+    `sae_training` is imported here so the rest of the package runs without it. Returns an
+    `encode` callable (float64 acts), the decoder rows, the decoder bias, and the training
+    metadata.
     """
     from sae_training.architectures.matryoshka import MatryoshkaSAE  # lazy
 

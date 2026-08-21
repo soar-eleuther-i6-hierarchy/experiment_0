@@ -1,14 +1,12 @@
 """
 World-building, config resolution, and SAE-sizing helpers for the toy generator.
 
-These are shared by both the trainer and the measurement scorer: the trainer builds a
-world to train on, and the scorer rebuilds the exact same world from a checkpoint's
-persisted `resolved_config` to score against. Everything here is pure toygen + torch,
-with no GPU dependency, so it runs and is tested anywhere.
+Shared by trainer and scorer: the trainer builds a world to train on, the scorer rebuilds
+the same world from a checkpoint's `resolved_config` to score against. Pure toygen + torch,
+no GPU dependency.
 
-Matryoshka prefixes are a fixed geometric schedule, independent of the toy's hierarchy:
-sizing the SAE's nesting from the toy's own depth would hand it the answer, so whether
-the hierarchy sorts into those prefixes stays a measurement, not an input.
+Matryoshka prefixes follow a fixed geometric schedule, independent of the toy's hierarchy --
+sizing SAE nesting from the toy's own depth would hand it the answer.
 """
 
 from __future__ import annotations
@@ -22,9 +20,9 @@ from . import tree as tree_mod
 def geometric_prefixes(F: int, expansion: int, n_steps: int = 4) -> tuple[list[int], int]:
     """Matryoshka prefix cutoffs for a dictionary of width `expansion * F`.
 
-    Cutoffs halve down from the full width: e.g. F=240, expansion=4 -> d_sae=960 and
-    steps [120, 240, 480, 960]. The last step is always the full width (the outermost
-    doll). Depends only on (F, expansion, n_steps), never on the tree's depth.
+    Cutoffs halve down from the full width: e.g. F=240, expansion=4 -> d_sae=960 and steps
+    [120, 240, 480, 960]. The last step is always the full width (the outermost doll). Depends
+    only on (F, expansion, n_steps), never on the tree's depth.
     """
     if F <= 0:
         raise ValueError(f"F must be positive; got {F}")
@@ -39,9 +37,7 @@ def geometric_prefixes(F: int, expansion: int, n_steps: int = 4) -> tuple[list[i
     return steps, d_sae
 
 
-# Confound counts a "powered" run may raise (each confound column needs >= 5 independent
-# nodes for valid inference). These are the only overridable knobs; resolve_config and
-# train_toy both read this tuple.
+# Confound counts a "powered" run may raise (each needs >= 5 independent nodes for valid inference); the only overridable knobs, read by resolve_config and train_toy.
 CONFOUND_OVERRIDES: tuple[str, ...] = (
     "n_superparent", "n_token_bound_pairs", "n_topical_pairs", "n_bind_ids",
 )
@@ -56,16 +52,12 @@ _OVERRIDE_ABBR: dict[str, str] = {
 def choose_k(tree: tree_mod.Tree, k_override: int | None = None) -> int:
     """The SAE's BatchTopK `k`, derived from the world's true L0 (never a starved value).
 
-    Defaults to `round(target_l0(tree))` -- the mean active features per token, which is
-    what the dictionary's top-k must be wide enough to represent. An explicit override is
-    honoured only if it does not starve the dictionary: a `k_override` below the derived
-    value drops real active features on the average token and reads downstream as recovery
-    failure, so it raises rather than silently training a starved SAE. Over-provisioning
-    (`k_override >= derived`) is allowed and returned unchanged.
+    Defaults to `round(target_l0(tree))`. An override below the derived value would starve
+    the dictionary on an average token, so it raises rather than training silently starved;
+    an override >= derived is returned unchanged.
     """
     l0 = strengths.target_l0(tree)
-    # round() is round-half-to-even; safe because L0 is a sum of continuous rate products
-    # (never exactly x.5).
+    # round() is round-half-to-even; safe here since L0 is a sum of continuous rate products (never exactly x.5).
     derived = round(l0)
     if k_override is None:
         return derived
@@ -80,16 +72,11 @@ def choose_k(tree: tree_mod.Tree, k_override: int | None = None) -> int:
 def resolve_config(cfg_name: str, **overrides: int) -> spec.ToyConfig:
     """Return the named base config with the given confound counts overridden.
 
-    `overrides` may name only the knobs in `CONFOUND_OVERRIDES`; anything else raises
-    (so a typo'd knob fails loudly instead of silently doing nothing). Only the non-None
-    overrides are applied. Three mistakes are refused loudly rather than silently
-    training the wrong world:
-      - a confound-count override against a config whose `confounds` are OFF (the
-        generator ignores those counts unless `confounds=True`, so the run would be
-        "powered" in name only),
-      - a negative count (the generator would clamp it to 0, quietly un-powering), and
-      - a bool (an int subclass that would slip past `< 0` and resolve True->1).
-    Feasibility of the resulting config is still enforced downstream by `build_tree`.
+    `overrides` may name only `CONFOUND_OVERRIDES` knobs (typos raise); only non-None values
+    are applied. Refuses loudly rather than building the wrong world: overriding a config
+    with `confounds=False` (would be powered in name only), a negative count (silently
+    un-powers), or a bool (slips past `< 0` and resolves True -> 1). Feasibility is still
+    checked by `build_tree`.
     """
     if cfg_name not in spec.CONFIGS:
         raise ValueError(
@@ -120,20 +107,12 @@ def resolve_config(cfg_name: str, **overrides: int) -> spec.ToyConfig:
 def checkpoint_dirname(config_name: str, variant: str, k: int, expansion: int,
                        overrides: dict[str, int], seed: int | None = None,
                        randomize_structure: bool = False) -> str:
-    """Checkpoint directory name, disambiguated by any active confound overrides and the seed.
+    """Checkpoint directory name, kept distinct by any active confound overrides and the seed.
 
-    With no overrides this is the legacy stem `{config_name}-{variant}-k{k}-x{expansion}`,
-    so existing un-powered checkpoints keep their names. With overrides a deterministic
-    `-pow-<tag>` suffix (sorted by key, so insertion order is irrelevant) is appended,
-    so two differently-powered runs never collide on disk.
-
-    `randomize_structure` (opt-in) inserts a `-rand` tag so a SEED-VARIED-backbone run and a
-    fixed-lattice run with the SAME config/overrides/seed do not write into the same directory and
-    silently clobber each other's weights + toy_meta.json (their `resolved_config` differs).
-
-    `seed` (opt-in) appends a terminal `-s{seed}` so two seeds trained into the same `--out`
-    directory never collide on disk. Default `None`/`False` reproduce the legacy name, so
-    callers/checkpoints that pre-date these stay resolvable.
+    Base stem is `{config_name}-{variant}-k{k}-x{expansion}`. Overrides append a sorted
+    `-pow-<tag>` suffix so differently-powered runs don't collide; `randomize_structure`
+    appends `-rand` so a seed-varied and fixed-lattice run don't clobber each other; `seed`
+    appends `-s{seed}`. Defaults reproduce the original name, so old callers stay resolvable.
     """
     stem = f"{config_name}-{variant}-k{k}-x{expansion}"
     if overrides:
@@ -147,24 +126,16 @@ def checkpoint_dirname(config_name: str, variant: str, k: int, expansion: int,
     return stem
 
 
-# A confound is only a real distractor if it clears the scorer's edge cut: a token-bound
-# (frequency) pair whose reverse coverage falls below edge_tau forms NO inferred edge, so the
-# 'frequency' negative class is empty and the detector gets a free pass. validate_config checks
-# the Zipf mass but NOT this, so an approved n_bind_ids override can silently un-power the confound
-# (measured: n_bind_ids=2 -> R~0.508, n_bind_ids=3 -> R~0.419 < edge_tau, yet validate_config passes).
+# A confound only counts as a real distractor if it clears the scorer's edge cut -- validate_config checks Zipf mass but not this, so an approved override can silently un-power it.
 _EDGE_TAU_REFERENCE = 0.5   # mirrors scoring.core.registry CONSTANTS["edge_tau"]
-# The confound-power check is a POPULATION property; it needs a real-scale draw to estimate the
-# reverse coverage reliably. Tiny smoke/test builds (n_tokens ~ hundreds) can't, so skip them —
-# real training (8M) and scoring (200k) draws are far above this.
+# Population-level check needs a real-scale draw; tiny smoke/test builds (n_tokens ~ hundreds) skip it since training/scoring draws are far above this floor.
 _MIN_TOKENS_FOR_CONFOUND_CHECK = 100_000
 
 
 def _assert_confounds_powered(A: torch.Tensor, tree: tree_mod.Tree) -> None:
-    """Refuse a powered world whose frequency OR topical confound sits below edge_tau (would form no
-    edges). Both are co-firing confounds: if their pairs' median reverse coverage R(p|c) does not clear
-    edge_tau, the class forms no inferred edges, its negative class is empty, and the detector is never
-    actually challenged. A low `kappa` (topical) or a high `n_bind_ids` (frequency) can silently do this
-    while `validate_config` — which only checks the id-set Zipf mass — still passes."""
+    """Refuse a powered world whose frequency or topical confound sits below edge_tau (forms no
+    inferred edges, leaving that negative class empty and the detector unchallenged). A low
+    `kappa` or high `n_bind_ids` can quietly trigger this even though `validate_config` passes."""
     from toygen import labels
     pl = labels.pair_label(tree)
     firing = A > 0
@@ -197,16 +168,12 @@ def build_world(cfg_name: str, n_tokens: int, seed: int, device: str,
                 ) -> tuple[torch.Tensor, tree_mod.Tree, spec.ToyConfig]:
     """Generate one toy and return (activations, tree, config).
 
-    float32 on `device`: the generator works in float64 internally, but the SAE trains
-    in float32 and an 8M x D double buffer would be pure overhead. Geometry is drawn
-    from the config's own seed; the sampling draw uses `seed`, so a disjoint seed gives
-    an independent world over the same design.
+    Returns float32 on `device` (the generator works in float64 internally; an 8M x D double
+    buffer would be pure overhead). Geometry uses the config's own seed; sampling uses `seed`,
+    so a different `seed` gives an independent world over the same design.
 
-    `config` lets a caller pass a pre-resolved `ToyConfig` (e.g. a powered variant from
-    `resolve_config`) to use verbatim; when omitted the base recipe named by `cfg_name`
-    is built, preserving the original call path. A passed `config` must agree with
-    `cfg_name` (`config.name == cfg_name`), so a caller can't build one world under
-    another world's label.
+    `config` lets a caller pass a pre-resolved `ToyConfig` (e.g. from `resolve_config`); it
+    must match `cfg_name` so a caller can't build one world under another world's label.
     """
     if config is not None and config.name != cfg_name:
         raise ValueError(

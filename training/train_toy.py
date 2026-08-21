@@ -1,11 +1,7 @@
-"""
-Train a Matryoshka BatchTopK SAE on the toy generator, using the sae-training backend.
+"""Train a Matryoshka BatchTopK SAE on the toy generator, using the sae-training backend.
 
-The seam between `toygen` (which knows the ground truth) and the SAE library: we build a
-toy world, feed its activations to `sae_training`'s MatryoshkaSAE, and persist the trained
-dictionary plus the config the scorer needs to regenerate the same world. The SAE class,
-the BatchTopK threshold calibration, and the Matryoshka losses come from `sae_training`; we
-supply the activations and the prefix (`latent_sizes`) schedule.
+Builds a toy world, feeds its activations to sae_training's MatryoshkaSAE, and saves the
+trained dictionary plus the config the scorer needs to rebuild the same world.
 
 Usage:
     python train_toy.py --config full --n-superparent 5 --seed 0
@@ -43,16 +39,16 @@ BATCH_SIZE = 4096
 
 @torch.no_grad()
 def sae_quality(sae, X: torch.Tensor) -> dict:
-    """Reconstruction quality of the SAE on an activation batch X [N, D].
+    """Measure SAE reconstruction quality on an activation batch X [N, D].
 
     final_mse: mean squared reconstruction error per element.
     explained_variance: 1 - SS_res/SS_tot (R^2-style, over the whole batch).
     dead_feature_frac: fraction of latents that never fire on X.
-    realized_l0: mean nonzero latents per token (tracks k).
+    realized_l0: mean number of nonzero latents per token (should track k).
     """
     sae.eval()
-    acts = sae.encode(X, use_threshold=True)[0]      # encode -> (hidden, pre_acts); take hidden
-    x_hat = acts @ sae.W_dec + sae.b_dec             # manual full reconstruction (robust)
+    acts = sae.encode(X, use_threshold=True)[0]      # encode returns (hidden, pre_acts); keep hidden
+    x_hat = acts @ sae.W_dec + sae.b_dec             # reconstruct by hand (more robust than a helper)
     resid = X - x_hat
     ss_tot = (X - X.mean(dim=0)).pow(2).sum().clamp_min(1e-12)
     fired = acts > 0
@@ -69,9 +65,8 @@ def main() -> None:
     ap.add_argument("--config", default="backbone", choices=sorted(spec.CONFIGS))
     ap.add_argument("--expansion", type=int, default=4)
     ap.add_argument("--n-steps", type=int, default=4, help="number of nested matryoshka prefixes")
-    ap.add_argument("--k", type=int, default=None, help="BatchTopK k; defaults to the world's true L0 round(sum firing_rates). A value below that starves the dictionary and is refused.")
-    # Powered-confound overrides (only 'full'/confounds=True accepts them; resolve_config refuses
-    # them otherwise): raise a confound column's node count for valid inference (needs >=5).
+    ap.add_argument("--k", type=int, default=None, help="BatchTopK k; defaults to the world's true L0, round(sum of firing_rates). A smaller value starves the dictionary and is refused.")
+    # Confound-strength overrides (full config only, node count >=5); resolve_config refuses these otherwise.
     ap.add_argument("--n-superparent", type=int, default=None)
     ap.add_argument("--n-token-bound-pairs", type=int, default=None)
     ap.add_argument("--n-topical-pairs", type=int, default=None)
@@ -82,22 +77,20 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--randomize-structure", action="store_true",
                     help="draw a seed-varied backbone (ragged branching/depth) instead of the fixed "
-                         "lattice, so --seed also varies STRUCTURE; the confound battery stays locked.")
+                         "lattice, so --seed also varies the tree STRUCTURE; the confound set stays locked.")
     ap.add_argument("--out", default="checkpoints")
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite an already-completed checkpoint dir (default: refuse — different "
+                         "training hparams can resolve to the SAME dirname)")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if device == "cpu":
         raise SystemExit("CUDA unavailable -- refusing to train on CPU.")
 
-    # Resolve powered-confound overrides up front so the persisted config is the exact one
-    # that trained (the scorer regenerates the world from it).
+    # Resolve confound overrides up front so the saved config matches exactly what trained.
     overrides = {name: getattr(args, name) for name in CONFOUND_OVERRIDES if getattr(args, name) is not None}
-    # --seed varies the GEOMETRY draw (via cfg.seed) and the SAMPLING draw. With the default fixed
-    # lattice the tree (F, k, firing structure) is seed-invariant, so all seeds share ONE hierarchy
-    # and across-seed captures direction + sampling variance only. With --randomize-structure the
-    # backbone is drawn per seed too, so each seed is a genuinely different controlled hierarchy
-    # (the confound battery stays locked across seeds as a fixed control group).
+    # --seed varies geometry+sampling; the default fixed lattice shares one hierarchy across seeds, while --randomize-structure redraws the backbone per seed (confound set stays locked).
     cfg = spec.replace(resolve_config(args.config, **overrides),
                        seed=args.seed, randomize_structure=args.randomize_structure)
 
@@ -106,22 +99,19 @@ def main() -> None:
     latent_sizes, d_sae = geometric_prefixes(tree.F, args.expansion, args.n_steps)
     if latent_sizes[-1] != d_sae:
         raise ValueError(f"latent_sizes must end at d_sae; got {latent_sizes} vs {d_sae}")
-    # Derive k from the world's true L0, not cfg.K -- powered confounds raise the true L0 past the
-    # declared K, and a top-k below it trains a structurally starved SAE.
+    # Derive k from the world's true L0, not cfg.K — strong confounds can push true L0 above declared K.
     k = choose_k(tree, args.k)
     n_train_steps = args.training_tokens // BATCH_SIZE
     print(f"world: {tuple(h.shape)} in {time.time() - t0:.1f}s | F={tree.F} "
           f"-> latent_sizes={latent_sizes} d_sae={d_sae} k={k} steps={n_train_steps}")
 
-    # Seed SAE init + batch order (sae_training seeds neither), AFTER build_world so it is
-    # decoupled from the world draw: same --seed -> identical world AND identical SAE fit.
+    # Seed SAE init + batch order here (sae_training seeds neither); done after build_world so --seed reproduces both world and fit.
     torch.manual_seed(args.seed)
 
     sae_cfg = MatryoshkaSAEConfig(
         d_in=cfg.D, d_sae=d_sae, latent_sizes=list(latent_sizes),
         activation_function="batch_topk", k=k, lr=args.lr,
-        # calibrate the inference threshold well before the run ends (the default 1000 would
-        # never calibrate on short/smoke runs).
+        # Calibrate threshold well before the run ends; the default of 1000 never kicks in on short/smoke runs.
         threshold_start_step=min(1000, max(1, n_train_steps // 2)),
         use_auxk=True,
     )
@@ -133,7 +123,7 @@ def main() -> None:
     batch_gen = torch.Generator(device=h.device).manual_seed(args.seed + 1)
 
     def loader():
-        # Plain tensors [B, d_in] (a tuple would break Matryoshka -- it has no attn_mask).
+        # Yield plain tensors [B, d_in]; a tuple would break Matryoshka, which has no attn_mask.
         for _ in range(n_train_steps):
             idx = torch.randint(0, h.shape[0], (BATCH_SIZE,), generator=batch_gen, device=h.device)
             yield h[idx]
@@ -141,15 +131,18 @@ def main() -> None:
     out = Path(args.out) / checkpoint_dirname(
         args.config, "matryoshka", k, args.expansion, overrides, seed=args.seed,
         randomize_structure=args.randomize_structure)
+    # Don't silently overwrite a completed run — dirname omits training hparams, so different runs can collide (toy_meta.json only exists once a run completes).
+    if (out / "toy_meta.json").exists() and not args.force:
+        raise SystemExit(
+            f"refusing to overwrite the completed checkpoint at {out}: a run with different hparams "
+            f"resolves to the same dirname and would replace it. Pass --force to overwrite.")
     out.mkdir(parents=True, exist_ok=True)
 
-    # train_sae drives BatchTopK during training, EMA-calibrates the scalar threshold, and writes
-    # cfg.json + sae_weights.safetensors (incl. the threshold) to save_dir at the end.
+    # train_sae runs BatchTopK, EMA-calibrates the threshold, and writes cfg.json + sae_weights.safetensors to save_dir.
     train_sae(sae, loader(), opt, lr_scheduler=sched, device=device,
               max_steps=n_train_steps, save_dir=str(out), grad_clip=1.0, dead_feature_window=200)
 
-    # Final reconstruction quality on the reloaded (deployment) model over an in-distribution
-    # batch. Persisted per seed so training quality is tracked without wandb.
+    # Final reconstruction quality on the reloaded (deployment) model, saved per seed to track quality without wandb.
     reloaded = MatryoshkaSAE.from_pretrained(str(out), device=device)
     eval_idx = torch.randint(0, h.shape[0], (min(131072, h.shape[0]),), device=h.device)
     train_quality = sae_quality(reloaded, h[eval_idx].to(torch.float32))
@@ -171,7 +164,7 @@ def main() -> None:
         "training_tokens": args.training_tokens,
         "world_tokens": args.world_tokens,
         "train_seed": args.seed,
-        # The fully-resolved config that trained -- the scorer rebuilds the world from this.
+        # The fully-resolved config that trained; the scorer rebuilds the world from this.
         "overrides": overrides,
         "resolved_config": dataclasses.asdict(cfg),
         "threshold": float(sae.threshold),

@@ -1,13 +1,13 @@
 """
 The sampler: documents, topics, token ids, coefficients, activations.
 
-Structural rules enforced token-wise, not on average:
-  - containment : a child can only fire where its parent fires
-  - exclusivity : mutually exclusive siblings never co-fire
+Two structural rules are enforced token by token, not just on average:
+  - containment: a child can only fire where its parent fires;
+  - exclusivity: mutually exclusive siblings never fire together.
 
-Both are drawn so the marginals still come out at their designed values — exclusive
-children share one uniform draw partitioned by their `p_edge`, which is exact as long
-as the sibling budget holds — each parent's child edge-probs sum to <= 1.
+Both are drawn so the per-feature firing rates still come out at their designed values.
+Exclusive children share one uniform draw split by their `p_edge`, which stays exact as
+long as the sibling budget holds -- each parent's child edge-probs sum to <= 1.
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ DT = torch.float64
 @dataclass
 class World:
     A: torch.Tensor            # [n, F] true coefficients
-    Atilde: torch.Tensor       # [n, F] healthy coefficients (= A @ Lam.T)
+    Atilde: torch.Tensor       # [n, F] coefficients re-expressed in the concept basis (= A @ Lam.T)
     h: torch.Tensor            # [n, D] activations
     noise: torch.Tensor        # [n, D]
     tokens: torch.Tensor       # [n] token ids
@@ -44,14 +44,11 @@ def _zipf_probs(vocab: int, s: float) -> torch.Tensor:
 
 
 def _strength(n: int, mean_strength: float, cv: float, gen: torch.Generator) -> torch.Tensor:
-    """Positive strength with mean `mean_strength` and sd `cv*mean_strength`, exactly.
+    """Draw positive strengths with mean `mean_strength` and sd `cv*mean_strength`, exactly.
 
-    Discrete features use a lognormal (right-skewed, strictly positive) with matched
-    first two moments.
-
-    Lognormal rather than Gamma because `torch.distributions.Gamma` does not accept an
-    explicit `generator`, and the only sampler that does is `torch._standard_gamma` —
-    a private API with no stability guarantee. `torch.randn` is public and seedable.
+    Uses a lognormal (right-skewed, positive) with its first two moments matched to those
+    targets. Lognormal rather than Gamma: `torch.distributions.Gamma` takes no explicit
+    `generator`, and the only Gamma sampler that does is a private, unstable API.
     """
     if n == 0:
         return torch.zeros(0, dtype=DT)
@@ -62,7 +59,7 @@ def _strength(n: int, mean_strength: float, cv: float, gen: torch.Generator) -> 
 
 
 def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geometry, n_tokens: int, seed: int | None = None) -> World:
-    # offset from the geometry stream so the two draws are independent
+    # offset the seed from the geometry stream so the two draws are independent
     gen = torch.Generator().manual_seed((cfg.seed if seed is None else seed) + 1000)
     F = tree.F
 
@@ -77,8 +74,7 @@ def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geome
     probs = _zipf_probs(cfg.vocab, cfg.zipf_s)
     tokens = torch.multinomial(probs, n, replacement=True, generator=gen)
 
-    # All token-bound features share one top-frequency id set (disjoint per-pair sets
-    # would fall below the design firing rate under Zipf; see DESIGN.md).
+    # All token-bound features share one top-frequency id set -- disjoint ids per pair would push firing rate below target under Zipf.
     high_ids = torch.arange(cfg.n_bind_ids, dtype=torch.long)
     token_sets: dict[int, torch.Tensor] = {
         k: high_ids for k in range(F) if tree.token_bound[k]
@@ -108,9 +104,7 @@ def sample_world(cfg: ToyConfig, tree: Tree, strengths: StrengthSpec, geo: Geome
             continue                                      # handled per-parent below
         fires[:, k] = fires[:, par] & (torch.rand(n, generator=gen, dtype=DT) < tree.p_edge_of(k))
 
-    # Exclusive sibling groups: one uniform draw per token, partitioned by p_edge. Must
-    # iterate in topological order — this reads `fires[:, par]`, so an exclusive child
-    # that is itself a parent must already be resolved.
+    # Exclusive sibling groups: one uniform draw per token, split into p_edge-sized bands. Must run in topological order since this reads `fires[:, par]`.
     for par in tree.topology_ordering:
         kids = tree.children.get(par, [])
         if not tree.exclusive.get(par, False) or not kids:
