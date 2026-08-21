@@ -1,22 +1,21 @@
 """
-Stage-0 survival-Δ — the clean-dictionary ceiling and its distance from the trained metric.
+Stage-0 clean-oracle ceiling — one of the harness's TWO standalone readouts.
 
-A low trained AUROC is ambiguous: the METRIC may be weak, or training may have DESTROYED a
-signal that was there in the clean geometry. Stage-0 resolves it. The clean dictionary is the
-world's own truth — true feature f's "latent" is f itself, decoder `g[f]`, activation `A[:,f]` —
-so scoring the detectors on it gives the ceiling each metric could reach with a perfect SAE.
-`Δ = clean − trained` then attributes the loss: a high Δ on a cell whose clean AUROC is high
-means the signal existed clean but training erased it (SAE fault); Δ≈0 with a low clean means
-the metric was weak even clean (metric fault).
+The scorer reports two INDEPENDENT grids, NOT a subtraction:
+  * this ORACLE (clean) grid — "can each metric identify its property at its own IDEAL?" The clean
+    dictionary is the world's own truth (decoder `g[f]`, an oracle-encoder / true-A / probe firing per
+    detector), so scoring the detectors on it is the ceiling each metric could reach with a perfect SAE.
+  * the TRAINED grid (`scoring.core.grid` via `retrieval.run_retrieval`) — "can it retrieve the property
+    from real SAE latents?"
+Per-detector oracles (α-encoder / true-A / probe) made a single-reference `Δ = clean − trained` invalid
+(different, sometimes UNATTAINABLE, oracles per detector), so the survival-Δ object is gone. The reader
+compares the two grids directly: a high oracle cell with a low trained cell = the metric works at its
+ideal but the SAE loses it. `annotate_clean_grid` stamps each oracle cell with `worked` / `degenerate` /
+`oracle_regime` / `oracle_idealized` so the oracle grid stands alone; `stage0_caveats` surfaces its
+degenerate / never-worked cells.
 
-Firewall: the clean dict is TRUTH (A, g), used ONLY to compute the ceiling the trained metric is
-compared against — never as a detector input on the trained side. Both stages enumerate the SAME
-recovered pairs on the same held-out draw. BUT a detector NaNs undefined cells independently on each
-side (a shared-token child underpowered on the trained dict may be well-supported on the clean one),
-so the SCORED (non-NaN) subset can differ between clean and trained even though the pair universe is
-identical. `survival_delta` therefore carries each side's n_pos/n_neg and a `same_support` flag; a Δ
-across a support mismatch (`same_support=False`) is not a clean metric-vs-SAE attribution and must be
-read with that caveat, not as "same pairs both sides".
+Firewall: the clean dict is TRUTH (A, g), used ONLY as the ceiling readout — never as a detector input
+on the trained side. Both grids enumerate the SAME recovered pairs on the same held-out draw.
 """
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ from typing import TYPE_CHECKING, Sequence
 
 import torch
 
-from scoring.core.detectors import DetectorInputs, compute_all, s_res_probe
+from scoring.core.detectors import DetectorInputs, compute_all, s_res_cosine, s_res_probe
 from scoring.core.grid import auroc_matrix
 from scoring.core.registry import CONSTANTS as _REGISTRY_CONSTANTS
 
@@ -34,6 +33,14 @@ if TYPE_CHECKING:                       # WorldBundle is used only as a type hin
     from scoring.core.world import WorldBundle
 
 _TINY = 1e-12
+
+
+class OracleEncodeInfeasible(ValueError):
+    """The oracle encoder cannot produce a Stage-0 ceiling for this draw (bad realized_l0, or the
+    checkpoint is denser than a tied-unit-g JumpReLU can mirror). A SUBCLASS of ValueError so existing
+    `except ValueError` callers (calibrate) still catch it, but narrow enough that run_retrieval can
+    catch ONLY this — not a compute_all config error (bad s_res_mode / missing inputs), which must
+    surface loudly instead of being mislabeled `stage0_unavailable`."""
 
 
 def oracle_encode(h: torch.Tensor, g: torch.Tensor, realized_l0: float) -> torch.Tensor:
@@ -57,7 +64,8 @@ def oracle_encode(h: torch.Tensor, g: torch.Tensor, realized_l0: float) -> torch
     """
     target = float(realized_l0)
     if not (target > 0) or not math.isfinite(target):
-        raise ValueError(f"oracle_encode: realized_l0 must be a positive finite number, got {target}")
+        raise OracleEncodeInfeasible(
+            f"oracle_encode: realized_l0 must be a positive finite number, got {target}")
     g_unit = g.double() / g.double().norm(dim=1, keepdim=True).clamp_min(_TINY)
     proj = h.double() @ g_unit.transpose(0, 1)              # [n, F] linear pre-activation
     n, F = proj.shape
@@ -71,7 +79,7 @@ def oracle_encode(h: torch.Tensor, g: torch.Tensor, realized_l0: float) -> torch
     k = int(round(target * n))                              # total firing entries wanted (== l0·n)
     P = int(pos.numel())
     if k >= P:
-        raise ValueError(
+        raise OracleEncodeInfeasible(
             f"oracle_encode: mean L0={target:.2f} needs {k} firing entries but only {P} projections "
             f"are positive (~{P / max(n, 1):.1f}/row); a non-negative JumpReLU gate cannot reach it "
             f"(the tied-unit-g encoder fires ≲ F/2 latents/row). The checkpoint is denser than this "
@@ -155,13 +163,23 @@ def clean_detectors_merged(bundle: "WorldBundle", feats: list[int], realized_l0:
     coefficients A. The recon_2a residual under true-A is noise + UNRECOVERED-feature energy (A@g omits
     features outside `feats`), i.e. the honest generative ceiling — read its survival-Δ that way.
 
-    `s_res_ceiling` selects the s_res ceiling: "cosine" (default) = the cheap analytic geometry oracle
-    (used by unit tests + the degeneracy check); "probe" = a LIKE-FOR-LIKE probe trained on the
-    alpha-encoder ORACLE firing over the true-g decoders, so the s_res survival-Δ compares probe-vs-probe
-    (isolating training degradation) instead of cosine-vs-probe (a cross-metric gap). "probe" trains R
-    probes on the ceiling — the real pipeline (run_retrieval) opts in; keep it off elsewhere.
+    `s_res_ceiling` selects the s_res ceiling. s_res is set EXPLICITLY here (never taken from
+    compute_all, which is called with s_res_mode="skip") so no cosine is computed-then-discarded:
+      "probe" = a LIKE-FOR-LIKE probe trained on the alpha-encoder ORACLE firing over the true-g
+                decoders -- the ONLY ceiling that may feed a reported cell (run_retrieval passes this).
+      "cosine" (default) = the cheap analytic geometry oracle, a DIAGNOSTIC ceiling for unit tests and
+                the degeneracy check ONLY; it is a cross-metric reference, never a reported s_res.
+    "probe" trains R probes on the ceiling; the default keeps unit tests cheap and probe-free.
     """
     constants = _REGISTRY_CONSTANTS if constants is None else constants
+    # Only s_res may be routed 'agnostic': its ceiling is set EXPLICITLY below (probe/cosine), so the
+    # by_regime['agnostic'] = alpha_det fallback is never read for it. ANY other agnostic-routed detector
+    # would silently take alpha_encoder numbers while stamped 'agnostic' — a latent mislabel. Fail loudly.
+    # Explicit raise, NOT `assert` (which `python -O` strips): a mis-routed detector would silently
+    # ship alpha_encoder numbers stamped 'agnostic', so this invariant must hold even under -O.
+    if not all(d == "s_res" for d, r in (routing or {}).items() if r == "agnostic"):
+        raise RuntimeError(
+            "only s_res may use the 'agnostic' regime (any other would silently get alpha_encoder numbers)")
     idx = torch.tensor(feats, dtype=torch.long)
     g_sel = bundle.g[idx]
     W_unit = g_sel / g_sel.norm(dim=1, keepdim=True).clamp_min(_TINY)
@@ -172,15 +190,21 @@ def clean_detectors_merged(bundle: "WorldBundle", feats: list[int], realized_l0:
     )
     alpha_acts = oracle_encode(bundle.h, bundle.g, realized_l0)[:, idx]
     trueA_acts = bundle.A[:, idx]
-    alpha_det = compute_all(DetectorInputs(acts_rec=alpha_acts, **common), constants)
-    trueA_det = compute_all(DetectorInputs(acts_rec=trueA_acts, **common), constants)
+    # s_res_mode="skip": neither regime's compute_all s_res is ever used (s_res is agnostic, set
+    # explicitly below) -- skipping it avoids computing-then-discarding a cosine s_res on the probe
+    # ceiling path, so no cosine is ever produced unless the cosine ceiling is explicitly requested.
+    alpha_det = compute_all(DetectorInputs(acts_rec=alpha_acts, **common), constants, s_res_mode="skip")
+    trueA_det = compute_all(DetectorInputs(acts_rec=trueA_acts, **common), constants, s_res_mode="skip")
     by_regime = {"alpha_encoder": alpha_det, "true_A": trueA_det, "agnostic": alpha_det}
     out: dict[str, torch.Tensor] = {}
     for name in alpha_det:                                  # all DETECTORS, in registry order
         regime = routing.get(name, "alpha_encoder")
         out[name] = by_regime[regime][name]
-    if s_res_ceiling == "probe":                            # like-for-like: probe on the oracle firing
-        out["s_res"] = s_res_probe(alpha_acts, bundle.h, W_unit, constants)
+    # s_res is set EXPLICITLY (never taken from compute_all): the probe on the α-encoder oracle firing
+    # (like-for-like reported ceiling) or, only when the cosine ceiling is explicitly asked for, the
+    # analytic geometry oracle. The report path always passes "probe"; "cosine" is a diagnostic ceiling.
+    out["s_res"] = (s_res_probe(alpha_acts, bundle.h, W_unit, constants) if s_res_ceiling == "probe"
+                    else s_res_cosine(W_unit))
     return out
 
 
@@ -223,19 +247,39 @@ def clean_grid(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[int, i
 def degenerate_clean_detectors(bundle: "WorldBundle", feats: list[int],
                                pairs: list[tuple[int, int]], constants: dict,
                                realized_l0: float, tol: float = 1e-9,
-                               routing: dict[str, str] | None = None) -> list[str]:
+                               routing: dict[str, str] | None = None,
+                               s_res_ceiling: str = "cosine") -> list[str]:
     """Clean detectors whose scored values are constant within `tol` across the recovered pairs.
 
     A near-constant detector column produces a meaningless AUROC (~0.5 from ties), so its Stage-0
     ceiling must be flagged DEGENERATE, not read as "the metric is weak even clean". With the
     oracle ENCODER the co-firing detectors are non-degenerate by construction (α-leakage spreads
     them), so this is a guard: it surfaces any residual collapse instead of silently scoring 0.5.
-    `routing` selects the same single/per-detector oracle as `clean_grid`. Returns the sorted list
-    of degenerate detector names."""
+    `routing`/`s_res_ceiling` MUST match `clean_grid`'s so the degeneracy flag is computed on the
+    SAME ceiling that is reported (else s_res is checked on cosine while the grid shows the probe).
+    Returns the sorted list of degenerate detector names."""
     if not feats or not pairs:
         return []
-    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing)
+    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing, s_res_ceiling)
     return _constant_scored_detectors(detectors, pairs, tol)
+
+
+def clean_grid_and_degenerate(bundle: "WorldBundle", feats: list[int],
+                              pairs: list[tuple[int, int]], y_label: torch.Tensor,
+                              columns: Sequence[str], constants: dict, realized_l0: float,
+                              routing: dict[str, str] | None = None,
+                              s_res_ceiling: str = "cosine", tol: float = 1e-9
+                              ) -> tuple[dict[str, dict[str, dict]], list[str]]:
+    """The Stage-0 clean grid AND its degenerate-detector list, computed from ONE `_clean_detectors`
+    pass. Prefer this over calling `clean_grid` + `degenerate_clean_detectors` separately: it (a)
+    guarantees the degeneracy flag is read off the SAME ceiling as the grid (so `s_res_ceiling`
+    cannot disagree between them) and (b) does not train the probe ceilings twice per seed."""
+    if not feats:
+        return {}, []
+    detectors = _clean_detectors(bundle, feats, realized_l0, constants, routing, s_res_ceiling)
+    grid = auroc_matrix(detectors, pairs, y_label, columns)
+    degenerate = _constant_scored_detectors(detectors, pairs, tol) if pairs else []
+    return grid, degenerate
 
 
 def _constant_scored_detectors(detectors: dict[str, torch.Tensor],
@@ -254,146 +298,84 @@ def _constant_scored_detectors(detectors: dict[str, torch.Tensor],
     return sorted(degen)
 
 
-def _support_status(cc: dict, tc: dict, min_retention: float
-                    ) -> tuple[str, int, int, int, int]:
-    """Classify how the trained-side scored support compares to the clean side.
-
-    Each side NaNs undefined cells independently, so the scored pair counts can differ even on
-    the SAME pair universe — and a Δ computed across a collapsed trained denominator ("nothing
-    changed on the 30% of pairs still scorable") must not read as a clean "survived". Returns
-    (`status`, n_pos_clean, n_neg_clean, n_pos_trained, n_neg_trained) where status is:
-      - "unknown"  : a side carries NO support keys at all — support is truly absent, NOT "same".
-      - "same"     : identical n on both sides.
-      - "collapsed": the smaller-class retention min(n_trained/n_clean) fell below `min_retention`.
-      - "mismatch" : n differ but retention is within tolerance.
-    """
-    have_c = ("n_pos" in cc) or ("n_neg" in cc)
-    have_t = ("n_pos" in tc) or ("n_neg" in tc)
-    np_c, nn_c = int(cc.get("n_pos", 0)), int(cc.get("n_neg", 0))
-    np_t, nn_t = int(tc.get("n_pos", 0)), int(tc.get("n_neg", 0))
-    if not (have_c and have_t):
-        return "unknown", np_c, nn_c, np_t, nn_t
-    if np_c == np_t and nn_c == nn_t:
-        return "same", np_c, nn_c, np_t, nn_t
-    ret_pos = (np_t / np_c) if np_c > 0 else 1.0
-    ret_neg = (nn_t / nn_c) if nn_c > 0 else 1.0
-    status = "collapsed" if min(ret_pos, ret_neg) < min_retention else "mismatch"
-    return status, np_c, nn_c, np_t, nn_t
-
-
-def survival_delta(clean: dict, trained_grid: dict, columns: Sequence[str],
-                   min_support_retention: float = 0.8,
-                   degenerate_detectors: Sequence[str] | None = None,
-                   clean_worked_floor: float = 0.55
-                   ) -> dict[str, dict[str, dict]]:
-    """Per (detector, column): the clean/trained AUROCs, their Δ, the inversion flag, and an
-    explicit SUPPORT STATUS. `delta = clean − trained`.
-
-    Detectors are taken from `trained_grid` (what actually ran) and columns from `columns`.
-    `delta` is NaN whenever either endpoint is NaN — an undefined ceiling or trained value
-    cannot yield a real attribution.
-
-    `inverted` requires a REAL flip: `trained < 0.5 AND clean > 0.5`. A destroyed cell erased the
-    signal (trained ≈ 0.5, `inverted=False`); an inverted cell had a clean signal that training
-    FLIPPED so the negatives now outscore the positives (a stronger phenomenon than erasure). A low
-    clean with a low trained is NOT an inversion (there was no signal to flip), so it stays False.
-
-    `support_status` (see `_support_status`) guards the attribution: a Δ on a `collapsed` cell rests
-    on a small surviving trained denominator and must NOT be read as a clean "survived"; a `mismatch`
-    is a mild count difference; `unknown` means the support was not reported. `same_support` is the
-    strict `support_status == "same"` — False on unknown/mismatch/collapsed. Cells needing a caveat
-    are collected by `stage0_caveats` and surfaced on the run_retrieval report so the headline reader
-    sees them without auditing every cell.
-
-    `clean_worked` gates the SURVIVED reading: a Δ≈0 means "survived" ONLY if the clean metric
-    actually WORKED — a clean ceiling at chance (never separated) with a trained value also at chance
-    is a Δ≈0 that reads as "survived" but is really "never worked" (e.g. a pooled clean 0.5239 = sub-
-    cells 0.056 & 1.000). A cell counts as `clean_worked` iff `clean >= clean_worked_floor` (0.55,
-    the primary gate — a fixed floor is required to catch a LARGE-n near-chance value whose CI is
-    tight) AND, when the clean cell carries a finite CI, `clean ci_lo > 0.5` (a conservative add-on
-    that only ever tightens the floor, for small-n cells whose point clears 0.55 but whose CI dips to
-    chance). Cells that did not work are surfaced by `stage0_caveats` as `clean_never_worked`.
-    """
-    degen = set(degenerate_detectors or ())
-    out: dict[str, dict[str, dict]] = {}
-    for det in trained_grid:
-        out[det] = {}
-        for col in columns:
-            cc = clean.get(det, {}).get(col, {})
-            tc = trained_grid.get(det, {}).get(col, {})
-            c = cc.get("auroc", float("nan"))
-            t = tc.get("auroc", float("nan"))
-            delta = (c - t) if (math.isfinite(c) and math.isfinite(t)) else float("nan")
-            status, np_c, nn_c, np_t, nn_t = _support_status(cc, tc, min_support_retention)
-            # SURVIVED floor: clean must clear the fixed floor, and (when a finite CI is present) its
-            # lower bound must clear chance. A missing/NaN CI falls back to the point floor alone.
-            cl_lo = cc.get("ci_lo")
-            ci_ok = (cl_lo is None or not isinstance(cl_lo, (int, float))
-                     or not math.isfinite(cl_lo) or cl_lo > 0.5)
-            clean_worked = bool(math.isfinite(c) and c >= clean_worked_floor and ci_ok)
-            out[det][col] = {
-                "clean": c, "trained": t, "delta": delta,
-                "inverted": bool(math.isfinite(t) and math.isfinite(c) and t < 0.5 and c > 0.5),
-                "n_pos_clean": np_c, "n_neg_clean": nn_c,
-                "n_pos_trained": np_t, "n_neg_trained": nn_t,
-                "support_status": status, "same_support": status == "same",
-                # a degenerate CLEAN ceiling (constant/undefined column) is a meaningless ~0.5 —
-                # mark every cell so its clean/delta is not read as a real attribution (silent-fail #1)
-                "degenerate": det in degen,
-                # a Δ≈0 is "survived" only if the clean metric worked (else "never worked", not survived)
-                "clean_worked": clean_worked,
-            }
-    return out
-
-
-def stage0_caveats(survival: dict) -> list[dict]:
-    """The Stage-0 cells whose Δ needs a caveat, for surfacing on the top-level report.
-
-    Returns `[{detector, column, status}, ...]` for every cell whose CLEAN ceiling is `degenerate`,
-    OR whose clean metric did not work (`clean_worked` False → `clean_never_worked`), OR whose
-    `support_status` is not "same" (collapsed / mismatch / unknown) — the cells where a bare Δ is not
-    a clean metric-vs-SAE attribution. Precedence: `degenerate` (a constant clean ceiling voids the Δ
-    entirely) > `clean_never_worked` (a clean ceiling at chance makes a Δ≈0 "never worked", not
-    "survived") > the support status. Detector/column order follows the survival dict.
+def stage0_caveats(clean_grid: dict) -> list[dict]:
+    """The Stage-0 ORACLE cells whose ceiling reading needs a caveat (clean-only — there is no
+    clean-vs-trained comparison object any more; the oracle grid and the trained grid are two
+    standalone readouts). Returns `[{detector, column, status}, ...]` for every clean cell that is
+    `degenerate` (a constant/undefined column → a meaningless ~0.5, not a real ceiling) or did not
+    work (`never_worked` — the metric never clears chance even at its own ideal). `degenerate` takes
+    precedence. Reads the flags stamped by `annotate_clean_grid`. Detector/column order follows the grid.
     """
     out: list[dict] = []
-    for det, cols in survival.items():
+    for det, cols in clean_grid.items():
         for col, cell in cols.items():
             if cell.get("degenerate"):
                 out.append({"detector": det, "column": col, "status": "degenerate"})
-            elif not cell.get("clean_worked", True):
-                out.append({"detector": det, "column": col, "status": "clean_never_worked"})
-            elif cell.get("support_status", "unknown") != "same":
-                out.append({"detector": det, "column": col,
-                            "status": cell.get("support_status", "unknown")})
+            elif not cell.get("worked", True):
+                out.append({"detector": det, "column": col, "status": "never_worked"})
     return out
 
 
 # A ceiling read off the exact oracle coefficients A (the `true_A` regime) is IDEALIZED: with an
 # overcomplete dictionary (F > D) no linear encoder can recover A, and even a perfect-GEOMETRY SAE
-# projects through α-overlapping directions and cannot reach it. So a `true_A`-routed cell's
-# Δ = clean − trained is NOT pure training-erasure — it also folds in the unrecoverable-A gap — and
-# its magnitude is NOT comparable to an `alpha_encoder` (realistic-encoder) cell's Δ.
+# projects through α-overlapping directions and cannot reach it. So a `true_A`-routed oracle cell is
+# an UNATTAINABLE ideal, not a ceiling any SAE could reach — read it as characterization, and do not
+# compare an idealized oracle cell against an `alpha_encoder` (achievable) one as if on one scale.
 IDEALIZED_REGIMES: tuple[str, ...] = ("true_A",)
 REGIME_CAVEAT: str = (
-    "Ceilings are per-detector: alpha_encoder cells use a realistic gated encoder (achievable), "
-    "true_A cells use the exact oracle coefficients A (IDEALIZED — unrecoverable when F>D, and "
-    "unreachable even by a perfect-geometry SAE). Read a true_A cell's delta as 'gap from the "
-    "idealized firing/recon oracle', not 'training erased a real signal', and do NOT compare delta "
-    "magnitudes across the two regimes.")
+    "Oracle ceilings are per-detector: alpha_encoder cells use a realistic gated encoder (achievable); "
+    "true_A cells use the exact oracle coefficients A (IDEALIZED — unrecoverable when F>D, unreachable "
+    "even by a perfect-geometry SAE). Read a true_A oracle cell as an UNATTAINABLE ideal (characterization "
+    "of the metric), NOT a ceiling any SAE could hit, and do not compare it against an alpha_encoder cell "
+    "as if the two oracles were on one scale.")
 
 
-def annotate_regime(survival: dict, routing: dict[str, str] | None) -> dict:
+def annotate_regime(survival: dict, routing: dict[str, str] | None,
+                    s_res_ceiling: str = "cosine") -> dict:
     """Stamp every survival cell with the oracle regime its ceiling was read from and whether that
     regime is idealized. In-place, and returns `survival` for chaining.
 
     `routing=None` (legacy single alpha-encoder oracle) marks every cell `alpha_encoder`,
-    `idealized=False` — so a reader never has to know which path produced the grid.
+    `idealized=False`. When `s_res_ceiling="probe"`, s_res is stamped `alpha_encoder_probe` (its
+    ceiling is a probe on the α-encoder oracle firing — NOT geometry-agnostic), not the routing's
+    "agnostic" label, so the per-cell regime does not misdescribe the s_res ceiling. Still
+    `idealized=False` (the α-encoder probe ceiling is achievable, not the unrecoverable-A ideal).
     """
     for det, cols in survival.items():
         regime = "alpha_encoder" if routing is None else routing.get(det, "alpha_encoder")
+        if det == "s_res" and s_res_ceiling == "probe":
+            regime = "alpha_encoder_probe"
         idealized = regime in IDEALIZED_REGIMES
         for cell in cols.values():
             cell["oracle_regime"] = regime
             cell["oracle_idealized"] = idealized
     return survival
+
+
+def annotate_clean_grid(clean_grid: dict, degenerate: Sequence[str],
+                        routing: dict[str, str] | None = None,
+                        s_res_ceiling: str = "cosine", worked_floor: float = 0.55) -> dict:
+    """Stamp each ORACLE (clean) grid cell with the characterization that says whether its ceiling
+    reading is REAL — so the oracle grid stands alone as "can the metric identify the property at its
+    ideal?", without any clean-vs-trained subtraction. In-place; returns `clean_grid`.
+
+      worked            : the metric clears chance at its ideal — `auroc >= worked_floor` (0.55) AND,
+                          when a finite CI is present, `ci_lo > 0.5` (a near-chance large-n value with a
+                          tight CI, or a clears-floor-but-CI-dips small-n value, is NOT `worked`).
+      degenerate        : the detector is in `degenerate` (a constant/undefined column → meaningless ~0.5).
+      oracle_regime /   : stamped by `annotate_regime` (which oracle firing produced this ceiling; and
+      oracle_idealized    whether it is the unattainable true-A ideal). s_res_ceiling='probe' labels
+                          s_res `alpha_encoder_probe`.
+    """
+    degen = set(degenerate or ())
+    for det, cols in clean_grid.items():
+        for cell in cols.values():
+            a = cell.get("auroc", float("nan"))
+            ci_lo = cell.get("ci_lo")
+            ci_ok = (ci_lo is None or not isinstance(ci_lo, (int, float))
+                     or not math.isfinite(ci_lo) or ci_lo > 0.5)
+            cell["worked"] = bool(isinstance(a, (int, float)) and math.isfinite(a)
+                                  and a >= worked_floor and ci_ok)
+            cell["degenerate"] = det in degen
+    annotate_regime(clean_grid, routing, s_res_ceiling=s_res_ceiling)
+    return clean_grid

@@ -47,8 +47,11 @@ def _index(name: str) -> int:
 def pair_label(tree: Tree) -> torch.Tensor:
     """`[F, F]` int8 answer key: the single class index of each ordered pair.
 
-    Class `LABELS[i]` -> the cell holds index `i`. The diagonal is 0. `unrelated` is assigned
-    exactly where no other class applies. Each predicate is checked independently and
+    Class `LABELS[i]` -> the cell holds index `i`. The diagonal is the `_UNSET` sentinel `-1` (a
+    self-pair is not a relation of any class: NOT index-0 is_a — so a consumer that forgets to mask
+    self-pairs can't read a self-pair as an is_a positive — and NOT `unrelated` either, which is
+    reserved for the genuine off-diagonal nulls). `unrelated` is assigned off-diagonal exactly where
+    no other class applies. Each predicate is checked independently and
     written through `assign`, which RAISES if a cell is claimed by two different classes
     — the non-intersecting invariant the single-label key depends on.
     """
@@ -109,8 +112,11 @@ def pair_label(tree: Tree) -> torch.Tensor:
             assign(a, b, name)
             assign(b, a, "reversed")
 
-    # the null: every off-diagonal pair with no declared property
+    # the null: every off-diagonal pair with no declared property becomes `unrelated`. The diagonal
+    # is left at the `_UNSET` sentinel (-1): a self-pair has no relation class — keeping it -1 (never
+    # index-0 is_a, and distinct from the off-diagonal `unrelated` nulls) means a consumer that
+    # forgets to mask self-pairs cannot mistake one for an is_a positive.
     off_diag = ~torch.eye(F, dtype=torch.bool)
     y[(y == _UNSET) & off_diag] = _index("unrelated")
-    y.fill_diagonal_(0)
+    y.fill_diagonal_(_UNSET)
     return y

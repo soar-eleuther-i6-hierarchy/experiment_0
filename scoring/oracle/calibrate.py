@@ -11,26 +11,31 @@ import dataclasses
 import math
 
 from scoring.core.registry import CONSTANTS, DETECTORS, SCORED_COLUMNS
-from scoring.oracle.ceiling import clean_grid
+from scoring.oracle.ceiling import DETECTOR_ORACLE_REGIME, clean_grid
 from scoring.core.world import regenerate_world
 from scoring.core.grid import pair_frame
 from toygen import spec, strengths
 from toygen.world import resolve_config
 
 
-def oracle_ceiling_grid(config_name: str, seed: int, n_tokens: int, target_l0: float | None = None, overrides: dict | None = None) -> dict:
+def oracle_ceiling_grid(config_name: str, seed: int, n_tokens: int, target_l0: float | None = None,
+                        overrides: dict | None = None, randomize_structure: bool = False) -> dict:
     """Per-(detector, column) clean-oracle ceiling AUROC grid for one config + seed.
 
     Rebuilds the same world the trained SAE would see (geometry + sampling both from `seed`),
     uses an identity match over all features (`feats = range(F)`), and grades the oracle
-    dictionary at the config's true L0. No SAE is loaded.
+    dictionary at the config's true L0. No SAE is loaded. Uses the SAME per-detector oracle routing
+    and probe s_res ceiling as `run_retrieval`, so these calibration ceilings match the ceilings the
+    scoring pipeline actually reports (not the legacy single alpha-encoder / cosine-s_res path).
     """
-    cfg = spec.replace(resolve_config(config_name, **(overrides or {})), seed=seed)
+    cfg = spec.replace(resolve_config(config_name, **(overrides or {})),
+                       seed=seed, randomize_structure=randomize_structure)
     bundle = regenerate_world(dataclasses.asdict(cfg), sample_seed=seed, n_tokens=n_tokens)
     feats = list(range(bundle.tree.F))
     pairs, y_label = pair_frame(feats, bundle.pair_labels)
     l0 = strengths.target_l0(bundle.tree) if target_l0 is None else target_l0
-    return clean_grid(bundle, feats, pairs, y_label, SCORED_COLUMNS, CONSTANTS, l0)
+    return clean_grid(bundle, feats, pairs, y_label, SCORED_COLUMNS, CONSTANTS, l0,
+                      routing=DETECTOR_ORACLE_REGIME, s_res_ceiling="probe")
 
 
 def aggregate_ceilings(grids: list[dict]) -> dict:
@@ -78,6 +83,8 @@ def main() -> None:
     ap.add_argument("--n-superparent", type=int, default=None)
     ap.add_argument("--seeds", type=int, nargs="+", default=[0])
     ap.add_argument("--n-tokens", type=int, default=200_000)
+    ap.add_argument("--randomize-structure", action="store_true",
+                    help="calibrate on seed-varied backbones (matches --randomize-structure training)")
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
@@ -86,7 +93,8 @@ def main() -> None:
     grids = []
     for s in args.seeds:
         try:
-            grids.append(oracle_ceiling_grid(args.config, s, args.n_tokens, overrides=overrides))
+            grids.append(oracle_ceiling_grid(args.config, s, args.n_tokens, overrides=overrides,
+                                             randomize_structure=args.randomize_structure))
         except ValueError as e:
             raise SystemExit(
                 f"oracle ceiling failed for seed {s}: {e}\n"

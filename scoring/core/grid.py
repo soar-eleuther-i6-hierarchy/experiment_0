@@ -645,7 +645,19 @@ def aggregate_seeds(reports: list[dict]) -> dict:
             svals = sorted(vals)
             median = svals[len(svals) // 2] if len(svals) % 2 else \
                 0.5 * (svals[len(svals) // 2 - 1] + svals[len(svals) // 2])
-            agg[det][col] = {"mean": _sigmoid(mean_l), "ci_lo": _sigmoid(mean_l - t_crit * se),
-                             "ci_hi": _sigmoid(mean_l + t_crit * se), "median": median,
-                             "n_seeds": len(vals)}
+            if sd == 0.0 and len(logits) > 1:
+                # All seeds clamped to the SAME logit (every seed saturated, e.g. AUROC 1.0 on H2/H4):
+                # the between-seed variance is 0 and a Student-t interval collapses to [mean, mean], a
+                # fabricated zero-width CI. Fall back to the ENVELOPE of the per-seed cell CIs (each cell
+                # carries its own finite-n logit CI) — the aggregate cannot honestly claim more certainty
+                # than any single seed already has.
+                lo_env = min((c["ci_lo"] for c in cells if c.get("ci_lo") is not None),
+                             default=_sigmoid(mean_l))
+                hi_env = max((c["ci_hi"] for c in cells if c.get("ci_hi") is not None),
+                             default=_sigmoid(mean_l))
+                ci_lo, ci_hi = lo_env, hi_env
+            else:
+                ci_lo, ci_hi = _sigmoid(mean_l - t_crit * se), _sigmoid(mean_l + t_crit * se)
+            agg[det][col] = {"mean": _sigmoid(mean_l), "ci_lo": ci_lo, "ci_hi": ci_hi,
+                             "median": median, "n_seeds": len(vals)}
     return agg

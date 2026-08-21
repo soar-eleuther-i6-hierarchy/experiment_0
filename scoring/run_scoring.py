@@ -81,14 +81,16 @@ def print_summary(res: dict) -> None:
     print("\n[3] fusion ensemble per seed (auroc + CI)")
     for s in seeds:
         e = res["retrieval"][s]["ensemble_h6"]
-        print(f"  seed{s}: auroc={e['auroc']:.3f} CI[{e.get('ci_lo'):.3f},{e.get('ci_hi'):.3f}]")
+        lo, hi = e.get("ci_lo"), e.get("ci_hi")
+        ci = f"[{lo:.3f},{hi:.3f}]" if lo is not None and hi is not None else "[n/a]"
+        print(f"  seed{s}: auroc={e['auroc']:.3f} CI{ci}")
 
     print("\n[4] absorption decomposition per seed")
     for s in seeds:
         ab = res["absorption"][s]
         print(f"  seed{s}: counts={ab['counts']} by_relation={ab['absorbed_by_relation']}")
 
-    print("\n[5] Stage-0 survival caveats per seed")
+    print("\n[5] Stage-0 oracle-ceiling caveats per seed (degenerate / never-worked)")
     for s in seeds:
         by: dict[str, int] = {}
         for c in res["retrieval"][s].get("stage0_caveats", []):

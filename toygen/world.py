@@ -118,7 +118,8 @@ def resolve_config(cfg_name: str, **overrides: int) -> spec.ToyConfig:
 
 
 def checkpoint_dirname(config_name: str, variant: str, k: int, expansion: int,
-                       overrides: dict[str, int], seed: int | None = None) -> str:
+                       overrides: dict[str, int], seed: int | None = None,
+                       randomize_structure: bool = False) -> str:
     """Checkpoint directory name, disambiguated by any active confound overrides and the seed.
 
     With no overrides this is the legacy stem `{config_name}-{variant}-k{k}-x{expansion}`,
@@ -126,15 +127,21 @@ def checkpoint_dirname(config_name: str, variant: str, k: int, expansion: int,
     `-pow-<tag>` suffix (sorted by key, so insertion order is irrelevant) is appended,
     so two differently-powered runs never collide on disk.
 
+    `randomize_structure` (opt-in) inserts a `-rand` tag so a SEED-VARIED-backbone run and a
+    fixed-lattice run with the SAME config/overrides/seed do not write into the same directory and
+    silently clobber each other's weights + toy_meta.json (their `resolved_config` differs).
+
     `seed` (opt-in) appends a terminal `-s{seed}` so two seeds trained into the same `--out`
-    directory never collide on disk and silently clobber each other's weights. Default
-    `None` reproduces the legacy name, so callers/checkpoints that pre-date this stay resolvable.
+    directory never collide on disk. Default `None`/`False` reproduce the legacy name, so
+    callers/checkpoints that pre-date these stay resolvable.
     """
     stem = f"{config_name}-{variant}-k{k}-x{expansion}"
     if overrides:
         tag = "-".join(f"{_OVERRIDE_ABBR.get(key, key)}{overrides[key]}"
                        for key in sorted(overrides))
         stem = f"{stem}-pow-{tag}"
+    if randomize_structure:
+        stem = f"{stem}-rand"
     if seed is not None:
         stem = f"{stem}-s{int(seed)}"
     return stem
@@ -153,24 +160,36 @@ _MIN_TOKENS_FOR_CONFOUND_CHECK = 100_000
 
 
 def _assert_confounds_powered(A: torch.Tensor, tree: tree_mod.Tree) -> None:
-    """Refuse a powered world whose frequency confound sits below edge_tau (would form no edges)."""
+    """Refuse a powered world whose frequency OR topical confound sits below edge_tau (would form no
+    edges). Both are co-firing confounds: if their pairs' median reverse coverage R(p|c) does not clear
+    edge_tau, the class forms no inferred edges, its negative class is empty, and the detector is never
+    actually challenged. A low `kappa` (topical) or a high `n_bind_ids` (frequency) can silently do this
+    while `validate_config` — which only checks the id-set Zipf mass — still passes."""
     from toygen import labels
     pl = labels.pair_label(tree)
-    freq = labels._index("frequency")
-    fp = (pl == freq).nonzero()
-    if fp.numel() == 0:
-        return
     firing = A > 0
     fire = firing.double().sum(0)
-    rs = [float((firing[:, p] & firing[:, c]).double().sum()) / max(float(fire[c]), 1.0)
-          for p, c in fp.tolist()]
-    med = float(torch.tensor(rs).median())
-    if med <= _EDGE_TAU_REFERENCE:
-        raise ValueError(
-            f"frequency confound is un-powered: median reverse coverage {med:.3f} <= edge_tau "
-            f"{_EDGE_TAU_REFERENCE} -> the token-bound pairs form no inferred edges, so the "
-            f"'frequency' negative class is empty and the detector is not actually challenged. "
-            f"LOWER n_bind_ids (a larger id set dilutes R) so the frequency pairs clear edge_tau.")
+
+    def _median_reverse_coverage(cls_name: str) -> float | None:
+        fp = (pl == labels._index(cls_name)).nonzero()
+        if fp.numel() == 0:
+            return None
+        rs = [float((firing[:, p] & firing[:, c]).double().sum()) / max(float(fire[c]), 1.0)
+              for p, c in fp.tolist()]
+        return float(torch.tensor(rs).median())
+
+    knob_hint = {
+        "frequency": "LOWER n_bind_ids (a larger id set dilutes R)",
+        "topical": "RAISE kappa (stronger topic modulation lifts R)",
+    }
+    for cls_name in ("frequency", "topical"):
+        med = _median_reverse_coverage(cls_name)
+        if med is not None and med <= _EDGE_TAU_REFERENCE:
+            raise ValueError(
+                f"{cls_name} confound is un-powered: median reverse coverage {med:.3f} <= edge_tau "
+                f"{_EDGE_TAU_REFERENCE} -> the {cls_name} pairs form no inferred edges, so the "
+                f"'{cls_name}' negative class is empty and the detector is not actually challenged. "
+                f"{knob_hint[cls_name]} so the {cls_name} pairs clear edge_tau.")
 
 
 def build_world(cfg_name: str, n_tokens: int, seed: int, device: str,

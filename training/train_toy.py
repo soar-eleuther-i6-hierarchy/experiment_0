@@ -139,7 +139,8 @@ def main() -> None:
             yield h[idx]
 
     out = Path(args.out) / checkpoint_dirname(
-        args.config, "matryoshka", k, args.expansion, overrides, seed=args.seed)
+        args.config, "matryoshka", k, args.expansion, overrides, seed=args.seed,
+        randomize_structure=args.randomize_structure)
     out.mkdir(parents=True, exist_ok=True)
 
     # train_sae drives BatchTopK during training, EMA-calibrates the scalar threshold, and writes

@@ -244,7 +244,7 @@ def joint_child_mass(acts_rec: torch.Tensor, Fm: torch.Tensor, em: torch.Tensor)
     R = acts_rec.shape[1]
     energy = (acts_rec.double() ** 2)                    # [n, R]
     energy_total = energy.sum(dim=0)                     # [R]
-    r_mass = torch.full((R,), _NAN, dtype=DT)
+    r_mass = torch.full((R,), _NAN, dtype=DT, device=acts_rec.device)  # match input device (CUDA-safe)
     for p in range(R):
         kids = em[p].nonzero(as_tuple=True)[0]
         if float(energy_total[p]) <= 0.0:
@@ -265,7 +265,7 @@ def sibling_redundancy(em: torch.Tensor, cofire: torch.Tensor, fire: torch.Tenso
     a redundant/splitting parent scores LOW.
     """
     R = em.shape[0]
-    red = torch.full((R,), _NAN, dtype=DT)
+    red = torch.full((R,), _NAN, dtype=DT, device=em.device)  # match input device (CUDA-safe)
     for p in range(R):
         kids = em[p].nonzero(as_tuple=True)[0]
         k = int(kids.numel())
@@ -363,13 +363,19 @@ def compute_all(inputs: DetectorInputs, constants: dict,
     Applies each detector's frozen `DETECTOR_SIGN` exactly once. Any residual +/-inf is
     coerced to NaN so downstream means/sorts see only finite-or-NaN.
 
-    `s_res_mode` selects the s_res variant: "cosine" (default) is the cheap analytic geometry
-    oracle used by every CEILING caller (no probe training); "probe" is the real Tree-SAE probe
-    metric, used by the trained retrieval detector. Only s_res depends on the mode — the other
-    nine detectors are identical either way.
+    `s_res_mode` selects the s_res variant:
+      "probe"  -- the real Tree-SAE probe metric; the SOLE mode that may feed a REPORTED s_res cell
+                  (trained retrieval detector AND the probe-on-oracle ceiling).
+      "cosine" -- the cheap analytic geometry oracle. A DIAGNOSTIC / calibration reference and the
+                  cheap default used by unit tests; it must NEVER be the s_res of a reported grid
+                  (the report path passes "probe" explicitly and asserts the probe regime).
+      "skip"   -- s_res returned as an all-NaN placeholder; the caller supplies the real s_res
+                  itself. Used only by `clean_detectors_merged`, which sets s_res explicitly (probe
+                  or cosine ceiling) rather than computing-then-discarding compute_all's copy.
+    Only s_res depends on the mode — the other nine detectors are identical in every mode.
     """
-    if s_res_mode not in ("cosine", "probe"):
-        raise ValueError(f"s_res_mode must be 'cosine' or 'probe', got {s_res_mode!r}")
+    if s_res_mode not in ("cosine", "probe", "skip"):
+        raise ValueError(f"s_res_mode must be 'cosine', 'probe', or 'skip', got {s_res_mode!r}")
     if inputs.h is None or inputs.b_dec is None or inputs.tokens is None:
         missing = [n for n in ("h", "b_dec", "tokens") if getattr(inputs, n) is None]
         readers = "recon_2a / token_freq_survival"
@@ -397,6 +403,9 @@ def compute_all(inputs: DetectorInputs, constants: dict,
             constants["freq_min_fire_low"]),
         "recon_2a": recon_2a(inputs.acts_rec, inputs.h, inputs.W_raw, inputs.b_dec, Fm),
         "s_res": (s_res_cosine(inputs.W_unit) if s_res_mode == "cosine"
+                  else torch.full((inputs.W_unit.shape[0], inputs.W_unit.shape[0]), float("nan"),
+                                  dtype=inputs.W_unit.dtype, device=inputs.W_unit.device)
+                  if s_res_mode == "skip"
                   else s_res_probe(inputs.acts_rec, inputs.h, inputs.W_unit, constants)),
         "sibling_redundancy": sibling_redundancy(em, cofire, fire),
         "joint_child_mass": joint_child_mass(inputs.acts_rec, Fm, em),

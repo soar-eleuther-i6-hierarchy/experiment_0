@@ -1,17 +1,17 @@
 """
 Settings for building a synthetic toy world.
 
-`ToyConfig` contains knobs that can be tuned in the constructed toy tress such as tree shape, how often features fire, their geometry, their loudness, and (optionally) a battery of distractors. Every value is a design choice made up front, and the rest of `toygen/` just builds the world these configurations describe.
+`ToyConfig` contains knobs that can be tuned in the constructed toy trees such as tree shape, how often features fire, their geometry, their loudness, and (optionally) a battery of distractors. Every value is a design choice made up front, and the rest of `toygen/` just builds the world these configurations describe.
 
-Three ready-made recipes at the bottom:
+Two ready-made recipes at the bottom:
   - backbone: the clean tree only (is_a, firing_only, sibling, transitive).
   - full: backbone plus the confounds - realistic look-alikes the metrics must not be fooled by.
-  - minimal:  a small backbone for quick bring-up.
 
 Each planted property maps to a reported SAE phenomenon (one reference each):
   is_a / sibling / transitive:  hierarchical & categorical concept geometry -- Park et al. 2024 (arXiv:2406.01506)
   firing_only:  the orthogonal-geometry null, i.e. is_a's hard negative (contrast to the above)
-  superparent / broad_parent:  high-density and feature-splitting features -- Bricken et al. 2023 (Towards Monosemanticity)
+  superparent:  the always-on / high-base-rate confound (a childless, high-firing distractor) -- NOT a Bricken term; it is the base-rate foil the coverage / out-degree metrics must not be fooled by
+  broad_parent:  a genuine wide parent (feature-splitting family) -- Bricken et al. 2023 (Towards Monosemanticity)
   token_bound:  single-token / spurious co-activation features -- Bricken et al. 2023
   topical:  co-occurring feature clusters ("lobes") -- Li et al. 2024 (arXiv:2410.19750)
 Dictionary-side properties (absorption, feature splitting, merging) are induced by SAE
@@ -44,7 +44,9 @@ class ToyConfig:
     randomize_structure: bool = False  # opt-in: draw a seed-varied backbone (ragged branching/depth,
                                      # stratified is-a/firing_only, mass-preserving edge probs) instead
                                      # of the fixed lattice. Off = the exact deterministic tree as before.
-                                     # The confound battery is UNCHANGED and identical across seeds.
+                                     # The confound battery is regenerated per seed: frequency and topical
+                                     # counts are seed-invariant, but the superparent class size scales
+                                     # with F (2*(F-1)*n_superparent), so it is NOT identical across seeds.
 
     # --- firing -------------------------------------------------------------
     root_p: float = 0.18             # a root fires on this fraction of tokens
@@ -73,7 +75,7 @@ class ToyConfig:
     Z: int = 8                       # number of topics (used by the topical confound)
     zipf_s: float = 1.05             # Zipf exponent controlling how skewed token frequencies are
 
-    # --- confounds (enabled by confounds=True; off in backbone / minimal) ---
+    # --- confounds (enabled by confounds=True; off in backbone) ---
     confounds: bool = False          # master switch for the whole distractor battery below
     n_superparent: int = 1           # always-on wide parents -- the base-rate confound
     n_broad_parent: int = 1          # genuine wide parents -- the superparent's honest foil, so out-degree isn't trivially decisive
@@ -116,15 +118,7 @@ def full_config() -> ToyConfig:
     return ToyConfig(name="full", confounds=True)
 
 
-def minimal_config() -> ToyConfig:
-    """Smallest world for quick bring-up: a 3-root backbone, no confounds. Still
-    exercises is_a and firing_only, but is small enough to train a real SAE on
-    quickly. K is lowered to 2 to match the smaller forest's firing mass."""
-    return ToyConfig(name="minimal", confounds=False, n_roots=3, K=2)
-
-
 CONFIGS = {
     "backbone": backbone_config,
     "full": full_config,
-    "minimal": minimal_config,
 }
