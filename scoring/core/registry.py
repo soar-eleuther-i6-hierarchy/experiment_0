@@ -34,11 +34,6 @@ POSITIVE_LABEL: str = "is_a"
 # Detectors symmetric in (parent, child). A symmetric negative class counts (a,b) and (b,a) as two identical negatives.
 SYMMETRIC_DETECTORS: tuple[str, ...] = ("pmi",)
 
-# The general-purpose is-a detectors in the fusion ensemble.
-ENSEMBLE_DETECTORS: tuple[str, ...] = (
-    "coverage_R", "asymmetry_R", "pmi", "recon_2a", "s_res", "token_freq_survival",
-)
-
 # Numeric knobs the detectors and scorer read by name.
 CONSTANTS: dict[str, float] = {
     "fire_thresh": 0.0,        # firing := activation > 0 (BatchTopK nonzero == top-k)

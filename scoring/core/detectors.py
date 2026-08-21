@@ -365,17 +365,14 @@ def compute_all(inputs: DetectorInputs, constants: dict,
 
     `s_res_mode` selects the s_res variant:
       "probe"  -- the real Tree-SAE probe metric; the SOLE mode that may feed a REPORTED s_res cell
-                  (trained retrieval detector AND the probe-on-oracle ceiling).
+                  (the trained retrieval detector).
       "cosine" -- the cheap analytic geometry oracle. A DIAGNOSTIC / calibration reference and the
                   cheap default used by unit tests; it must NEVER be the s_res of a reported grid
                   (the report path passes "probe" explicitly and asserts the probe regime).
-      "skip"   -- s_res returned as an all-NaN placeholder; the caller supplies the real s_res
-                  itself. Used only by `clean_detectors_merged`, which sets s_res explicitly (probe
-                  or cosine ceiling) rather than computing-then-discarding compute_all's copy.
     Only s_res depends on the mode — the other nine detectors are identical in every mode.
     """
-    if s_res_mode not in ("cosine", "probe", "skip"):
-        raise ValueError(f"s_res_mode must be 'cosine', 'probe', or 'skip', got {s_res_mode!r}")
+    if s_res_mode not in ("cosine", "probe"):
+        raise ValueError(f"s_res_mode must be 'cosine' or 'probe', got {s_res_mode!r}")
     if inputs.h is None or inputs.b_dec is None or inputs.tokens is None:
         missing = [n for n in ("h", "b_dec", "tokens") if getattr(inputs, n) is None]
         readers = "recon_2a / token_freq_survival"
@@ -403,9 +400,6 @@ def compute_all(inputs: DetectorInputs, constants: dict,
             constants["freq_min_fire_low"]),
         "recon_2a": recon_2a(inputs.acts_rec, inputs.h, inputs.W_raw, inputs.b_dec, Fm),
         "s_res": (s_res_cosine(inputs.W_unit) if s_res_mode == "cosine"
-                  else torch.full((inputs.W_unit.shape[0], inputs.W_unit.shape[0]), float("nan"),
-                                  dtype=inputs.W_unit.dtype, device=inputs.W_unit.device)
-                  if s_res_mode == "skip"
                   else s_res_probe(inputs.acts_rec, inputs.h, inputs.W_unit, constants)),
         "sibling_redundancy": sibling_redundancy(em, cofire, fire),
         "joint_child_mass": joint_child_mass(inputs.acts_rec, Fm, em),
