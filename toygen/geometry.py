@@ -7,7 +7,7 @@ the two per-feature steps must interleave: orthogonalising `u_k` against its anc
 span needs `g` for every ancestor, which the earlier features have already built.
 
 The `Lambda` returned here is read off the construction, not `U^T G` (the two differ
-once siblings are involved). See `tests_local/test_toygen.py::test_gram_route_is_not_lambda`.
+once siblings are involved); the toygen tests pin this Gram-vs-Lambda distinction.
 """
 
 from __future__ import annotations
