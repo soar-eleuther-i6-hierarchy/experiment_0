@@ -22,9 +22,12 @@ The trained driver that feeds real checkpoint activations through this toolkit l
 
 from __future__ import annotations
 
+import logging
 import math
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 from scoring.core.detectors import DetectorInputs
 from scoring.core.registry import (
@@ -233,6 +236,96 @@ def _effective_n(mat: torch.Tensor, pairs: list[tuple[int, int]], y_label: torch
         if inside and not math.isnan(float(mat[a, b])):
             seen.add(frozenset((a, b)))
     return len(seen)
+
+
+def _effective_n_mask(mat: torch.Tensor, pairs: list[tuple[int, int]],
+                      mask: torch.Tensor) -> int:
+    """Unordered count of finite-scored pairs selected by a boolean `mask` over pairs —
+    the mask-based twin of `_effective_n` (which keys off a single class NAME). Needed for
+    property-vs-rest, whose negative population is "everything else", not one class."""
+    seen = set()
+    for (a, b), inside in zip(pairs, mask.tolist()):
+        if inside and not math.isnan(float(mat[a, b])):
+            seen.add(frozenset((a, b)))
+    return len(seen)
+
+
+def property_vs_rest_grid(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
+                          y_label: torch.Tensor, columns: tuple[str, ...],
+                          label_masks: dict[str, torch.Tensor] | None = None
+                          ) -> dict[str, dict[str, dict]]:
+    """AUROC(D, C-vs-rest) for every detector x column: column C = positives, EVERYTHING
+    ELSE off-diagonal = negatives.
+
+    The property-vs-rest generalization of `auroc_matrix` (which locks the positive to
+    `is_a`). Each column is scored as its own class against the union of all other classes,
+    so a detector that isolates, say, `frequency` shows up on the `frequency` column even
+    though it is useless for `is_a`. Orientation stays FROZEN (never argmaxed): an AUROC
+    below 0.5 is a real INVERTED isolator and is reported as-is — the both-tails cascade
+    downstream reads it, so flipping it here would hide half the signal.
+
+    A generative column's positives come from the single-label `y_label` (`class_members`).
+    A column named in `label_masks` instead takes its positives from the given boolean mask
+    over `pairs` — for the LATENT-side columns (`absorbed`, `merged`) whose truth OVERLAPS a
+    generative class (an absorbed edge is also an is_a edge), so they cannot live in the
+    single-label `y_label`. Their "rest" is genuinely everything-not-that-mask, is_a pairs
+    included — the correct property-vs-rest semantics.
+
+    NaN/empty-column discipline: a column with 0 positive (or 0 negative) pairs yields an
+    all-NaN cell (auroc/ci NaN, n_pos or n_neg 0) and is logged once — never a crash. This
+    is the SUCCESS path for an over-parameterized SAE with no `absorbed`/`merged` edges,
+    not a failure. The per-cell schema matches `auroc_matrix` (auroc/n_pos/n_neg/n_pos_ci/
+    n_neg_ci/ci_lo/ci_hi/n_dropped) so `aggregate_seeds` consumes either grid unchanged.
+    """
+    label_masks = label_masks or {}
+    pa = torch.tensor([a for a, _ in pairs], dtype=torch.long)
+    pb = torch.tensor([b for _, b in pairs], dtype=torch.long)
+    # Column membership is detector-independent; compute the masks once and log empties once
+    # (not F times inside the detector loop). A column in `label_masks` uses its explicit mask;
+    # otherwise the single-label y_label decides membership.
+    col_masks: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
+    for col in columns:
+        if col in label_masks:
+            pos_mask = label_masks[col].to(torch.bool)
+        else:
+            pos_mask = class_members(y_label, col)
+        neg_mask = ~pos_mask                         # everything else (pairs are all off-diagonal)
+        if int(pos_mask.sum()) == 0:
+            logger.warning("property_vs_rest_grid: column %r has 0 positive pairs — NaN cell", col)
+        elif int(neg_mask.sum()) == 0:
+            logger.warning("property_vs_rest_grid: column %r has 0 negative pairs — NaN cell", col)
+        col_masks[col] = (pos_mask, neg_mask)
+
+    out: dict[str, dict[str, dict]] = {}
+    for det, mat in detectors.items():
+        symmetric = det in SYMMETRIC_DETECTORS
+        vals_all = mat[pa, pb].double()              # vectorized gather, once per detector
+        out[det] = {}
+        for col in columns:
+            pos_mask, neg_mask = col_masks[col]
+            pos, neg = vals_all[pos_mask], vals_all[neg_mask]
+            n_dropped = int(torch.isnan(pos).sum() + torch.isnan(neg).sum())
+            a = auroc(pos, neg)
+            n_pos = int((~torch.isnan(pos)).sum())
+            n_neg = int((~torch.isnan(neg)).sum())
+            # Symmetric detectors give (a,b) and (b,a) identical values, so BOTH the column
+            # and its rest can double-count independent comparisons; the honest CI n is the
+            # UNORDERED count on each side. The AUROC point estimate is unaffected.
+            if symmetric:
+                n_pos_ci = _effective_n_mask(mat, pairs, pos_mask)
+                n_neg_ci = _effective_n_mask(mat, pairs, neg_mask)
+            else:
+                n_pos_ci, n_neg_ci = n_pos, n_neg
+            # N-aware clamp from the smaller class (same rule as auroc_matrix/aggregate_seeds),
+            # so a saturated cell reports a finite, n-tight CI instead of a degenerate one.
+            n_ci = (max(1, min(int(n_pos_ci), int(n_neg_ci)))
+                    if (n_pos_ci is not None and n_neg_ci is not None) else 1)
+            cell_clamp = max(CONSTANTS["auroc_clamp"], 1.0 / (2.0 * n_ci))
+            lo, hi = logit_ci(a, n_pos_ci, n_neg_ci, cell_clamp)
+            out[det][col] = {"auroc": a, "n_pos": n_pos, "n_neg": n_neg,
+                             "n_pos_ci": n_pos_ci, "n_neg_ci": n_neg_ci,
+                             "ci_lo": lo, "ci_hi": hi, "n_dropped": n_dropped}
+    return out
 
 
 # --------------------------------------------------------------------------

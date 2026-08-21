@@ -3,8 +3,8 @@
 For each seed the driver runs the three scorers on one checkpoint:
 
   * ``run_recovery``   — Hungarian feature matching + realized-L0 / architecture provenance;
-  * ``run_retrieval``  — the relationship-retrieval AUROC grid, the Stage-0 clean-ceiling
-                          survival map, and the class-balanced ensemble pooled AUROC;
+  * ``run_retrieval``  — the property-vs-rest relationship-retrieval AUROC grid (each
+                          generative class vs the rest, scored by the 10 firewalled detectors);
   * ``run_absorption`` — the absorption / decoder-multiplicity / composition decomposition.
 
 Every per-seed report is written to ``<out>/`` as JSON, then ``aggregate_seeds`` combines the
@@ -27,9 +27,13 @@ from pathlib import Path
 
 from scoring.trained.absorption import run_absorption
 from scoring.trained.recovery import run_recovery
-from scoring.core.registry import DETECTORS, SCORED_COLUMNS
+from scoring.core.registry import DETECTORS, LATENT_COLUMNS
 from scoring.core.grid import aggregate_seeds
 from scoring.trained.retrieval import run_retrieval
+from toygen import labels
+
+# The property-vs-rest grid columns: the generative classes plus the latent-side ones.
+_GRID_COLS = tuple(labels.LABELS) + LATENT_COLUMNS
 
 
 def score_seeds(ckpt_glob: str, seeds: list[int], out: Path, n_tokens: int) -> dict:
@@ -68,34 +72,22 @@ def print_summary(res: dict) -> None:
         print(f"  seed{s}: L0={rec.get('realized_l0'):.2f} arch={rec.get('architecture')} "
               f"n_recovered={ret.get('n_recovered')}")
 
-    print("\n[2] across-seed AUROC grid (mean; is_a vs each column)")
-    print("  " + " " * 20 + "".join(f"{c[:7]:>8}" for c in SCORED_COLUMNS))
+    print("\n[2] across-seed property-vs-rest AUROC (mean; each column vs the rest)")
+    print("  " + " " * 20 + "".join(f"{c[:7]:>8}" for c in _GRID_COLS))
     for det in DETECTORS:
         row = agg.get(det, {})
         cells = "".join(
             (f"{m:>8.2f}" if isinstance((m := row.get(c, {}).get("mean")), float) and m == m
              else f"{'--':>8}")
-            for c in SCORED_COLUMNS)
+            for c in _GRID_COLS)
         print(f"  {det:20s}{cells}")
 
-    print("\n[3] fusion ensemble per seed (auroc + CI)")
-    for s in seeds:
-        e = res["retrieval"][s]["ensemble_h6"]
-        lo, hi = e.get("ci_lo"), e.get("ci_hi")
-        ci = f"[{lo:.3f},{hi:.3f}]" if lo is not None and hi is not None else "[n/a]"
-        print(f"  seed{s}: auroc={e['auroc']:.3f} CI{ci}")
-
-    print("\n[4] absorption decomposition per seed")
+    print("\n[3] absorption decomposition + split readout per seed")
     for s in seeds:
         ab = res["absorption"][s]
-        print(f"  seed{s}: counts={ab['counts']} by_relation={ab['absorbed_by_relation']}")
-
-    print("\n[5] Stage-0 oracle-ceiling caveats per seed (degenerate / never-worked)")
-    for s in seeds:
-        by: dict[str, int] = {}
-        for c in res["retrieval"][s].get("stage0_caveats", []):
-            by[c["status"]] = by.get(c["status"], 0) + 1
-        print(f"  seed{s}: {by}")
+        sp = res["retrieval"][s].get("split_readout", {})
+        print(f"  seed{s}: counts={ab['counts']} by_relation={ab['absorbed_by_relation']} "
+              f"n_split={sp.get('n_split', '--')}")
 
 
 def main() -> None:

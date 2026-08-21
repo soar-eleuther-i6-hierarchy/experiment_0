@@ -17,11 +17,17 @@ DETECTOR_SIGN: dict[str, int] = {
     "sibling_redundancy": -1, "joint_child_mass": 1, "outdegree": -1,
 }
 
-# The confound columns scored against is_a 
+# The confound columns scored against is_a
 SCORED_COLUMNS: tuple[str, ...] = (
     "firing_only", "sibling", "superparent", "frequency", "topical",
     "transitive", "reversed", "unrelated",
 )
+
+# Latent-side (dictionary-damage) scoring columns — NOT generative pair_label classes. Their
+# positives come from the absorption classification (truth+trained-derived), not the single-label
+# answer key, because they OVERLAP the generative classes (an absorbed edge is also an is_a edge).
+# `split` is per-latent (per-feature), so it is a side readout, not a pair column.
+LATENT_COLUMNS: tuple[str, ...] = ("absorbed", "merged")
 
 POSITIVE_LABEL: str = "is_a"
 
