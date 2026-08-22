@@ -58,19 +58,75 @@
 % [MAIN 2]
 \begin{table}[tbp]
   \centering
-  \small
-  \caption{\textbf{Block pair B0$\rightarrow$B1 on \texttt{gemma-2-2b}, all 6 graded layers.} Read left to right: coverage proposes thousands of edges, the reconstruction filter keeps most of them, and the independence null rejects most of them --- the over-connection is what the parent's own firing rate already forces, not capture of frequent tokens, which the frequency control puts at 1--2\%. Multi-parenting is the measure that does not depend on the candidate set and the only one of the project's original four claims to survive BOS exclusion (Table~\ref{tab:bos}). The $S_\mathrm{res}$ pass has been run on every graded layer; its rates are only comparable against the shared null of Table~\ref{tab:null}.}
+  \footnotesize
+  \caption{\textbf{Every graded block pair, at every graded layer, on both SAE sources.} 18 graded pairs on \texttt{gemma-2-2b} and 28 on the PCFG Matryoshka SAEs, under one threshold set that is tuned to neither (Table~\ref{tab:setup}). Read left to right: coverage proposes thousands of edges, the reconstruction filter keeps most of them, and the independence null rejects most of them --- the over-connection is what the parent's own firing rate already forces, not capture of frequent tokens, which the frequency control puts at 1--2\% in the outermost pair. Read down instead and the claim is locational: multi-parenting sits at the coarsest boundary B0$\rightarrow$B1 at every layer of both sources, while the deeper pairs fail the frequency control instead. Multi-parenting is the measure that does not depend on the candidate set and the only one of the project's original four claims to survive BOS exclusion (Table~\ref{tab:bos}). A pair the run never computed carries its reason rather than being dropped, and a pair that proposed nothing shows a candidate count of zero with the columns downstream of it blank: neither is the same statement as a clean pair. The $S_\mathrm{res}$ pass has been run on every graded layer of both sources and on every pair, not on the outermost one alone; its rates are only comparable against the shared null of Table~\ref{tab:null}, because a top-$k$ rank rule is only as strict as the dictionary is large.}
+  \label{tab:results}
   \label{tab:gemma}
-  \begin{tabular}{lrrrrrr}
+  \begin{tabular}{llrrrrrr}
     \toprule
-    Layer & Candidates & Recon. & At chance & Freq.-driven & $\geq 2$ parents & $S_\mathrm{res}$ \\
+    Pair & Layer & Candidates & Recon. & At chance & Freq.-driven & $\geq 2$ parents & $S_\mathrm{res}$ \\
     \midrule
-    L1 & 2,929 & 86\% & 75\% & 0.7\% & 100\% & 33/1,642 \\
-    L3 & 1,971 & 90\% & 69\% & 0.9\% & 99\% & 28/1,602 \\
-    L6 & 2,428 & 86\% & 86\% & 1.0\% & 100\% & 10/1,700 \\
-    L12 & 1,473 & 54\% & 76\% & 1.8\% & 100\% & 22/1,111 \\
-    L18 & 1,129 & 75\% & 71\% & 1.3\% & 89\% & 8/867 \\
-    L24 & 2,273 & 74\% & 80\% & 2.2\% & 100\% & 55/1,387 \\
+    \multicolumn{8}{l}{\textbf{\texttt{gemma-2-2b} --- $D = 32,768$, 5 nested blocks}} \\
+    \addlinespace[1pt]
+    B0$\rightarrow$B1 & L1 & 2,929 & 86\% & 75\% & 0.7\% & 100\% & 33/1,642 \\
+     & L3 & 1,971 & 90\% & 69\% & 0.9\% & 99\% & 28/1,602 \\
+     & L6 & 2,428 & 86\% & 86\% & 1.0\% & 100\% & 10/1,700 \\
+     & L12 & 1,473 & 54\% & 76\% & 1.8\% & 100\% & 22/1,111 \\
+     & L18 & 1,129 & 75\% & 71\% & 1.3\% & 89\% & 8/867 \\
+     & L24 & 2,273 & 74\% & 80\% & 2.2\% & 100\% & 55/1,387 \\
+    \addlinespace[2pt]
+    B1$\rightarrow$B2 & L1 & 1,861 & 20\% & 10\% & 48.8\% & 48\% & 111/1,847 \\
+     & L3 & 1,387 & 46\% & 57\% & 8.4\% & 35\% & 71/1,377 \\
+     & L6 & 280 & 36\% & 27\% & 27.8\% & 19\% & 53/278 \\
+     & L12 & 621 & 32\% & 42\% & 24.2\% & 22\% & 65/613 \\
+     & L18 & 1,748 & 37\% & 81\% & 11.1\% & 8\% & 66/865 \\
+     & L24 & 424 & 52\% & 4\% & 20.2\% & 26\% & 167/417 \\
+    \addlinespace[2pt]
+    B2$\rightarrow$B3 & L1 & 16,729 & 2\% & 0\% & 96.3\% & 57\% & 171/16,640 \\
+     & L3 & 4,379 & 41\% & 64\% & 21.3\% & 16\% & 252/2,426 \\
+     & L6 & 762 & 31\% & 0\% & 41.5\% & 14\% & 216/739 \\
+     & L12 & 1,747 & 9\% & 0\% & 77.7\% & 22\% & 212/1,720 \\
+     & L18 & 4,195 & 10\% & 0\% & 82.4\% & 31\% & 379/4,145 \\
+     & L24 & 4,867 & 14\% & 59\% & 10.1\% & 24\% & 611/3,978 \\
+    \addlinespace[2pt]
+    B3$\rightarrow$B4 & --- & \multicolumn{6}{c}{\emph{not computed: 6,144$\times$24,576 exceeds the memory budget}} \\
+    \addlinespace[3pt] \midrule \addlinespace[2pt]
+    \multicolumn{8}{l}{\textbf{PCFG Matryoshka --- $D = 1,792$, 8 nested blocks}} \\
+    \addlinespace[1pt]
+    B0$\rightarrow$B1 & L0 & 749 & 97\% & 90\% & 0.0\% & 100\% & 4/643 \\
+     & L1 & 327 & 100\% & 95\% & 0.0\% & 99\% & 0/327 \\
+     & L2 & 111 & 92\% & 0\% & 0.0\% & 26\% & 3/107 \\
+     & L3 & 781 & 95\% & 18\% & 1.2\% & 99\% & 4/772 \\
+    \addlinespace[2pt]
+    B1$\rightarrow$B2 & L0 & 8 & 100\% & 0\% & 0.0\% & 67\% & 2/8 \\
+     & L1 & 1 & 100\% & 0\% & 0.0\% & 0\% & 1/1 \\
+     & L2 & 1 & 100\% & 0\% & 0.0\% & 0\% & 1/1 \\
+     & L3 & 2 & 100\% & 0\% & 0.0\% & 0\% & 0/2 \\
+    \addlinespace[2pt]
+    B2$\rightarrow$B3 & L0 & 2 & 100\% & 0\% & 0.0\% & 0\% & 1/2 \\
+     & L1 & 2 & 100\% & 0\% & 0.0\% & 100\% & 1/2 \\
+     & L2 & 0 & --- & --- & --- & --- & --- \\
+     & L3 & 0 & --- & --- & --- & --- & --- \\
+    \addlinespace[2pt]
+    B3$\rightarrow$B4 & L0 & 1 & 100\% & 0\% & 0.0\% & 0\% & 1/1 \\
+     & L1 & 0 & --- & --- & --- & --- & --- \\
+     & L2 & 0 & --- & --- & --- & --- & --- \\
+     & L3 & 0 & --- & --- & --- & --- & --- \\
+    \addlinespace[2pt]
+    B4$\rightarrow$B5 & L0 & 0 & --- & --- & --- & --- & --- \\
+     & L1 & 1 & 100\% & 0\% & 0.0\% & 0\% & 1/1 \\
+     & L2 & 0 & --- & --- & --- & --- & --- \\
+     & L3 & 3 & 0\% & 0\% & 0.0\% & 100\% & 0/3 \\
+    \addlinespace[2pt]
+    B5$\rightarrow$B6 & L0 & 2 & 100\% & 0\% & 0.0\% & 0\% & 0/2 \\
+     & L1 & 0 & --- & --- & --- & --- & --- \\
+     & L2 & 0 & --- & --- & --- & --- & --- \\
+     & L3 & 1 & 100\% & 0\% & 0.0\% & 0\% & 0/1 \\
+    \addlinespace[2pt]
+    B6$\rightarrow$B7 & L0 & 6 & 100\% & 0\% & 0.0\% & 20\% & 1/6 \\
+     & L1 & 1 & 100\% & 0\% & 0.0\% & 0\% & 0/1 \\
+     & L2 & 3 & 100\% & 0\% & 0.0\% & 50\% & 1/1 \\
+     & L3 & 0 & --- & --- & --- & --- & --- \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -83,17 +139,23 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{The same battery across SAE sources.} Identical metric code and identical global thresholds; only the block structure follows the source, read from the statistics file being graded. The reconstruction column should be read with care on PCFG: the weakest candidate edge there sits $3.5\times$ above the threshold, so the filter is inert on that source and its surviving edges have passed coverage alone. $S_\mathrm{res}$ pass rates are not comparable between rows of different $D$ --- see Table~\ref{tab:null}.}
+  \caption{\textbf{The same battery across SAE sources, every graded run.} All 10 graded runs, and within each run every block pair it graded --- 46 pairs in total, not the outermost one alone. Identical metric code and identical global thresholds; only the block structure follows the source, read from the statistics file being graded. Candidates, the reconstruction rate and the $S_\mathrm{res}$ column are whole-run totals over those pairs, so a run is summarised rather than represented by one of its pairs; the per-pair breakdown is Table~\ref{tab:results}. The reconstruction column should be read with care on PCFG: the weakest candidate edge there sits $3.5\times$ above the threshold, so the filter is inert on that source and its surviving edges have passed coverage alone. $S_\mathrm{res}$ pass rates are not comparable between rows of different $D$ --- see Table~\ref{tab:null}.}
   \label{tab:sources}
-  \begin{tabular}{lrrrrrr}
+  \begin{tabular}{lrrrrrrr}
     \toprule
-    Run & $D$ & Blocks & Tokens & Candidates & Recon. & $S_\mathrm{res}$ \\
+    Run & $D$ & Blocks & Tokens & Pairs & Candidates & Recon. & $S_\mathrm{res}$ \\
     \midrule
-    \texttt{gemma-2-2b} L6 & 32,768 & 5 & 48,571 & 2,428 & 86\% & 10/1,700 \\
-    PCFG layer 0 & 1,792 & 8 & 1,016,600 & 749 & 97\% & 4/643 \\
-    PCFG layer 1 & 1,792 & 8 & 1,016,600 & 327 & 100\% & 0/327 \\
-    PCFG layer 2 & 1,792 & 8 & 1,016,600 & 111 & 92\% & 3/107 \\
-    PCFG layer 3 & 1,792 & 8 & 1,016,600 & 781 & 95\% & 4/772 \\
+    \texttt{gemma-2-2b} L1 & 32,768 & 5 & 48,571 & 3 & 21,519 & 15\% & 315/20,129 \\
+    \texttt{gemma-2-2b} L3 & 32,768 & 5 & 48,571 & 3 & 7,737 & 54\% & 351/5,405 \\
+    \texttt{gemma-2-2b} L6 & 32,768 & 5 & 48,571 & 3 & 3,470 & 70\% & 279/2,717 \\
+    \texttt{gemma-2-2b} L12 & 32,768 & 5 & 48,571 & 3 & 3,841 & 30\% & 299/3,444 \\
+    \texttt{gemma-2-2b} L18 & 32,768 & 5 & 48,571 & 3 & 7,072 & 27\% & 453/5,877 \\
+    \texttt{gemma-2-2b} L24 & 32,768 & 5 & 48,571 & 3 & 7,564 & 34\% & 833/5,782 \\
+    \addlinespace[2pt]
+    PCFG layer 0 & 1,792 & 8 & 1,016,600 & 7 & 768 & 97\% & 9/662 \\
+    PCFG layer 1 & 1,792 & 8 & 1,016,600 & 7 & 332 & 100\% & 3/332 \\
+    PCFG layer 2 & 1,792 & 8 & 1,016,600 & 7 & 115 & 92\% & 5/109 \\
+    PCFG layer 3 & 1,792 & 8 & 1,016,600 & 7 & 787 & 95\% & 4/778 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -148,24 +210,24 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{The rank rule's null depends on dictionary size.} $S_\mathrm{res}$ passes an edge when both decoders fall in the top $k = 5$ of the probe's correlations over the whole dictionary. It is a geometry test, so an unrelated parent passes whenever chance puts it there, at a rate of $k/D$. The same $k$ is therefore two orders of magnitude stricter on gemma than on a 42-feature toy, and a measured pass rate is only interpretable against its own null: two runs on the \emph{same} 1{,}792-latent dictionary land on opposite sides of theirs. Reporting $S_\mathrm{res}$ shares across sources without this correction compares nothing.}
+  \caption{\textbf{The rank rule's null depends on dictionary size.} $S_\mathrm{res}$ passes an edge when both decoders fall in the top $k = 5$ of the probe's correlations over the whole dictionary. It is a geometry test, so an unrelated parent passes whenever chance puts it there, at a rate of $k/D$. The same $k$ is therefore two orders of magnitude stricter on gemma than on a 42-feature toy, and a measured pass rate is only interpretable against its own null: two runs on the \emph{same} 1{,}792-latent dictionary land on opposite sides of theirs. Reporting $S_\mathrm{res}$ shares across sources without this correction compares nothing. The observed rate is over \emph{every} block pair the run probed, not its outermost pair alone: each pair is scored against the same dictionary, so each belongs in the same rate, and the pair and edge counts behind it are printed so a rate resting on a handful of edges is visible as one. The per-pair breakdown is Table~\ref{tab:results}.}
   \label{tab:null}
-  \begin{tabular}{lrrrr}
+  \begin{tabular}{lrrrrrr}
     \toprule
-    Source & $D$ & Null $k/D$ & Observed & vs.\ null \\
+    Source & $D$ & Null $k/D$ & Pairs & Edges scored & Observed & vs.\ null \\
     \midrule
-    Synthetic toy (Tier 1) & 42 & 11.9\% & --- & --- \\
-    Trained toy (Tier 2) & 20 & 25.0\% & 5/5 true edges & --- \\
-    \texttt{gemma-2-2b} L1 & 32,768 & 0.015\% & 2.01\% & 132$\times$ \\
-    \texttt{gemma-2-2b} L3 & 32,768 & 0.015\% & 1.75\% & 115$\times$ \\
-    \texttt{gemma-2-2b} L6 & 32,768 & 0.015\% & 0.59\% & 39$\times$ \\
-    \texttt{gemma-2-2b} L12 & 32,768 & 0.015\% & 1.98\% & 130$\times$ \\
-    \texttt{gemma-2-2b} L18 & 32,768 & 0.015\% & 0.92\% & 60$\times$ \\
-    \texttt{gemma-2-2b} L24 & 32,768 & 0.015\% & 3.97\% & 260$\times$ \\
-    PCFG layer 0 & 1,792 & 0.279\% & 0.62\% & 2$\times$ \\
-    PCFG layer 1 & 1,792 & 0.279\% & 0.00\% & below chance \\
-    PCFG layer 2 & 1,792 & 0.279\% & 2.80\% & 10$\times$ \\
-    PCFG layer 3 & 1,792 & 0.279\% & 0.52\% & 2$\times$ \\
+    Synthetic toy (Tier 1) & 42 & 11.9\% & 1 & --- & --- & --- \\
+    Trained toy (Tier 2) & 20 & 25.0\% & 1 & --- & 5/5 true edges & --- \\
+    \texttt{gemma-2-2b} L1 & 32,768 & 0.015\% & 3 & 20,129 & 1.56\% & 103$\times$ \\
+    \texttt{gemma-2-2b} L3 & 32,768 & 0.015\% & 3 & 5,405 & 6.49\% & 426$\times$ \\
+    \texttt{gemma-2-2b} L6 & 32,768 & 0.015\% & 3 & 2,717 & 10.27\% & 673$\times$ \\
+    \texttt{gemma-2-2b} L12 & 32,768 & 0.015\% & 3 & 3,444 & 8.68\% & 569$\times$ \\
+    \texttt{gemma-2-2b} L18 & 32,768 & 0.015\% & 3 & 5,877 & 7.71\% & 505$\times$ \\
+    \texttt{gemma-2-2b} L24 & 32,768 & 0.015\% & 3 & 5,782 & 14.41\% & 944$\times$ \\
+    PCFG layer 0 & 1,792 & 0.279\% & 6 & 662 & 1.36\% & 5$\times$ \\
+    PCFG layer 1 & 1,792 & 0.279\% & 5 & 332 & 0.90\% & 3$\times$ \\
+    PCFG layer 2 & 1,792 & 0.279\% & 3 & 109 & 4.59\% & 16$\times$ \\
+    PCFG layer 3 & 1,792 & 0.279\% & 4 & 778 & 0.51\% & 2$\times$ \\
     \bottomrule
   \end{tabular}
 \end{table}
