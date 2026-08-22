@@ -28,10 +28,38 @@
 \graphicspath{{./}{paper_figuers/}{figuers/}{figures/}{../paper_figuers/}{../figuers/}{../figures/}{../}}
 
 % -------------------------------------------------------------------------
-% What the battery finds on gemma-2-2b
+% What the battery finds
 % -------------------------------------------------------------------------
 
 % [MAIN 1]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
+  \caption{%
+    \textbf{One instrument, untuned, on both sources.}
+    Every metric per block pair \emph{and} per layer, one panel per SAE source; no cell is an
+    average, so a row is one block pair read at one layer and an empty candidate set shows as
+    a dash rather than as a number. Colour ranks \emph{within} a column of its own panel (the
+    columns are different quantities on different scales, and the two sources have different
+    dictionaries), so the reading is locational. Three things read off it. The structural
+    pathology (multi-parenting, base-rate co-firing, superparents) sits in the outermost pair
+    B0$\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\% at
+    \emph{every} graded layer of gemma and 99--100\% at three of the four PCFG layers. The
+    deeper pairs are not clean but differently broken, failing the frequency control instead
+    (up to 96.3\% of B2$\rightarrow$B3 edges at L1) with sibling overlap several times higher.
+    And fan-out Gini is the one column that localises nothing, sitting at 0.81--0.97 on gemma
+    and 0.95--1.00 on PCFG in every pair at every layer, which makes it a property of the
+    dictionary rather than of any boundary within it. The PCFG deep pairs rest on one to three
+    candidate edges, so their quiet columns record emptiness, not health. gemma's fourth
+    adjacent pair B3$\rightarrow$B4 carries a reason rather than a row of dashes: it was never
+    computed, because its co-firing matrix is 6{,}144$\times$24{,}576 and does not fit this
+    run's memory budget. It is drawn because a pair silently absent from a grid reads as a
+    pair with nothing in it, which is a claim the run never tested.
+  }
+  \label{fig:tangle-lives-in-top-block-pair}
+\end{figure}
+
+% [MAIN 2]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
@@ -48,7 +76,7 @@
   \label{fig:funnel-coverage-to-sres}
 \end{figure}
 
-% [MAIN 2]
+% [MAIN 3]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{multiparenting_by_layer}
@@ -70,7 +98,7 @@
   \label{fig:multiparenting-by-layer}
 \end{figure}
 
-% [MAIN 3]
+% [MAIN 4]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{recovered_graph_toy_vs_pcfg_vs_gemma}
@@ -199,34 +227,6 @@
 % -------------------------------------------------------------------------
 % Appendix: what the battery finds
 % -------------------------------------------------------------------------
-
-% [APP 1]
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
-  \caption{%
-    \textbf{The tangle lives in the coarsest block pair, on both sources.}
-    Every metric per block pair \emph{and} per layer, one panel per SAE source; no cell is an
-    average, so a row is one block pair read at one layer and an empty candidate set shows as
-    a dash rather than as a number. Colour ranks \emph{within} a column of its own panel (the
-    columns are different quantities on different scales, and the two sources have different
-    dictionaries), so the reading is locational. Three things read off it. The structural
-    pathology (multi-parenting, base-rate co-firing, superparents) sits in the outermost pair
-    B0$\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\% at
-    \emph{every} graded layer of gemma and 99--100\% at three of the four PCFG layers. The
-    deeper pairs are not clean but differently broken, failing the frequency control instead
-    (up to 96.3\% of B2$\rightarrow$B3 edges at L1) with sibling overlap several times higher.
-    And fan-out Gini is the one column that localises nothing, sitting at 0.81--0.97 on gemma
-    and 0.95--1.00 on PCFG in every pair at every layer, which makes it a property of the
-    dictionary rather than of any boundary within it. The PCFG deep pairs rest on one to three
-    candidate edges, so their quiet columns record emptiness, not health. gemma's fourth
-    adjacent pair B3$\rightarrow$B4 carries a reason rather than a row of dashes: it was never
-    computed, because its co-firing matrix is 6{,}144$\times$24{,}576 and does not fit this
-    run's memory budget. It is drawn because a pair silently absent from a grid reads as a
-    pair with nothing in it, which is a claim the run never tested.
-  }
-  \label{fig:tangle-lives-in-top-block-pair}
-\end{figure}
 
 % [APP 1b]
 \begin{figure}[tbp]

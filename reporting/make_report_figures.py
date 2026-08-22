@@ -112,6 +112,27 @@ def _text_on(bg):
     L = _lum(bg)
     return "white" if 1.05 / (L + 0.05) > (L + 0.05) / (_lum(INK) + 0.05) else INK
 
+
+def _fit_width(fig, t, avail_in, floor=5.2):
+    """Shrink a text artist until it fits `avail_in` inches.
+
+    Header labels sit over a column group, so a name wider than its group runs
+    into the neighbouring one -- "Reconstruction" printed straight through
+    "Probe-based" the first time this figure carried the full battery. The
+    width is measured with the renderer rather than estimated from a character
+    count: the names are mixed-case and some carry mathtext, and a per-character
+    guess is wrong in both directions on exactly those.
+    """
+    try:
+        r = fig.canvas.get_renderer()
+    except AttributeError:                       # backend without a live renderer
+        fig.canvas.draw()
+        r = fig.canvas.get_renderer()
+    lim = avail_in * fig.dpi * 0.86              # visible air on either side
+    while t.get_fontsize() > floor and t.get_window_extent(r).width > lim:
+        t.set_fontsize(t.get_fontsize() - 0.2)
+    return t
+
 plt.rcParams.update({
     "font.size": 9.5,
     "axes.edgecolor": "#D8DBE0",
@@ -129,6 +150,19 @@ plt.rcParams.update({
 # figure instead of the run.
 def _json(path: Path):
     return json.loads(path.read_text()) if path.exists() else None
+
+
+def _layer_name(dirname: str) -> str:
+    """``layer_00`` -> ``layer 0``. The zero pad is a sort key, not a number.
+
+    Run directories are padded so ``ls`` orders them, and reading that pad
+    straight into a label printed the PCFG runs as L00--L03 beside gemma's
+    L1--L24, which invites a reader to take the width for a difference in what
+    is being counted. The pad is dropped for display only; nothing on disk or
+    in any path is renamed.
+    """
+    m = re.fullmatch(r"layer_0*(\d+)", dirname)
+    return f"layer {int(m.group(1))}" if m else dirname.replace("_", " ")
 
 
 def gemma_layers() -> list[tuple[int, dict]]:
@@ -1593,7 +1627,7 @@ def sres_null_rate_vs_dictionary_size(observed):
 #     per pair.
 # ---------------------------------------------------------------------------
 def tangle_lives_in_top_block_pair(layers, pcfg):
-    """Every metric per block pair AND per layer, one panel per source.
+    """The WHOLE battery per block pair AND per layer, one panel per source.
 
     The earlier version averaged each cell over a source's graded layers, which
     a reader read as a single layer -- the rows are block pairs, and nothing in
@@ -1605,24 +1639,67 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     sources sit in their own panels, which is also what lets the layer sets
     differ -- gemma is graded at L1..L24 and the PCFG transformer has four
     layers, so a shared row axis was never possible.
+
+    It also carried seven hand-picked columns, which made it a summary of the
+    battery rather than the battery. The caption's claim is that the columns
+    DISAGREE -- edge quality reads healthy while graph structure reads broken --
+    and a reader cannot check that against a subset somebody chose. Every
+    per-pair number the battery emits is a column now, grouped under the metric
+    that emits it, so the header names both the instrument and its output
+    ("Out-degree / superparent" -> "fan-out Gini") instead of a bare quantity.
+    The panels stack vertically for the same reason: 17 columns side by side
+    halve at \\textwidth, and a cell nobody can read is not evidence.
     """
-    from matplotlib import cm
+    # (metric family, what it emits, reader, format). Families follow the battery
+    # order of the Metrics section, so the figure and the section can be read
+    # against each other; the battery's numbering is deliberately NOT carried
+    # here -- "2b" is a cross-reference the figure cannot resolve on its own, and
+    # it competed for width with the name that actually identifies the metric.
+    # The family is drawn once over its own columns; the second element is the
+    # column's own header.
     COLS = [
-        ("candidates", lambda p: p["n_candidate_edges"], "{:,.0f}"),
-        ("multi-parenting %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
-        ("fan-out Gini", lambda p: p["degree"]["outdeg_gini"], "{:.2f}"),
-        ("at chance %", lambda p: 100 * p["independence_null"]["frac_chance_level"], "{:.0f}"),
-        ("superparents", lambda p: p["n_superparents"], "{:.0f}"),
-        ("sibling Jaccard", lambda p: p["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
-        ("freq-driven %", lambda p: 100 * p["freq_control"]["frac_freq_driven"], "{:.1f}"),
+        ("Coverage", "candidates",
+         lambda q, s: q["n_candidate_edges"], "{:,.0f}"),
+        ("Joint-child", "R$_{\\rm supp}$",
+         lambda q, s: q["joint_child"]["r_supp_mean"], "{:.2f}"),
+        ("Joint-child", "R$_{\\rm mass}$",
+         lambda q, s: q["joint_child"]["r_mass_mean"], "{:.2f}"),
+        ("Joint-child", "split\nchildren",
+         lambda q, s: q["joint_child"]["n_share_energy_ge_09"], "{:,.0f}"),
+        ("Joint-child", "mean\ncoverage",
+         lambda q, s: q["joint_child_cov_mean"], "{:.2f}"),
+        ("Reconstruction\nablation", "% pass",
+         lambda q, s: 100 * q["reconstruction"]["frac_pass"], "{:.0f}"),
+        ("Probe-based\n$S_{\\rm res}$", "% pass",
+         lambda q, s: 100 * s["sres"]["frac_pass"], "{:.1f}"),
+        ("Siblings", "mean\nJaccard",
+         lambda q, s: q["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
+        ("Out-degree / superparent", "multi-\nparented %",
+         lambda q, s: 100 * q["degree"]["poly_frac"], "{:.0f}"),
+        ("Out-degree / superparent", "fan-out\nGini",
+         lambda q, s: q["degree"]["outdeg_gini"], "{:.2f}"),
+        ("Out-degree / superparent", "max\nfan-out",
+         lambda q, s: q["degree"]["max_outdeg"], "{:,.0f}"),
+        ("Out-degree / superparent", "top-1 edge\nshare %",
+         lambda q, s: 100 * q["degree"]["top1_edge_share"], "{:.0f}"),
+        ("Out-degree / superparent", "super-\nparents",
+         lambda q, s: q["n_superparents"], "{:.0f}"),
+        ("Frequency control", "% freq-\ndriven",
+         lambda q, s: 100 * q["freq_control"]["frac_freq_driven"], "{:.1f}"),
+        ("Frequency control", "mean\nsurvival",
+         lambda q, s: q["freq_control"]["mean_survival"], "{:.2f}"),
+        ("Independence null", "% at\nchance",
+         lambda q, s: 100 * q["independence_null"]["frac_chance_level"], "{:.0f}"),
+        ("Independence null", "mean\nPMI",
+         lambda q, s: q["independence_null"]["mean_edge_pmi"], "{:.2f}"),
     ]
 
-    def safe(fn, q):
+    def safe(fn, q, s):
         # a sub-metric with nothing to score is absent, never zero
         try:
-            v = fn(q)
+            v = fn(q, s)
             return float(v) if v is not None else np.nan
-        except (TypeError, KeyError):
+        except (TypeError, KeyError, ZeroDivisionError):
             return np.nan
 
     def source_grid(named_reports):
@@ -1644,9 +1721,13 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
             if pr in pairs:
                 for lab, r in named_reports:
                     q = _pair(r, pr)
+                    # the strict test lives in second_pass.json, which every
+                    # metrics_report.json embeds -- read from the report so the
+                    # probe column costs this figure no extra argument
+                    s = (r.get("second_pass") or {}).get(pr) or {}
                     # a layer where the pair proposes nothing is shown as an
                     # empty row rather than dropped: the absence is a measurement
-                    vals = [safe(fn, q) if q else np.nan for _, fn, _ in COLS]
+                    vals = [safe(fn, q, s) if q else np.nan for _, _, fn, _ in COLS]
                     if q and q["n_candidate_edges"] == 0:
                         vals = [0.0] + [np.nan] * (len(COLS) - 1)
                     out.append((name, lab, vals, None))
@@ -1664,15 +1745,36 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     pcf = source_grid([(n.replace("PCFG layer ", "L"), r) for n, r in pcfg]) if pcfg else []
     panels = [(r"gemma-2-2b", gem)] + ([("PCFG", pcf)] if pcf else [])
 
+    # contiguous runs of one family, so the family is drawn once over its columns
+    spans, prev = [], None
+    for j, (g, *_) in enumerate(COLS):
+        if g != prev:
+            spans.append([j, j + 1, g])
+            prev = g
+        else:
+            spans[-1][1] = j + 1
+
     # plt.get_cmap, not cm.get_cmap: the latter was removed in matplotlib 3.9 and its
     # AttributeError aborted the whole build, so every later figure went unwritten too.
     # This spelling works on both old and new matplotlib.
     cmap = plt.get_cmap("Blues")
-    n_max = max(len(g) for _, g in panels)
-    fig, axes = plt.subplots(
-        1, len(panels), figsize=(7.2 * len(panels), 0.26 * n_max + 1.9),
-        gridspec_kw={"width_ratios": [1] * len(panels), "wspace": 0.55})
-    axes = np.atleast_1d(axes)
+
+    # Geometry in inches, placed by hand rather than by tight_layout: the two
+    # header rows and the block-pair labels all live OUTSIDE the axes, which
+    # tight_layout does not see, and at 17 columns a guessed margin is the
+    # difference between a readable header and a clipped one.
+    NC, CELL_W, CELL_H = len(COLS), 0.64, 0.235
+    ML, MR, MT, MB, GAP = 1.40, 0.22, 1.18, 0.62, 1.42
+    rows = [len(g) for _, g in panels]
+    W = ML + MR + NC * CELL_W
+    H = MT + MB + sum(rows) * CELL_H + GAP * (len(panels) - 1)
+    fig = plt.figure(figsize=(W, H))
+    axes, top = [], H - MT
+    for _, grid in panels:
+        h = len(grid) * CELL_H
+        axes.append(fig.add_axes([ML / W, (top - h) / H, NC * CELL_W / W, h / H]))
+        top -= h + GAP
+    axes = np.array(axes)
 
     for ax, (src, grid) in zip(axes, panels):
         M = np.array([v for _, _, v, _ in grid], dtype=float)
@@ -1684,9 +1786,9 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
         with np.errstate(invalid="ignore"):
             for j in range(M.shape[1]):
                 col = M[:, j]
-                top = np.nanmax(col) if not np.all(np.isnan(col)) else np.nan
-                if top and not np.isnan(top):
-                    norm[:, j] = col / top
+                top_v = np.nanmax(col) if not np.all(np.isnan(col)) else np.nan
+                if top_v and not np.isnan(top_v):
+                    norm[:, j] = col / top_v
         for i in range(M.shape[0]):
             # an uncomputed pair is one band carrying its reason, not a row of
             # dashes: a dash means "measured, nothing there", which is the
@@ -1696,7 +1798,7 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                                            facecolor="#EDEEF1", hatch="///",
                                            edgecolor="white", lw=0))
                 ax.text(M.shape[1] / 2, i + 0.5, notes[i], ha="center",
-                        va="center", fontsize=6.4, color=MUTED, style="italic")
+                        va="center", fontsize=6.8, color=MUTED, style="italic")
                 continue
             for j in range(M.shape[1]):
                 v, nv = M[i, j], norm[i, j]
@@ -1707,14 +1809,25 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                     continue
                 bg = cmap(0.06 + 0.86 * nv)
                 ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
-                ax.text(j + 0.5, i + 0.5, COLS[j][2].format(v), ha="center",
-                        va="center", fontsize=7, color=_text_on(bg))
+                ax.text(j + 0.5, i + 0.5, COLS[j][3].format(v), ha="center",
+                        va="center", fontsize=6.6, color=_text_on(bg))
         ax.set_xlim(0, M.shape[1])
         ax.set_ylim(M.shape[0], 0)
-        ax.set_xticks(np.arange(M.shape[1]) + 0.5)
-        ax.set_xticklabels([c for c, *_ in COLS], fontsize=7.6, rotation=32,
-                           ha="left")
-        ax.xaxis.set_ticks_position("top")
+        ax.set_xticks([])
+        # Two header rows, not one: the lower names the number in the column,
+        # the upper names the metric that emitted it. A bare "fan-out Gini"
+        # asks the reader to remember which metric that came from; the pair
+        # "4 Out-degree / superparent -> fan-out Gini" does not.
+        for j, (_, out_name, _, _) in enumerate(COLS):
+            ax.text(j + 0.5, -0.42, out_name, ha="center", va="bottom",
+                    fontsize=6.5, color=INK, linespacing=1.3)
+        for a, b, fam in spans:
+            ax.plot([a + 0.08, b - 0.08], [-1.62, -1.62], color="#C9CCD1",
+                    lw=0.9, clip_on=False, solid_capstyle="butt")
+            _fit_width(fig, ax.text((a + b) / 2, -1.80, fam, ha="center",
+                                    va="bottom", fontsize=7.0, fontweight="bold",
+                                    color=INK, linespacing=1.3),
+                       (b - a) * CELL_W)
         ax.set_yticks(np.arange(len(grid)) + 0.5)
         ax.set_yticklabels([lay for _, lay, _, _ in grid], fontsize=7.4)
         # the block pair is a GROUP over consecutive layer rows, so it is drawn
@@ -1726,22 +1839,21 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                 prev = pr
         for k, b in enumerate(bounds):
             stop = bounds[k + 1] if k + 1 < len(bounds) else len(grid)
-            ax.text(-1.55, (b + stop) / 2, grid[b][0], fontsize=8.2,
+            ax.text(-1.85, (b + stop) / 2, grid[b][0], fontsize=8.2,
                     fontweight="bold", color=INK, ha="left", va="center")
             if b:
                 ax.axhline(b, color=INK, lw=1.0)
-        ax.text(0, -0.055 * (24 / max(len(grid), 1)) * len(grid) / 6 - 1.2, "",
-                transform=ax.transData)
-        ax.set_title(src, fontsize=10.5, fontweight="bold", color=INK,
-                     loc="left", pad=26)
+        ax.text(0, -3.20, src, fontsize=10.5, fontweight="bold", color=INK,
+                ha="left", va="bottom")
         for spine in ax.spines.values():
             spine.set_visible(False)
         ax.tick_params(length=0)
-        ax.set_xlabel("one row = one block pair at one layer;  colour ranks within "
-                      "a column of this panel;  — : nothing to score",
+        ax.set_xlabel("one row = one block pair at one layer;  header reads "
+                      "metric → the number it emits;  colour ranks within a "
+                      "column of this panel;  — : nothing to score",
                       fontsize=7, color=MUTED, labelpad=8, loc="left")
 
-    return _finish(fig, axes, "tangle_lives_in_top_block_pair")
+    return _finish(fig, axes, "tangle_lives_in_top_block_pair", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -2224,7 +2336,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")):
         r = _json(p / "metrics_report.json")
         if r:
-            pcfg.append((f"PCFG {p.name.replace('_', ' ')}", r,
+            pcfg.append((f"PCFG {_layer_name(p.name)}", r,
                          _json(p / "second_pass.json")))
     run("funnel_coverage_to_sres", bool(second),
         f"{len(second)} gemma + {sum(1 for *_, sp in pcfg if sp)} PCFG layers with "
@@ -2319,7 +2431,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         for lay in sorted(base.glob("layer_*")):
             j = _json(lay / "in_block_edges.json")
             if j:
-                ib.append((f"{label} {lay.name.replace('_', ' ')}", j))
+                ib.append((f"{label} {_layer_name(lay.name)}", j))
     run("in_block_relations", bool(ib),
         f"{len(ib)} runs with in_block_edges.json" if ib
         else "needs in_block_edges.json — pipeline stage 01c",
@@ -2330,7 +2442,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     observed = []
     probes = [(f"gemma L{int(q.parent.name.split('_')[1])}", C.D_SAE, q)
               for q in sorted(G.glob("layer_*/second_pass.json"))]
-    probes += [(f"PCFG {q.parent.name.replace('_', ' ')}", 1792, q)
+    probes += [(f"PCFG {_layer_name(q.parent.name)}", 1792, q)
                for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json"))]
     for label, d_sae, path in probes:
         sp = _json(path)
@@ -3063,14 +3175,22 @@ def _captions():
 # has one); the hypothesis figure and the mechanism that explains it are adjacent;
 # and the battery's own failure closes, because it qualifies everything above it.
 TEX_ORDER = [
-    # main text: the three headline results first, then the two calibration
-    # figures that license them; everything after goes to the appendix
-    ("MAIN 1", "funnel_coverage_to_sres", False,
-     "Coverage proposes; the strict test disposes.",
-     "What the battery finds on gemma-2-2b"),
-    ("MAIN 2", "multiparenting_by_layer", False,
+    # main text: the whole battery on both sources FIRST, then the three
+    # headline results it decomposes into; everything after goes to the
+    # appendix. The overview leads because every main figure after it is one
+    # of its columns read closely -- the funnel is coverage against the probe,
+    # multi-parenting is the out-degree column across layers -- and a reader
+    # who meets those one at a time never learns that the columns disagree.
+    # It is a full-page figure at 17 columns x 52 rows; the manuscript is
+    # expected to give it its own page (\clearpage, or sidewaysfigure*).
+    ("MAIN 1", "tangle_lives_in_top_block_pair", True,
+     "One instrument, untuned, on both sources.",
+     "What the battery finds"),
+    ("MAIN 2", "funnel_coverage_to_sres", False,
+     "Coverage proposes; the strict test disposes.", None),
+    ("MAIN 3", "multiparenting_by_layer", False,
      "The recovered graph is not a tree.", None),
-    ("MAIN 3", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
+    ("MAIN 4", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
      "The recovered graph, drawn.", None),
     # The whole calibration ladder sits in the appendix: it is what licenses the main
     # text's numbers rather than a finding of its own, and the three read as one
@@ -3087,11 +3207,11 @@ TEX_ORDER = [
      "The same tree, after a real training run.", None),
     ("APP 0d", "calibration_toy_tree_recovered", True,
      "That tree drawn, before and after the battery.", None),
-    ("APP 1", "tangle_lives_in_top_block_pair", True,
-     "The tangle lives in the coarsest block pair, on both sources.",
-     "Appendix: what the battery finds"),
+    # the overview matrix moved to MAIN 1; the section it used to open now
+    # starts at the slice, which is one cell of that matrix read closely
     ("APP 1b", "a_slice_of_the_tangle", False,
-     "A slice of the tangle: every child in it has many parents.", None),
+     "A slice of the tangle: every child in it has many parents.",
+     "Appendix: what the battery finds"),
     # the single-child twin of the slice: emitted so the manuscript can choose
     # between them; expected to be commented in/out there, not both shown
     ("APP 1b'", "one_child_many_parents", False,
@@ -3238,6 +3358,7 @@ CLAIMS = {
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
+    "tangle_lives_in_top_block_pair": "the whole battery, every column, on both sources with one untuned instrument",
     "cross_source_layer_response": "the shape of B0→B1 is the same on both base models at the layers both graded; its strength is not",
     "cross_source_alignment_check": "which alignment across two models of different depth the data prefers — block index or relative depth",
 }

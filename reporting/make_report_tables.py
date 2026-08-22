@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -62,6 +63,19 @@ def gemma_layers():
         if r:
             out.append((L, r))
     return out
+
+
+def _layer_name(dirname: str) -> str:
+    """``layer_00`` -> ``layer 0``. The zero pad is a sort key, not a number.
+
+    Run directories are padded so ``ls`` orders them, and reading that pad
+    straight into a label printed the PCFG runs as L00--L03 beside gemma's
+    L1--L24, which invites a reader to take the width for a difference in what
+    is being counted. The pad is dropped for display only; nothing on disk or
+    in any path is renamed.
+    """
+    m = re.fullmatch(r"layer_0*(\d+)", dirname)
+    return f"layer {int(m.group(1))}" if m else dirname.replace("_", " ")
 
 
 def pcfg_runs():
@@ -458,7 +472,7 @@ def t_sources(layers, second, pcfg):
         d = cfg.get("d_sae") or (r.get("block_ranges") or [[0, 0]])[-1][-1]
         nb = len(r.get("block_ranges") or [])
         sr = sp["0->1"]["sres"] if sp and "0->1" in sp else None
-        rows.append([f"PCFG {esc(name.replace('_', ' '))}", f"{d:,}", str(nb),
+        rows.append([f"PCFG {esc(_layer_name(name))}", f"{d:,}", str(nb),
                      f"{r['total_tokens']:,}", f"{p['n_candidate_edges']:,}",
                      rf"{100 * p['reconstruction']['frac_pass']:.0f}\%",
                      rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"])
@@ -610,7 +624,7 @@ def t_null(layers, second, pcfg):
         if sp and "0->1" in sp and sp["0->1"]["sres"]["n_edges_scored"]:
             s = sp["0->1"]["sres"]
             d = (r.get("config") or {}).get("d_sae") or 1792
-            obs.append((f"PCFG {esc(name.replace('_', ' '))}", d,
+            obs.append((f"PCFG {esc(_layer_name(name))}", d,
                         100 * s["n_pass"] / s["n_edges_scored"]))
     for name, d, o in obs:
         null = 100 * k / d
