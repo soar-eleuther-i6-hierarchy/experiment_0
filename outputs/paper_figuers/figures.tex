@@ -247,7 +247,11 @@
     verdict and the shade carries the margin: how decisively that metric separated the two
     classes it was graded on, on a $\log_{10}$ scale, because the margins span orders of
     magnitude and a grid of identical verdicts would hide exactly that. A row that passes at a
-    margin of $1.05$ and one that passes at $10^{3}$ are not the same evidence. Rows scored
+    margin of $1.05$ and one that passes at $10^{3}$ are not the same evidence. The scale is
+    capped at $10^{3}\times$, the same ceiling the scorecard itself prints as \texttt{>1000x}:
+    three rows score $10^{9}$, which is not a measured magnitude but the guard in the
+    denominator when the rejected class scores zero, and letting it set the top of the ramp
+    pushed every honestly-measured margin into the palest two shades. Rows scored
     categorically have no magnitude to report and are left grey rather than given an invented
     one. Everything else in this appendix is reported at seed 0; this is the figure that says
     what that number is worth.

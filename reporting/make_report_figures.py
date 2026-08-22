@@ -1587,9 +1587,28 @@ def calibration_seed_sweep(sweep):
             M[i, j] = (np.nan if r.get("margin_kind") == "categorical"
                        else np.log10(max(mg, 1e-9)))
 
-    fig, ax = plt.subplots(figsize=(1.05 * len(seeds) + 5.6, 0.30 * len(names) + 2.0))
-    hi = np.nanmax(M) if not np.all(np.isnan(M)) else 1.0
-    cmap = plt.get_cmap("Greens")
+    from matplotlib import colors as mcolors
+
+    fig, ax = plt.subplots(figsize=(1.05 * len(seeds) + 6.4, 0.30 * len(names) + 2.0))
+    lo = float(np.nanmin(M)) if not np.all(np.isnan(M)) else 0.0
+    # Capped at 10^3, the same ceiling `calibrate_on_synthetic_toy._render` prints
+    # as ">1000x". Three rows here score 1e9, which is not a measured magnitude --
+    # it is the epsilon guard in the denominator when the rejected class scores
+    # zero. Letting that set the top of the scale pushed every honestly-measured
+    # margin into the palest two shades, so the ramp said nothing.
+    CAP = 3.0
+    hi = min(float(np.nanmax(M)) if not np.all(np.isnan(M)) else 1.0, CAP)
+    if hi <= lo:
+        hi = lo + 1.0
+    # The cells use a SUB-RANGE of Greens (never the palest end, where a shade
+    # stops being distinguishable from the "no margin" grey), so the colour bar
+    # has to be built from that same sub-range. Keying a bar to the full ramp
+    # while the cells use part of it would put a legend on the figure that reads
+    # the shades wrong -- which is worse than the missing legend it replaces.
+    base = plt.get_cmap("Greens")
+    cmap = mcolors.LinearSegmentedColormap.from_list(
+        "greens_sub", base(np.linspace(0.10, 0.82, 256)))
+    norm = mcolors.Normalize(vmin=lo, vmax=hi, clip=True)
     for i in range(len(names)):
         for j in range(len(seeds)):
             v = M[i, j]
@@ -1598,7 +1617,7 @@ def calibration_seed_sweep(sweep):
             elif np.isnan(v):
                 bg = "#EDEEF1"                    # categorical: passed, no margin
             else:
-                bg = cmap(0.10 + 0.72 * min(v / hi, 1.0))
+                bg = cmap(norm(v))
             ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
             ax.text(j + 0.5, i + 0.5, "PASS" if ok[i, j] else "FAIL",
                     ha="center", va="center", fontsize=7.4,
@@ -1616,11 +1635,40 @@ def calibration_seed_sweep(sweep):
     ax.tick_params(length=0)
 
     n_cells = ok.size
-    fig.subplots_adjust(left=0.30, right=0.985, top=0.86, bottom=0.07)
+    fig.subplots_adjust(left=0.27, right=0.855, top=0.86, bottom=0.12)
+
+    # The margin scale, which the shading was carrying with no key at all: a
+    # reader could see that some rows were darker and had no way to learn what
+    # the darkness was, or that a row scored categorically is grey rather than
+    # weak. Ticks are labelled as the margin itself (10^x) as well as its log,
+    # because "passes at 1000x" is the sentence the row supports and "3.0" is not.
+    TOP, POW, ONE = r"$\geq 10^{%d}\times$", r"$10^{%d}\times$", r"$1\times$"
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    cb = fig.colorbar(sm, ax=ax, fraction=0.030, pad=0.025, aspect=26)
+    ticks = list(range(int(np.ceil(lo)), int(np.floor(hi)) + 1))
+    if len(ticks) >= 2:
+        cb.set_ticks(ticks)
+        # labelled as the margin itself, not its logarithm: "passes at 100x" is
+        # the sentence a row supports and "2.0" is not. The top tick carries the
+        # cap, so a clipped cell is not read as a measured ceiling.
+        cb.set_ticklabels([(TOP % t if t == ticks[-1] and hi >= CAP
+                            else POW % t if t else ONE) for t in ticks])
+    cb.set_label("margin", fontsize=8.5, labelpad=6)
+    cb.ax.tick_params(labelsize=7)
+    cb.outline.set_visible(False)
+
+    # the two cell colours the ramp cannot express, named rather than guessed at
+    fig.legend(handles=[
+        plt.Rectangle((0, 0), 1, 1, facecolor="#EDEEF1", edgecolor="none",
+                      label="passed; scored categorically, so no margin to report"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=CAT[3], edgecolor="none",
+                      label="did not pass"),
+    ], loc="lower left", bbox_to_anchor=(0.27, 0.008), ncol=2, frameon=False, fontsize=8)
+
     _panel_head(ax, "every row, every seed",
                 f"{int(ok.sum())}/{n_cells} cells pass over {len(seeds)} independently "
-                "drawn worlds;  darker = a wider margin (log₁₀), grey = a row with no "
-                "margin to report")
+                "drawn worlds;  the shade is the margin behind each verdict, capped at "
+                f"{10 ** CAP:,.0f}×")
     return _finish(fig, ax, "calibration_seed_sweep", tight=False)
 
 
@@ -3566,6 +3614,11 @@ def _captions():
             r"on, on a $\log_{10}$ scale, because the margins span orders of magnitude and "
             "a grid of identical verdicts would hide exactly that. A row that passes at a "
             "margin of $1.05$ and one that passes at $10^{3}$ are not the same evidence. "
+            r"The scale is capped at $10^{3}\times$, the same ceiling the scorecard itself "
+            r"prints as \texttt{>1000x}: three rows score $10^{9}$, which is not a measured "
+            "magnitude but the guard in the denominator when the rejected class scores zero, "
+            "and letting it set the top of the ramp pushed every honestly-measured margin "
+            "into the palest two shades. "
             "Rows scored categorically have no magnitude to report and are left grey rather "
             "than given an invented one. Everything else in this appendix is reported at "
             "seed 0; this is the figure that says what that number is worth.")
