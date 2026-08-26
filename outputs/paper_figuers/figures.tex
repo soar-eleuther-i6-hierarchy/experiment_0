@@ -208,6 +208,30 @@
   \label{fig:calibration-toy-world-before-after}
 \end{figure}
 
+% [APP 0d']
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_toy_world_gate_verdicts}
+  \caption{%
+    \textbf{What the set of metrics kept.} The same hand-built world as the previous figure,
+    drawn in one palette with one colour per injected structure: the parent block as the top
+    row, the child block as the bottom row --- 24 declared true parent--child edges over 42
+    features, plus the six structures planted to be caught or to demonstrate that nothing
+    catches them. A faded edge is one the three composed gates (reverse coverage, the
+    reconstruction condition, the token-frequency control) removed, so the declared world is
+    every edge, bright or faded, and the note above each parent names the gate that decided
+    its edges. Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges
+    survive. The division of labour is the reading: all 30 super-parent pairs die at the
+    reconstruction condition rather than at coverage, the frequency-coincidence pair passes
+    coverage and reconstruction and dies only at the frequency control, and the feature-split
+    edges are kept --- correctly, since they are real refinements --- with the split reported
+    against the parent by a different metric. The two negative controls come through
+    unchanged: the absorbed edge (8, 21) is never proposed at all, and the shared-topic pair
+    (9, 22) passes every gate here.
+  }
+  \label{fig:calibration-toy-world-gate-verdicts}
+\end{figure}
+
 % [APP 0e]
 \begin{figure}[tbp]
   \centering

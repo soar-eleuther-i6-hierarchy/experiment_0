@@ -1281,6 +1281,117 @@ def calibration_toy_world_before_after(w):
     return _finish(fig, axes, "calibration_toy_world_before_after", tight=False)
 
 
+def calibration_toy_world_gate_verdicts(w):
+    """The after panel of the before/after pair alone, rotated onto two rows.
+
+    Same world, same palette, same alpha rule as `calibration_toy_world_before_after`;
+    both are emitted so the manuscript can choose (like the slice and its
+    single-child twin). What this one gives up and why it can: the before panel
+    repeats no information -- the after panel already draws every declared edge
+    and carries the outcome in alpha alone, so the declared world is recoverable
+    from one panel (faded = cut) once the subtitle says so. What it gains: the
+    two-column layout is tall and mostly whitespace, because a bipartite drawing
+    with 10 parents against 32 children leaves the parent column empty for
+    two-thirds of its height; laying the blocks as rows spends that height on
+    nothing and halves the figure.
+    """
+    P, Cn = w["P"], w["C"]
+    cx = {c: c + 0.5 for c in range(Cn)}
+    px = {p: (p + 0.5) * Cn / P for p in range(P)}
+    PY, CY = 1.0, 0.0                   # parents on the top row, children below
+    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6))}
+
+    fig, ax = plt.subplots(figsize=(12.6, 4.25))
+
+    def link(p, c, role, lw=1.6, alive=True):
+        colour = TOY_ROLE[role][0]
+        # Removed edges keep colour and dash -- the identity of the structure is
+        # the point -- so only alpha carries the outcome. Per role for the same
+        # ink-accumulation reason as the before/after figure.
+        ghost = 0.14 if role == "superparent" else 0.34
+        ax.plot([px[p], cx[c]], [PY, CY], lw=lw, color=colour,
+                ls=dash_of.get(role, "-"), alpha=1.0 if alive else ghost, zorder=1)
+
+    for c in range(Cn):                                   # (A) superparent
+        if (w["keys"]["superparent"], c) in w["candidates"]:
+            link(w["keys"]["superparent"], c, "superparent", lw=0.7,
+                 alive=(w["keys"]["superparent"], c) in w["survivors"])
+    for (p, c) in w["genuine"]:
+        link(p, c, "genuine", lw=1.7, alive=(p, c) in w["survivors"])
+    for (p, c) in w["split_edges"]:
+        link(p, c, "split", lw=1.7, alive=(p, c) in w["survivors"])
+    for role in ("freq", "absorbed", "topic"):
+        p = w["keys"][role]
+        c = next(x for x in range(Cn) if w["roles_c"][x] == role)
+        link(p, c, role, lw=1.7, alive=(p, c) in w["survivors"])
+
+    # (F) within-block: both endpoints live in the child row, so the bezier
+    # bows BELOW the row (the column layout bowed it sideways).
+    for (a, b), ls in w["in_block"]:
+        x0, x1 = cx[a], cx[b]
+        ctrl = ((x0 + x1) / 2, CY - 0.42)
+        t = np.linspace(0, 1, 40)
+        ax.plot((1 - t) ** 2 * x0 + 2 * (1 - t) * t * ctrl[0] + t ** 2 * x1,
+                (1 - t) ** 2 * CY + 2 * (1 - t) * t * ctrl[1] + t ** 2 * CY,
+                ls=ls, lw=1.2, color=TOY_ROLE["in_block"][0], alpha=0.5, zorder=1)
+
+    live_p = {p for p, _ in w["survivors"]}
+    live_c = {c for _, c in w["survivors"]}
+    for xs, y, roles, live in ((px, PY, w["roles_p"], live_p),
+                               (cx, CY, w["roles_c"], live_c)):
+        for i, x in xs.items():
+            colour = TOY_ROLE[roles[i]][0]
+            on = i in live
+            ax.scatter([x], [y], s=118, zorder=3,
+                       facecolor=colour if on else "white",
+                       edgecolor=colour, linewidths=1.3)
+            ax.text(x, y, str(i), ha="center", va="center", fontsize=5.4,
+                    zorder=4, color=_text_on(colour) if on else MUTED)
+
+    # Verdicts sit ABOVE their parent instead of to its left, comma-split to
+    # lines and staggered on two tiers: the three long middle verdicts are
+    # wider than the parent spacing and collide on a single tier.
+    for p in range(P):
+        ax.text(px[p], PY + (0.10 if p % 2 == 0 else 0.30),
+                w["verdict"][p].replace(", ", "\n"), ha="center", va="bottom",
+                fontsize=5.6, color=TOY_ROLE[w["roles_p"][p]][0], zorder=4,
+                linespacing=1.25)
+
+    for y, lab in ((PY, "parent block"), (CY, "child block")):
+        ax.text(-0.7, y, lab, ha="right", va="center", fontsize=7.5, color=MUTED)
+
+    ax.set_xlim(-3.6, Cn + 0.6)
+    ax.set_ylim(CY - 0.55, PY + 0.75)
+    ax.axis("off")
+
+    # The same four legend groups, and the same reason they are groups.
+    groups = [
+        ("the genuine tree", ["genuine"], 0.02),
+        ("injected pathologies — a metric catches each",
+         ["superparent", "freq", "split"], 0.17),
+        ("blind spots — nothing catches these", ["absorbed", "topic"], 0.47),
+        ("scored by a different metric", ["in_block"], 0.72),
+    ]
+    for title, roles, x in groups:
+        handles = [Line2D([], [], color=TOY_ROLE[r][0], lw=2.0,
+                          ls=dash_of.get(r, "-"), marker="s", markersize=6.5,
+                          label=TOY_ROLE[r][1]) for r in roles]
+        leg = fig.legend(handles=handles, title=title, loc="upper left",
+                         bbox_to_anchor=(x, 0.215), frameon=False, fontsize=8,
+                         handlelength=2.4, labelspacing=0.35)
+        leg.get_title().set_fontsize(8.5)
+        leg.get_title().set_color(INK)
+        leg._legend_box.align = "left"
+        fig.add_artist(leg)
+
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.85, bottom=0.25)
+    _panel_head(ax, "what the set of metrics kept",
+                f"{len(w['recovered'])}/{len(w['true_edges'])} true edges kept, "
+                f"{len(w['candidates']) - len(w['survivors'])} candidates cut — "
+                "faded edges are the declared world the gates removed")
+    return _finish(fig, ax, "calibration_toy_world_gate_verdicts", tight=False)
+
+
 # ---------------------------------------------------------------------------
 # 7c. Tier 1, the corpus underneath it. Every claim the calibration makes is a
 #     claim about a corpus: how often each feature fires, and how the token mass
@@ -2919,6 +3030,12 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         "computed from validation/synthetic_toy_world.py (no cache needed)" if world
         else "needs torch + validation/synthetic_toy_world.py",
         lambda: calibration_toy_world_before_after(world))
+    # The single-panel, rows-not-columns redraw of the same world; both are
+    # built so the manuscript can pick one (see the function's docstring).
+    run("calibration_toy_world_gate_verdicts", bool(world),
+        "computed from validation/synthetic_toy_world.py (no cache needed)" if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_toy_world_gate_verdicts(world))
     # The same world, three more questions: what the corpus underneath it looks
     # like, what each gate removed as a count, and what the first gate saw.
     run("calibration_toy_corpus_firing", bool(world),
@@ -3323,6 +3440,35 @@ def _captions():
             "since they are real refinements --- with the split reported against the "
             "parent by a different metric. The two negative controls are the two colours "
             "that come through unchanged: "
+            + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
+            + (f"and the shared-topic pair {spur} passes every gate here."
+               if spur else ""))
+        # Standalone twin of the caption above, because the manuscript shows one
+        # of the two figures, not both: it re-describes the world instead of
+        # deferring to a before panel that may not be on the page.
+        d["calibration_toy_world_gate_verdicts"] = (
+            r"\textbf{What the set of metrics kept.} "
+            "The same hand-built world as the previous figure, drawn in one "
+            "palette with one colour per injected structure: the parent block "
+            f"as the top row, the child block as the bottom row --- "
+            f"{len(world['true_edges'])} declared true parent--child edges over "
+            f"{world['P'] + world['C']} features, plus the six structures "
+            "planted to be caught or to demonstrate that nothing catches them. "
+            "A faded edge is one the three composed gates (reverse coverage, "
+            "the reconstruction condition, the token-frequency control) "
+            "removed, so the declared world is every edge, bright or faded, and "
+            "the note above each parent names the gate that decided its edges. "
+            f"Coverage proposes {len(world['candidates'])} candidates; "
+            f"{len(world['candidates']) - len(world['survivors'])} are cut, and "
+            f"{len(world['recovered'])} of the {len(world['true_edges'])} true "
+            "edges survive. The division of labour is the reading: all "
+            f"{n_sp} super-parent pairs die at the reconstruction condition "
+            "rather than at coverage, the frequency-coincidence pair passes "
+            "coverage and reconstruction and dies only at the frequency "
+            "control, and the feature-split edges are kept --- correctly, "
+            "since they are real refinements --- with the split reported "
+            "against the parent by a different metric. The two negative "
+            "controls come through unchanged: "
             + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
             + (f"and the shared-topic pair {spur} passes every gate here."
                if spur else ""))
@@ -3842,6 +3988,10 @@ TEX_ORDER = [
      "What each gate removes, counted.", None),
     ("APP 0d", "calibration_toy_world_before_after", True,
      "Which gate caught which injected pathology.", None),
+    # the single-panel twin of 0d: emitted so the manuscript can choose
+    # between them; expected to be commented in/out there, not both shown
+    ("APP 0d'", "calibration_toy_world_gate_verdicts", True,
+     "What the set of metrics kept.", None),
     ("APP 0e", "calibration_synthetic_toy_scorecard", True,
      "Every metric scored against a known tree.", None),
     ("APP 0f", "calibration_seed_sweep", True,
@@ -3994,6 +4144,7 @@ CLAIMS = {
     "superparent_fanout_vs_firing": "the superparent gate reads fan-out; firing rate is handled per edge",
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_toy_world_before_after": "which gate removed which injected pathology, on the world where the answer was fixed first",
+    "calibration_toy_world_gate_verdicts": "the same gate verdicts in one panel — blocks as rows, the declared world kept as the faded edges",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "calibration_toy_tree_recovered": "the tree drawn: which edges the battery returned, and which features were never learned",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
