@@ -29,16 +29,21 @@ class LoadedSAE:
 def load_sae(ckpt_dir: str | Path) -> LoadedSAE:
     """Load a trained sae-training Matryoshka checkpoint and its `toy_meta.json`.
 
-    `sae_training` is imported here so the rest of the package runs without it. Returns an
-    `encode` callable (float64 acts), the decoder rows, the decoder bias, and the training
-    metadata.
+    `sae_training` is imported here so the rest of the package runs without it. The
+    architecture class is chosen from the checkpoint's `variant` (matryoshka | vanilla), so a
+    plain-BatchTopK baseline loads the same way as the nested one. Returns an `encode` callable
+    (float64 acts), the decoder rows, the decoder bias, and the training metadata.
     """
-    from sae_training.architectures.matryoshka import MatryoshkaSAE  # lazy
-
     ckpt = Path(ckpt_dir)
-    sae = MatryoshkaSAE.from_pretrained(str(ckpt), device="cpu")
-    sae.eval()
     meta = json.loads((ckpt / "toy_meta.json").read_text(encoding="utf-8"))
+    variant = str(meta.get("variant", "matryoshka"))
+    if variant == "vanilla":
+        from sae_training.architectures.base import VanillaSAE as SAECls  # lazy
+    else:
+        from sae_training.architectures.matryoshka import MatryoshkaSAE as SAECls  # lazy
+
+    sae = SAECls.from_pretrained(str(ckpt), device="cpu")
+    sae.eval()
 
     def encode(h: torch.Tensor) -> torch.Tensor:
         # encode() -> (hidden, pre_acts); the deployed (thresholded) acts are `hidden`.

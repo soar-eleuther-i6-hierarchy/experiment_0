@@ -34,6 +34,7 @@ import torch
 from scoring.core.detectors import (DetectorInputs, compute_all, s_res_cosine,
                                     s_res_probe)
 from scoring.core.registry import CONSTANTS as _REGISTRY_CONSTANTS
+from toygen import labels
 
 if TYPE_CHECKING:                       # WorldBundle is used only as a type hint
     from scoring.core.world import WorldBundle
@@ -155,11 +156,14 @@ def _constant_scored_detectors(detectors: dict[str, torch.Tensor],
 
 
 # --------------------------------------------------------------------------
-# the validation battery
+# the validation checks
 # --------------------------------------------------------------------------
-def _pure_inputs(bundle: "WorldBundle", feats: list[int], acts: torch.Tensor) -> DetectorInputs:
+def pure_inputs(bundle: "WorldBundle", feats: list[int], acts: torch.Tensor) -> DetectorInputs:
     """Build DetectorInputs on the recovered features from a given activation matrix and
-    the TRUE decoders."""
+    the TRUE decoders.
+
+    Public (no leading underscore) because it is a shared seam: `machinery_report` here and
+    `scoring.oracle.score_dump.oracle_scores` both build their pure-input bundles through it."""
     idx = torch.tensor(feats, dtype=torch.long)
     g_sel = bundle.g[idx]
     W_unit = g_sel / g_sel.norm(dim=1, keepdim=True).clamp_min(_TINY)
@@ -171,20 +175,26 @@ def _pure_inputs(bundle: "WorldBundle", feats: list[int], acts: torch.Tensor) ->
 
 
 def _detector_validity(detectors: dict[str, torch.Tensor], pairs: list[tuple[int, int]],
-                       tol: float) -> dict[str, dict]:
-    """Per-detector validity over `pairs`: finite-value count and fraction, finiteness
-    (≥2), and degeneracy (constant / all-NaN).
+                       pair_classes: torch.Tensor, tol: float) -> dict[str, dict]:
+    """Per-detector validity over `pairs`: finite-value count, finiteness (≥2), degeneracy
+    (constant / all-NaN), and the finite fraction PER ground-truth class.
 
-    `finite_frac` surfaces near-total breakage that still clears the lenient ≥2
-    `finite` gate (many detectors are legitimately sparse, e.g. a dead-parent NaN)."""
+    `finite_by_class` replaces a single class-size-weighted fraction (which the huge
+    `unrelated` class dominates): it shows WHERE each metric is defined, so designed
+    abstention (NaN on a class it cannot measure) reads apart from breakage (NaN on a
+    class it should score). This is domain, not correctness — correctness is Stage 2."""
     degen = set(_constant_scored_detectors(detectors, pairs, tol))
-    n_pairs = len(pairs)
+    pa = torch.tensor([a for (a, _b) in pairs], dtype=torch.long)
+    pb = torch.tensor([b for (_a, b) in pairs], dtype=torch.long)
+    class_masks = {name: pair_classes == labels._index(name) for name in labels.LABELS}
     out: dict[str, dict] = {}
     for det, mat in detectors.items():
-        vals = torch.tensor([float(mat[p, c]) for (p, c) in pairs], dtype=torch.float64)
-        n_finite = int(torch.isfinite(vals).sum())         # finite = not NaN and not ±inf
+        finite = torch.isfinite(mat[pa, pb]) if pa.numel() else torch.zeros(0, dtype=torch.bool)
+        n_finite = int(finite.sum())                       # finite = not NaN and not ±inf
+        by_class = {name: (float(finite[m].double().mean()) if int(m.sum()) else float("nan"))
+                    for name, m in class_masks.items()}
         out[det] = {"n_finite": n_finite, "finite": n_finite >= 2, "degenerate": det in degen,
-                    "finite_frac": n_finite / n_pairs if n_pairs else 0.0}
+                    "finite_by_class": by_class}
     return out
 
 
@@ -195,7 +205,7 @@ def machinery_report(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[
     features and report each detector's finiteness and non-degeneracy per regime, plus the
     alpha-encoder reconstruction FVU.
 
-    A detector PASSES the battery when it is finite AND non-degenerate in AT LEAST ONE
+    A detector PASSES when it is finite AND non-degenerate in AT LEAST ONE
     regime. A detector that is degenerate in one regime by design (coverage_R ≡ 1 for is_a
     on true_A) but healthy in the other is correct machinery; only a detector broken in
     BOTH regimes is a machinery failure.
@@ -206,10 +216,14 @@ def machinery_report(bundle: "WorldBundle", feats: list[int], pairs: list[tuple[
     alpha_acts = alpha_full[:, idx]
     trueA_acts = bundle.A[:, idx]
     regimes = {
-        "true_A": compute_all(_pure_inputs(bundle, feats, trueA_acts), constants),
-        "alpha_encoder": compute_all(_pure_inputs(bundle, feats, alpha_acts), constants),
+        "true_A": compute_all(pure_inputs(bundle, feats, trueA_acts), constants),
+        "alpha_encoder": compute_all(pure_inputs(bundle, feats, alpha_acts), constants),
     }
-    per_regime = {name: _detector_validity(dets, pairs, tol) for name, dets in regimes.items()}
+    # class per pair (positions -> feature ids -> the truth label); truth enters only here.
+    pair_classes = torch.tensor(
+        [int(bundle.pair_labels[feats[a], feats[b]]) for (a, b) in pairs], dtype=torch.long)
+    per_regime = {name: _detector_validity(dets, pairs, pair_classes, tol)
+                  for name, dets in regimes.items()}
     detectors = list(regimes["true_A"].keys())
     passed = {
         det: any(per_regime[r][det]["finite"] and not per_regime[r][det]["degenerate"]
