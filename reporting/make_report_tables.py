@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -62,6 +63,19 @@ def gemma_layers():
         if r:
             out.append((L, r))
     return out
+
+
+def _layer_name(dirname: str) -> str:
+    """``layer_00`` -> ``layer 0``. The zero pad is a sort key, not a number.
+
+    Run directories are padded so ``ls`` orders them, and reading that pad
+    straight into a label printed the PCFG runs as L00--L03 beside gemma's
+    L1--L24, which invites a reader to take the width for a difference in what
+    is being counted. The pad is dropped for display only; nothing on disk or
+    in any path is renamed.
+    """
+    m = re.fullmatch(r"layer_0*(\d+)", dirname)
+    return f"layer {int(m.group(1))}" if m else dirname.replace("_", " ")
 
 
 def pcfg_runs():
@@ -104,7 +118,8 @@ def wrap(text, frac: float) -> str:
     return rf"\parbox[t]{{{frac}\linewidth}}{{\raggedright {text}\strut}}"
 
 
-def table(label, caption, header, rows, align=None, star=False, note=None):
+def table(label, caption, header, rows, align=None, star=False, note=None,
+          size="small"):
     r"""One booktabs table, caption ABOVE the rules.
 
     Caption above is the convention for tables and below for figures, and it is
@@ -117,11 +132,19 @@ def table(label, caption, header, rows, align=None, star=False, note=None):
     """
     env = "table*" if (star and TWOCOLUMN) else "table"
     align = align or ("l" + "r" * (len(header) - 1))
-    L = [rf"\begin{{{env}}}[tbp]", r"  \centering", r"  \small",
-         rf"  \caption{{{caption}}}", rf"  \label{{tab:{label}}}",
-         rf"  \begin{{tabular}}{{{align}}}", r"    \toprule",
-         "    " + " & ".join(header) + r" \\", r"    \midrule"]
-    L += ["    " + " & ".join(str(c) for c in r) + r" \\" for r in rows]
+    # `label` may be several names: a table that grew to cover more than its
+    # original scope keeps its old label as an alias, so a \ref written against
+    # the narrower table still resolves instead of printing "??".
+    labels = [label] if isinstance(label, str) else list(label)
+    L = [rf"\begin{{{env}}}[tbp]", r"  \centering", rf"  \{size}",
+         rf"  \caption{{{caption}}}"]
+    L += [rf"  \label{{tab:{n}}}" for n in labels]
+    L += [rf"  \begin{{tabular}}{{{align}}}", r"    \toprule",
+          "    " + " & ".join(header) + r" \\", r"    \midrule"]
+    # a plain string is emitted verbatim: that is how a grouped table gets its
+    # \addlinespace and its section headings without a second table builder
+    L += ["    " + (r if isinstance(r, str)
+                    else " & ".join(str(c) for c in r) + r" \\") for r in rows]
     L += [r"    \bottomrule", r"  \end{tabular}"]
     if note:
         L.append(rf"  \\[2pt] \footnotesize {note}")
@@ -390,30 +413,88 @@ def t_tier1(toy):
 # ---------------------------------------------------------------------------
 # 6. The gemma result, per layer.
 # ---------------------------------------------------------------------------
-def t_gemma(layers, second, has_bos=True):
-    # Which layers carry the strict column is read off the run directories --
-    # `second` maps layer -> second_pass.json content. The caption used to say
-    # "layer 6 alone", then "layers 1 and 6" while the body still filled only
-    # L6: a hand-written scope note is the part that goes stale first, so the
-    # scope sentence is now chosen by the same data that fills the cells.
+def t_gemma(layers, second, has_bos=True, pcfg=()):
+    """Every graded block pair, at every graded layer, on every source.
+
+    It reported B0->B1 on gemma alone, which is one cell of the grid the battery
+    actually produced: three more adjacent pairs per gemma layer, seven per PCFG
+    layer, and the S_res column filled for every one of them rather than for the
+    outermost pair. A table that shows one pair cannot be read against the claim
+    the paper makes, which is about WHERE in the block structure the pathology
+    sits -- one row can neither support that claim nor contradict it.
+
+    Rows are grouped (source, block pair, layer) and the pair is printed once per
+    group, the same grouping the matrix figure uses; the two sources are sections
+    of one table rather than two tables because every threshold is identical
+    across them and it is that identity the table is evidence for.
+    """
     _sp = [L for L, _ in layers if second.get(L)]
-    rows = []
-    for L, r in layers:
-        p = _pair(r)
-        s = ""
-        sp = second.get(L)
-        if sp and "0->1" in sp:
-            sr = sp["0->1"]["sres"]
-            s = rf"{sr['n_pass']}/{sr['n_edges_scored']:,}"
-        rows.append([f"L{L}", f"{p['n_candidate_edges']:,}",
-                     rf"{100 * p['reconstruction']['frac_pass']:.0f}\%",
-                     rf"{100 * p['independence_null']['frac_chance_level']:.0f}\%",
-                     rf"{100 * p['freq_control']['frac_freq_driven']:.1f}\%",
-                     rf"{100 * p['degree']['poly_frac']:.0f}\%",
-                     s or "---"])
+
+    def block_pairs(report):
+        """Adjacent pairs the run's own block structure declares, not the ones it filled.
+
+        A pair the run never computed is a row carrying the reason. Dropping it
+        would let the table read as if the block structure ended where the
+        memory budget did.
+        """
+        return list(range(len(report.get("block_ranges") or []) - 1))
+
+    def cells(q, sp):
+        s = "---"
+        if sp and sp.get("n_edges_scored"):
+            s = rf"{sp['n_pass']}/{sp['n_edges_scored']:,}"
+        if q["n_candidate_edges"] == 0:
+            # nothing proposed is a measurement; the columns downstream of it
+            # have nothing to report and say so rather than printing 0\%
+            return ["0"] + ["---"] * 5
+        return [f"{q['n_candidate_edges']:,}",
+                rf"{100 * q['reconstruction']['frac_pass']:.0f}\%",
+                rf"{100 * q['independence_null']['frac_chance_level']:.0f}\%",
+                rf"{100 * q['freq_control']['frac_freq_driven']:.1f}\%"
+                if q.get("freq_control") else "---",
+                rf"{100 * q['degree']['poly_frac']:.0f}\%",
+                s]
+
+    NC = 8
+
+    def section(title, runs):
+        """One source's block: a heading row, then pair-major (pair, layer) rows."""
+        out = [rf"\multicolumn{{{NC}}}{{l}}{{\textbf{{{title}}}}} \\", r"\addlinespace[1pt]"]
+        ranges = next((r.get("block_ranges") for _, r in runs if r.get("block_ranges")), None)
+        for k in block_pairs(runs[0][1]) if ranges else []:
+            pr, name = f"{k}->{k + 1}", rf"B{k}$\rightarrow$B{k + 1}"
+            if k:
+                out.append(r"\addlinespace[2pt]")
+            filled = [(lab, r) for lab, r in runs if _pair(r, pr)]
+            if not filled:
+                P = ranges[k][1] - ranges[k][0]
+                Cn = ranges[k + 1][1] - ranges[k + 1][0]
+                out.append([name, "---",
+                            rf"\multicolumn{{{NC - 2}}}{{c}}{{\emph{{not computed: "
+                            rf"{P:,}$\times${Cn:,} exceeds the memory budget}}}}"])
+                continue
+            for i, (lab, r) in enumerate(filled):
+                q = _pair(r, pr)
+                sp = ((r.get("second_pass") or {}).get(pr) or {}).get("sres")
+                out.append([name if i == 0 else "", lab] + cells(q, sp))
+        return out
+
+    rows = section(rf"\texttt{{gemma-2-2b}} --- $D = {C.D_SAE:,}$, "
+                   rf"{len(C.BLOCK_RANGES)} nested blocks",
+                   [(f"L{L}", r) for L, r in layers])
+    if pcfg:
+        d_pcfg = pcfg[0][1].get("block_ranges", [[0, 0]])[-1][1]
+        nb = len(pcfg[0][1].get("block_ranges") or [])
+        rows.append(r"\addlinespace[3pt] \midrule \addlinespace[2pt]")
+        rows += section(rf"PCFG Matryoshka --- $D = {d_pcfg:,}$, {nb} nested blocks",
+                        [(_layer_name(n).replace("layer ", "L"), r) for n, r, _ in pcfg])
+
     if len(_sp) == len(layers):
-        sres_note = (r" The $S_\mathrm{res}$ pass has been run on every graded layer; its "
-                     r"rates are only comparable against the shared null of Table~\ref{tab:null}.")
+        sres_note = (r" The $S_\mathrm{res}$ pass has been run on every graded layer of both "
+                     r"sources and on every pair, not on the outermost one alone; its rates "
+                     r"are only comparable against the shared null of Table~\ref{tab:null}, "
+                     "because a top-$k$ rank rule is only as strict as the dictionary is "
+                     "large.")
     elif _sp:
         sres_note = (r" The $S_\mathrm{res}$ column is filled for layer"
                      + ("s~" if len(_sp) > 1 else "~")
@@ -423,54 +504,90 @@ def t_gemma(layers, second, has_bos=True):
                      "run there, not that nothing passed.")
     else:
         sres_note = r" No layer has had the $S_\mathrm{res}$ pass (stage~03) yet."
+
+    n_gem = sum(1 for k in range(len(C.BLOCK_RANGES) - 1)
+                for _, r in layers if _pair(r, f"{k}->{k + 1}"))
+    n_pcf = sum(1 for _, r, _ in pcfg for q in r["pairs"])
     return table(
-        "gemma", rf"\textbf{{Block pair B0$\rightarrow$B1 on \texttt{{gemma-2-2b}}, all "
-        rf"{len(layers)} graded "
-        r"layers.} Read left to right: coverage proposes thousands of edges, the reconstruction "
-        "filter keeps most of them, and the independence null rejects most of them --- the "
-        "over-connection is what the parent's own firing rate already forces, not capture of "
-        "frequent tokens, which the frequency control puts at 1--2\\%. Multi-parenting is the "
-        "measure that does not depend on the candidate set and the only one of the project's "
-        r"original four claims to survive BOS exclusion"
-        + (r" (Table~\ref{tab:bos})" if has_bos else "") + "." + sres_note,
-        ["Layer", "Candidates", "Recon.", "At chance", "Freq.-driven",
+        ["results", "gemma"],
+        r"\textbf{Every graded block pair, at every graded layer, on both SAE sources.} "
+        rf"{n_gem} graded pairs on \texttt{{gemma-2-2b}}"
+        + (rf" and {n_pcf} on the PCFG Matryoshka SAEs" if pcfg else "") + ", under one "
+        "threshold set that is tuned to neither (Table~\\ref{tab:setup}). Read left to right: "
+        "coverage proposes thousands of edges, the reconstruction filter keeps most of them, "
+        "and the independence null rejects most of them --- the over-connection is what the "
+        "parent's own firing rate already forces, not capture of frequent tokens, which the "
+        "frequency control puts at 1--2\\% in the outermost pair. Read down instead and the "
+        "claim is locational: multi-parenting sits at the coarsest boundary "
+        "B0$\\rightarrow$B1 at every layer of both sources, while the deeper pairs fail the "
+        "frequency control instead. Multi-parenting is the measure that does not depend on "
+        "the candidate set and the only one of the project's original four claims to survive "
+        r"BOS exclusion"
+        + (r" (Table~\ref{tab:bos})" if has_bos else "") + ". A pair the run never computed "
+        "carries its reason rather than being dropped, and a pair that proposed nothing "
+        "shows a candidate count of zero with the columns downstream of it blank: neither is "
+        "the same statement as a clean pair." + sres_note,
+        ["Pair", "Layer", "Candidates", "Recon.", "At chance", "Freq.-driven",
          r"$\geq 2$ parents", r"$S_\mathrm{res}$"],
-        rows, star=True)
+        rows, align="ll" + "r" * 6, star=True, size="footnotesize")
 
 
 # ---------------------------------------------------------------------------
 # 7. Cross-source (appendix).
 # ---------------------------------------------------------------------------
 def t_sources(layers, second, pcfg):
-    rows = []
-    l6 = next((r for L, r in layers if L == 6), None)
-    if l6:
-        p = _pair(l6)
-        second6 = second.get(6)
-        sr = second6["0->1"]["sres"] if second6 else None
-        rows.append([r"\texttt{gemma-2-2b} L6", f"{C.D_SAE:,}", str(len(C.BLOCK_RANGES)),
-                     f"{l6['total_tokens']:,}", f"{p['n_candidate_edges']:,}",
-                     rf"{100 * p['reconstruction']['frac_pass']:.0f}\%",
-                     rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"])
-    for name, r, sp in pcfg:
-        p = _pair(r)
+    """One row per graded RUN, summed over every block pair that run graded.
+
+    It carried gemma's layer 6 against the PCFG runs, at B0->B1 only, which made
+    a cross-source table out of two cells. Two things were wrong with that: five
+    of gemma's six graded layers were absent, so the row that represented gemma
+    was chosen rather than measured; and reading only the outermost pair left the
+    deeper ones -- where the two sources differ most -- out of the comparison
+    entirely.
+
+    Every column is now a whole-run total over the pairs that run graded, which
+    is this table's own altitude. The per-pair breakdown behind these totals is
+    Table~\\ref{tab:results}: this one answers "is it the same battery on both
+    sources", that one answers "where in the block structure".
+    """
+    def run_row(label, r, sp_json=None):
         cfg = r.get("config") or {}
         d = cfg.get("d_sae") or (r.get("block_ranges") or [[0, 0]])[-1][-1]
         nb = len(r.get("block_ranges") or [])
-        sr = sp["0->1"]["sres"] if sp and "0->1" in sp else None
-        rows.append([f"PCFG {esc(name.replace('_', ' '))}", f"{d:,}", str(nb),
-                     f"{r['total_tokens']:,}", f"{p['n_candidate_edges']:,}",
-                     rf"{100 * p['reconstruction']['frac_pass']:.0f}\%",
-                     rf"{sr['n_pass']}/{sr['n_edges_scored']:,}" if sr else "---"])
+        sp = sp_json or r.get("second_pass") or {}
+        cand = recon = sres_pass = sres_n = 0
+        for q in r["pairs"]:
+            cand += q["n_candidate_edges"]
+            recon += q["reconstruction"]["n_pass"]
+            s = (sp.get(q["pair"]) or {}).get("sres") or {}
+            sres_pass += s.get("n_pass", 0)
+            sres_n += s.get("n_edges_scored", 0)
+        return [label, f"{d:,}", str(nb), f"{r['total_tokens']:,}",
+                str(len(r["pairs"])), f"{cand:,}",
+                rf"{100 * recon / cand:.0f}\%" if cand else "---",
+                rf"{sres_pass}/{sres_n:,}" if sres_n else "---"]
+
+    rows = [run_row(rf"\texttt{{gemma-2-2b}} L{L}", r, second.get(L)) for L, r in layers]
+    if layers and pcfg:
+        rows.append(r"\addlinespace[2pt]")
+    rows += [run_row(f"PCFG {esc(_layer_name(name))}", r, sp) for name, r, sp in pcfg]
+
+    n_pairs = sum(len(r["pairs"]) for _, r in layers) + sum(len(r["pairs"]) for _, r, _ in pcfg)
     return table(
-        "sources", r"\textbf{The same battery across SAE sources.} Identical metric code and "
-        "identical global thresholds; only the block structure follows the source, read from the "
-        "statistics file being graded. The reconstruction column should be read with care on "
+        "sources", r"\textbf{The same battery across SAE sources, every graded run.} "
+        f"All {len(layers) + len(pcfg)} graded runs, and within each run every block pair it "
+        f"graded --- {n_pairs} pairs in total, not the outermost one alone. Identical metric "
+        "code and identical global thresholds; only the block structure follows the source, "
+        "read from the statistics file being graded. Candidates, the reconstruction rate and "
+        r"the $S_\mathrm{res}$ column are whole-run totals over those pairs, so a run is "
+        "summarised rather than represented by one of its pairs; the per-pair breakdown is "
+        r"Table~\ref{tab:results}. The reconstruction column should be read with care on "
         "PCFG: the weakest candidate edge there sits $3.5\\times$ above the threshold, so the "
         "filter is inert on that source and its surviving edges have passed coverage alone. "
         r"$S_\mathrm{res}$ pass rates are not comparable between rows of different $D$ --- see "
         r"Table~\ref{tab:null}.",
-        ["Run", "$D$", "Blocks", "Tokens", "Candidates", "Recon.", r"$S_\mathrm{res}$"],
+        ["Run", "$D$", "Blocks", "Tokens", "Pairs", "Candidates", "Recon.",
+         r"$S_\mathrm{res}$"],
         rows, star=True)
 
 
@@ -597,24 +714,44 @@ def t_align(rs):
 # ---------------------------------------------------------------------------
 def t_null(layers, second, pcfg):
     k = C.SRES_RANK_TOP_K
-    rows = [["Synthetic toy (Tier 1)", "42", rf"{100 * k / 42:.1f}\%", "---", "---"],
-            ["Trained toy (Tier 2)", "20", rf"{100 * k / 20:.1f}\%", "5/5 true edges", "---"]]
+    rows = [["Synthetic toy (Tier 1)", "42", rf"{100 * k / 42:.1f}\%", "1", "---",
+             "---", "---"],
+            ["Trained toy (Tier 2)", "20", rf"{100 * k / 20:.1f}\%", "1", "---",
+             "5/5 true edges", "---"]]
+    def whole_run(r, sp_json):
+        """Passes and edges scored over EVERY pair the run probed, not the outermost.
+
+        The observed rate used to be read off B0->B1 alone, which made a table
+        about a null that depends on the dictionary depend on a choice of block
+        pair as well. Every pair is probed against the same dictionary, so every
+        pair belongs in the same rate.
+        """
+        sp = sp_json or r.get("second_pass") or {}
+        n_pass = n_scored = n_pairs = 0
+        for q in r["pairs"]:
+            sr = (sp.get(q["pair"]) or {}).get("sres") or {}
+            if sr.get("n_edges_scored"):
+                n_pairs += 1
+            n_pass += sr.get("n_pass", 0)
+            n_scored += sr.get("n_edges_scored", 0)
+        return n_pass, n_scored, n_pairs
+
     obs = []
-    for L, _ in layers:
-        sp = second.get(L)
-        if sp and "0->1" in sp and sp["0->1"]["sres"]["n_edges_scored"]:
-            s = sp["0->1"]["sres"]
+    for L, r in layers:
+        n_pass, n_scored, n_pairs = whole_run(r, second.get(L))
+        if n_scored:
             obs.append((rf"\texttt{{gemma-2-2b}} L{L}", C.D_SAE,
-                        100 * s["n_pass"] / s["n_edges_scored"]))
+                        100 * n_pass / n_scored, n_pairs, n_scored))
     for name, r, sp in pcfg:
-        if sp and "0->1" in sp and sp["0->1"]["sres"]["n_edges_scored"]:
-            s = sp["0->1"]["sres"]
+        n_pass, n_scored, n_pairs = whole_run(r, sp)
+        if n_scored:
             d = (r.get("config") or {}).get("d_sae") or 1792
-            obs.append((f"PCFG {esc(name.replace('_', ' '))}", d,
-                        100 * s["n_pass"] / s["n_edges_scored"]))
-    for name, d, o in obs:
+            obs.append((f"PCFG {esc(_layer_name(name))}", d,
+                        100 * n_pass / n_scored, n_pairs, n_scored))
+    for name, d, o, n_pairs, n_scored in obs:
         null = 100 * k / d
-        rows.append([name, f"{d:,}", rf"{null:.3f}\%", rf"{o:.2f}\%",
+        rows.append([name, f"{d:,}", rf"{null:.3f}\%", str(n_pairs), f"{n_scored:,}",
+                     rf"{o:.2f}\%",
                      rf"{o / null:.0f}$\times$" if o > 0 else "below chance"])
     return table(
         "null", rf"\textbf{{The rank rule's null depends on dictionary size.}} $S_\mathrm{{res}}$ "
@@ -624,8 +761,13 @@ def t_null(layers, second, pcfg):
         "orders of magnitude stricter on gemma than on a 42-feature toy, and a measured pass rate "
         "is only interpretable against its own null: two runs on the \\emph{same} 1{,}792-latent "
         "dictionary land on opposite sides of theirs. Reporting $S_\\mathrm{res}$ shares across "
-        "sources without this correction compares nothing.",
-        ["Source", "$D$", "Null $k/D$", "Observed", "vs.\\ null"], rows, star=True)
+        "sources without this correction compares nothing. The observed rate is over "
+        r"\emph{every} block pair the run probed, not its outermost pair alone: each pair "
+        "is scored against the same dictionary, so each belongs in the same rate, and the "
+        "pair and edge counts behind it are printed so a rate resting on a handful of edges "
+        r"is visible as one. The per-pair breakdown is Table~\ref{tab:results}.",
+        ["Source", "$D$", "Null $k/D$", "Pairs", "Edges scored", "Observed",
+         "vs.\\ null"], rows, star=True)
 
 
 # ---------------------------------------------------------------------------
@@ -736,7 +878,7 @@ def build(dry: bool, internal: bool = False):
         if toy else "needs synthetic_toy_calibration.json", lambda: t_tier1(toy))
     add("MAIN 2", "gemma", bool(layers), f"{len(layers)} gemma layer reports"
         if layers else "needs gemma metrics_report.json",
-        lambda: t_gemma(layers, second, has_bos), "The result")
+        lambda: t_gemma(layers, second, has_bos, pcfg), "The result")
     add("APP 1", "sources", bool(layers and pcfg), f"gemma + {len(pcfg)} PCFG runs"
         if (layers and pcfg) else "needs a gemma report and a PCFG report",
         lambda: t_sources(layers, second, pcfg), "Appendix")

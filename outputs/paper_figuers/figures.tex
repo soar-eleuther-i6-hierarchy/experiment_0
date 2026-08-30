@@ -28,10 +28,38 @@
 \graphicspath{{./}{paper_figuers/}{figuers/}{figures/}{../paper_figuers/}{../figuers/}{../figures/}{../}}
 
 % -------------------------------------------------------------------------
-% What the battery finds on gemma-2-2b
+% What the metric battery finds
 % -------------------------------------------------------------------------
 
 % [MAIN 1]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
+  \caption{%
+    \textbf{One instrument, untuned, on both sources.}
+    Every metric per block pair \emph{and} per layer, one panel per SAE source; no cell is an
+    average, so a row is one block pair read at one layer and an empty candidate set shows as
+    a dash rather than as a number. Colour ranks \emph{within} a column of its own panel (the
+    columns are different quantities on different scales, and the two sources have different
+    dictionaries), so the reading is locational. Three things read off it. The structural
+    pathology (multi-parenting, base-rate co-firing, superparents) sits in the outermost pair
+    B0$\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\% at
+    \emph{every} graded layer of gemma and 99--100\% at three of the four PCFG layers. The
+    deeper pairs are not clean but differently broken, failing the frequency control instead
+    (up to 96.3\% of B2$\rightarrow$B3 edges at L1) with sibling overlap several times higher.
+    And fan-out Gini is the one column that localises nothing, sitting at 0.81--0.97 on gemma
+    and 0.95--1.00 on PCFG in every pair at every layer, which makes it a property of the
+    dictionary rather than of any boundary within it. The PCFG deep pairs rest on one to three
+    candidate edges, so their quiet columns record emptiness, not health. gemma's fourth
+    adjacent pair B3$\rightarrow$B4 carries a reason rather than a row of dashes: it was never
+    computed, because its co-firing matrix is 6{,}144$\times$24{,}576 and does not fit this
+    run's memory budget. It is drawn because a pair silently absent from a grid reads as a
+    pair with nothing in it, which is a claim the run never tested.
+  }
+  \label{fig:tangle-lives-in-top-block-pair}
+\end{figure}
+
+% [MAIN 2]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{funnel_coverage_to_sres}
@@ -48,7 +76,7 @@
   \label{fig:funnel-coverage-to-sres}
 \end{figure}
 
-% [MAIN 2]
+% [MAIN 3]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{multiparenting_by_layer}
@@ -70,7 +98,7 @@
   \label{fig:multiparenting-by-layer}
 \end{figure}
 
-% [MAIN 3]
+% [MAIN 4]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{recovered_graph_toy_vs_pcfg_vs_gemma}
@@ -99,6 +127,114 @@
 % [APP 0a]
 \begin{figure}[tbp]
   \centering
+  \includegraphics[width=\linewidth]{calibration_toy_corpus_firing}
+  \caption{%
+    \textbf{The corpus the Tier-1 calibration is run on.} Every claim in this appendix is a
+    claim about a corpus, and a metric that separated two classes cleanly on a corpus with
+    nothing in it has demonstrated nothing. \emph{Left:} the tokens each declared feature
+    fires on, log scale, coloured by the role it was planted as; the dashed line is the
+    production \texttt{MIN\_FIRE\_COUNT} $= 20$, below which no pair is scored at all. Two of
+    the 42 declared features never fire and are drawn as stubs at the floor rather than
+    omitted. The super-parent is visible as the single bar an order of magnitude above
+    everything else --- that is what makes it a super-parent. \emph{Right:} where the corpus's
+    token mass sits across the three frequency buckets metric 5 re-weights by: 51\% of all
+    tokens fall in bucket 1, carried by 348 distinct ids. That concentration is what the
+    frequency control has to work against, so it is reported rather than assumed. The bucket
+    bars use a single-hue sequential shade and no role colour: buckets are an order, not a
+    category, and the palette in the key below applies to the left panel only.
+  }
+  \label{fig:calibration-toy-corpus-firing}
+\end{figure}
+
+% [APP 0b]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_reverse_coverage}
+  \caption{%
+    \textbf{What the first gate proposes, and the one true edge it cannot.} The
+    reverse-coverage matrix $R = $ co-fire\,/\,child firing for every parent--child pair in
+    the hand-built world, with the ground truth drawn on top of it. Coverage keeps a pair when
+    $R \geq \tau = 0.5$, which proposes 55 of the 320 possible pairs. Circles are true edges
+    it proposed, crosses are pairs it proposed that no true edge backs, and the square is the
+    reading that matters: a true edge whose $R$ never reaches the threshold, so no later gate
+    ever sees it. That is a limit of the first gate which no downstream metric can repair, and
+    it is the same absorption case the scorecard files as a demonstrated blind spot rather
+    than a caught pathology. The super-parent's row is the wide band of crosses --- one parent
+    proposing against nearly every child, at high $R$, on co-firing alone.
+  }
+  \label{fig:calibration-reverse-coverage}
+\end{figure}
+
+% [APP 0c]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_gate_funnel_by_role}
+  \caption{%
+    \textbf{What each gate removes, counted.} The same three composed gates the before/after
+    figure draws, as counts split by the structure each candidate was planted as. Coverage
+    proposes 55 candidates; the reconstruction condition takes that to 25 and the
+    token-frequency control to 24. The genuine block does not move at any stage, which is the
+    claim: the gates are removing planted pathology rather than thinning everything. The
+    division of labour is legible in the widths --- the super-parent's candidates die entirely
+    at reconstruction and not at coverage, and the frequency-coincidence pair survives both
+    coverage and reconstruction and dies only at the control built for it. The two negative
+    controls are the segments that never shrink; they are limitations this composition
+    demonstrates, not failures of it.
+  }
+  \label{fig:calibration-gate-funnel-by-role}
+\end{figure}
+
+% [APP 0d]
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_toy_world_before_after}
+  \caption{%
+    \textbf{Which gate caught which injected pathology.} The same hand-built world as the
+    previous figure, drawn twice in one palette: one colour per injected structure, in both
+    panels. \emph{Left:} the world as declared --- 24 true parent--child edges over 42
+    features, plus the six structures planted to be caught or to demonstrate that nothing
+    catches them. \emph{Right:} the same world after the three composed gates (reverse
+    coverage, the reconstruction condition, the token-frequency control), where a faded edge
+    is one the gates removed and the note beside each parent names the gate that removed it.
+    Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges survive. The
+    division of labour is the reading: all 30 super-parent pairs die at the reconstruction
+    condition rather than at coverage, the frequency-coincidence pair passes coverage and
+    reconstruction and dies only at the frequency control, and the feature-split edges are
+    kept --- correctly, since they are real refinements --- with the split reported against
+    the parent by a different metric. The two negative controls are the two colours that come
+    through unchanged: the absorbed edge (8, 21) is never proposed at all, and the
+    shared-topic pair (9, 22) passes every gate here.
+  }
+  \label{fig:calibration-toy-world-before-after}
+\end{figure}
+
+% [APP 0d']
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\linewidth]{calibration_toy_world_gate_verdicts}
+  \caption{%
+    \textbf{What the set of metrics kept.} The same hand-built world as the previous figure,
+    drawn in one palette with one colour per injected structure: the parent block as the top
+    row, the child block as the bottom row --- 24 declared true parent--child edges over 42
+    features, plus the six structures planted to be caught or to demonstrate that nothing
+    catches them. A faded edge is one the three composed gates (reverse coverage, the
+    reconstruction condition, the token-frequency control) removed, so the declared world is
+    every edge, bright or faded, and the note above each parent names the gate that decided
+    its edges. Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges
+    survive. The division of labour is the reading: all 30 super-parent pairs die at the
+    reconstruction condition rather than at coverage, the frequency-coincidence pair passes
+    coverage and reconstruction and dies only at the frequency control, and the feature-split
+    edges are kept --- correctly, since they are real refinements --- with the split reported
+    against the parent by a different metric. The two negative controls come through
+    unchanged: the absorbed edge (8, 21) is never proposed at all, and the shared-topic pair
+    (9, 22) passes every gate here.
+  }
+  \label{fig:calibration-toy-world-gate-verdicts}
+\end{figure}
+
+% [APP 0e]
+\begin{figure}[tbp]
+  \centering
   \includegraphics[width=\linewidth]{calibration_synthetic_toy_scorecard}
   \caption{%
     \textbf{Calibrating the metrics where the answer is known.} The test world is built by
@@ -124,31 +260,30 @@
   \label{fig:calibration-synthetic-toy-scorecard}
 \end{figure}
 
-% [APP 0b]
+% [APP 0f]
 \begin{figure}[tbp]
   \centering
-  \includegraphics[width=\linewidth]{calibration_toy_world_before_after}
+  \includegraphics[width=\linewidth]{calibration_seed_sweep}
   \caption{%
-    \textbf{Which gate caught which injected pathology.} The same hand-built world as the
-    previous figure, drawn twice in one palette: one colour per injected structure, in both
-    panels. \emph{Left:} the world as declared --- 24 true parent--child edges over 42
-    features, plus the six structures planted to be caught or to demonstrate that nothing
-    catches them. \emph{Right:} the same world after the three composed gates (reverse
-    coverage, the reconstruction condition, the token-frequency control), where a faded edge
-    is one the gates removed and the note beside each parent names the gate that removed it.
-    Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges survive. The
-    division of labour is the reading: all 30 super-parent pairs die at the reconstruction
-    condition rather than at coverage, the frequency-coincidence pair passes coverage and
-    reconstruction and dies only at the frequency control, and the feature-split edges are
-    kept --- correctly, since they are real refinements --- with the split reported against
-    the parent by a different metric. The two negative controls are the two colours that come
-    through unchanged: the absorbed edge (8, 21) is never proposed at all, and the
-    shared-topic pair (9, 22) passes every gate here.
+    \textbf{The scorecard is not an accident of one draw.} Every row of the Tier-1 scorecard,
+    re-run on independently drawn worlds --- a new corpus, new decoder directions and a new
+    residual draw per seed, with the production thresholds unchanged. The cell carries the
+    verdict and the shade carries the margin: how decisively that metric separated the two
+    classes it was graded on, on a $\log_{10}$ scale, because the margins span orders of
+    magnitude and a grid of identical verdicts would hide exactly that. A row that passes at a
+    margin of $1.05$ and one that passes at $10^{3}$ are not the same evidence. The scale is
+    capped at $10^{3}\times$, the same ceiling the scorecard itself prints as \texttt{>1000x}:
+    three rows score $10^{9}$, which is not a measured magnitude but the guard in the
+    denominator when the rejected class scores zero, and letting it set the top of the ramp
+    pushed every honestly-measured margin into the palest two shades. Rows scored
+    categorically have no magnitude to report and are left grey rather than given an invented
+    one. Everything else in this appendix is reported at seed 0; this is the figure that says
+    what that number is worth.
   }
-  \label{fig:calibration-toy-world-before-after}
+  \label{fig:calibration-seed-sweep}
 \end{figure}
 
-% [APP 0c]
+% [APP 0g]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_trained_toy_recovery}
@@ -169,7 +304,7 @@
   \label{fig:calibration-trained-toy-recovery}
 \end{figure}
 
-% [APP 0d]
+% [APP 0h]
 \begin{figure}[tbp]
   \centering
   \includegraphics[width=\linewidth]{calibration_toy_tree_recovered}
@@ -199,34 +334,6 @@
 % -------------------------------------------------------------------------
 % Appendix: what the battery finds
 % -------------------------------------------------------------------------
-
-% [APP 1]
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\linewidth]{tangle_lives_in_top_block_pair}
-  \caption{%
-    \textbf{The tangle lives in the coarsest block pair, on both sources.}
-    Every metric per block pair \emph{and} per layer, one panel per SAE source; no cell is an
-    average, so a row is one block pair read at one layer and an empty candidate set shows as
-    a dash rather than as a number. Colour ranks \emph{within} a column of its own panel (the
-    columns are different quantities on different scales, and the two sources have different
-    dictionaries), so the reading is locational. Three things read off it. The structural
-    pathology (multi-parenting, base-rate co-firing, superparents) sits in the outermost pair
-    B0$\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\% at
-    \emph{every} graded layer of gemma and 99--100\% at three of the four PCFG layers. The
-    deeper pairs are not clean but differently broken, failing the frequency control instead
-    (up to 96.3\% of B2$\rightarrow$B3 edges at L1) with sibling overlap several times higher.
-    And fan-out Gini is the one column that localises nothing, sitting at 0.81--0.97 on gemma
-    and 0.95--1.00 on PCFG in every pair at every layer, which makes it a property of the
-    dictionary rather than of any boundary within it. The PCFG deep pairs rest on one to three
-    candidate edges, so their quiet columns record emptiness, not health. gemma's fourth
-    adjacent pair B3$\rightarrow$B4 carries a reason rather than a row of dashes: it was never
-    computed, because its co-firing matrix is 6{,}144$\times$24{,}576 and does not fit this
-    run's memory budget. It is drawn because a pair silently absent from a grid reads as a
-    pair with nothing in it, which is a claim the run never tested.
-  }
-  \label{fig:tangle-lives-in-top-block-pair}
-\end{figure}
 
 % [APP 1b]
 \begin{figure}[tbp]
@@ -358,11 +465,15 @@
     parent passes whenever chance places it there: the null rate is $k/D$, the grey line,
     which is $11.9\%$ on the 42-feature synthetic toy, $0.28\%$ on a 1{,}792-latent PCFG SAE
     and $0.015\%$ on gemma's 32{,}768. Each measured pass rate is drawn with a vertical drop
-    to its own null, and that distance (not the rate) is what the measurement is worth. Two
-    runs on the \emph{same} 1{,}792-latent dictionary land on opposite sides of their null,
-    which is why a raw pass rate compares nothing across sources. A measured zero has no
-    position on a logarithmic axis and is drawn at a marked floor rather than silently
-    dropped.
+    to its own null, and that distance (not the rate) is what the measurement is worth. The
+    rate is over every block pair a run probed, not its outermost pair alone
+    (Table~\ref{tab:null}), because the null is a property of the dictionary and every pair is
+    scored against the same one. The spread within a single dictionary is itself wide --- four
+    runs on a 1,792-latent dictionary span 0.51--4.59\%, all 2--16$\times$ their null; six
+    runs on a 32,768-latent dictionary span 1.56--14.41\%, all 103--944$\times$ their null ---
+    which is why a raw pass rate compares nothing across sources, and little within one. A
+    measured zero would have no position on a logarithmic axis and is drawn at a marked floor
+    rather than silently dropped; no run needs that here.
   }
   \label{fig:sres-null-rate-vs-dictionary-size}
 \end{figure}

@@ -112,6 +112,27 @@ def _text_on(bg):
     L = _lum(bg)
     return "white" if 1.05 / (L + 0.05) > (L + 0.05) / (_lum(INK) + 0.05) else INK
 
+
+def _fit_width(fig, t, avail_in, floor=5.2):
+    """Shrink a text artist until it fits `avail_in` inches.
+
+    Header labels sit over a column group, so a name wider than its group runs
+    into the neighbouring one -- "Reconstruction" printed straight through
+    "Probe-based" the first time this figure carried the full battery. The
+    width is measured with the renderer rather than estimated from a character
+    count: the names are mixed-case and some carry mathtext, and a per-character
+    guess is wrong in both directions on exactly those.
+    """
+    try:
+        r = fig.canvas.get_renderer()
+    except AttributeError:                       # backend without a live renderer
+        fig.canvas.draw()
+        r = fig.canvas.get_renderer()
+    lim = avail_in * fig.dpi * 0.86              # visible air on either side
+    while t.get_fontsize() > floor and t.get_window_extent(r).width > lim:
+        t.set_fontsize(t.get_fontsize() - 0.2)
+    return t
+
 plt.rcParams.update({
     "font.size": 9.5,
     "axes.edgecolor": "#D8DBE0",
@@ -131,6 +152,19 @@ def _json(path: Path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+def _layer_name(dirname: str) -> str:
+    """``layer_00`` -> ``layer 0``. The zero pad is a sort key, not a number.
+
+    Run directories are padded so ``ls`` orders them, and reading that pad
+    straight into a label printed the PCFG runs as L00--L03 beside gemma's
+    L1--L24, which invites a reader to take the width for a difference in what
+    is being counted. The pad is dropped for display only; nothing on disk or
+    in any path is renamed.
+    """
+    m = re.fullmatch(r"layer_0*(\d+)", dirname)
+    return f"layer {int(m.group(1))}" if m else dirname.replace("_", " ")
+
+
 def gemma_layers() -> list[tuple[int, dict]]:
     out = []
     for L in C.NAV_LAYERS:
@@ -139,6 +173,65 @@ def gemma_layers() -> list[tuple[int, dict]]:
             out.append((L, r))
     return out
 
+
+
+@functools.lru_cache(maxsize=1)
+def sres_observed_rates():
+    """(label, D, measured % pass) per probed run, over EVERY pair it probed.
+
+    Shared by the figure and by its caption so the two cannot print different
+    numbers for one quantity. The rate is whole-run, not B0->B1: the null it is
+    measured against is $k/D$, a property of the dictionary, and every pair is
+    scored against the same dictionary -- restricting the rate to one pair made a
+    quantity about D depend on a choice of block pair, and printed a number the
+    null table did not agree with.
+    """
+    G = C.OUT_DIR / C.SOURCE_NAME
+    probes = [(f"gemma L{int(q.parent.name.split('_')[1])}", C.D_SAE, q)
+              for q in sorted(G.glob("layer_*/second_pass.json"))]
+    probes += [(f"PCFG {_layer_name(q.parent.name)}", 1792, q)
+               for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json"))]
+    out = []
+    for label, d_sae, path in probes:
+        sp = _json(path)
+        if not sp:
+            continue
+        n_pass = sum((v.get("sres") or {}).get("n_pass", 0) for v in sp.values())
+        n_scored = sum((v.get("sres") or {}).get("n_edges_scored", 0) for v in sp.values())
+        if n_scored:
+            # zero is a measurement, not a missing value -- kept and drawn
+            out.append((label, d_sae, 100 * n_pass / n_scored))
+    return out
+
+
+def _sres_same_D_clause() -> str:
+    """The within-dictionary spread, computed rather than asserted.
+
+    The caption used to state that two runs on the same 1,792-latent dictionary
+    land on opposite sides of their null. That was a property of the B0->B1 rate
+    and false of the whole-run rate that replaced it -- exactly the kind of
+    hand-typed claim this module's captions are meant to be immune to.
+    """
+    by_d: dict = {}
+    for _, d, o in sres_observed_rates():
+        by_d.setdefault(d, []).append(o)
+    parts = []
+    for d in sorted(by_d):
+        g = by_d[d]
+        if len(g) < 2:
+            continue
+        null = 100 * C.SRES_RANK_TOP_K / d
+        lo, hi = min(g), max(g)
+        span = rf"{lo:.2f}--{hi:.2f}\%" if hi > lo else rf"{hi:.2f}\%"
+        where = ("straddling their null" if lo <= null <= hi else
+                 rf"all {lo / null:.0f}--{hi / null:.0f}$\times$ their null" if lo > null
+                 else "all below their null")
+        parts.append(f"{_spell(len(g))} runs on a {d:,}-latent dictionary span {span}, {where}")
+    if not parts:
+        return ""
+    return ("The spread within a single dictionary is itself wide --- "
+            + "; ".join(parts) + " --- which is why a raw pass rate compares nothing "
+            "across sources, and little within one. ")
 
 def _pair(report, name):
     return next((p for p in report["pairs"] if p["pair"] == name), None)
@@ -197,6 +290,54 @@ def _label_extremes(ax, xs, vals, fmt, color):
         ax.annotate(fmt(vals[i]), (xs[i], vals[i]), textcoords="offset points",
                     xytext=(0, 9), ha="center", fontsize=8, color=color)
 
+
+
+def _panel_head(ax, tag: str, detail: str = ""):
+    """A two-line panel heading: what the panel IS, then what it counts.
+
+    `set_title` cannot give the two lines different weights, and in a
+    before/after pair the word that matters most -- which of the two moments
+    this panel is -- was the part competing with a run of counts for the
+    reader's eye. The tag carries the weight; the counts sit under it in the
+    muted colour the rest of the figures use for derived numbers. Returns the two
+    artists, so a caller with a narrow panel can hand them to `_fit_width`.
+    """
+    # Offsets in INCHES, converted to this axes' fraction. A fixed fraction is a
+    # different physical gap on a 7-inch panel and on a 2-inch one: at 0.05 of a
+    # short axes the two lines landed on top of each other and on the top bar.
+    # Requires the layout to be settled, so call this after `subplots_adjust`.
+    fig = ax.get_figure()
+    h = max(ax.get_position().height * fig.get_figheight(), 0.35)
+    pad, line = 0.045 / h, 0.135 / h
+    out = [ax.text(0.0, 1 + pad + (line if detail else 0), tag,
+                   transform=ax.transAxes, ha="left", va="bottom",
+                   fontsize=10, fontweight="bold", color=INK)]
+    if detail:
+        out.append(ax.text(0.0, 1 + pad, detail, transform=ax.transAxes,
+                           ha="left", va="bottom", fontsize=8.2, color=MUTED))
+    return out
+
+
+def _panel_rule(fig, left, right, top_pad: float = 0.055, bottom_pad: float = 0.0,
+                bias: float = 0.5):
+    """A vertical rule down the seam between two panels, in figure coordinates.
+
+    Two panels of the same drawing side by side with nothing between them read
+    as one wide picture: the eye follows a link straight across the seam and
+    the before/after comparison the figure exists for stops being visible as
+    two states of one object. Call it AFTER the figure's own
+    `subplots_adjust` -- that is what fixes the positions this reads, so a
+    figure using it must also pass ``tight=False`` to `_finish`.
+    """
+    a, b = left.get_position(), right.get_position()
+    # `bias` places the rule across the gutter: 0.5 is midway, lower pulls it
+    # toward the left panel. The right panel's tick labels and y-label live in
+    # that gutter, so a rule at dead centre can run through them.
+    x = a.x1 + bias * (b.x0 - a.x1)
+    y0 = max(0.0, min(a.y0, b.y0) - bottom_pad)
+    y1 = min(1.0, max(a.y1, b.y1) + top_pad)
+    fig.add_artist(Line2D([x, x], [y0, y1], transform=fig.transFigure,
+                          color=NEUTRAL, lw=1.0, zorder=0))
 
 def _finish(fig, ax_or_axes, name: str, tight: bool = True) -> str:
     axes = ax_or_axes if isinstance(ax_or_axes, (list, np.ndarray)) else [ax_or_axes]
@@ -835,12 +976,16 @@ def calibration_toy_tree_recovered(tt):
         ax.axis("off")
 
     # Panel identifiers, not captions -- every number in them is read from the JSON.
+    # Named "before"/"after" rather than by their contents: the two panels draw the
+    # same tree at two moments, and a reader who reads them as two trees has already
+    # lost the comparison. The full term "the metric battery" is used here because a
+    # panel heading is met with no prose around it to have introduced the short form.
     n_tp = len(found & set(truth))
-    axes[0].set_title(f"the known tree — {len(truth)} edges over {tt['n_features']} features",
-                      fontsize=10, loc="left", color=INK)
-    axes[1].set_title(f"after the battery — {n_tp}/{len(truth)} recovered, "
-                      f"{len(spurious)} false, {len(recovered)}/{tt['n_features']} features learned",
-                      fontsize=10, loc="left", color=INK)
+    heads = (("before — the tree as constructed",
+              f"{len(truth)} edges over {tt['n_features']} features"),
+             ("after — the tree the metric battery recovered",
+              f"{n_tp}/{len(truth)} recovered, {len(spurious)} false, "
+              f"{len(recovered)}/{tt['n_features']} features learned"))
 
     handles = [
         Line2D([], [], color=CAT[0], lw=2.4, label="true edge"),
@@ -856,7 +1001,10 @@ def calibration_toy_tree_recovered(tt):
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=8.5)
     # tight_layout would reclaim the strip the legend sits in, so this figure
     # manages its own margins (see `_finish`).
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.93, bottom=0.11, wspace=0.05)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.90, bottom=0.11, wspace=0.08)
+    for ax, (tag, detail) in zip(axes, heads):
+        _panel_head(ax, tag, detail)
+    _panel_rule(fig, axes[0], axes[1])
     return _finish(fig, axes, "calibration_toy_tree_recovered", tight=False)
 
 
@@ -965,10 +1113,35 @@ def synthetic_toy_gates():
             parts.append("no gate tests this")
         verdict[p] = ", ".join(parts) or "no candidates"
 
+    # Per-feature firing and the corpus's own frequency profile. Read here rather
+    # than in each figure: `build_world` is the expensive call, and three figures
+    # now ask it different questions about the SAME world -- rebuilding it per
+    # figure would let them disagree about which corpus they describe.
+    buckets, tok_counts = stats["buckets"], stats["token_counts"]
+    n_buckets = int(buckets.max()) + 1
+    bucket_mass = []
+    for k in range(n_buckets):
+        sel = buckets == k
+        bucket_mass.append({"tokens": float(tok_counts[sel].sum()),
+                            "ids": int(sel.sum())})
+
+    # The gate funnel is the same three composed gates the before/after figure
+    # draws, counted instead of drawn: a drawing shows WHICH edge died, a funnel
+    # shows how many and at which gate, and the division-of-labour claim needs both.
+    stages = [("after coverage", as_set(edge_mask)),
+              ("+ reconstruction", as_set(recon_ok)),
+              ("+ frequency control", survivors)]
+
     return {
         "P": int(stats["P"]), "C": int(stats["C"]),
         "true_edges": true_edges, "candidates": as_set(edge_mask),
         "survivors": survivors,
+        "fire_count": [float(x) for x in stats["fire_count"]],
+        "total_tokens": int(stats["total_tokens"]),
+        "bucket_mass": bucket_mass,
+        "R": m["R"].tolist(),
+        "min_fire": int(C.MIN_FIRE_COUNT),
+        "stages": [(lab, sorted(e)) for lab, e in stages],
         "recovered": sorted(survivors & set(true_edges)),
         "missed": sorted(set(true_edges) - survivors),
         "spurious": sorted(survivors - set(true_edges)),
@@ -1069,12 +1242,10 @@ def calibration_toy_world_before_after(w):
         ax.set_ylim(-Cn - 0.6, 2.2)
         ax.axis("off")
 
-    axes[0].set_title("declared — the six structures as injected",
-                      fontsize=10, loc="left", color=INK)
-    axes[1].set_title(f"after the battery — {len(w['recovered'])}/{len(w['true_edges'])} "
-                      f"true edges kept, "
-                      f"{len(w['candidates']) - len(w['survivors'])} candidates cut",
-                      fontsize=10, loc="left", color=INK)
+    heads = (("before — the world as declared", "the six structures as injected"),
+             ("after — what the metric battery kept",
+              f"{len(w['recovered'])}/{len(w['true_edges'])} true edges kept, "
+              f"{len(w['candidates']) - len(w['survivors'])} candidates cut"))
 
     # The key, in three named groups rather than one flat row: healthy, injected,
     # and the ones nothing here catches. A flat legend orders itself by whichever
@@ -1103,8 +1274,513 @@ def calibration_toy_world_before_after(w):
         leg._legend_box.align = "left"
         fig.add_artist(leg)
 
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.94, bottom=0.13, wspace=0.04)
+    fig.subplots_adjust(left=0.02, right=0.98, top=0.92, bottom=0.13, wspace=0.08)
+    for ax, (tag, detail) in zip(axes, heads):
+        _panel_head(ax, tag, detail)
+    _panel_rule(fig, axes[0], axes[1])
     return _finish(fig, axes, "calibration_toy_world_before_after", tight=False)
+
+
+def calibration_toy_world_gate_verdicts(w):
+    """The after panel of the before/after pair alone, rotated onto two rows.
+
+    Same world, same palette, same alpha rule as `calibration_toy_world_before_after`;
+    both are emitted so the manuscript can choose (like the slice and its
+    single-child twin). What this one gives up and why it can: the before panel
+    repeats no information -- the after panel already draws every declared edge
+    and carries the outcome in alpha alone, so the declared world is recoverable
+    from one panel (faded = cut) once the subtitle says so. What it gains: the
+    two-column layout is tall and mostly whitespace, because a bipartite drawing
+    with 10 parents against 32 children leaves the parent column empty for
+    two-thirds of its height; laying the blocks as rows spends that height on
+    nothing and halves the figure.
+    """
+    P, Cn = w["P"], w["C"]
+    cx = {c: c + 0.5 for c in range(Cn)}
+    px = {p: (p + 0.5) * Cn / P for p in range(P)}
+    PY, CY = 1.0, 0.0                   # parents on the top row, children below
+    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6))}
+
+    fig, ax = plt.subplots(figsize=(12.6, 4.25))
+
+    def link(p, c, role, lw=1.6, alive=True):
+        colour = TOY_ROLE[role][0]
+        # Removed edges keep colour and dash -- the identity of the structure is
+        # the point -- so only alpha carries the outcome. Per role for the same
+        # ink-accumulation reason as the before/after figure.
+        ghost = 0.14 if role == "superparent" else 0.34
+        ax.plot([px[p], cx[c]], [PY, CY], lw=lw, color=colour,
+                ls=dash_of.get(role, "-"), alpha=1.0 if alive else ghost, zorder=1)
+
+    for c in range(Cn):                                   # (A) superparent
+        if (w["keys"]["superparent"], c) in w["candidates"]:
+            link(w["keys"]["superparent"], c, "superparent", lw=0.7,
+                 alive=(w["keys"]["superparent"], c) in w["survivors"])
+    for (p, c) in w["genuine"]:
+        link(p, c, "genuine", lw=1.7, alive=(p, c) in w["survivors"])
+    for (p, c) in w["split_edges"]:
+        link(p, c, "split", lw=1.7, alive=(p, c) in w["survivors"])
+    for role in ("freq", "absorbed", "topic"):
+        p = w["keys"][role]
+        c = next(x for x in range(Cn) if w["roles_c"][x] == role)
+        link(p, c, role, lw=1.7, alive=(p, c) in w["survivors"])
+
+    # (F) within-block: both endpoints live in the child row, so the bezier
+    # bows BELOW the row (the column layout bowed it sideways).
+    for (a, b), ls in w["in_block"]:
+        x0, x1 = cx[a], cx[b]
+        ctrl = ((x0 + x1) / 2, CY - 0.42)
+        t = np.linspace(0, 1, 40)
+        ax.plot((1 - t) ** 2 * x0 + 2 * (1 - t) * t * ctrl[0] + t ** 2 * x1,
+                (1 - t) ** 2 * CY + 2 * (1 - t) * t * ctrl[1] + t ** 2 * CY,
+                ls=ls, lw=1.2, color=TOY_ROLE["in_block"][0], alpha=0.5, zorder=1)
+
+    live_p = {p for p, _ in w["survivors"]}
+    live_c = {c for _, c in w["survivors"]}
+    for xs, y, roles, live in ((px, PY, w["roles_p"], live_p),
+                               (cx, CY, w["roles_c"], live_c)):
+        for i, x in xs.items():
+            colour = TOY_ROLE[roles[i]][0]
+            on = i in live
+            ax.scatter([x], [y], s=118, zorder=3,
+                       facecolor=colour if on else "white",
+                       edgecolor=colour, linewidths=1.3)
+            ax.text(x, y, str(i), ha="center", va="center", fontsize=5.4,
+                    zorder=4, color=_text_on(colour) if on else MUTED)
+
+    # Verdicts sit ABOVE their parent instead of to its left, comma-split to
+    # lines and staggered on two tiers: the three long middle verdicts are
+    # wider than the parent spacing and collide on a single tier.
+    for p in range(P):
+        ax.text(px[p], PY + (0.10 if p % 2 == 0 else 0.30),
+                w["verdict"][p].replace(", ", "\n"), ha="center", va="bottom",
+                fontsize=5.6, color=TOY_ROLE[w["roles_p"][p]][0], zorder=4,
+                linespacing=1.25)
+
+    for y, lab in ((PY, "parent block"), (CY, "child block")):
+        ax.text(-0.7, y, lab, ha="right", va="center", fontsize=7.5, color=MUTED)
+
+    ax.set_xlim(-3.6, Cn + 0.6)
+    ax.set_ylim(CY - 0.55, PY + 0.75)
+    ax.axis("off")
+
+    # The same four legend groups, and the same reason they are groups.
+    groups = [
+        ("the genuine tree", ["genuine"], 0.02),
+        ("injected pathologies — a metric catches each",
+         ["superparent", "freq", "split"], 0.17),
+        ("blind spots — nothing catches these", ["absorbed", "topic"], 0.47),
+        ("scored by a different metric", ["in_block"], 0.72),
+    ]
+    for title, roles, x in groups:
+        handles = [Line2D([], [], color=TOY_ROLE[r][0], lw=2.0,
+                          ls=dash_of.get(r, "-"), marker="s", markersize=6.5,
+                          label=TOY_ROLE[r][1]) for r in roles]
+        leg = fig.legend(handles=handles, title=title, loc="upper left",
+                         bbox_to_anchor=(x, 0.215), frameon=False, fontsize=8,
+                         handlelength=2.4, labelspacing=0.35)
+        leg.get_title().set_fontsize(8.5)
+        leg.get_title().set_color(INK)
+        leg._legend_box.align = "left"
+        fig.add_artist(leg)
+
+    fig.subplots_adjust(left=0.02, right=0.99, top=0.85, bottom=0.25)
+    _panel_head(ax, "what the set of metrics kept",
+                f"{len(w['recovered'])}/{len(w['true_edges'])} true edges kept, "
+                f"{len(w['candidates']) - len(w['survivors'])} candidates cut — "
+                "faded edges are the declared world the gates removed")
+    return _finish(fig, ax, "calibration_toy_world_gate_verdicts", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 7c. Tier 1, the corpus underneath it. Every claim the calibration makes is a
+#     claim about a corpus: how often each feature fires, and how the token mass
+#     is distributed over frequency. A reader who has not seen those two facts
+#     cannot tell a metric that separated two classes from a metric that had
+#     almost nothing to separate.
+# ---------------------------------------------------------------------------
+def calibration_toy_corpus_firing(w):
+    """Per-feature firing counts, and the corpus mass behind the frequency control.
+
+    The right-hand panel is the reason this exists as its own figure. Metric 5
+    re-weights co-firing by frequency bucket, and what that gate can possibly do
+    is set by how the corpus's mass falls across the buckets -- if one bucket
+    holds almost everything, the control has nothing to re-weight.
+
+    Its colours are deliberately NOT the role palette. The notebook version drew
+    the three buckets in amber, blue and grey, which are exactly the swatches
+    "frequency coincidence (B)", "shared topic (E)" and "superparent (A)" carry
+    in the key directly below it: the same colour meant a role on the left and a
+    frequency bucket on the right, and nothing on the figure said so. Buckets are
+    ORDERED (high -> mid -> rare), so they get a single-hue sequential ramp, the
+    same rule `DEPTH` follows for layers; the hue is purple because no role uses
+    it, so a swatch cannot be read off the wrong key.
+    """
+    P, Cn = w["P"], w["C"]
+    fire = w["fire_count"]
+    roles = ([w["roles_p"][p] for p in range(P)] + [w["roles_c"][c] for c in range(Cn)])
+    names = [f"parent {p}" for p in range(P)] + [f"child {c}" for c in range(Cn)]
+    # a feature that never fires is not its declared role -- it is the absence of
+    # one, and colouring it as the role claims the world contains something it does not
+    roles = [r if fire[i] > 0 else "unused" for i, r in enumerate(roles)]
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.4, 4.9),
+                             gridspec_kw={"width_ratios": [3.05, 1]})
+
+    # -- left: tokens each feature fires on --------------------------------
+    ax = axes[0]
+    x = np.arange(len(fire))
+    ax.bar(x, [v if v > 0 else np.nan for v in fire], width=0.72,
+           color=[TOY_ROLE[r][0] for r in roles])
+    ax.set_yscale("log")
+    pos = [v for v in fire if v > 0]
+    lo = max(min(pos) / 3.2, 1.0)
+    ax.set_ylim(lo, max(pos) * 2.2)
+    for i, v in enumerate(fire):
+        if v > 0:
+            continue
+        # zero has no position on a log axis. A feature that was declared and
+        # never fired is a measurement, so it gets a stub at the floor rather
+        # than an empty slot -- otherwise the key's last swatch marks nothing.
+        ax.add_patch(plt.Rectangle((i - 0.36, lo), 0.72, lo * 0.55,
+                                   color=TOY_ROLE["unused"][0]))
+    ax.axhline(w["min_fire"], color=CAT[3], lw=1.1, ls=(0, (4, 3)), zorder=3)
+    # lifted clear of its own rule: at va="bottom" the glyphs still sat on the line
+    ax.text(len(fire) - 0.4, w["min_fire"] * 1.10, f"MIN_FIRE_COUNT = {w['min_fire']} ",
+            ha="right", va="bottom", fontsize=7, color=CAT[3])
+    ax.set_ylabel("tokens the feature fires on (log)")
+    ax.set_xticks(x)
+    ax.set_xticklabels(names, fontsize=5.4, rotation=90)
+    ax.set_xlim(-0.8, len(fire) - 0.2)
+    ax.grid(True, axis="y", alpha=0.12)
+    ax.set_axisbelow(True)
+
+    # -- right: where the corpus's mass sits -------------------------------
+    ax = axes[1]
+    mass = w["bucket_mass"]
+    total = max(w["total_tokens"], 1)
+    ramp = plt.get_cmap("Purples")
+    cols = [ramp(0.78 - 0.24 * k) for k in range(len(mass))]
+    labs = ["high", "mid", "rare"][:len(mass)] or []
+    labs = [f"{labs[k] if k < len(labs) else k} (bucket {k})" for k in range(len(mass))]
+    ax.bar(np.arange(len(mass)), [b["tokens"] for b in mass], width=0.62, color=cols)
+    for k, b in enumerate(mass):
+        ax.text(k, b["tokens"],
+                f"{b['tokens']:,.0f} tokens\n"
+                f"{b['ids']:,} id{'' if b['ids'] == 1 else 's'}\n"
+                f"{100 * b['tokens'] / total:.0f}% of corpus",
+                ha="center", va="bottom", fontsize=7, color=INK)
+    ax.set_xticks(np.arange(len(mass)))
+    ax.set_xticklabels(labs, fontsize=8)
+    ax.set_ylim(0, max(b["tokens"] for b in mass) * 1.42)
+    ax.set_ylabel("tokens")
+    ax.grid(True, axis="y", alpha=0.12)
+    ax.set_axisbelow(True)
+
+
+    order = ["genuine", "split", "freq", "absorbed", "topic", "in_block",
+             "superparent", "unused"]
+    fig.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=TOY_ROLE[r][0],
+                                      label=TOY_ROLE[r][1])
+                        for r in order if r in set(roles)],
+               loc="lower center", ncol=4, frameon=False, fontsize=8.5)
+    fig.subplots_adjust(left=0.055, right=0.99, top=0.86, bottom=0.30, wspace=0.20)
+    heads = _panel_head(axes[0], "the features — what each one fires on",
+                        f"{len(fire)} declared features over {w['total_tokens']:,} tokens; "
+                        "colour = the role it was planted as")
+    heads = [(axes[0], t) for t in heads]
+    heads += [(axes[1], t) for t in
+              _panel_head(axes[1], "the corpus — its token mass",
+                          "shade = frequency bucket: an order, not a role")]
+    # fitted only now: a heading is only too wide relative to a panel whose
+    # width the layout has already settled
+    for ax_i, t in heads:
+        _fit_width(fig, t, ax_i.get_position().width * fig.get_figwidth())
+    # biased toward the left panel: this gutter also holds the right panel's
+    # y-label and tick numbers, and a rule at dead centre ran through the word
+    _panel_rule(fig, axes[0], axes[1], bias=0.22)
+    return _finish(fig, axes, "calibration_toy_corpus_firing", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 7d. The same three gates as 7b, counted rather than drawn. The before/after
+#     drawing says WHICH edge each gate removed; this says how many, and it is
+#     the version that survives being read at a glance. Both are needed: the
+#     division-of-labour claim is about identity AND about magnitude.
+# ---------------------------------------------------------------------------
+def calibration_gate_funnel_by_role(w):
+    """Candidates surviving each composed gate, split by the role that planted them."""
+    # Roles ordered so the genuine tree anchors the left of every bar: the reading
+    # is "the healthy block never moves, the pathologies fall off one at a time",
+    # and a bar whose segments reorder between stages cannot show that.
+    order = ["genuine", "superparent", "split", "freq", "absorbed", "topic"]
+    role_of = {p: w["roles_p"][p] for p in range(w["P"])}
+    stages = w["stages"]
+
+    counts = []
+    for _, edges in stages:
+        c = {r: 0 for r in order}
+        for p, _ in edges:
+            r = role_of.get(int(p))
+            if r in c:
+                c[r] += 1
+        counts.append(c)
+
+    fig, ax = plt.subplots(figsize=(10.6, 3.2))
+    ys = np.arange(len(stages))[::-1]
+    for i, c in enumerate(counts):
+        left = 0.0
+        for r in order:
+            n = c[r]
+            if not n:
+                continue
+            ax.barh(ys[i], n, left=left, height=0.58, color=TOY_ROLE[r][0],
+                    edgecolor="white", linewidth=0.8)
+            # a segment narrower than its own label is left unlabelled rather than
+            # printed over its neighbour; the total at the end of the bar carries it
+            if n / max(sum(c.values()), 1) > 0.045:
+                ax.text(left + n / 2, ys[i], str(n), ha="center", va="center",
+                        fontsize=8, color=_text_on(TOY_ROLE[r][0]))
+            left += n
+        ax.text(left + 0.6, ys[i], f"{int(left)} edges", va="center",
+                fontsize=8.5, color=MUTED)
+
+    ax.set_yticks(ys)
+    ax.set_yticklabels([lab for lab, _ in stages], fontsize=9.5)
+    ax.set_xlabel("candidate edges surviving")
+    ax.set_xlim(0, max(sum(c.values()) for c in counts) * 1.12)
+    ax.grid(True, axis="x", alpha=0.12)
+    ax.set_axisbelow(True)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", length=0)
+
+    n_true = len(w["true_edges"])
+    n_kept_true = len(set(w["survivors"]) & set(map(tuple, w["true_edges"])))
+    head = ("the gates, composed — what each one removes",
+            f"{sum(counts[0].values())} candidates in, {sum(counts[-1].values())} out; "
+            f"{n_kept_true}/{n_true} true edges survive all three")
+    fig.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=TOY_ROLE[r][0],
+                                      label=TOY_ROLE[r][1])
+                        for r in order if any(c[r] for c in counts)],
+               loc="lower center", ncol=6, frameon=False, fontsize=8)
+    fig.subplots_adjust(left=0.155, right=0.985, top=0.78, bottom=0.34)
+    _panel_head(ax, *head)
+    return _finish(fig, ax, "calibration_gate_funnel_by_role", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 7e. The first gate, at full resolution. Every later calibration figure starts
+#     from "the candidates coverage proposed"; this is the only one that shows
+#     the quantity that decision was made on, for every parent-child pair in the
+#     world, with the ground truth drawn on top of it.
+# ---------------------------------------------------------------------------
+def calibration_reverse_coverage(w):
+    """The reverse-coverage matrix R, with what it proposed and what it could not.
+
+    Three marks, and the third is the point. A circle is a true edge coverage
+    proposed; a cross is a pair it proposed that no true edge backs; a square is
+    a true edge whose R never reaches the threshold, so no later gate ever sees
+    it -- a limit of the first gate that no downstream metric can repair.
+
+    "True edge" here is the world's full tree (genuine + the feature-split
+    refinements + the absorbed edge), the same set the before/after figure
+    scores against. The notebook's version marked only `labels.genuine`, which
+    drew the split parent's real refinements as false proposals.
+    """
+    R = np.array(w["R"], dtype=float)
+    truth = {tuple(e) for e in w["true_edges"]}
+    cand = {tuple(e) for e in w["candidates"]}
+
+    P, Cn = R.shape
+    fig, ax = plt.subplots(figsize=(0.30 * Cn + 3.0, 0.30 * P + 2.5))
+    im = ax.imshow(R, cmap="Blues", vmin=0, vmax=1, aspect="auto",
+                   interpolation="nearest")
+
+    for (p, c) in sorted(cand | truth):
+        if (p, c) in cand and (p, c) in truth:
+            ax.scatter([c], [p], s=54, facecolor="none", edgecolor=GOOD,
+                       linewidths=1.6, zorder=3)
+        elif (p, c) in cand:
+            ax.scatter([c], [p], s=34, marker="x", color=CAT[3], linewidths=1.6,
+                       zorder=3)
+        else:
+            ax.scatter([c], [p], s=62, marker="s", facecolor="none",
+                       edgecolor="#CC79A7", linewidths=1.8, zorder=3)
+
+    ax.set_xticks(np.arange(Cn))
+    ax.set_xticklabels(range(Cn), fontsize=6)
+    ax.set_yticks(np.arange(P))
+    ax.set_yticklabels(range(P), fontsize=7)
+    ax.set_xlabel("child-block local index")
+    ax.set_ylabel("parent-block local index")
+    ax.set_xticks(np.arange(-0.5, Cn, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, P, 1), minor=True)
+    ax.grid(which="minor", color="white", lw=0.6)
+    ax.tick_params(which="minor", length=0)
+    cb = fig.colorbar(im, ax=ax, fraction=0.022, pad=0.015)
+    cb.set_label("R = co-fire / child firing", fontsize=8)
+    cb.ax.tick_params(labelsize=7)
+    cb.outline.set_visible(False)
+
+    n_cannot = len(truth - cand)
+    head = (f"reverse coverage, and the {len(cand)} pairs it proposes",
+            f"threshold τ = {C.EDGE_TAU}; {len(cand & truth)}/{len(truth)} true edges "
+            f"proposed, {n_cannot} that R cannot reach")
+    fig.legend(handles=[
+        Line2D([], [], color=GOOD, marker="o", ls="", markersize=8,
+               markerfacecolor="none", markeredgewidth=1.6, label="true edge, proposed"),
+        Line2D([], [], color=CAT[3], marker="x", ls="", markersize=7,
+               markeredgewidth=1.6, label="proposed, no true edge behind it"),
+        Line2D([], [], color="#CC79A7", marker="s", ls="", markersize=8,
+               markerfacecolor="none", markeredgewidth=1.8,
+               label="true edge coverage cannot propose"),
+    ], loc="lower center", ncol=3, frameon=False, fontsize=8.5)
+    fig.subplots_adjust(left=0.075, right=0.985, top=0.84, bottom=0.24)
+    _panel_head(ax, *head)
+    return _finish(fig, ax, "calibration_reverse_coverage", tight=False)
+
+
+# ---------------------------------------------------------------------------
+# 7f. Whether Tier 1 is a result or an accident of one seed. The scorecard is
+#     run on seed 0 everywhere else in this file; this re-runs the whole world
+#     and the whole battery on several, because "14/14 rows pass" means one
+#     thing on one draw and another on eight.
+# ---------------------------------------------------------------------------
+@functools.lru_cache(maxsize=1)
+def synthetic_toy_seed_sweep(n_seeds: int = 8):
+    """The full Tier-1 scorecard, re-run per seed. None if the world is unavailable.
+
+    Each seed rebuilds the world and runs the battery, so this is the most
+    expensive thing in the generator -- cached, and reported in the skip line
+    rather than run twice.
+    """
+    try:
+        from validation.calibrate_on_synthetic_toy import calibrate
+    except Exception as exc:                      # noqa: BLE001 -- reported, not raised
+        print(f"[figures] seed sweep unavailable: {type(exc).__name__}: {exc}")
+        return None
+    out = []
+    for seed in range(n_seeds):
+        try:
+            _, _, rows = calibrate(seed=seed)
+        except Exception as exc:                  # noqa: BLE001
+            # one bad seed is a missing column, not a missing figure -- and the
+            # column is left out rather than filled with a guess
+            print(f"[figures] seed {seed} failed: {type(exc).__name__}: {exc}")
+            continue
+        out.append((seed, rows))
+    return out or None
+
+
+def calibration_seed_sweep(sweep):
+    """Every scorecard row, every seed: verdict in the cell, margin in the shade.
+
+    The margin is how decisively a metric separated the two classes it was graded
+    on, and it spans orders of magnitude, so the shade is log10 of it. A row that
+    passes on every seed at a margin of 1.05 is a different claim from one that
+    passes at 1000, and a grid of identical PASS cells would hide exactly that.
+    """
+    seeds = [s for s, _ in sweep]
+    names = [r["metric"].strip() for r in sweep[0][1]]
+    M = np.full((len(names), len(seeds)), np.nan)
+    ok = np.zeros_like(M, dtype=bool)
+    for j, (_, rows) in enumerate(sweep):
+        by_name = {r["metric"].strip(): r for r in rows}
+        for i, nm in enumerate(names):
+            r = by_name.get(nm)
+            if r is None:
+                continue
+            ok[i, j] = bool(r["pass"])
+            mg = r["margin"]
+            mg = np.inf if mg == "inf" else float(mg)
+            # a categorical row has no margin to shade: it is right or it is not,
+            # and inventing a magnitude for it would rank it against rows that do
+            M[i, j] = (np.nan if r.get("margin_kind") == "categorical"
+                       else np.log10(max(mg, 1e-9)))
+
+    from matplotlib import colors as mcolors
+
+    fig, ax = plt.subplots(figsize=(1.05 * len(seeds) + 6.4, 0.30 * len(names) + 2.0))
+    lo = float(np.nanmin(M)) if not np.all(np.isnan(M)) else 0.0
+    # Capped at 10^3, the same ceiling `calibrate_on_synthetic_toy._render` prints
+    # as ">1000x". Three rows here score 1e9, which is not a measured magnitude --
+    # it is the epsilon guard in the denominator when the rejected class scores
+    # zero. Letting that set the top of the scale pushed every honestly-measured
+    # margin into the palest two shades, so the ramp said nothing.
+    CAP = 3.0
+    hi = min(float(np.nanmax(M)) if not np.all(np.isnan(M)) else 1.0, CAP)
+    if hi <= lo:
+        hi = lo + 1.0
+    # The cells use a SUB-RANGE of Greens (never the palest end, where a shade
+    # stops being distinguishable from the "no margin" grey), so the colour bar
+    # has to be built from that same sub-range. Keying a bar to the full ramp
+    # while the cells use part of it would put a legend on the figure that reads
+    # the shades wrong -- which is worse than the missing legend it replaces.
+    base = plt.get_cmap("Greens")
+    cmap = mcolors.LinearSegmentedColormap.from_list(
+        "greens_sub", base(np.linspace(0.10, 0.82, 256)))
+    norm = mcolors.Normalize(vmin=lo, vmax=hi, clip=True)
+    for i in range(len(names)):
+        for j in range(len(seeds)):
+            v = M[i, j]
+            if not ok[i, j]:
+                bg = CAT[3]                       # a failure is never a shade of pass
+            elif np.isnan(v):
+                bg = "#EDEEF1"                    # categorical: passed, no margin
+            else:
+                bg = cmap(norm(v))
+            ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
+            ax.text(j + 0.5, i + 0.5, "PASS" if ok[i, j] else "FAIL",
+                    ha="center", va="center", fontsize=7.4,
+                    fontweight="bold" if not ok[i, j] else "normal",
+                    color=_text_on(bg))
+    ax.set_xlim(0, len(seeds))
+    ax.set_ylim(len(names), 0)
+    ax.set_xticks(np.arange(len(seeds)) + 0.5)
+    ax.set_xticklabels([f"seed {s}" for s in seeds], fontsize=8)
+    ax.set_yticks(np.arange(len(names)) + 0.5)
+    ax.set_yticklabels(names, fontsize=7.6)
+    ax.xaxis.set_ticks_position("bottom")
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.tick_params(length=0)
+
+    n_cells = ok.size
+    fig.subplots_adjust(left=0.27, right=0.855, top=0.86, bottom=0.12)
+
+    # The margin scale, which the shading was carrying with no key at all: a
+    # reader could see that some rows were darker and had no way to learn what
+    # the darkness was, or that a row scored categorically is grey rather than
+    # weak. Ticks are labelled as the margin itself (10^x) as well as its log,
+    # because "passes at 1000x" is the sentence the row supports and "3.0" is not.
+    TOP, POW, ONE = r"$\geq 10^{%d}\times$", r"$10^{%d}\times$", r"$1\times$"
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    cb = fig.colorbar(sm, ax=ax, fraction=0.030, pad=0.025, aspect=26)
+    ticks = list(range(int(np.ceil(lo)), int(np.floor(hi)) + 1))
+    if len(ticks) >= 2:
+        cb.set_ticks(ticks)
+        # labelled as the margin itself, not its logarithm: "passes at 100x" is
+        # the sentence a row supports and "2.0" is not. The top tick carries the
+        # cap, so a clipped cell is not read as a measured ceiling.
+        cb.set_ticklabels([(TOP % t if t == ticks[-1] and hi >= CAP
+                            else POW % t if t else ONE) for t in ticks])
+    cb.set_label("margin", fontsize=8.5, labelpad=6)
+    cb.ax.tick_params(labelsize=7)
+    cb.outline.set_visible(False)
+
+    # the two cell colours the ramp cannot express, named rather than guessed at
+    fig.legend(handles=[
+        plt.Rectangle((0, 0), 1, 1, facecolor="#EDEEF1", edgecolor="none",
+                      label="passed; scored categorically, so no margin to report"),
+        plt.Rectangle((0, 0), 1, 1, facecolor=CAT[3], edgecolor="none",
+                      label="did not pass"),
+    ], loc="lower left", bbox_to_anchor=(0.27, 0.008), ncol=2, frameon=False, fontsize=8)
+
+    _panel_head(ax, "every row, every seed",
+                f"{int(ok.sum())}/{n_cells} cells pass over {len(seeds)} independently "
+                "drawn worlds;  the shade is the margin behind each verdict, capped at "
+                f"{10 ** CAP:,.0f}×")
+    return _finish(fig, ax, "calibration_seed_sweep", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1555,6 +2231,11 @@ def sres_null_rate_vs_dictionary_size(observed):
                     xytext=(11, -4 if at_zero else 4), fontsize=7.5, color=GOOD)
     ax.set_xscale("log")
     ax.set_yscale("log")
+    # Headroom for the labels, which hang to the RIGHT of their point in offset
+    # points: the widest one belongs to the largest dictionary, which is also the
+    # rightmost, so autoscale clipped it off the canvas.
+    d_max = max(d for _, d, _ in observed) if observed else 1
+    ax.set_xlim(right=d_max * 9)
     if zeros:
         ax.axhline(floor, ls=(0, (1, 4)), lw=1, color=NEUTRAL)
         ax.text(ax.get_xlim()[0] * 1.15, floor * 1.15, "0% drawn here — a log axis has no zero",
@@ -1593,7 +2274,7 @@ def sres_null_rate_vs_dictionary_size(observed):
 #     per pair.
 # ---------------------------------------------------------------------------
 def tangle_lives_in_top_block_pair(layers, pcfg):
-    """Every metric per block pair AND per layer, one panel per source.
+    """The WHOLE battery per block pair AND per layer, one panel per source.
 
     The earlier version averaged each cell over a source's graded layers, which
     a reader read as a single layer -- the rows are block pairs, and nothing in
@@ -1605,24 +2286,67 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     sources sit in their own panels, which is also what lets the layer sets
     differ -- gemma is graded at L1..L24 and the PCFG transformer has four
     layers, so a shared row axis was never possible.
+
+    It also carried seven hand-picked columns, which made it a summary of the
+    battery rather than the battery. The caption's claim is that the columns
+    DISAGREE -- edge quality reads healthy while graph structure reads broken --
+    and a reader cannot check that against a subset somebody chose. Every
+    per-pair number the battery emits is a column now, grouped under the metric
+    that emits it, so the header names both the instrument and its output
+    ("Out-degree / superparent" -> "fan-out Gini") instead of a bare quantity.
+    The panels stack vertically for the same reason: 17 columns side by side
+    halve at \\textwidth, and a cell nobody can read is not evidence.
     """
-    from matplotlib import cm
+    # (metric family, what it emits, reader, format). Families follow the battery
+    # order of the Metrics section, so the figure and the section can be read
+    # against each other; the battery's numbering is deliberately NOT carried
+    # here -- "2b" is a cross-reference the figure cannot resolve on its own, and
+    # it competed for width with the name that actually identifies the metric.
+    # The family is drawn once over its own columns; the second element is the
+    # column's own header.
     COLS = [
-        ("candidates", lambda p: p["n_candidate_edges"], "{:,.0f}"),
-        ("multi-parenting %", lambda p: 100 * p["degree"]["poly_frac"], "{:.0f}"),
-        ("fan-out Gini", lambda p: p["degree"]["outdeg_gini"], "{:.2f}"),
-        ("at chance %", lambda p: 100 * p["independence_null"]["frac_chance_level"], "{:.0f}"),
-        ("superparents", lambda p: p["n_superparents"], "{:.0f}"),
-        ("sibling Jaccard", lambda p: p["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
-        ("freq-driven %", lambda p: 100 * p["freq_control"]["frac_freq_driven"], "{:.1f}"),
+        ("Coverage", "candidates",
+         lambda q, s: q["n_candidate_edges"], "{:,.0f}"),
+        ("Joint-child", "R$_{\\rm supp}$",
+         lambda q, s: q["joint_child"]["r_supp_mean"], "{:.2f}"),
+        ("Joint-child", "R$_{\\rm mass}$",
+         lambda q, s: q["joint_child"]["r_mass_mean"], "{:.2f}"),
+        ("Joint-child", "split\nchildren",
+         lambda q, s: q["joint_child"]["n_share_energy_ge_09"], "{:,.0f}"),
+        ("Joint-child", "mean\ncoverage",
+         lambda q, s: q["joint_child_cov_mean"], "{:.2f}"),
+        ("Reconstruction\nablation", "% pass",
+         lambda q, s: 100 * q["reconstruction"]["frac_pass"], "{:.0f}"),
+        ("Probe-based\n$S_{\\rm res}$", "% pass",
+         lambda q, s: 100 * s["sres"]["frac_pass"], "{:.1f}"),
+        ("Siblings", "mean\nJaccard",
+         lambda q, s: q["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
+        ("Out-degree / superparent", "multi-\nparented %",
+         lambda q, s: 100 * q["degree"]["poly_frac"], "{:.0f}"),
+        ("Out-degree / superparent", "fan-out\nGini",
+         lambda q, s: q["degree"]["outdeg_gini"], "{:.2f}"),
+        ("Out-degree / superparent", "max\nfan-out",
+         lambda q, s: q["degree"]["max_outdeg"], "{:,.0f}"),
+        ("Out-degree / superparent", "top-1 edge\nshare %",
+         lambda q, s: 100 * q["degree"]["top1_edge_share"], "{:.0f}"),
+        ("Out-degree / superparent", "super-\nparents",
+         lambda q, s: q["n_superparents"], "{:.0f}"),
+        ("Frequency control", "% freq-\ndriven",
+         lambda q, s: 100 * q["freq_control"]["frac_freq_driven"], "{:.1f}"),
+        ("Frequency control", "mean\nsurvival",
+         lambda q, s: q["freq_control"]["mean_survival"], "{:.2f}"),
+        ("Independence null", "% at\nchance",
+         lambda q, s: 100 * q["independence_null"]["frac_chance_level"], "{:.0f}"),
+        ("Independence null", "mean\nPMI",
+         lambda q, s: q["independence_null"]["mean_edge_pmi"], "{:.2f}"),
     ]
 
-    def safe(fn, q):
+    def safe(fn, q, s):
         # a sub-metric with nothing to score is absent, never zero
         try:
-            v = fn(q)
+            v = fn(q, s)
             return float(v) if v is not None else np.nan
-        except (TypeError, KeyError):
+        except (TypeError, KeyError, ZeroDivisionError):
             return np.nan
 
     def source_grid(named_reports):
@@ -1644,9 +2368,13 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
             if pr in pairs:
                 for lab, r in named_reports:
                     q = _pair(r, pr)
+                    # the strict test lives in second_pass.json, which every
+                    # metrics_report.json embeds -- read from the report so the
+                    # probe column costs this figure no extra argument
+                    s = (r.get("second_pass") or {}).get(pr) or {}
                     # a layer where the pair proposes nothing is shown as an
                     # empty row rather than dropped: the absence is a measurement
-                    vals = [safe(fn, q) if q else np.nan for _, fn, _ in COLS]
+                    vals = [safe(fn, q, s) if q else np.nan for _, _, fn, _ in COLS]
                     if q and q["n_candidate_edges"] == 0:
                         vals = [0.0] + [np.nan] * (len(COLS) - 1)
                     out.append((name, lab, vals, None))
@@ -1664,15 +2392,36 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     pcf = source_grid([(n.replace("PCFG layer ", "L"), r) for n, r in pcfg]) if pcfg else []
     panels = [(r"gemma-2-2b", gem)] + ([("PCFG", pcf)] if pcf else [])
 
+    # contiguous runs of one family, so the family is drawn once over its columns
+    spans, prev = [], None
+    for j, (g, *_) in enumerate(COLS):
+        if g != prev:
+            spans.append([j, j + 1, g])
+            prev = g
+        else:
+            spans[-1][1] = j + 1
+
     # plt.get_cmap, not cm.get_cmap: the latter was removed in matplotlib 3.9 and its
     # AttributeError aborted the whole build, so every later figure went unwritten too.
     # This spelling works on both old and new matplotlib.
     cmap = plt.get_cmap("Blues")
-    n_max = max(len(g) for _, g in panels)
-    fig, axes = plt.subplots(
-        1, len(panels), figsize=(7.2 * len(panels), 0.26 * n_max + 1.9),
-        gridspec_kw={"width_ratios": [1] * len(panels), "wspace": 0.55})
-    axes = np.atleast_1d(axes)
+
+    # Geometry in inches, placed by hand rather than by tight_layout: the two
+    # header rows and the block-pair labels all live OUTSIDE the axes, which
+    # tight_layout does not see, and at 17 columns a guessed margin is the
+    # difference between a readable header and a clipped one.
+    NC, CELL_W, CELL_H = len(COLS), 0.64, 0.235
+    ML, MR, MT, MB, GAP = 1.40, 0.22, 1.18, 0.62, 1.42
+    rows = [len(g) for _, g in panels]
+    W = ML + MR + NC * CELL_W
+    H = MT + MB + sum(rows) * CELL_H + GAP * (len(panels) - 1)
+    fig = plt.figure(figsize=(W, H))
+    axes, top = [], H - MT
+    for _, grid in panels:
+        h = len(grid) * CELL_H
+        axes.append(fig.add_axes([ML / W, (top - h) / H, NC * CELL_W / W, h / H]))
+        top -= h + GAP
+    axes = np.array(axes)
 
     for ax, (src, grid) in zip(axes, panels):
         M = np.array([v for _, _, v, _ in grid], dtype=float)
@@ -1684,9 +2433,9 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
         with np.errstate(invalid="ignore"):
             for j in range(M.shape[1]):
                 col = M[:, j]
-                top = np.nanmax(col) if not np.all(np.isnan(col)) else np.nan
-                if top and not np.isnan(top):
-                    norm[:, j] = col / top
+                top_v = np.nanmax(col) if not np.all(np.isnan(col)) else np.nan
+                if top_v and not np.isnan(top_v):
+                    norm[:, j] = col / top_v
         for i in range(M.shape[0]):
             # an uncomputed pair is one band carrying its reason, not a row of
             # dashes: a dash means "measured, nothing there", which is the
@@ -1696,7 +2445,7 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                                            facecolor="#EDEEF1", hatch="///",
                                            edgecolor="white", lw=0))
                 ax.text(M.shape[1] / 2, i + 0.5, notes[i], ha="center",
-                        va="center", fontsize=6.4, color=MUTED, style="italic")
+                        va="center", fontsize=6.8, color=MUTED, style="italic")
                 continue
             for j in range(M.shape[1]):
                 v, nv = M[i, j], norm[i, j]
@@ -1707,14 +2456,25 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                     continue
                 bg = cmap(0.06 + 0.86 * nv)
                 ax.add_patch(plt.Rectangle((j, i), 1, 1, color=bg))
-                ax.text(j + 0.5, i + 0.5, COLS[j][2].format(v), ha="center",
-                        va="center", fontsize=7, color=_text_on(bg))
+                ax.text(j + 0.5, i + 0.5, COLS[j][3].format(v), ha="center",
+                        va="center", fontsize=6.6, color=_text_on(bg))
         ax.set_xlim(0, M.shape[1])
         ax.set_ylim(M.shape[0], 0)
-        ax.set_xticks(np.arange(M.shape[1]) + 0.5)
-        ax.set_xticklabels([c for c, *_ in COLS], fontsize=7.6, rotation=32,
-                           ha="left")
-        ax.xaxis.set_ticks_position("top")
+        ax.set_xticks([])
+        # Two header rows, not one: the lower names the number in the column,
+        # the upper names the metric that emitted it. A bare "fan-out Gini"
+        # asks the reader to remember which metric that came from; the pair
+        # "4 Out-degree / superparent -> fan-out Gini" does not.
+        for j, (_, out_name, _, _) in enumerate(COLS):
+            ax.text(j + 0.5, -0.42, out_name, ha="center", va="bottom",
+                    fontsize=6.5, color=INK, linespacing=1.3)
+        for a, b, fam in spans:
+            ax.plot([a + 0.08, b - 0.08], [-1.62, -1.62], color="#C9CCD1",
+                    lw=0.9, clip_on=False, solid_capstyle="butt")
+            _fit_width(fig, ax.text((a + b) / 2, -1.80, fam, ha="center",
+                                    va="bottom", fontsize=7.0, fontweight="bold",
+                                    color=INK, linespacing=1.3),
+                       (b - a) * CELL_W)
         ax.set_yticks(np.arange(len(grid)) + 0.5)
         ax.set_yticklabels([lay for _, lay, _, _ in grid], fontsize=7.4)
         # the block pair is a GROUP over consecutive layer rows, so it is drawn
@@ -1726,22 +2486,21 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                 prev = pr
         for k, b in enumerate(bounds):
             stop = bounds[k + 1] if k + 1 < len(bounds) else len(grid)
-            ax.text(-1.55, (b + stop) / 2, grid[b][0], fontsize=8.2,
+            ax.text(-1.85, (b + stop) / 2, grid[b][0], fontsize=8.2,
                     fontweight="bold", color=INK, ha="left", va="center")
             if b:
                 ax.axhline(b, color=INK, lw=1.0)
-        ax.text(0, -0.055 * (24 / max(len(grid), 1)) * len(grid) / 6 - 1.2, "",
-                transform=ax.transData)
-        ax.set_title(src, fontsize=10.5, fontweight="bold", color=INK,
-                     loc="left", pad=26)
+        ax.text(0, -3.20, src, fontsize=10.5, fontweight="bold", color=INK,
+                ha="left", va="bottom")
         for spine in ax.spines.values():
             spine.set_visible(False)
         ax.tick_params(length=0)
-        ax.set_xlabel("one row = one block pair at one layer;  colour ranks within "
-                      "a column of this panel;  — : nothing to score",
+        ax.set_xlabel("one row = one block pair at one layer;  header reads "
+                      "metric → the number it emits;  colour ranks within a "
+                      "column of this panel;  — : nothing to score",
                       fontsize=7, color=MUTED, labelpad=8, loc="left")
 
-    return _finish(fig, axes, "tangle_lives_in_top_block_pair")
+    return _finish(fig, axes, "tangle_lives_in_top_block_pair", tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -1808,7 +2567,7 @@ def battery_questions_gemma(layers, second):
                 fontweight="bold", color=INK, va="top")
         ax.text(0, 1.19, "\n".join(textwrap.wrap(q, 38)), transform=ax.transAxes,
                 fontsize=7.3, color=MUTED, va="top", style="italic")
-    lines = _title(fig, "The battery, question by question — gemma-2-2b, block pair B0→B1, "
+    lines = _title(fig, "The metric battery, question by question — gemma-2-2b, block pair B0→B1, "
                    "every graded layer",
                    "each panel is the question one metric asks and its measured answer; the "
                    "questions the edges pass are about quality, the ones they fail are about "
@@ -2224,7 +2983,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
     for p in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*")):
         r = _json(p / "metrics_report.json")
         if r:
-            pcfg.append((f"PCFG {p.name.replace('_', ' ')}", r,
+            pcfg.append((f"PCFG {_layer_name(p.name)}", r,
                          _json(p / "second_pass.json")))
     run("funnel_coverage_to_sres", bool(second),
         f"{len(second)} gemma + {sum(1 for *_, sp in pcfg if sp)} PCFG layers with "
@@ -2271,6 +3030,38 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         "computed from validation/synthetic_toy_world.py (no cache needed)" if world
         else "needs torch + validation/synthetic_toy_world.py",
         lambda: calibration_toy_world_before_after(world))
+    # The single-panel, rows-not-columns redraw of the same world; both are
+    # built so the manuscript can pick one (see the function's docstring).
+    run("calibration_toy_world_gate_verdicts", bool(world),
+        "computed from validation/synthetic_toy_world.py (no cache needed)" if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_toy_world_gate_verdicts(world))
+    # The same world, three more questions: what the corpus underneath it looks
+    # like, what each gate removed as a count, and what the first gate saw.
+    run("calibration_toy_corpus_firing", bool(world),
+        (f"computed from validation/synthetic_toy_world.py — {world['P'] + world['C']} "
+         f"features over {world['total_tokens']:,} tokens") if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_toy_corpus_firing(world))
+    run("calibration_gate_funnel_by_role", bool(world),
+        (f"computed from validation/synthetic_toy_world.py — {len(world['candidates'])} "
+         "candidates through three gates") if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_gate_funnel_by_role(world))
+    run("calibration_reverse_coverage", bool(world),
+        (f"computed from validation/synthetic_toy_world.py — "
+         f"{world['P']}×{world['C']} coverage matrix") if world
+        else "needs torch + validation/synthetic_toy_world.py",
+        lambda: calibration_reverse_coverage(world))
+
+    # The most expensive input in the generator: the world and the whole battery,
+    # once per seed. Skipped with its reason rather than silently costing a minute.
+    sweep = synthetic_toy_seed_sweep() if world else None
+    run("calibration_seed_sweep", bool(sweep),
+        (f"{len(sweep)} seeds × {len(sweep[0][1])} scorecard rows, re-run from "
+         "validation/calibrate_on_synthetic_toy.py") if sweep
+        else "needs torch + validation/calibrate_on_synthetic_toy.py",
+        lambda: calibration_seed_sweep(sweep))
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     align = _json(C.OUT_DIR / "block_tree_alignment.json")
@@ -2319,7 +3110,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         for lay in sorted(base.glob("layer_*")):
             j = _json(lay / "in_block_edges.json")
             if j:
-                ib.append((f"{label} {lay.name.replace('_', ' ')}", j))
+                ib.append((f"{label} {_layer_name(lay.name)}", j))
     run("in_block_relations", bool(ib),
         f"{len(ib)} runs with in_block_edges.json" if ib
         else "needs in_block_edges.json — pipeline stage 01c",
@@ -2327,18 +3118,7 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
 
     # observed S_res shares, read off whatever second_pass.json files exist --
     # every gemma layer that has one, not the single layer that had one first
-    observed = []
-    probes = [(f"gemma L{int(q.parent.name.split('_')[1])}", C.D_SAE, q)
-              for q in sorted(G.glob("layer_*/second_pass.json"))]
-    probes += [(f"PCFG {q.parent.name.replace('_', ' ')}", 1792, q)
-               for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json"))]
-    for label, d_sae, path in probes:
-        sp = _json(path)
-        if sp and "0->1" in sp:
-            s = sp["0->1"]["sres"]
-            if s["n_edges_scored"]:
-                # zero is a measurement, not a missing value -- kept and drawn
-                observed.append((label, d_sae, 100 * s["n_pass"] / s["n_edges_scored"]))
+    observed = sres_observed_rates()
     run("sres_null_rate_vs_dictionary_size", True,
         f"config (k={C.SRES_RANK_TOP_K}) + {len(observed)} measured pass rates",
         lambda: sres_null_rate_vs_dictionary_size(observed))
@@ -2663,6 +3443,35 @@ def _captions():
             + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
             + (f"and the shared-topic pair {spur} passes every gate here."
                if spur else ""))
+        # Standalone twin of the caption above, because the manuscript shows one
+        # of the two figures, not both: it re-describes the world instead of
+        # deferring to a before panel that may not be on the page.
+        d["calibration_toy_world_gate_verdicts"] = (
+            r"\textbf{What the set of metrics kept.} "
+            "The same hand-built world as the previous figure, drawn in one "
+            "palette with one colour per injected structure: the parent block "
+            f"as the top row, the child block as the bottom row --- "
+            f"{len(world['true_edges'])} declared true parent--child edges over "
+            f"{world['P'] + world['C']} features, plus the six structures "
+            "planted to be caught or to demonstrate that nothing catches them. "
+            "A faded edge is one the three composed gates (reverse coverage, "
+            "the reconstruction condition, the token-frequency control) "
+            "removed, so the declared world is every edge, bright or faded, and "
+            "the note above each parent names the gate that decided its edges. "
+            f"Coverage proposes {len(world['candidates'])} candidates; "
+            f"{len(world['candidates']) - len(world['survivors'])} are cut, and "
+            f"{len(world['recovered'])} of the {len(world['true_edges'])} true "
+            "edges survive. The division of labour is the reading: all "
+            f"{n_sp} super-parent pairs die at the reconstruction condition "
+            "rather than at coverage, the frequency-coincidence pair passes "
+            "coverage and reconstruction and dies only at the frequency "
+            "control, and the feature-split edges are kept --- correctly, "
+            "since they are real refinements --- with the split reported "
+            "against the parent by a different metric. The two negative "
+            "controls come through unchanged: "
+            + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
+            + (f"and the shared-topic pair {spur} passes every gate here."
+               if spur else ""))
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     if tt:
@@ -2885,6 +3694,80 @@ def _captions():
                 "It is reported because an unstated alignment does the same work invisibly, and "
                 "because the two rules would support different claims about which part of gemma "
                 "a four-block transformer stands in for.")
+    # DRAFT CAPTIONS -- prose to be rewritten by hand before submission, per the
+    # same rule as the world figure above: the numbers are load-bearing and are
+    # computed from the world each figure draws, the sentences around them are not.
+    if world:
+        n_never = sum(1 for v in world["fire_count"] if v <= 0)
+        mass = world["bucket_mass"]
+        tot = max(world["total_tokens"], 1)
+        big = max(range(len(mass)), key=lambda k: mass[k]["tokens"])
+        d["calibration_toy_corpus_firing"] = (
+            r"\textbf{The corpus the Tier-1 calibration is run on.} Every claim in this "
+            "appendix is a claim about a corpus, and a metric that separated two classes "
+            "cleanly on a corpus with nothing in it has demonstrated nothing. "
+            r"\emph{Left:} the tokens each declared feature fires on, log scale, coloured "
+            "by the role it was planted as; the dashed line is the production "
+            rf"\texttt{{MIN\_FIRE\_COUNT}} $= {world['min_fire']}$, below which no pair is "
+            # sentence-initial: `_spell` returns the word, not its capitalisation
+            f"scored at all. {_spell(n_never).capitalize()} of the "
+            f"{len(world['fire_count'])} declared "
+            "features never fire and are drawn as stubs at the floor rather than omitted. "
+            "The super-parent is visible as the single bar an order of magnitude above "
+            r"everything else --- that is what makes it a super-parent. \emph{Right:} where "
+            "the corpus's token mass sits across the three frequency buckets metric 5 "
+            f"re-weights by: {100 * mass[big]['tokens'] / tot:.0f}\\% of all tokens fall in "
+            f"bucket {big}, carried by {mass[big]['ids']:,} distinct id"
+            f"{'' if mass[big]['ids'] == 1 else 's'}. That concentration is what the "
+            "frequency control has to work against, so it is reported rather than assumed. "
+            "The bucket bars use a single-hue sequential shade and no role colour: buckets "
+            "are an order, not a category, and the palette in the key below applies to the "
+            "left panel only.")
+        d["calibration_reverse_coverage"] = (
+            r"\textbf{What the first gate proposes, and the one true edge it cannot.} "
+            "The reverse-coverage matrix $R = $ co-fire\,/\,child firing for every "
+            f"parent--child pair in the hand-built world, with the ground truth drawn on "
+            rf"top of it. Coverage keeps a pair when $R \geq \tau = {C.EDGE_TAU}$, which "
+            f"proposes {len(world['candidates'])} of the "
+            f"{world['P'] * world['C']:,} possible pairs. Circles are true edges it "
+            "proposed, crosses are pairs it proposed that no true edge backs, and the "
+            "square is the reading that matters: a true edge whose $R$ never reaches the "
+            "threshold, so no later gate ever sees it. That is a limit of the first gate "
+            "which no downstream metric can repair, and it is the same absorption case the "
+            "scorecard files as a demonstrated blind spot rather than a caught pathology. "
+            "The super-parent's row is the wide band of crosses --- one parent proposing "
+            "against nearly every child, at high $R$, on co-firing alone.")
+        stg = world["stages"]
+        d["calibration_gate_funnel_by_role"] = (
+            r"\textbf{What each gate removes, counted.} The same three composed gates the "
+            "before/after figure draws, as counts split by the structure each candidate "
+            f"was planted as. Coverage proposes {len(stg[0][1])} candidates; the "
+            f"reconstruction condition takes that to {len(stg[1][1])} and the "
+            f"token-frequency control to {len(stg[2][1])}. The genuine block does not move "
+            "at any stage, which is the claim: the gates are removing planted pathology "
+            "rather than thinning everything. The division of labour is legible in the "
+            "widths --- the super-parent's candidates die entirely at reconstruction and "
+            "not at coverage, and the frequency-coincidence pair survives both coverage and "
+            "reconstruction and dies only at the control built for it. The two negative "
+            "controls are the segments that never shrink; they are limitations this "
+            "composition demonstrates, not failures of it.")
+        d["calibration_seed_sweep"] = (
+            r"\textbf{The scorecard is not an accident of one draw.} Every row of the "
+            "Tier-1 scorecard, re-run on independently drawn worlds --- a new corpus, new "
+            "decoder directions and a new residual draw per seed, with the production "
+            "thresholds unchanged. The cell carries the verdict and the shade carries the "
+            r"margin: how decisively that metric separated the two classes it was graded "
+            r"on, on a $\log_{10}$ scale, because the margins span orders of magnitude and "
+            "a grid of identical verdicts would hide exactly that. A row that passes at a "
+            "margin of $1.05$ and one that passes at $10^{3}$ are not the same evidence. "
+            r"The scale is capped at $10^{3}\times$, the same ceiling the scorecard itself "
+            r"prints as \texttt{>1000x}: three rows score $10^{9}$, which is not a measured "
+            "magnitude but the guard in the denominator when the rejected class scores zero, "
+            "and letting it set the top of the ramp pushed every honestly-measured margin "
+            "into the palest two shades. "
+            "Rows scored categorically have no magnitude to report and are left grey rather "
+            "than given an invented one. Everything else in this appendix is reported at "
+            "seed 0; this is the figure that says what that number is worth.")
     if lay:
         d["tangle_lives_in_top_block_pair"] = (
             "Every metric per block pair \\emph{and} per layer, one panel per SAE source; no "
@@ -3049,10 +3932,15 @@ def _captions():
         r"null rate is $k/D$, the grey line, which is $11.9\%$ on the 42-feature synthetic toy, "
         r"$0.28\%$ on a 1{,}792-latent PCFG SAE and $0.015\%$ on gemma's 32{,}768. Each measured "
         "pass rate is drawn with a vertical drop to its own null, and that distance (not the "
-        r"rate) is what the measurement is worth. Two runs on the \emph{same} 1{,}792-latent "
-        "dictionary land on opposite sides of their null, which is why a raw pass rate compares "
-        "nothing across sources. A measured zero has no position on a logarithmic axis and is "
-        "drawn at a marked floor rather than silently dropped.")
+        r"rate) is what the measurement is worth. The rate is over every block pair a run "
+        r"probed, not its outermost pair alone (Table~\ref{tab:null}), because the null is a "
+        "property of the dictionary and every pair is scored against the same one. "
+        + _sres_same_D_clause()
+        + ("A measured zero has no position on a logarithmic axis and is drawn at a marked "
+           "floor rather than silently dropped."
+           if any(o == 0 for *_, o in sres_observed_rates())
+           else "A measured zero would have no position on a logarithmic axis and is drawn "
+                "at a marked floor rather than silently dropped; no run needs that here."))
     return d
 
 
@@ -3063,14 +3951,22 @@ def _captions():
 # has one); the hypothesis figure and the mechanism that explains it are adjacent;
 # and the battery's own failure closes, because it qualifies everything above it.
 TEX_ORDER = [
-    # main text: the three headline results first, then the two calibration
-    # figures that license them; everything after goes to the appendix
-    ("MAIN 1", "funnel_coverage_to_sres", False,
-     "Coverage proposes; the strict test disposes.",
-     "What the battery finds on gemma-2-2b"),
-    ("MAIN 2", "multiparenting_by_layer", False,
+    # main text: the whole battery on both sources FIRST, then the three
+    # headline results it decomposes into; everything after goes to the
+    # appendix. The overview leads because every main figure after it is one
+    # of its columns read closely -- the funnel is coverage against the probe,
+    # multi-parenting is the out-degree column across layers -- and a reader
+    # who meets those one at a time never learns that the columns disagree.
+    # It is a full-page figure at 17 columns x 52 rows; the manuscript is
+    # expected to give it its own page (\clearpage, or sidewaysfigure*).
+    ("MAIN 1", "tangle_lives_in_top_block_pair", True,
+     "One instrument, untuned, on both sources.",
+     "What the metric battery finds"),
+    ("MAIN 2", "funnel_coverage_to_sres", False,
+     "Coverage proposes; the strict test disposes.", None),
+    ("MAIN 3", "multiparenting_by_layer", False,
      "The recovered graph is not a tree.", None),
-    ("MAIN 3", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
+    ("MAIN 4", "recovered_graph_toy_vs_pcfg_vs_gemma", True,
      "The recovered graph, drawn.", None),
     # The whole calibration ladder sits in the appendix: it is what licenses the main
     # text's numbers rather than a finding of its own, and the three read as one
@@ -3079,19 +3975,36 @@ TEX_ORDER = [
     # figures (the hand-built world, where the answer was fixed before any metric
     # saw it) come before both Tier-2 ones (the same question after a real training
     # run). The ladder is the argument, so the figures climb it in order.
-    ("APP 0a", "calibration_synthetic_toy_scorecard", True,
-     "Every metric scored against a known tree.", "Appendix: the instrument, calibrated"),
-    ("APP 0b", "calibration_toy_world_before_after", True,
+    # Tier 1 climbs in the order the argument does, not in the order the figures
+    # were written: the world first (a metric that separated cleanly on an empty
+    # corpus has shown nothing), then the first gate at full resolution, then the
+    # gates composed as counts, then as a drawing, then every metric scored, and
+    # last whether that score survives a different draw of the world.
+    ("APP 0a", "calibration_toy_corpus_firing", True,
+     "The world the calibration is run on.", "Appendix: the instrument, calibrated"),
+    ("APP 0b", "calibration_reverse_coverage", True,
+     "What the first gate proposes, and the one true edge it cannot.", None),
+    ("APP 0c", "calibration_gate_funnel_by_role", True,
+     "What each gate removes, counted.", None),
+    ("APP 0d", "calibration_toy_world_before_after", True,
      "Which gate caught which injected pathology.", None),
-    ("APP 0c", "calibration_trained_toy_recovery", True,
+    # the single-panel twin of 0d: emitted so the manuscript can choose
+    # between them; expected to be commented in/out there, not both shown
+    ("APP 0d'", "calibration_toy_world_gate_verdicts", True,
+     "What the set of metrics kept.", None),
+    ("APP 0e", "calibration_synthetic_toy_scorecard", True,
+     "Every metric scored against a known tree.", None),
+    ("APP 0f", "calibration_seed_sweep", True,
+     "The same scorecard on eight independently drawn worlds.", None),
+    ("APP 0g", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
-    ("APP 0d", "calibration_toy_tree_recovered", True,
-     "That tree drawn, before and after the battery.", None),
-    ("APP 1", "tangle_lives_in_top_block_pair", True,
-     "The tangle lives in the coarsest block pair, on both sources.",
-     "Appendix: what the battery finds"),
+    ("APP 0h", "calibration_toy_tree_recovered", True,
+     "That tree drawn, before and after the metric battery.", None),
+    # the overview matrix moved to MAIN 1; the section it used to open now
+    # starts at the slice, which is one cell of that matrix read closely
     ("APP 1b", "a_slice_of_the_tangle", False,
-     "A slice of the tangle: every child in it has many parents.", None),
+     "A slice of the tangle: every child in it has many parents.",
+     "Appendix: what the battery finds"),
     # the single-child twin of the slice: emitted so the manuscript can choose
     # between them; expected to be commented in/out there, not both shown
     ("APP 1b'", "one_child_many_parents", False,
@@ -3231,6 +4144,7 @@ CLAIMS = {
     "superparent_fanout_vs_firing": "the superparent gate reads fan-out; firing rate is handled per edge",
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_toy_world_before_after": "which gate removed which injected pathology, on the world where the answer was fixed first",
+    "calibration_toy_world_gate_verdicts": "the same gate verdicts in one panel — blocks as rows, the declared world kept as the faded edges",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
     "calibration_toy_tree_recovered": "the tree drawn: which edges the battery returned, and which features were never learned",
     "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
@@ -3238,6 +4152,11 @@ CLAIMS = {
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
     "sres_null_rate_vs_dictionary_size": "a top-k rank rule is only as strict as D is large",
+    "calibration_toy_corpus_firing": "the corpus the Tier-1 calibration runs on — firing per feature, and where the token mass sits",
+    "calibration_reverse_coverage": "what reverse coverage proposes at full resolution, and the true edge it structurally cannot",
+    "calibration_gate_funnel_by_role": "what each composed gate removes, counted by the structure it was planted as",
+    "calibration_seed_sweep": "the Tier-1 scorecard re-run per seed — whether 14/14 is a result or one draw",
+    "tangle_lives_in_top_block_pair": "the whole battery, every column, on both sources with one untuned instrument",
     "cross_source_layer_response": "the shape of B0→B1 is the same on both base models at the layers both graded; its strength is not",
     "cross_source_alignment_check": "which alignment across two models of different depth the data prefers — block index or relative depth",
 }
