@@ -82,7 +82,7 @@ def build_tree(cfg: ToyConfig) -> Tree:
 
     `randomize_structure=False` (default) reproduces the fixed lattice exactly. When True the
     backbone is drawn from `cfg.seed` and retried deterministically until it clears both the
-    structural floors and `validate_config`. The confound battery is identical in both modes.
+    structural floors and `validate_config`. The confound set is identical in both modes.
     """
     from .validate import validate_config     # lazy: avoid a tree <-> strengths import cycle
 
@@ -192,7 +192,8 @@ def _assemble_tree(cfg: ToyConfig, gen: "torch.Generator | None") -> Tree:
 
 def _backbone_lattice(cfg, new, parents, children, exclusive, root_p) -> None:
     """The fixed lattice backbone: `n_roots` roots, uniform `branching` and `depth`, with
-    firing_only on every `alpha_zero_every`-th edge (counted across the whole forest)."""
+    firing_only on every `alpha_zero_every`-th edge (counted across the whole forest).
+    `alpha_zero_every=0` disables firing_only, so every edge is a real alpha>0 is-a edge."""
     edge_i = 0
     frontier = []
     for _ in range(cfg.n_roots):
@@ -205,7 +206,7 @@ def _backbone_lattice(cfg, new, parents, children, exclusive, root_p) -> None:
             exclusive[p] = cfg.exclusive_siblings
             for _ in range(cfg.branching):
                 c = new()
-                a = 0.0 if (edge_i % cfg.alpha_zero_every == 0) else cfg.alpha
+                a = 0.0 if (cfg.alpha_zero_every > 0 and edge_i % cfg.alpha_zero_every == 0) else cfg.alpha
                 edge_i += 1
                 parents[c] = [(p, cfg.child_p_edge, a)]
                 children[p].append(c)
@@ -261,7 +262,7 @@ def _backbone_random(cfg, gen, new, parents, children, exclusive, root_p) -> Non
 
     # balanced is-a / firing_only: exactly round(n_edges / alpha_zero_every) edges get alpha=0.
     n_edges = len(edge_order)
-    n_zero = round(n_edges / cfg.alpha_zero_every) if n_edges else 0
+    n_zero = round(n_edges / cfg.alpha_zero_every) if (n_edges and cfg.alpha_zero_every > 0) else 0
     zero_children: set[int] = set()
     if n_zero > 0:
         perm = torch.randperm(n_edges, generator=gen)

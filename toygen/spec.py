@@ -2,7 +2,7 @@
 Settings for building a synthetic toy world.
 
 `ToyConfig` is the single knob panel: tree shape, firing rates, geometry, strength, and an
-optional confound battery. Two ready-made recipes at the bottom: backbone (clean tree only)
+optional set of confounds. Two ready-made recipes at the bottom: backbone (clean tree only)
 and full (backbone plus realistic confounds).
 
 Each planted property mirrors a real SAE phenomenon:
@@ -46,7 +46,7 @@ class ToyConfig:
 
     # --- composition (geometry) ---------------------------------------------
     alpha: float = 0.48              # cosine of a child's direction onto its parent (is_a overlap); siblings share alpha^2 of the parent
-    alpha_zero_every: int = 4        # every n-th edge (across the forest) gets alpha = 0: the firing_only cell
+    alpha_zero_every: int = 4        # every n-th edge (across the forest) gets alpha = 0: the firing_only cell; 0 disables firing_only entirely (all edges is-a)
     eps_alpha: float = 0.02          # keep alpha <= 1 - eps so the change-of-basis matrix stays invertible
 
     # --- strength -----------------------------------------------------------
@@ -65,7 +65,7 @@ class ToyConfig:
     zipf_s: float = 1.05             # Zipf exponent controlling how skewed token frequencies are
 
     # --- confounds (enabled by confounds=True; off in backbone) ---
-    confounds: bool = False          # master switch for the whole distractor battery below
+    confounds: bool = False          # master switch for all the distractor confounds below
     n_superparent: int = 1           # always-on wide parents -- the base-rate confound
     n_broad_parent: int = 1          # genuine wide parents -- the superparent's honest foil
     broad_children: int = 5          # children under each broad parent
@@ -98,11 +98,26 @@ def backbone_config() -> ToyConfig:
 
 
 def full_config() -> ToyConfig:
-    """Backbone plus the full confound battery -- the main validation world."""
+    """Backbone plus the full set of confounds -- the main validation world."""
     return ToyConfig(name="full", confounds=True)
+
+
+def only_isa_config() -> ToyConfig:
+    """Pure is-a world for single-property metric characterization (Stage-1 oracle read).
+
+    Isolation is by tree shape, not by injecting negatives: branching=1 removes siblings,
+    depth=1 removes transitive, alpha_zero_every=0 disables the firing_only edge (so every
+    edge is a real alpha>0 is-a edge), and confounds=False removes superparent/frequency/
+    topical. The only pair classes left are is_a, its reversed flip (child->parent, the
+    asymmetry test), and the unrelated null. n_roots=120 gives F=240 (matching the full
+    world's backbone size) and ~120 is-a edges, well clear of the N>=10 reporting floor.
+    """
+    return ToyConfig(name="only_isa", n_roots=120, branching=1, depth=1,
+                     alpha_zero_every=0, confounds=False)
 
 
 CONFIGS = {
     "backbone": backbone_config,
     "full": full_config,
+    "only_isa": only_isa_config,
 }

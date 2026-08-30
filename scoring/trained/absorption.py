@@ -35,7 +35,7 @@ _TINY = 1e-12
 ABSORPTION_CONSTANTS: dict[str, float] = {
     "hole_min": 0.15,        # parent recall must drop this far below 1 to count as a hole
     "solo_min": 0.10,        # min parent recall on parent-solo tokens for absorption (vs ~0 for merging)
-    "conj_min": 0.05,        # excess conjunction cos (K) above baseline to count as composition
+    "conj_min": 0.10,        # excess conjunction cos (K) above baseline to count as composition; raised from 0.05 (defense-in-depth alongside the sum-alignment + own-latent gates in conjunction_strength)
     "null_target_exceedances": 0.01,  # Bonferroni target on expected chance latents dictionary-wide
     "n_null_perm": 1000,     # random in-span directions for a stable tail quantile
     "multiplicity_excess_min": 1.5,   # excess needed to flag genuine multiplicity over a clean latent
@@ -164,20 +164,41 @@ def absorption_signals(g: torch.Tensor, W_dec: torch.Tensor, acts: torch.Tensor,
 # --------------------------------------------------------------------------
 # composition / merging (conjunction latent)
 # --------------------------------------------------------------------------
-def conjunction_strength(g: torch.Tensor, W_dec: torch.Tensor, a: int, b: int) -> dict:
-    """`K = max_j cos(W_dec[j], unit(g_a+g_b)) - baseline`; composed iff `K > conj_min`.
+def conjunction_strength(g: torch.Tensor, W_dec: torch.Tensor, a: int, b: int,
+                         match: torch.Tensor | None = None, conj_min: float | None = None) -> dict:
+    """`K = cos(W_dec[j*], unit(g_a+g_b)) - baseline` over ELIGIBLE latents; composed iff `K > conj_min`.
 
-    A conjunction latent points along the normalized sum of the two true directions. The baseline
-    is the larger of the two single-feature cosines onto that sum, computed from actual geometry
-    rather than hardcoded `1/sqrt(2)` (this toy is overcomplete, non-orthogonal). Composition is
-    the excess over that baseline.
+    A real conjunction latent is a THIRD latent that points along the normalized sum of the two true
+    directions. Two guards make `j*` that latent rather than a masquerade:
+      * **sum-alignment gate** — `j*` must be closer to the sum than to either single feature
+        (`cos(W_j, conj) > cos(W_j, g_a)` and `> cos(W_j, g_b)`). A latent that merely recovers one
+        feature (its own entanglement-contaminated decoder) is single-aligned, so it is excluded.
+        This is geometric and needs no `match`.
+      * **own-latent exclusion** — when `match` is given, the pair's own matched latents
+        (`match[a]`, `match[b]`) are excluded outright; a feature's own latent can never be the
+        pair's conjunction.
+    Without these, ~90% of flagged "composites" were a feature's own latent clearing a low `conj_min`.
+    The baseline is the larger single-feature cosine onto the sum (actual geometry, not `1/sqrt(2)`,
+    since the dictionary is overcomplete/non-orthogonal); composition is the excess over it.
     """
-    conj = _unit((g[a].double() + g[b].double()))
-    cosj = _unit(W_dec.double()) @ conj                    # [d_sae], signed
-    jstar = int(torch.argmax(cosj))
-    baseline = max(float(conj @ _unit(g[a].double())), float(conj @ _unit(g[b].double())))
-    K = float(cosj[jstar]) - baseline
-    return {"K": K, "latent": jstar, "baseline": baseline}
+    Wu = _unit(W_dec.double())
+    ga, gb = _unit(g[a].double()), _unit(g[b].double())
+    conj = _unit(g[a].double() + g[b].double())
+    cos_conj = Wu @ conj                                   # [d_sae], signed
+    baseline = max(float(conj @ ga), float(conj @ gb))
+    cmin = ABSORPTION_CONSTANTS["conj_min"] if conj_min is None else float(conj_min)
+
+    eligible = (cos_conj > (Wu @ ga)) & (cos_conj > (Wu @ gb))   # sum-aligned, not single-aligned
+    if match is not None:
+        for x in (int(match[a]), int(match[b])):
+            if 0 <= x < eligible.numel():
+                eligible[x] = False
+    if not bool(eligible.any()):
+        return {"K": float("-inf"), "latent": -1, "baseline": baseline, "composed": False}
+    cand = torch.where(eligible, cos_conj, torch.full_like(cos_conj, float("-inf")))
+    jstar = int(torch.argmax(cand))
+    K = float(cos_conj[jstar]) - baseline
+    return {"K": K, "latent": jstar, "baseline": baseline, "composed": bool(K > cmin)}
 
 
 # --------------------------------------------------------------------------
@@ -254,8 +275,9 @@ def classify_dictionary(g: torch.Tensor, W_dec: torch.Tensor, A: torch.Tensor, a
     for (a, b) in sibling_pairs:
         if not (bool(recovered[int(a)]) and bool(recovered[int(b)])):   # recovered-gated
             continue
-        cs = conjunction_strength(g, W_dec, int(a), int(b))
-        if cs["K"] > constants["conj_min"]:
+        cs = conjunction_strength(g, W_dec, int(a), int(b), match=match,
+                                  conj_min=constants["conj_min"])
+        if cs["composed"]:
             composed_pairs.append({"a": int(a), "b": int(b), "K": cs["K"], "latent": cs["latent"]})
 
     multiplicity_set = {d["feature"] for d in multiplicity_features}

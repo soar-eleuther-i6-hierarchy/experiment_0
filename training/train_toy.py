@@ -17,8 +17,9 @@ from pathlib import Path
 
 import torch
 
+from sae_training.architectures.base import VanillaSAE
 from sae_training.architectures.matryoshka import MatryoshkaSAE
-from sae_training.config import MatryoshkaSAEConfig
+from sae_training.config import MatryoshkaSAEConfig, SAEConfig
 from sae_training.trainer import train_sae
 from sae_training.utils import get_wsd_scheduler
 
@@ -63,6 +64,14 @@ def sae_quality(sae, X: torch.Tensor) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="backbone", choices=sorted(spec.CONFIGS))
+    ap.add_argument("--variant", default="matryoshka", choices=["matryoshka", "vanilla"],
+                    help="matryoshka = nested BatchTopK; vanilla = plain SAE (no nesting) "
+                         "at the same total width -- the absorption-contrast baseline.")
+    ap.add_argument("--activation", default="batch_topk", choices=["batch_topk", "relu"],
+                    help="vanilla only: batch_topk (matched k) or relu+L1 (Bussmann's absorbing "
+                         "baseline; sparsity via --l1, not k).")
+    ap.add_argument("--l1", type=float, default=1e-4,
+                    help="L1 sparsity coefficient (only bites for --activation relu).")
     ap.add_argument("--expansion", type=int, default=4)
     ap.add_argument("--n-steps", type=int, default=4, help="number of nested matryoshka prefixes")
     ap.add_argument("--k", type=int, default=None, help="BatchTopK k; defaults to the world's true L0, round(sum of firing_rates). A smaller value starves the dictionary and is refused.")
@@ -71,6 +80,9 @@ def main() -> None:
     ap.add_argument("--n-token-bound-pairs", type=int, default=None)
     ap.add_argument("--n-topical-pairs", type=int, default=None)
     ap.add_argument("--n-bind-ids", type=int, default=None)
+    # Geometry override (not a confound count): sweep the is_a overlap cos(child,parent) to study absorption.
+    ap.add_argument("--alpha", type=float, default=None,
+                    help="override the is_a geometric overlap; default = the config's alpha")
     ap.add_argument("--training-tokens", type=int, default=50_000_000)
     ap.add_argument("--world-tokens", type=int, default=WORLD_TOKENS)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -93,6 +105,8 @@ def main() -> None:
     # --seed varies geometry+sampling; the default fixed lattice shares one hierarchy across seeds, while --randomize-structure redraws the backbone per seed (confound set stays locked).
     cfg = spec.replace(resolve_config(args.config, **overrides),
                        seed=args.seed, randomize_structure=args.randomize_structure)
+    if args.alpha is not None:
+        cfg = spec.replace(cfg, alpha=args.alpha)   # geometry sweep; saved into toy_meta so scoring rebuilds the same overlap
 
     t0 = time.time()
     h, tree, cfg = build_world(args.config, args.world_tokens, args.seed, device, config=cfg)
@@ -108,14 +122,22 @@ def main() -> None:
     # Seed SAE init + batch order here (sae_training seeds neither); done after build_world so --seed reproduces both world and fit.
     torch.manual_seed(args.seed)
 
-    sae_cfg = MatryoshkaSAEConfig(
-        d_in=cfg.D, d_sae=d_sae, latent_sizes=list(latent_sizes),
-        activation_function="batch_topk", k=k, lr=args.lr,
-        # Calibrate threshold well before the run ends; the default of 1000 never kicks in on short/smoke runs.
-        threshold_start_step=min(1000, max(1, n_train_steps // 2)),
-        use_auxk=True,
-    )
-    sae = MatryoshkaSAE(sae_cfg).to(device)
+    # Calibrate threshold well before the run ends; the default of 1000 never kicks in on short/smoke runs.
+    thr_start = min(1000, max(1, n_train_steps // 2))
+    if args.variant == "matryoshka":
+        sae_cfg = MatryoshkaSAEConfig(
+            d_in=cfg.D, d_sae=d_sae, latent_sizes=list(latent_sizes),
+            activation_function="batch_topk", k=k, lr=args.lr,
+            threshold_start_step=thr_start, use_auxk=True)
+        sae = MatryoshkaSAE(sae_cfg).to(device)
+    else:  # vanilla: plain SAE, no nesting -- the absorption baseline (batch_topk or relu+L1)
+        sae_cfg = SAEConfig(
+            d_in=cfg.D, d_sae=d_sae,
+            activation_function=args.activation, k=k, lr=args.lr,
+            l1_coefficient=args.l1,                       # bites only for relu; negligible under batch_topk
+            threshold_start_step=thr_start,
+            use_auxk=(args.activation == "batch_topk"))   # auxk revival is topk-specific
+        sae = VanillaSAE(sae_cfg).to(device)
 
     opt = torch.optim.Adam(sae.parameters(), lr=args.lr)
     sched = get_wsd_scheduler(opt, n_train_steps)
@@ -128,8 +150,12 @@ def main() -> None:
             idx = torch.randint(0, h.shape[0], (BATCH_SIZE,), generator=batch_gen, device=h.device)
             yield h[idx]
 
+    # actual activation trained (matryoshka is always batch_topk); tag the dir when it's not
+    # batch_topk so a relu run can't collide with the batch_topk vanilla dir.
+    act = "batch_topk" if args.variant == "matryoshka" else args.activation
+    dir_variant = args.variant if act == "batch_topk" else f"{args.variant}-{act}"
     out = Path(args.out) / checkpoint_dirname(
-        args.config, "matryoshka", k, args.expansion, overrides, seed=args.seed,
+        args.config, dir_variant, k, args.expansion, overrides, seed=args.seed,
         randomize_structure=args.randomize_structure)
     # Don't silently overwrite a completed run — dirname omits training hparams, so different runs can collide (toy_meta.json only exists once a run completes).
     if (out / "toy_meta.json").exists() and not args.force:
@@ -143,7 +169,7 @@ def main() -> None:
               max_steps=n_train_steps, save_dir=str(out), grad_clip=1.0, dead_feature_window=200)
 
     # Final reconstruction quality on the reloaded (deployment) model, saved per seed to track quality without wandb.
-    reloaded = MatryoshkaSAE.from_pretrained(str(out), device=device)
+    reloaded = type(sae).from_pretrained(str(out), device=device)
     eval_idx = torch.randint(0, h.shape[0], (min(131072, h.shape[0]),), device=h.device)
     train_quality = sae_quality(reloaded, h[eval_idx].to(torch.float32))
     print(f"train quality: EV={train_quality['explained_variance'] * 100:.2f}%  "
@@ -152,8 +178,8 @@ def main() -> None:
 
     meta = {
         "config": args.config,
-        "variant": "matryoshka",
-        "activation_function": "batch_topk",
+        "variant": args.variant,
+        "activation_function": act,
         "k": k,
         "expansion": args.expansion,
         "n_steps": args.n_steps,
