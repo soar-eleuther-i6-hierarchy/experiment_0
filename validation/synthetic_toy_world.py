@@ -69,8 +69,8 @@ D_MODEL = 64
 # properties of the world and are kept independent here.
 RESID_ERR_ENERGY = 0.64
 
-P = 10          # parent-block features
-C = 32          # child-block features
+P = 15          # parent-block features
+C = 33          # child-block features
 N_FREQ_BUCKETS = 3
 
 # ---- ground-truth structure (parent-local -> list of child-local) ----------
@@ -103,6 +103,27 @@ ABSORB_CHILD = 21
 #     negative control -- the open column in the matrix.
 TOPIC_PARENT = 9
 TOPIC_CHILD = 22
+# (G) COMPOSITION. One child latent encodes the conjunction of two component
+#     concepts ("red triangle"): it fires exactly where both components fire, so
+#     EACH component contains it (R = 1) and both edges clear every gate, yet
+#     neither is a taxonomic refinement. The third negative control -- like
+#     topic, nothing in the battery tests atomicity; out-degree sees only the
+#     symptom (a multi-parented child).
+COMP_PARENTS = (10, 11)
+COMP_CHILD = 23
+# (H) MULTI-PARENTING. Child 31 has ONE true parent (12) and one intruding
+#     broad parent (13) that co-fires on all of the child's tokens and on many
+#     others. Both edges clear every gate; the child's in-degree of 2 is the
+#     symptom, and only the out-degree metric reads in-degree at all.
+MULTI_TRUE_PARENT = 12
+MULTI_INTRUDER_PARENT = 13
+MULTI_CHILD = 31
+# (I) CROSS-BLOCK SIBLINGS. Parent-block latent 14 and child-block latent 32
+#     fire on exactly the same tokens: two names for one concept straddling the
+#     block boundary. Coverage reads the pair as an edge (R = 1 both ways);
+#     the joint-child energy share ~ 1 is the rename/duplicate signature.
+COEXT_PARENT = 14
+COEXT_CHILD = 32
 # (F) WITHIN-BLOCK structure, for metric 7 (in_block_edges). Same block, so no
 #     block ordering fixes the direction: it has to come out of the coverage
 #     asymmetry. 28 fires only inside 27 (directed edge); 29 and 30 fire on
@@ -135,6 +156,15 @@ class ToyLabels:
     # reject it, so counting it as a false positive would misattribute a known
     # gap in the battery to the metric that happens to pass it.
     topical_edges: set[tuple[int, int]] = field(default_factory=set)
+    # Same status as topical_edges: component -> composed-child pairs that pass
+    # every gate because nothing tests atomicity. Not scored as false positives.
+    composition_edges: set[tuple[int, int]] = field(default_factory=set)
+    # The intruding parent of the multi-parented child: passes every gate; the
+    # detection is the child's in-degree, read only by the out-degree metric.
+    multiparent_edges: set[tuple[int, int]] = field(default_factory=set)
+    # A cross-block co-extensive pair (two names for one concept): coverage
+    # proposes it as an edge; the energy share ~ 1 is the duplicate signature.
+    coextensive_edges: set[tuple[int, int]] = field(default_factory=set)
     # Within-block ground truth, in child-local space.
     in_block_edges: set[tuple[int, int]] = field(default_factory=set)
     in_block_duplicates: set[tuple[int, int]] = field(default_factory=set)
@@ -242,6 +272,44 @@ def build_world(
             feats[P + TOPIC_CHILD] = child_act()
         gen.add(feats, _bucket_id_for_genuine(gen, i))
     labels.topical_edges.add((TOPIC_PARENT, TOPIC_CHILD))
+
+    # (2G) composition: the two component parents co-fire on shared tokens, and
+    # the composed child fires exactly on that intersection (36 of 60 clears
+    # MIN_JOINT for both edges); each component also fires alone, so the two
+    # components are neither duplicates nor parent/child of each other.
+    for i in range(60):
+        feats = {p: parent_act() for p in COMP_PARENTS}
+        if i % 5 < 3:                              # 36 of 60 -> clears MIN_JOINT
+            feats[P + COMP_CHILD] = child_act()
+        gen.add(feats, _bucket_id_for_genuine(gen, i))
+    for i in range(20):                            # solo firings, one component each
+        gen.add({COMP_PARENTS[i % 2]: parent_act()}, _bucket_id_for_genuine(gen, i))
+    for p in COMP_PARENTS:
+        labels.composition_edges.add((p, COMP_CHILD))
+
+    # (2H) multi-parenting: the child fires only with its true parent, but the
+    # intruding broad parent is present on every one of those tokens and on 60
+    # more of its own, so both edges pass coverage, reconstruction and the
+    # frequency control; the child's in-degree of 2 is what out-degree reports.
+    for i in range(40):
+        gen.add({MULTI_TRUE_PARENT: parent_act(),
+                 MULTI_INTRUDER_PARENT: parent_act(),
+                 P + MULTI_CHILD: child_act()}, _bucket_id_for_genuine(gen, i))
+    for i in range(60):                            # the intruder is broad
+        gen.add({MULTI_INTRUDER_PARENT: parent_act()},
+                _bucket_id_for_genuine(gen, i))
+    for i in range(20):                            # true parent also fires alone
+        gen.add({MULTI_TRUE_PARENT: parent_act()}, _bucket_id_for_genuine(gen, i))
+    labels.genuine.add((MULTI_TRUE_PARENT, MULTI_CHILD))
+    labels.multiparent_edges.add((MULTI_INTRUDER_PARENT, MULTI_CHILD))
+
+    # (2I) cross-block siblings: identical firing sets and identical activation,
+    # one latent in each block -- a duplicate straddling the boundary.
+    for i in range(40):
+        shared = child_act()
+        gen.add({COEXT_PARENT: shared, P + COEXT_CHILD: shared},
+                _bucket_id_for_genuine(gen, i))
+    labels.coextensive_edges.add((COEXT_PARENT, COEXT_CHILD))
 
     # (2F) within-block structure, in the CHILD block. 28 fires only on a subset
     # of 27's tokens (asymmetric containment -> a directed edge), 29 and 30 fire

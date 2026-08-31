@@ -133,12 +133,12 @@
     claim about a corpus, and a metric that separated two classes cleanly on a corpus with
     nothing in it has demonstrated nothing. \emph{Left:} the tokens each declared feature
     fires on, log scale, coloured by the role it was planted as; the dashed line is the
-    production \texttt{MIN\_FIRE\_COUNT} $= 20$, below which no pair is scored at all. Two of
-    the 42 declared features never fire and are drawn as stubs at the floor rather than
+    production \texttt{MIN\_FIRE\_COUNT} $= 20$, below which no pair is scored at all. Zero of
+    the 48 declared features never fire and are drawn as stubs at the floor rather than
     omitted. The super-parent is visible as the single bar an order of magnitude above
     everything else --- that is what makes it a super-parent. \emph{Right:} where the corpus's
-    token mass sits across the three frequency buckets metric 5 re-weights by: 51\% of all
-    tokens fall in bucket 1, carried by 348 distinct ids. That concentration is what the
+    token mass sits across the three frequency buckets metric 5 re-weights by: 52\% of all
+    tokens fall in bucket 1, carried by 444 distinct ids. That concentration is what the
     frequency control has to work against, so it is reported rather than assumed. The bucket
     bars use a single-hue sequential shade and no role colour: buckets are an order, not a
     category, and the palette in the key below applies to the left panel only.
@@ -154,7 +154,7 @@
     \textbf{What the first gate proposes, and the one true edge it cannot.} The
     reverse-coverage matrix $R = $ co-fire\,/\,child firing for every parent--child pair in
     the hand-built world, with the ground truth drawn on top of it. Coverage keeps a pair when
-    $R \geq \tau = 0.5$, which proposes 55 of the 320 possible pairs. Circles are true edges
+    $R \geq \tau = 0.5$, which proposes 63 of the 495 possible pairs. Circles are true edges
     it proposed, crosses are pairs it proposed that no true edge backs, and the square is the
     reading that matters: a true edge whose $R$ never reaches the threshold, so no later gate
     ever sees it. That is a limit of the first gate which no downstream metric can repair, and
@@ -172,8 +172,8 @@
   \caption{%
     \textbf{What each gate removes, counted.} The same three composed gates the before/after
     figure draws, as counts split by the structure each candidate was planted as. Coverage
-    proposes 55 candidates; the reconstruction condition takes that to 25 and the
-    token-frequency control to 24. The genuine block does not move at any stage, which is the
+    proposes 63 candidates; the reconstruction condition takes that to 30 and the
+    token-frequency control to 29. The genuine block does not move at any stage, which is the
     claim: the gates are removing planted pathology rather than thinning everything. The
     division of labour is legible in the widths --- the super-parent's candidates die entirely
     at reconstruction and not at coverage, and the frequency-coincidence pair survives both
@@ -191,19 +191,21 @@
   \caption{%
     \textbf{Which gate caught which injected pathology.} The same hand-built world as the
     previous figure, drawn twice in one palette: one colour per injected structure, in both
-    panels. \emph{Left:} the world as declared --- 24 true parent--child edges over 42
-    features, plus the six structures planted to be caught or to demonstrate that nothing
-    catches them. \emph{Right:} the same world after the three composed gates (reverse
+    panels. \emph{Top:} the world as declared --- 25 true parent--child edges over 48
+    features, plus the eight structures planted to be caught or to demonstrate that nothing
+    catches them. \emph{Bottom:} the same world after the three composed gates (reverse
     coverage, the reconstruction condition, the token-frequency control), where a faded edge
-    is one the gates removed and the note beside each parent names the gate that removed it.
-    Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges survive. The
-    division of labour is the reading: all 30 super-parent pairs die at the reconstruction
+    is one the gates removed and the note above each parent names the gate that removed it.
+    Coverage proposes 63 candidates; 34 are rejected, and 24 of the 25 true edges survive. The
+    division of labour is the reading: all 33 super-parent pairs die at the reconstruction
     condition rather than at coverage, the frequency-coincidence pair passes coverage and
     reconstruction and dies only at the frequency control, and the feature-split edges are
-    kept --- correctly, since they are real refinements --- with the split reported against
-    the parent by a different metric. The two negative controls are the two colours that come
-    through unchanged: the absorbed edge (8, 21) is never proposed at all, and the
-    shared-topic pair (9, 22) passes every gate here.
+    recovered --- correctly, since they are real refinements --- with the split reported
+    against the parent by a different metric. The dashed structures are the negative controls:
+    the absorbed edge (8, 21) is never proposed at all, while the shared-topic pair (9, 22)
+    and the composition edges (10, 23) and (11, 23) pass every gate. The multi-parenting
+    intruder (13, 31) and the co-extensive pair (14, 32) also pass every gate and are flagged
+    by reports (the child's in-degree, the energy share) rather than rejected.
   }
   \label{fig:calibration-toy-world-before-after}
 \end{figure}
@@ -213,21 +215,23 @@
   \centering
   \includegraphics[width=\linewidth]{calibration_toy_world_gate_verdicts}
   \caption{%
-    \textbf{What the set of metrics kept.} The same hand-built world as the previous figure,
-    drawn in one palette with one colour per injected structure: the parent block as the top
-    row, the child block as the bottom row --- 24 declared true parent--child edges over 42
-    features, plus the six structures planted to be caught or to demonstrate that nothing
-    catches them. A faded edge is one the three composed gates (reverse coverage, the
+    \textbf{What the set of metrics recovered.} The same hand-built world as the previous
+    figure, drawn in one palette with one colour per injected structure: the parent block as
+    the top row, the child block as the bottom row --- 25 declared true parent--child edges
+    over 48 features, plus the eight structures planted to be caught or to demonstrate that
+    nothing catches them. A faded edge is one the three composed gates (reverse coverage, the
     reconstruction condition, the token-frequency control) removed, so the declared world is
     every edge, bright or faded, and the note above each parent names the gate that decided
-    its edges. Coverage proposes 55 candidates; 31 are cut, and 23 of the 24 true edges
-    survive. The division of labour is the reading: all 30 super-parent pairs die at the
+    its edges. Coverage proposes 63 candidates; 34 are rejected, and 24 of the 25 true edges
+    survive. The division of labour is the reading: all 33 super-parent pairs die at the
     reconstruction condition rather than at coverage, the frequency-coincidence pair passes
     coverage and reconstruction and dies only at the frequency control, and the feature-split
-    edges are kept --- correctly, since they are real refinements --- with the split reported
-    against the parent by a different metric. The two negative controls come through
-    unchanged: the absorbed edge (8, 21) is never proposed at all, and the shared-topic pair
-    (9, 22) passes every gate here.
+    edges are recovered --- correctly, since they are real refinements --- with the split
+    reported against the parent by a different metric. The dashed structures are the negative
+    controls: the absorbed edge (8, 21) is never proposed at all, while the shared-topic pair
+    (9, 22) and the composition edges (10, 23) and (11, 23) pass every gate. The
+    multi-parenting intruder (13, 31) and the co-extensive pair (14, 32) also pass every gate
+    and are flagged by reports (the child's in-degree, the energy share) rather than rejected.
   }
   \label{fig:calibration-toy-world-gate-verdicts}
 \end{figure}
@@ -238,24 +242,24 @@
   \includegraphics[width=\linewidth]{calibration_synthetic_toy_scorecard}
   \caption{%
     \textbf{Calibrating the metrics where the answer is known.} The test world is built by
-    hand: activations are composed from a known concept hierarchy (five parent features, each
-    with children that fire only when it fires) plus six planted look-alike structures that a
-    naive co-firing analysis would mistake for parent--child links, such as a feature pair
+    hand: activations are composed from a known concept hierarchy (six parent features, each
+    with children that fire only when it fires) plus eight planted look-alike structures that
+    a naive co-firing analysis would mistake for parent--child links, such as a feature pair
     that co-fires only through shared frequent tokens, a pair lifted together by a shared
     topic, and an always-on ``super-parent''. Each row is one metric of the battery
     (Table~\ref{tab:battery}) applied to this world, and a row passes when the metric tells
-    its planted target apart from healthy structure; 14 of 14 rows pass. \emph{Left:} metrics
+    its planted target apart from healthy structure; 17 of 17 rows pass. \emph{Left:} metrics
     that return a score. The bar is the separation: the ratio between the metric's value on
     the pairs it must flag and its value on the pairs it must keep, so $1\times$ means the two
     are indistinguishable and the metric carries no signal. \emph{Right:} metrics whose output
     is a discrete answer (an edge set, a direction), scored simply as correct or not; the two
-    panels are separate because a discrete answer has no meaningful ratio. The two hatched
+    panels are separate because a discrete answer has no meaningful ratio. The three hatched
     rows are negative controls, planted blind spots expected to slip through: an absorbed
     child that coverage cannot even propose (the child fires exactly where its parent is
-    silent) and a shared-topic pair that every filter accepts. They pass when nothing catches
-    them, documenting the battery's limits, and a code change that made them catchable would
-    fail them visibly. Passing this tier is what licenses running the same battery on real
-    models, where no ground truth exists.
+    silent), a shared-topic pair, and a composed child's two component edges that every filter
+    accepts. They pass when nothing catches them, documenting the battery's limits, and a code
+    change that made them catchable would fail them visibly. Passing this tier is what
+    licenses running the same battery on real models, where no ground truth exists.
   }
   \label{fig:calibration-synthetic-toy-scorecard}
 \end{figure}

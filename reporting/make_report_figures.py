@@ -302,6 +302,11 @@ def _panel_head(ax, tag: str, detail: str = ""):
     muted colour the rest of the figures use for derived numbers. Returns the two
     artists, so a caller with a narrow panel can hand them to `_fit_width`.
     """
+    # Honours the same --titles gate as _title: the paper's LaTeX captions carry
+    # this text, and baking it into the PNG was the mentors' figure complaint
+    # (text explaining a figure belongs in the caption).
+    if not TITLES:
+        return []
     # Offsets in INCHES, converted to this axes' fraction. A fixed fraction is a
     # different physical gap on a 7-inch panel and on a 2-inch one: at 0.05 of a
     # short axes the two lines landed on top of each other and on the top bar.
@@ -706,7 +711,7 @@ def calibration_synthetic_toy_scorecard(rows):
     # different kind of claim and are hatched rather than recoloured -- texture is
     # the secondary encoding that survives greyscale printing.
     for i, r in enumerate(ratio):
-        ctrl = r["metric"].lstrip().startswith("—")
+        ctrl = "negative control" in r["metric"]
         ax.barh(i, min(r["margin"], 1e4), height=0.6,
                 color=GOOD if r["pass"] else CAT[3],
                 hatch="///" if ctrl else None, edgecolor="white", linewidth=0.8)
@@ -742,7 +747,7 @@ def calibration_synthetic_toy_scorecard(rows):
 
     ax = axes[1]
     for i, r in enumerate(cat_rows):
-        ctrl = r["metric"].lstrip().startswith("—")
+        ctrl = "negative control" in r["metric"]
         ax.barh(i, 1.0, height=0.6, color=GOOD if r["pass"] else CAT[3],
                 hatch="///" if ctrl else None, edgecolor="white", linewidth=0.8)
         ax.text(0.5, i, "correct" if r["pass"] else "wrong", va="center", ha="center",
@@ -757,7 +762,7 @@ def calibration_synthetic_toy_scorecard(rows):
 
     _title(fig, f"Every metric scored against a known tree — {n_pass}/{len(rows)} rows pass",
            "the hatched rows are limitations demonstrated rather than caught: an absorbed edge "
-           "coverage cannot propose, and a shared-topic pair every filter accepts", width=112)
+           "coverage cannot propose, and shared-topic and composition pairs every filter accepts", width=112)
     # Right-hand ticks on the right panel: with two-line labels, left-hand ticks put
     # this panel's text into the left panel's plot area.
     axes[1].yaxis.tick_right()
@@ -1019,7 +1024,9 @@ def calibration_toy_tree_recovered(tt):
 # ---------------------------------------------------------------------------
 # Role -> (colour, label). Okabe-Ito throughout, unlike the notebook's screen
 # palette: #2E9E5B beside #D98A3D is indistinguishable under protanopia, and in
-# print no tooltip can rescue the encoding. Seven roles, seven separable hues.
+# print no tooltip can rescue the encoding. Ten roles, ten separable hues
+# (composition takes a purple outside Okabe-Ito: the palette's remaining
+# slots, black and yellow, read as text-ink and near-invisible on white).
 TOY_ROLE = {
     "genuine":     ("#009E73", "genuine tree"),
     "superparent": ("#9AA3AD", "superparent (A)"),
@@ -1028,6 +1035,9 @@ TOY_ROLE = {
     "absorbed":    ("#D55E00", "absorption (D)"),
     "topic":       ("#0072B2", "shared topic (E)"),
     "in_block":    ("#56B4E9", "within-block (F)"),
+    "composition": ("#9467BD", "composition (G)"),
+    "multi":       ("#8C564B", "multi-parenting (H)"),
+    "sibling":     ("#BCBD22", "siblings (I)"),
     "unused":      ("#D9DDE1", "declared but never fires"),
 }
 
@@ -1046,9 +1056,11 @@ def synthetic_toy_gates():
 
         from validation.calibrate_on_synthetic_toy import _run_metrics
         from validation.synthetic_toy_world import (
-            ABSORB_CHILD, ABSORB_PARENT, FREQ_CHILD, FREQ_PARENT, GENUINE_TREE,
-            IN_BLOCK_CHILD, IN_BLOCK_DUP, IN_BLOCK_PARENT, SPLIT_CHILDREN,
-            SPLIT_PARENT, SUPERPARENT, TOPIC_CHILD, TOPIC_PARENT, build_world,
+            ABSORB_CHILD, ABSORB_PARENT, COEXT_CHILD, COEXT_PARENT, COMP_CHILD,
+            COMP_PARENTS, FREQ_CHILD, FREQ_PARENT, GENUINE_TREE, IN_BLOCK_CHILD,
+            IN_BLOCK_DUP, IN_BLOCK_PARENT, MULTI_CHILD, MULTI_INTRUDER_PARENT,
+            MULTI_TRUE_PARENT, SPLIT_CHILDREN, SPLIT_PARENT, SUPERPARENT,
+            TOPIC_CHILD, TOPIC_PARENT, build_world,
         )
     except Exception as exc:                      # noqa: BLE001 -- reported, not raised
         print(f"[figures] synthetic toy unavailable: {type(exc).__name__}: {exc}")
@@ -1072,13 +1084,19 @@ def synthetic_toy_gates():
     tree = {p: list(kids) for p, kids in GENUINE_TREE.items()}
     tree[SPLIT_PARENT] = list(SPLIT_CHILDREN)
     tree[ABSORB_PARENT] = [ABSORB_CHILD]
+    tree[MULTI_TRUE_PARENT] = [MULTI_CHILD]
     true_edges = sorted((p, c) for p, kids in tree.items() for c in kids)
 
     survivors = as_set(freq_ok)
     roles_p = {p: ("genuine" if p in GENUINE_TREE else
                    {SPLIT_PARENT: "split", FREQ_PARENT: "freq",
                     SUPERPARENT: "superparent", ABSORB_PARENT: "absorbed",
-                    TOPIC_PARENT: "topic"}[p])
+                    TOPIC_PARENT: "topic",
+                    COMP_PARENTS[0]: "composition",
+                    COMP_PARENTS[1]: "composition",
+                    MULTI_TRUE_PARENT: "genuine",
+                    MULTI_INTRUDER_PARENT: "multi",
+                    COEXT_PARENT: "sibling"}[p])
                for p in range(stats["P"])}
     genuine_children = {c for kids in GENUINE_TREE.values() for c in kids}
     roles_c = {}
@@ -1091,7 +1109,10 @@ def synthetic_toy_gates():
             roles_c[c] = "in_block"
         else:
             roles_c[c] = {FREQ_CHILD: "freq", ABSORB_CHILD: "absorbed",
-                          TOPIC_CHILD: "topic"}.get(c, "unused")
+                          TOPIC_CHILD: "topic",
+                          COMP_CHILD: "composition",
+                          MULTI_CHILD: "genuine",
+                          COEXT_CHILD: "sibling"}.get(c, "unused")
 
     verdict = {}
     for p in range(stats["P"]):
@@ -1100,17 +1121,21 @@ def synthetic_toy_gates():
         cut_recon = int((edge_mask & ~m["recon"]["passes"])[p].sum())
         cut_freq = int((recon_ok & ~(survival >= C.FREQ_SURVIVAL_MIN))[p].sum())
         if kept:
-            parts.append(f"{kept} kept")
+            parts.append(f"{kept} recovered")
         if cut_recon:
-            parts.append(f"{cut_recon} cut: reconstruction")
+            parts.append(f"{cut_recon} rejected: reconstruction")
         if cut_freq:
-            parts.append(f"{cut_freq} cut: frequency control")
+            parts.append(f"{cut_freq} rejected: frequency control")
         if not int(edge_mask[p].sum()) and tree.get(p):
             parts.append("never proposed: coverage")
         if p == SPLIT_PARENT:
             parts.append("parent flagged: redundancy")
-        if p == TOPIC_PARENT and kept:
+        if p in (TOPIC_PARENT, *COMP_PARENTS) and kept:
             parts.append("no gate tests this")
+        if p == MULTI_INTRUDER_PARENT and kept:
+            parts.append("flagged: multi-parenting")
+        if p == COEXT_PARENT and kept:
+            parts.append("flagged: co-extensive")
         verdict[p] = ", ".join(parts) or "no candidates"
 
     # Per-feature firing and the corpus's own frequency profile. Read here rather
@@ -1153,12 +1178,15 @@ def synthetic_toy_gates():
         "keys": {"superparent": SUPERPARENT, "split": SPLIT_PARENT,
                  "freq": FREQ_PARENT, "absorbed": ABSORB_PARENT,
                  "topic": TOPIC_PARENT},
+        "comp_edges": [(p, COMP_CHILD) for p in COMP_PARENTS],
+        "multi_edges": [(MULTI_INTRUDER_PARENT, MULTI_CHILD)],
+        "coext_edges": [(COEXT_PARENT, COEXT_CHILD)],
         "superparent_cut": sum(1 for p, _ in as_set(edge_mask) if p == SUPERPARENT),
     }
 
 
 def calibration_toy_world_before_after(w):
-    """The declared world, and the same world after the three composed gates.
+    """The declared world and the gate verdicts, as two stacked row-panels.
 
     Same colours in both panels, because the question is not "how many edges came
     back" -- `calibration_toy_tree_recovered` answers that for Tier 2 -- but which
@@ -1166,25 +1194,36 @@ def calibration_toy_world_before_after(w):
     false) cannot say that: it renders thirty superparent pairs and one frequency
     coincidence in the same colour, and their whole difference is that one died at
     reconstruction and the other survived it.
+
+    Layout: rotated onto rows like the gate-verdicts twin and stacked, for the
+    same reason that twin exists -- the two side-by-side columns left the parent
+    column empty for two-thirds of its height and the figure was mostly
+    whitespace. Top panel: the world as declared. Bottom panel: the same world
+    after the gates, outcome on alpha and node fill, the deciding gate named
+    above each parent.
     """
     P, Cn = w["P"], w["C"]
-    py = {p: -(p + 0.5) * Cn / P for p in range(P)}
-    cy = {c: -(c + 0.5) for c in range(Cn)}
-    PX, CX = 0.0, 1.0
-    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6))}
+    cx = {c: c + 0.5 for c in range(Cn)}
+    px = {p: (p + 0.5) * Cn / P for p in range(P)}
+    PY, CY = 1.0, 0.0                   # parents on the top row, children below
+    # dash carries ONE meaning: a blind spot no gate tests. Everything the
+    # battery does test -- recover, reject or flag -- is drawn solid.
+    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6)),
+               "composition": (0, (5, 1.5, 1, 1.5))}
 
-    fig, axes = plt.subplots(1, 2, figsize=(12.6, 9.0))
+    fig, axes = plt.subplots(2, 1, figsize=(12.6, 5.7),
+                             gridspec_kw={"height_ratios": [1.0, 1.3],
+                                          "hspace": 0.06})
 
     for ax, is_truth in zip(axes, (True, False)):
         def link(p, c, role, lw=1.6, alive=True):
             colour = TOY_ROLE[role][0]
-            # Removed edges keep colour and dash -- the identity of the structure is
-            # the point -- so only alpha carries the outcome. It is per role because
-            # ink accumulates: thirty overlapping hairlines at the alpha that makes a
-            # single amber line readable print as strong a wash as the left panel.
+            # Removed edges keep colour and dash -- the identity of the structure
+            # is the point -- so only alpha carries the outcome; per role for the
+            # ink-accumulation reason the old layout documented.
             ghost = 0.14 if role == "superparent" else 0.34
-            ax.plot([PX, CX], [py[p], cy[c]], lw=lw,
-                    color=colour, ls=dash_of.get(role, "-"),
+            ax.plot([px[p], cx[c]], [PY, CY], lw=lw, color=colour,
+                    ls=dash_of.get(role, "-"),
                     alpha=1.0 if (is_truth or alive) else ghost, zorder=1)
 
         for c in range(Cn):                                   # (A) superparent
@@ -1195,89 +1234,118 @@ def calibration_toy_world_before_after(w):
             link(p, c, "genuine", lw=1.7, alive=(p, c) in w["survivors"])
         for (p, c) in w["split_edges"]:
             link(p, c, "split", lw=1.7, alive=(p, c) in w["survivors"])
+        for (p, c) in w["comp_edges"]:
+            link(p, c, "composition", lw=1.7, alive=(p, c) in w["survivors"])
+        for (p, c) in w["multi_edges"]:
+            link(p, c, "multi", lw=1.7, alive=(p, c) in w["survivors"])
+        for (p, c) in w["coext_edges"]:
+            link(p, c, "sibling", lw=1.7, alive=(p, c) in w["survivors"])
         for role in ("freq", "absorbed", "topic"):
             p = w["keys"][role]
             c = next(x for x in range(Cn) if w["roles_c"][x] == role)
             link(p, c, role, lw=1.7, alive=(p, c) in w["survivors"])
 
-        # (F) is structure inside the child block: no parent-block edge can carry
-        # it, and this composition does not score it. Drawn so it is not silently
-        # absent from a figure that claims to show the whole world.
+        # (F) within-block: both endpoints live in the child row, so the bezier
+        # bows BELOW the row.
         for (a, b), ls in w["in_block"]:
-            # A quadratic Bezier bowed out of the column: a straight line between two
-            # nodes in the same column runs through every node between them and reads
-            # as a chain of edges that does not exist.
-            y0, y1 = cy[a], cy[b]
-            ctrl = (CX + 0.42, (y0 + y1) / 2)
+            x0, x1 = cx[a], cx[b]
+            ctrl = ((x0 + x1) / 2, CY - 0.42)
             t = np.linspace(0, 1, 40)
-            ax.plot((1 - t) ** 2 * CX + 2 * (1 - t) * t * ctrl[0] + t ** 2 * CX,
-                    (1 - t) ** 2 * y0 + 2 * (1 - t) * t * ctrl[1] + t ** 2 * y1,
+            ax.plot((1 - t) ** 2 * x0 + 2 * (1 - t) * t * ctrl[0] + t ** 2 * x1,
+                    (1 - t) ** 2 * CY + 2 * (1 - t) * t * ctrl[1] + t ** 2 * CY,
                     ls=ls, lw=1.2, color=TOY_ROLE["in_block"][0],
                     alpha=1.0 if is_truth else 0.5, zorder=1)
 
         live_p = {p for p, _ in w["survivors"]}
         live_c = {c for _, c in w["survivors"]}
-        for xs, ys, roles, live in ((PX, py, w["roles_p"], live_p),
-                                    (CX, cy, w["roles_c"], live_c)):
-            for i, y in ys.items():
+        for xs, y, roles, live in ((px, PY, w["roles_p"], live_p),
+                                   (cx, CY, w["roles_c"], live_c)):
+            for i, x in xs.items():
                 colour = TOY_ROLE[roles[i]][0]
                 on = is_truth or i in live
-                ax.scatter([xs], [y], s=118, zorder=3,
+                ax.scatter([x], [y], s=118, zorder=3,
                            facecolor=colour if on else "white",
                            edgecolor=colour, linewidths=1.3)
-                ax.text(xs, y, str(i), ha="center", va="center", fontsize=5.4,
+                ax.text(x, y, str(i), ha="center", va="center", fontsize=5.4,
                         zorder=4, color=_text_on(colour) if on else MUTED)
 
-        if not is_truth:                       # which test each parent went through
-            for p in range(P):
-                ax.text(PX - 0.06, py[p], w["verdict"][p], ha="right", va="center",
-                        fontsize=5.6, color=TOY_ROLE[w["roles_p"][p]][0], zorder=4)
+        if not is_truth:            # which test each parent went through,
+            for p in range(P):      # staggered on two tiers as in the twin
+                ax.text(px[p], PY + (0.10 if p % 2 == 0 else 0.30),
+                        w["verdict"][p].replace(", ", "\n"), ha="center",
+                        va="bottom", fontsize=5.6,
+                        color=TOY_ROLE[w["roles_p"][p]][0], zorder=4,
+                        linespacing=1.25)
 
-        for x, lab in ((PX, "parent block"), (CX, "child block")):
-            ax.text(x, 0.9, lab, ha="center", va="bottom", fontsize=7.5, color=MUTED)
-        # One x-range for both panels: the verdict column needs room on the left,
-        # and giving it to only one panel would offset every node between before
-        # and after -- the one comparison this figure exists to make easy.
-        ax.set_xlim(-1.25, 1.35)
-        ax.set_ylim(-Cn - 0.6, 2.2)
+        for y, lab in ((PY, "parent block"), (CY, "child block")):
+            ax.text(-0.7, y, lab, ha="right", va="center", fontsize=7.5,
+                    color=MUTED)
+        # Panel identity as a conventional subplot tag, not explanatory prose:
+        # the caption says what "declared" and "verdicts" mean.
+        ax.text(-3.5, PY + (0.30 if is_truth else 0.58),
+                "before: as declared" if is_truth
+                else "after: what the metrics recovered",
+                ha="left", va="top", fontsize=8.5, fontweight="bold", color=INK)
+        ax.set_xlim(-3.6, Cn + 0.6)
+        ax.set_ylim(CY - 0.55, PY + (0.42 if is_truth else 0.75))
         ax.axis("off")
 
-    heads = (("before — the world as declared", "the six structures as injected"),
-             ("after — what the metric battery kept",
-              f"{len(w['recovered'])}/{len(w['true_edges'])} true edges kept, "
-              f"{len(w['candidates']) - len(w['survivors'])} candidates cut"))
-
-    # The key, in three named groups rather than one flat row: healthy, injected,
-    # and the ones nothing here catches. A flat legend orders itself by whichever
-    # edge was drawn first, and that ordering is the reading this figure is for.
-    # Four groups, not three. "nothing catches these" is true of the two negative
-    # controls and false of the within-block pair: no PARENT->CHILD edge can express
-    # structure inside one block, but `in_block_edges.directed_coverage` scores it
-    # and passes. Filing (F) under the blind spots reported a working metric as a
-    # gap in the battery.
-    groups = [
-        ("the genuine tree", ["genuine"], 0.02),
-        ("injected pathologies — a metric catches each",
-         ["superparent", "freq", "split"], 0.17),
-        ("blind spots — nothing catches these", ["absorbed", "topic"], 0.47),
-        ("scored by a different metric", ["in_block"], 0.72),
+    # ONE legend, shared by both panels: colour = planted structure, circle
+    # markers matching the node glyphs. The recovered / not-recovered fill
+    # encoding is defined in the caption, not here, and the dash styles speak
+    # for themselves in the handles -- both cuts were manuscript feedback.
+    handles = [Line2D([], [], ls="none", marker="o", markersize=7.5,
+                      markerfacecolor=TOY_ROLE[r][0],
+                      markeredgecolor=TOY_ROLE[r][0],
+                      label=TOY_ROLE[r][1])
+               # ordered as the columns of tab:matrix; within-block last
+               # (it is a metric's row there, not a pathology column)
+               for r in ("genuine", "split", "absorbed", "composition",
+                         "superparent", "multi", "sibling", "freq",
+                         "topic", "in_block")]
+    leg = fig.legend(handles=handles, loc="lower center", ncol=4,
+                     bbox_to_anchor=(0.5, 0.055), frameon=False, fontsize=8,
+                     handlelength=2.4, labelspacing=0.35, columnspacing=1.6)
+    leg._legend_box.align = "left"
+    # a second line for the outcome encoding: the PNG also appears on the
+    # outputs pages with no LaTeX caption to define these symbols
+    # the three dash patterns (long dash, dots, dash-dot) differ only so the
+    # untestable structures stay tellable apart in greyscale; they share one
+    # meaning, so the key shows all three beside a single label
+    from matplotlib.legend_handler import HandlerTuple
+    dash_samples = tuple(Line2D([], [], color="#444444", lw=2.0, ls=ls)
+                         for ls in ((0, (4, 2)), (0, (1, 1.6)),
+                                    (0, (5, 1.5, 1, 1.5))))
+    outcome = [
+        Line2D([], [], color="#444444", lw=2.0,
+               label="solid: tested by the metrics"),
+        dash_samples,
+        Line2D([], [], color="#444444", lw=2.0, alpha=0.30,
+               label="faded: rejected by the metrics"),
+        Line2D([], [], ls="none", marker="o", markersize=7.5,
+               markerfacecolor="#444444", markeredgecolor="#444444",
+               label="recovered"),
+        Line2D([], [], ls="none", marker="o", markersize=7.5,
+               markerfacecolor="white", markeredgecolor="#444444",
+               label="not recovered"),
     ]
-    for title, roles, x in groups:
-        handles = [Line2D([], [], color=TOY_ROLE[r][0], lw=2.0,
-                          ls=dash_of.get(r, "-"), marker="s", markersize=6.5,
-                          label=TOY_ROLE[r][1]) for r in roles]
-        leg = fig.legend(handles=handles, title=title, loc="upper left",
-                         bbox_to_anchor=(x, 0.105), frameon=False, fontsize=8,
-                         handlelength=2.4, labelspacing=0.35)
-        leg.get_title().set_fontsize(8.5)
-        leg.get_title().set_color(INK)
-        leg._legend_box.align = "left"
-        fig.add_artist(leg)
+    labels2 = ["solid: tested by the metrics",
+               "dashed or dotted: no metric can test it",
+               "faded: rejected by the metrics", "recovered", "not recovered"]
+    leg2 = fig.legend(handles=outcome, labels=labels2, loc="lower center",
+                      ncol=5, bbox_to_anchor=(0.5, 0.0), frameon=False,
+                      fontsize=8, handlelength=3.4, columnspacing=1.2,
+                      handler_map={tuple: HandlerTuple(ndivide=3, pad=0.35)})
+    leg2._legend_box.align = "left"
 
-    fig.subplots_adjust(left=0.02, right=0.98, top=0.92, bottom=0.13, wspace=0.08)
+    fig.subplots_adjust(left=0.02, right=0.99,
+                        top=0.90 if TITLES else 0.985, bottom=0.22)
+    heads = (("before: the world as declared", "the planted structures as injected"),
+             ("after: what the metric battery recovered",
+              f"{len(w['recovered'])}/{len(w['true_edges'])} true edges recovered, "
+              f"{len(w['candidates']) - len(w['survivors'])} candidates rejected"))
     for ax, (tag, detail) in zip(axes, heads):
         _panel_head(ax, tag, detail)
-    _panel_rule(fig, axes[0], axes[1])
     return _finish(fig, axes, "calibration_toy_world_before_after", tight=False)
 
 
@@ -1291,7 +1359,7 @@ def calibration_toy_world_gate_verdicts(w):
     and carries the outcome in alpha alone, so the declared world is recoverable
     from one panel (faded = cut) once the subtitle says so. What it gains: the
     two-column layout is tall and mostly whitespace, because a bipartite drawing
-    with 10 parents against 32 children leaves the parent column empty for
+    with few parents against many children leaves the parent column empty for
     two-thirds of its height; laying the blocks as rows spends that height on
     nothing and halves the figure.
     """
@@ -1299,7 +1367,10 @@ def calibration_toy_world_gate_verdicts(w):
     cx = {c: c + 0.5 for c in range(Cn)}
     px = {p: (p + 0.5) * Cn / P for p in range(P)}
     PY, CY = 1.0, 0.0                   # parents on the top row, children below
-    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6))}
+    # dash carries ONE meaning: a blind spot no gate tests. Everything the
+    # battery does test -- recover, reject or flag -- is drawn solid.
+    dash_of = {"absorbed": (0, (4, 2)), "topic": (0, (1, 1.6)),
+               "composition": (0, (5, 1.5, 1, 1.5))}
 
     fig, ax = plt.subplots(figsize=(12.6, 4.25))
 
@@ -1320,6 +1391,12 @@ def calibration_toy_world_gate_verdicts(w):
         link(p, c, "genuine", lw=1.7, alive=(p, c) in w["survivors"])
     for (p, c) in w["split_edges"]:
         link(p, c, "split", lw=1.7, alive=(p, c) in w["survivors"])
+    for (p, c) in w["comp_edges"]:
+        link(p, c, "composition", lw=1.7, alive=(p, c) in w["survivors"])
+    for (p, c) in w["multi_edges"]:
+        link(p, c, "multi", lw=1.7, alive=(p, c) in w["survivors"])
+    for (p, c) in w["coext_edges"]:
+        link(p, c, "sibling", lw=1.7, alive=(p, c) in w["survivors"])
     for role in ("freq", "absorbed", "topic"):
         p = w["keys"][role]
         c = next(x for x in range(Cn) if w["roles_c"][x] == role)
@@ -1364,27 +1441,55 @@ def calibration_toy_world_gate_verdicts(w):
     ax.set_ylim(CY - 0.55, PY + 0.75)
     ax.axis("off")
 
-    # The same four legend groups, and the same reason they are groups.
-    groups = [
-        ("the genuine tree", ["genuine"], 0.02),
-        ("injected pathologies — a metric catches each",
-         ["superparent", "freq", "split"], 0.17),
-        ("blind spots — nothing catches these", ["absorbed", "topic"], 0.47),
-        ("scored by a different metric", ["in_block"], 0.72),
+    # ONE legend (the mentors' ask): colour = which planted structure, circle
+    # markers matching the node glyphs. The recovered / not-recovered fill
+    # encoding is defined in the caption, not here -- manuscript feedback.
+    handles = [Line2D([], [], ls="none", marker="o", markersize=7.5,
+                      markerfacecolor=TOY_ROLE[r][0],
+                      markeredgecolor=TOY_ROLE[r][0],
+                      label=TOY_ROLE[r][1])
+               # ordered as the columns of tab:matrix; within-block last
+               # (it is a metric's row there, not a pathology column)
+               for r in ("genuine", "split", "absorbed", "composition",
+                         "superparent", "multi", "sibling", "freq",
+                         "topic", "in_block")]
+    leg = fig.legend(handles=handles, loc="lower center", ncol=4,
+                     bbox_to_anchor=(0.5, 0.055), frameon=False, fontsize=8,
+                     handlelength=2.4, labelspacing=0.35, columnspacing=1.6)
+    leg._legend_box.align = "left"
+    # a second line for the outcome encoding: the PNG also appears on the
+    # outputs pages with no LaTeX caption to define these symbols
+    # the three dash patterns (long dash, dots, dash-dot) differ only so the
+    # untestable structures stay tellable apart in greyscale; they share one
+    # meaning, so the key shows all three beside a single label
+    from matplotlib.legend_handler import HandlerTuple
+    dash_samples = tuple(Line2D([], [], color="#444444", lw=2.0, ls=ls)
+                         for ls in ((0, (4, 2)), (0, (1, 1.6)),
+                                    (0, (5, 1.5, 1, 1.5))))
+    outcome = [
+        Line2D([], [], color="#444444", lw=2.0,
+               label="solid: tested by the metrics"),
+        dash_samples,
+        Line2D([], [], color="#444444", lw=2.0, alpha=0.30,
+               label="faded: rejected by the metrics"),
+        Line2D([], [], ls="none", marker="o", markersize=7.5,
+               markerfacecolor="#444444", markeredgecolor="#444444",
+               label="recovered"),
+        Line2D([], [], ls="none", marker="o", markersize=7.5,
+               markerfacecolor="white", markeredgecolor="#444444",
+               label="not recovered"),
     ]
-    for title, roles, x in groups:
-        handles = [Line2D([], [], color=TOY_ROLE[r][0], lw=2.0,
-                          ls=dash_of.get(r, "-"), marker="s", markersize=6.5,
-                          label=TOY_ROLE[r][1]) for r in roles]
-        leg = fig.legend(handles=handles, title=title, loc="upper left",
-                         bbox_to_anchor=(x, 0.215), frameon=False, fontsize=8,
-                         handlelength=2.4, labelspacing=0.35)
-        leg.get_title().set_fontsize(8.5)
-        leg.get_title().set_color(INK)
-        leg._legend_box.align = "left"
-        fig.add_artist(leg)
+    labels2 = ["solid: tested by the metrics",
+               "dashed or dotted: no metric can test it",
+               "faded: rejected by the metrics", "recovered", "not recovered"]
+    leg2 = fig.legend(handles=outcome, labels=labels2, loc="lower center",
+                      ncol=5, bbox_to_anchor=(0.5, 0.0), frameon=False,
+                      fontsize=8, handlelength=3.4, columnspacing=1.2,
+                      handler_map={tuple: HandlerTuple(ndivide=3, pad=0.35)})
+    leg2._legend_box.align = "left"
 
-    fig.subplots_adjust(left=0.02, right=0.99, top=0.85, bottom=0.25)
+    fig.subplots_adjust(left=0.02, right=0.99,
+                        top=0.85 if TITLES else 0.97, bottom=0.25)
     _panel_head(ax, "what the set of metrics kept",
                 f"{len(w['recovered'])}/{len(w['true_edges'])} true edges kept, "
                 f"{len(w['candidates']) - len(w['survivors'])} candidates cut — "
@@ -1413,8 +1518,9 @@ def calibration_toy_corpus_firing(w):
     in the key directly below it: the same colour meant a role on the left and a
     frequency bucket on the right, and nothing on the figure said so. Buckets are
     ORDERED (high -> mid -> rare), so they get a single-hue sequential ramp, the
-    same rule `DEPTH` follows for layers; the hue is purple because no role uses
-    it, so a swatch cannot be read off the wrong key.
+    same rule `DEPTH` follows for layers; the ramp is neutral grey because every
+    hue family now carries a role (purple went to composition), and an ordered
+    grey triplet cannot be read as any single role swatch.
     """
     P, Cn = w["P"], w["C"]
     fire = w["fire_count"]
@@ -1459,8 +1565,8 @@ def calibration_toy_corpus_firing(w):
     ax = axes[1]
     mass = w["bucket_mass"]
     total = max(w["total_tokens"], 1)
-    ramp = plt.get_cmap("Purples")
-    cols = [ramp(0.78 - 0.24 * k) for k in range(len(mass))]
+    ramp = plt.get_cmap("Greys")
+    cols = [ramp(0.88 - 0.26 * k) for k in range(len(mass))]
     labs = ["high", "mid", "rare"][:len(mass)] or []
     labs = [f"{labs[k] if k < len(labs) else k} (bucket {k})" for k in range(len(mass))]
     ax.bar(np.arange(len(mass)), [b["tokens"] for b in mass], width=0.62, color=cols)
@@ -1513,7 +1619,8 @@ def calibration_gate_funnel_by_role(w):
     # Roles ordered so the genuine tree anchors the left of every bar: the reading
     # is "the healthy block never moves, the pathologies fall off one at a time",
     # and a bar whose segments reorder between stages cannot show that.
-    order = ["genuine", "superparent", "split", "freq", "absorbed", "topic"]
+    order = ["genuine", "split", "absorbed", "composition", "superparent",
+             "multi", "sibling", "freq", "topic"]
     role_of = {p: w["roles_p"][p] for p in range(w["P"])}
     stages = w["stages"]
 
@@ -1562,7 +1669,7 @@ def calibration_gate_funnel_by_role(w):
     fig.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=TOY_ROLE[r][0],
                                       label=TOY_ROLE[r][1])
                         for r in order if any(c[r] for c in counts)],
-               loc="lower center", ncol=6, frameon=False, fontsize=8)
+               loc="lower center", ncol=4, frameon=False, fontsize=8)
     fig.subplots_adjust(left=0.155, right=0.985, top=0.78, bottom=0.34)
     _panel_head(ax, *head)
     return _finish(fig, ax, "calibration_gate_funnel_by_role", tight=False)
@@ -3388,8 +3495,8 @@ def _captions():
     if toy:
         d["calibration_synthetic_toy_scorecard"] = (
             r"\textbf{Calibrating the metrics where the answer is known.} The test world is "
-            "built by hand: activations are composed from a known concept hierarchy (five "
-            "parent features, each with children that fire only when it fires) plus six "
+            "built by hand: activations are composed from a known concept hierarchy (six "
+            "parent features, each with children that fire only when it fires) plus eight "
             "planted look-alike structures that a naive co-firing analysis would mistake for "
             "parent--child links, such as a feature pair that co-fires only through shared "
             "frequent tokens, a pair lifted together by a shared topic, and an always-on "
@@ -3401,11 +3508,12 @@ def _captions():
             r"pairs it must keep, so $1\times$ means the two are indistinguishable and the "
             r"metric carries no signal. \emph{Right:} metrics whose output is a discrete "
             "answer (an edge set, a direction), scored simply as correct or not; the two "
-            "panels are separate because a discrete answer has no meaningful ratio. The two "
+            "panels are separate because a discrete answer has no meaningful ratio. The three "
             "hatched rows are negative controls, planted blind spots expected to slip "
             "through: an absorbed child that coverage cannot even propose (the child fires "
-            "exactly where its parent is silent) and a shared-topic pair that every filter "
-            "accepts. They pass when nothing catches them, documenting the battery's limits, "
+            "exactly where its parent is silent), a shared-topic pair, and a composed "
+            "child's two component edges that every filter accepts. They pass when nothing "
+            "catches them, documenting the battery's limits, "
             "and a code change that made them catchable would fail them visibly. Passing "
             "this tier is what licenses running the same battery on real models, where no "
             "ground truth exists.")
@@ -3423,55 +3531,64 @@ def _captions():
             r"\textbf{Which gate caught which injected pathology.} "
             "The same hand-built world as the previous figure, drawn twice in one "
             r"palette: one colour per injected structure, in both panels. "
-            r"\emph{Left:} the world as declared --- "
+            r"\emph{Top:} the world as declared --- "
             f"{len(world['true_edges'])} true parent--child edges over "
-            f"{world['P'] + world['C']} features, plus the six structures planted to be "
-            r"caught or to demonstrate that nothing catches them. \emph{Right:} the same "
+            f"{world['P'] + world['C']} features, plus the eight structures planted to be "
+            r"caught or to demonstrate that nothing catches them. \emph{Bottom:} the same "
             "world after the three composed gates (reverse coverage, the reconstruction "
             "condition, the token-frequency control), where a faded edge is one the gates "
-            "removed and the note beside each parent names the gate that removed it. "
+            "removed and the note above each parent names the gate that removed it. "
             f"Coverage proposes {len(world['candidates'])} candidates; "
-            f"{len(world['candidates']) - len(world['survivors'])} are cut, and "
+            f"{len(world['candidates']) - len(world['survivors'])} are rejected, and "
             f"{len(world['recovered'])} of the {len(world['true_edges'])} true edges "
             f"survive. The division of labour is the reading: all {n_sp} super-parent "
             "pairs die at the reconstruction condition rather than at coverage, the "
             "frequency-coincidence pair passes coverage and reconstruction and dies only "
-            "at the frequency control, and the feature-split edges are kept --- correctly, "
+            "at the frequency control, and the feature-split edges are recovered --- correctly, "
             "since they are real refinements --- with the split reported against the "
-            "parent by a different metric. The two negative controls are the two colours "
-            "that come through unchanged: "
+            "parent by a different metric. The dashed structures are the negative controls: "
             + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
-            + (f"and the shared-topic pair {spur} passes every gate here."
-               if spur else ""))
+            + (f"while the shared-topic pair {spur} and the composition edges "
+               f"{world['comp_edges'][0]} and {world['comp_edges'][1]} pass every gate. "
+               if spur else "")
+            + f"The multi-parenting intruder {world['multi_edges'][0]} and the "
+              f"co-extensive pair {world['coext_edges'][0]} also pass every gate and are "
+              "flagged by reports (the child's in-degree, the energy share) rather than "
+              "rejected.")
         # Standalone twin of the caption above, because the manuscript shows one
         # of the two figures, not both: it re-describes the world instead of
         # deferring to a before panel that may not be on the page.
         d["calibration_toy_world_gate_verdicts"] = (
-            r"\textbf{What the set of metrics kept.} "
+            r"\textbf{What the set of metrics recovered.} "
             "The same hand-built world as the previous figure, drawn in one "
             "palette with one colour per injected structure: the parent block "
             f"as the top row, the child block as the bottom row --- "
             f"{len(world['true_edges'])} declared true parent--child edges over "
-            f"{world['P'] + world['C']} features, plus the six structures "
+            f"{world['P'] + world['C']} features, plus the eight structures "
             "planted to be caught or to demonstrate that nothing catches them. "
             "A faded edge is one the three composed gates (reverse coverage, "
             "the reconstruction condition, the token-frequency control) "
             "removed, so the declared world is every edge, bright or faded, and "
             "the note above each parent names the gate that decided its edges. "
             f"Coverage proposes {len(world['candidates'])} candidates; "
-            f"{len(world['candidates']) - len(world['survivors'])} are cut, and "
+            f"{len(world['candidates']) - len(world['survivors'])} are rejected, and "
             f"{len(world['recovered'])} of the {len(world['true_edges'])} true "
             "edges survive. The division of labour is the reading: all "
             f"{n_sp} super-parent pairs die at the reconstruction condition "
             "rather than at coverage, the frequency-coincidence pair passes "
             "coverage and reconstruction and dies only at the frequency "
-            "control, and the feature-split edges are kept --- correctly, "
+            "control, and the feature-split edges are recovered --- correctly, "
             "since they are real refinements --- with the split reported "
-            "against the parent by a different metric. The two negative "
-            "controls come through unchanged: "
+            "against the parent by a different metric. The dashed structures are "
+            "the negative controls: "
             + (f"the absorbed edge {miss} is never proposed at all, " if miss else "")
-            + (f"and the shared-topic pair {spur} passes every gate here."
-               if spur else ""))
+            + (f"while the shared-topic pair {spur} and the composition edges "
+               f"{world['comp_edges'][0]} and {world['comp_edges'][1]} pass every gate. "
+               if spur else "")
+            + f"The multi-parenting intruder {world['multi_edges'][0]} and the "
+              f"co-extensive pair {world['coext_edges'][0]} also pass every gate and are "
+              "flagged by reports (the child's in-degree, the energy share) rather than "
+              "rejected.")
 
     tt = _json(C.OUT_DIR / "trained_toy_calibration.json")
     if tt:

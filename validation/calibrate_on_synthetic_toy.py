@@ -431,9 +431,12 @@ def _score_per_token(stats, labels, m, kept) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Negative controls. These two rows pass when the battery does NOT do something.
-# They exist because the properties matrix claims two columns are open, and a
-# claim that no metric catches X is worth exactly as much as a demonstration.
+# Negative controls and flags. The control rows pass when the battery does NOT
+# do something: the properties matrix claims the absorption, topic and
+# composition columns are open, and a claim that no metric catches X is worth
+# exactly as much as a demonstration. The flag rows check the two structures
+# whose edges survive every gate on purpose (multi-parenting, cross-block
+# siblings): detection there is a report, not a cut.
 # ---------------------------------------------------------------------------
 def _score_blind_spots(stats, labels, m, kept) -> list[dict]:
     R, edge_mask = m["R"], m["edge_mask"]
@@ -475,6 +478,59 @@ def _score_blind_spots(stats, labels, m, kept) -> list[dict]:
                     "model-based topic null, not another threshold",
         "margin": 1.0 if all(survives.values()) else 0.0,
         "margin_kind": "categorical",
+    })
+
+    # --- Composition passes the whole battery (third negative control) ------
+    comp_ok = {}
+    for (p, c) in sorted(labels.composition_edges):
+        comp_ok[(p, c)] = ((p, c) in kept
+                           and bool((m["recon"]["passes"] & edge_mask)[p, c])
+                           and bool(m["fcov"]["survival"][p, c] >= C.FREQ_SURVIVAL_MIN))
+    rows.append({
+        "metric": "— composition (negative control)",
+        "job": "confirm no metric rejects a component -> composed-child edge",
+        "pass": all(comp_ok.values()),
+        "detail": "the composed child fires exactly where both components fire, so each "
+                  "component contains it; "
+                  + ", ".join(f"({p}->{c}) " + ("survives" if v else "REJECTED")
+                              for (p, c), v in comp_ok.items())
+                  + ". Nothing in the battery tests atomicity — the third open column; "
+                    "closing it needs a decomposition test, not another threshold",
+        "margin": 1.0 if all(comp_ok.values()) else 0.0,
+        "margin_kind": "categorical",
+    })
+
+    # --- Multi-parenting: the intruder survives, the in-degree reports it ---
+    ip, ic = next(iter(labels.multiparent_edges))
+    intruder_survives = ((ip, ic) in kept
+                         and bool((m["recon"]["passes"] & edge_mask)[ip, ic])
+                         and bool(m["fcov"]["survival"][ip, ic] >= C.FREQ_SURVIVAL_MIN))
+    in_degree = int(edge_mask[:, ic].sum())
+    rows.append({
+        "metric": "— multi-parenting (flag)",
+        "job": "intruding parent passes every gate; the child's in-degree reports it",
+        "pass": intruder_survives and in_degree >= 2,
+        "detail": f"intruder edge ({ip}->{ic}) survives coverage, reconstruction and the "
+                  f"frequency control; child {ic} has in-degree {in_degree} in the candidate "
+                  f"set (true parent + intruder + the superparent overlay), the symptom only "
+                  f"the out-degree metric "
+                  f"reads. Detection is a report, not a cut",
+        "margin": float(in_degree) / 2 if intruder_survives else 0.0,
+    })
+
+    # --- Cross-block siblings: kept as an edge, flagged by the energy share --
+    cp, cc = next(iter(labels.coextensive_edges))
+    pair_kept = (cp, cc) in kept
+    pair_share = float(m["share"][cp, cc])
+    rows.append({
+        "metric": "— cross-block siblings (flag)",
+        "job": "co-extensive pair proposed as an edge; energy share ~ 1 flags the rename",
+        "pass": pair_kept and pair_share >= SPLIT_SHARE_MIN,
+        "detail": f"identical firing sets straddling the block boundary: coverage keeps "
+                  f"({cp}->{cc}) with R={float(R[cp, cc]):.2f}, and the child holds "
+                  f"{pair_share:.2f} of the parent's energy (thr={SPLIT_SHARE_MIN}) — the "
+                  f"rename/duplicate signature from joint-child coverage",
+        "margin": pair_share / SPLIT_SHARE_MIN if pair_kept else 0.0,
     })
     return rows
 
@@ -525,11 +581,14 @@ def _render(rows) -> str:
              "ground-truth calibration anywhere. The toy now carries the per-token view "
              "(`resid`, `fired`, `W_dec`) that made it testable.")
     L.append("")
-    L.append("The last two rows are **negative controls**: they pass when the battery does "
-             "*not* do something. Absorption is unreachable because coverage gates the "
-             "candidate set, and a shared-topic pair survives every filter here. Both are "
-             "open columns in the properties matrix, and a claim that nothing catches them "
-             "is worth what a demonstration is worth.")
+    L.append("The dash-named rows are **negative controls and flags**: the controls pass "
+             "when the battery does *not* do something (absorption is unreachable because "
+             "coverage gates the candidate set; a shared-topic pair and both composition "
+             "edges survive every filter — the open columns of the properties matrix, and "
+             "a claim that nothing catches them is worth what a demonstration is worth), "
+             "and the flags check the two structures whose edges survive on purpose: the "
+             "multi-parenting intruder is reported by the child's in-degree, the "
+             "cross-block sibling pair by its energy share.")
     return "\n".join(L)
 
 
