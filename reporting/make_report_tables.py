@@ -232,52 +232,59 @@ def t_battery():
 # ---------------------------------------------------------------------------
 # 3. The properties matrix. NOT derived -- see the module docstring.
 # ---------------------------------------------------------------------------
-# Column order matches the battery order of Section "Metrics"; the
-# Multi-parenting column is separate from Superparent on purpose. A superparent
-# is an out-degree pathology (one parent swallowing the block) and
-# multi-parenting an in-degree one (one child claimed by several parents); the
-# second is what the results section actually measures, and only `outdegree`
-# reads in-degree at all.
+# Column order matches Sec. "Edge properties": target first, then the eight
+# pathologies -- Splitting, Absorption, Composition, Superparent,
+# Multi-parenting, Siblings, Frequency, Topic. Multi-parenting is separate from
+# Superparent on purpose: a superparent is an out-degree pathology (one parent
+# swallowing the block) and multi-parenting an in-degree one (one child claimed
+# by several parents); only `outdegree` reads in-degree at all. Composition (one
+# latent encoding a conjunction of co-occurring concepts) is an open column like
+# Topic: nothing in the battery tests atomicity. Out-degree gets partial credit
+# there only because a composed child surfaces as multi-parented, a symptom the
+# metric reports without naming its cause.
 MATRIX = [
-    ("1 Reverse coverage",        "P", "x", "x", "x", "x", "x", "x", "x"),
-    ("1 Forward coverage",        "P", "x", "x", "P", "x", "x", "x", "x"),
-    ("2 Independence null",       "P", "x", "x", "Y", "P", "x", "Y", "x"),
-    ("3 Frequency control",       "P", "x", "x", "P", "x", "x", "Y", "x"),
-    ("4 Reconstruction",          "P", "x", "x", "x", "x", "x", "P", "x"),
-    (r"5 Probe $S_\mathrm{res}$", "Y", "P", "x", "P", "P", "P", "Y", "x"),
-    ("6 Out-degree",              "x", "x", "x", "Y", "Y", "x", "P", "x"),
-    ("7 Sibling redundancy",      "P", "x", "Y", "x", "x", "Y", "x", "x"),
-    ("8 Joint-child",             "P", "x", "Y", "Y", "x", "x", "x", "x"),
-    ("--- In-block coverage",     "Y", "x", "Y", "x", "x", "Y", "x", "x"),
+    ("1 Reverse coverage",        "P", "x", "x", "x", "x", "x", "x", "x", "x"),
+    ("1 Forward coverage",        "P", "x", "x", "x", "P", "x", "x", "x", "x"),
+    ("2 Independence null",       "P", "x", "x", "x", "Y", "P", "x", "Y", "x"),
+    ("3 Frequency control",       "P", "x", "x", "x", "P", "x", "x", "Y", "x"),
+    ("4 Reconstruction",          "P", "x", "x", "x", "x", "x", "x", "P", "x"),
+    (r"5 Probe $S_\mathrm{res}$", "Y", "x", "P", "x", "P", "P", "P", "Y", "x"),
+    ("6 Out-degree",              "x", "x", "x", "P", "Y", "Y", "x", "P", "x"),
+    ("7 Sibling redundancy",      "P", "Y", "x", "x", "x", "x", "Y", "x", "x"),
+    ("8 Joint-child",             "P", "Y", "x", "x", "Y", "x", "x", "x", "x"),
+    ("9 In-block coverage",       "Y", "Y", "x", "x", "x", "x", "Y", "x", "x"),
 ]
 GLYPH = {"Y": r"$\bullet$", "P": r"$\circ$", "x": r"--"}
 
 
 def t_matrix():
-    cols = ["Parent$\\rightarrow$child", "Absorption", "Splitting", "Superparent",
-            "Multi-parenting", "Siblings", "Frequency", "Topic"]
+    cols = ["Parent$\\rightarrow$child", "Splitting", "Absorption", "Composition",
+            "Superparent", "Multi-parenting", "Siblings", "Frequency", "Topic"]
     rows = [[r[0]] + [GLYPH[c] for c in r[1:]] for r in MATRIX]
-    # HUMAN-WRITTEN CAPTION. Transcribed from the manuscript, where it was rewritten
-    # by hand after the machine draft: shorter, with a sentence on how the row
-    # numbers relate to the battery, and with the two open columns left to the body
-    # text instead of argued here. The draft it replaced also cited
-    # Table~\ref{tab:tier1}, which the paper no longer has -- regenerating over the
-    # manuscript would have reintroduced a dangling reference. Edit the paper and
-    # this string together, or neither.
-    return table(
-        "matrix", r"\textbf{What each metric can separate.} A candidate pair can look like an "
-        r"edge for eight reasons and only one of them is hierarchy. $\bullet$ detects, "
-        r"$\circ$ partial, -- blind. Row numbers follow the battery above (coverage appears "
-        "as its two legs); the in-block measurement is unnumbered because it grades "
-        "same-level pairs, not candidate edges. The cells are read off each metric's "
-        r"construction, not measured. \emph{Superparent} and \emph{multi-parenting} are "
-        "separate columns because they are separate pathologies: the first is an out-degree "
-        "failure, one parent claiming most of the child block, and the second an in-degree "
-        "failure, one child claimed by several parents. Only the out-degree metric reads "
-        "in-degree at all; the filters marked partial there earn it by removing the edges "
-        "that produce the tangle rather than by measuring a child's parent count. The two "
-        "open columns, absorption and topic, are discussed in the text.",
+    # HUMAN-WRITTEN CAPTION. Transcribed from the manuscript (rewritten by hand,
+    # 2026-08-31, with the target/pathologies grouping row and the new column
+    # order). The Sec.~\ref{sec:pathologies} reference resolves only once the
+    # pathologies subsection is in the paper -- it is, since the same revision.
+    # Edit the paper and this string together, or neither.
+    out = table(
+        "matrix", r"Mapping of evaluation metrics to the specific failure cases they are "
+        r"designed to identify, defined in Sec.~\ref{sec:pathologies}. Detection capability "
+        r"is measured by linear separability, where ``$\bullet$'' indicates successful "
+        r"detection, ``$\circ$'' indicates partial detection, and ``--'' indicates that the "
+        r"metric is blind to the failure.",
         [""] + cols, rows, align="l" + "c" * len(cols), star=True)
+    # a second header row (target vs pathologies) that the shared table() helper
+    # has no slot for: injected between \toprule and the column names
+    group = ("     & \\multicolumn{1}{c}{target} & \\multicolumn{8}{c}{pathologies} \\\\\n"
+             "    \\cmidrule(lr){2-2}\\cmidrule(lr){3-10}")
+    out = out.replace("    \\toprule", "    \\toprule\n" + group, 1)
+    # ten columns overflow the onecolumn ICLR text width and LaTeX will not
+    # break a tabular -- shrink to \linewidth (needs graphicx, which the ICLR
+    # template loads)
+    out = out.replace("  \\begin{tabular}",
+                      "  \\setlength{\\tabcolsep}{4pt}\n"
+                      "  \\resizebox{\\linewidth}{!}{%\n  \\begin{tabular}", 1)
+    return out.replace("  \\end{tabular}", "  \\end{tabular}}", 1)
 
 
 # ---------------------------------------------------------------------------

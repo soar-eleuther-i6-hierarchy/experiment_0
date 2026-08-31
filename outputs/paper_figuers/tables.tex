@@ -31,24 +31,28 @@
 \begin{table}[tbp]
   \centering
   \small
-  \caption{\textbf{What each metric can separate.} A candidate pair can look like an edge for eight reasons and only one of them is hierarchy. $\bullet$ detects, $\circ$ partial, -- blind. Row numbers follow the battery above (coverage appears as its two legs); the in-block measurement is unnumbered because it grades same-level pairs, not candidate edges. The cells are read off each metric's construction, not measured. \emph{Superparent} and \emph{multi-parenting} are separate columns because they are separate pathologies: the first is an out-degree failure, one parent claiming most of the child block, and the second an in-degree failure, one child claimed by several parents. Only the out-degree metric reads in-degree at all; the filters marked partial there earn it by removing the edges that produce the tangle rather than by measuring a child's parent count. The two open columns, absorption and topic, are discussed in the text.}
+  \caption{Mapping of evaluation metrics to the specific failure cases they are designed to identify, defined in Sec.~\ref{sec:pathologies}. Detection capability is measured by linear separability, where ``$\bullet$'' indicates successful detection, ``$\circ$'' indicates partial detection, and ``--'' indicates that the metric is blind to the failure.}
   \label{tab:matrix}
-  \begin{tabular}{lcccccccc}
+  \setlength{\tabcolsep}{4pt}
+  \resizebox{\linewidth}{!}{%
+  \begin{tabular}{lccccccccc}
     \toprule
-     & Parent$\rightarrow$child & Absorption & Splitting & Superparent & Multi-parenting & Siblings & Frequency & Topic \\
+     & \multicolumn{1}{c}{target} & \multicolumn{8}{c}{pathologies} \\
+    \cmidrule(lr){2-2}\cmidrule(lr){3-10}
+     & Parent$\rightarrow$child & Splitting & Absorption & Composition & Superparent & Multi-parenting & Siblings & Frequency & Topic \\
     \midrule
-    1 Reverse coverage & $\circ$ & -- & -- & -- & -- & -- & -- & -- \\
-    1 Forward coverage & $\circ$ & -- & -- & $\circ$ & -- & -- & -- & -- \\
-    2 Independence null & $\circ$ & -- & -- & $\bullet$ & $\circ$ & -- & $\bullet$ & -- \\
-    3 Frequency control & $\circ$ & -- & -- & $\circ$ & -- & -- & $\bullet$ & -- \\
-    4 Reconstruction & $\circ$ & -- & -- & -- & -- & -- & $\circ$ & -- \\
-    5 Probe $S_\mathrm{res}$ & $\bullet$ & $\circ$ & -- & $\circ$ & $\circ$ & $\circ$ & $\bullet$ & -- \\
-    6 Out-degree & -- & -- & -- & $\bullet$ & $\bullet$ & -- & $\circ$ & -- \\
-    7 Sibling redundancy & $\circ$ & -- & $\bullet$ & -- & -- & $\bullet$ & -- & -- \\
-    8 Joint-child & $\circ$ & -- & $\bullet$ & $\bullet$ & -- & -- & -- & -- \\
-    --- In-block coverage & $\bullet$ & -- & $\bullet$ & -- & -- & $\bullet$ & -- & -- \\
+    1 Reverse coverage & $\circ$ & -- & -- & -- & -- & -- & -- & -- & -- \\
+    1 Forward coverage & $\circ$ & -- & -- & -- & $\circ$ & -- & -- & -- & -- \\
+    2 Independence null & $\circ$ & -- & -- & -- & $\bullet$ & $\circ$ & -- & $\bullet$ & -- \\
+    3 Frequency control & $\circ$ & -- & -- & -- & $\circ$ & -- & -- & $\bullet$ & -- \\
+    4 Reconstruction & $\circ$ & -- & -- & -- & -- & -- & -- & $\circ$ & -- \\
+    5 Probe $S_\mathrm{res}$ & $\bullet$ & -- & $\circ$ & -- & $\circ$ & $\circ$ & $\circ$ & $\bullet$ & -- \\
+    6 Out-degree & -- & -- & -- & $\circ$ & $\bullet$ & $\bullet$ & -- & $\circ$ & -- \\
+    7 Sibling redundancy & $\circ$ & $\bullet$ & -- & -- & -- & -- & $\bullet$ & -- & -- \\
+    8 Joint-child & $\circ$ & $\bullet$ & -- & -- & $\bullet$ & -- & -- & -- & -- \\
+    9 In-block coverage & $\bullet$ & $\bullet$ & -- & -- & -- & -- & $\bullet$ & -- & -- \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}
 \end{table}
 
 % -------------------------------------------------------------------------
