@@ -1,0 +1,718 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 6,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "6-res-matryoshka-dc",
+    "sae_id": "blocks.6.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "block_values": [
+    {
+      "block": 0,
+      "n_firings": 745305,
+      "p10": 2.19140625,
+      "p50": 5.92578125,
+      "p90": 24.75
+    },
+    {
+      "block": 1,
+      "n_firings": 564121,
+      "p10": 1.90625,
+      "p50": 3.31640625,
+      "p90": 12.4140625
+    },
+    {
+      "block": 2,
+      "n_firings": 735460,
+      "p10": 1.85546875,
+      "p50": 2.884765625,
+      "p90": 9.578125
+    },
+    {
+      "block": 3,
+      "n_firings": 1394296,
+      "p10": 1.8486328125,
+      "p50": 2.76953125,
+      "p90": 6.921875
+    },
+    {
+      "block": 4,
+      "n_firings": 928341,
+      "p10": 1.8388671875,
+      "p50": 2.689453125,
+      "p90": 6.859375
+    }
+  ],
+  "pairs": {
+    "0->1": {
+      "summary": {
+        "n_edges": 2428,
+        "child_over_parent": {
+          "p10": 0.14204761385917664,
+          "p50": 0.6689620018005371,
+          "p90": 1.0925347805023193
+        },
+        "frac_child_stronger": 0.1507413536310196,
+        "parent_shared_over_all": {
+          "p10": 0.8798026442527771,
+          "p50": 1.0576848983764648,
+          "p90": 1.284234881401062
+        },
+        "frac_parent_halved_on_child": 0.0,
+        "mean_parent_shared": {
+          "p10": 6.513707637786865,
+          "p50": 8.016416549682617,
+          "p90": 42.0860481262207
+        },
+        "mean_child_shared": {
+          "p10": 3.8352813720703125,
+          "p50": 5.716948509216309,
+          "p90": 8.753351211547852
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 15,
+            "child": 194,
+            "n_shared": 202,
+            "mean_parent_shared": 27.92303466796875,
+            "mean_child_shared": 6.949944019317627,
+            "child_over_parent": 0.24889644345462533,
+            "parent_shared_over_all": 0.61975838768885,
+            "parent_label": "feature 15",
+            "child_label": "feature 194"
+          },
+          {
+            "parent": 15,
+            "child": 406,
+            "n_shared": 1586,
+            "mean_parent_shared": 28.98515510559082,
+            "mean_child_shared": 7.8933424949646,
+            "child_over_parent": 0.2723236244970822,
+            "parent_shared_over_all": 0.6433324031130094,
+            "parent_label": "feature 15",
+            "child_label": "feature 406"
+          },
+          {
+            "parent": 15,
+            "child": 333,
+            "n_shared": 312,
+            "mean_parent_shared": 29.734052658081055,
+            "mean_child_shared": 6.916566371917725,
+            "child_over_parent": 0.23261431771353092,
+            "parent_shared_over_all": 0.6599543621942655,
+            "parent_label": "feature 15",
+            "child_label": "feature 333"
+          },
+          {
+            "parent": 15,
+            "child": 353,
+            "n_shared": 163,
+            "mean_parent_shared": 29.90281105041504,
+            "mean_child_shared": 6.602784633636475,
+            "child_over_parent": 0.2208081582197882,
+            "parent_shared_over_all": 0.6636999948013779,
+            "parent_label": "feature 15",
+            "child_label": "feature 353"
+          },
+          {
+            "parent": 15,
+            "child": 319,
+            "n_shared": 288,
+            "mean_parent_shared": 30.159420013427734,
+            "mean_child_shared": 3.8782551288604736,
+            "child_over_parent": 0.1285918338991193,
+            "parent_shared_over_all": 0.6693954916939735,
+            "parent_label": "feature 15",
+            "child_label": "feature 319"
+          },
+          {
+            "parent": 15,
+            "child": 508,
+            "n_shared": 171,
+            "mean_parent_shared": 31.154102325439453,
+            "mean_child_shared": 6.289011001586914,
+            "child_over_parent": 0.2018678290226808,
+            "parent_shared_over_all": 0.6914727019000032,
+            "parent_label": "feature 15",
+            "child_label": "feature 508"
+          },
+          {
+            "parent": 15,
+            "child": 349,
+            "n_shared": 276,
+            "mean_parent_shared": 31.354703903198242,
+            "mean_child_shared": 5.135494709014893,
+            "child_over_parent": 0.1637870580717256,
+            "parent_shared_over_all": 0.6959251015721005,
+            "parent_label": "feature 15",
+            "child_label": "feature 349"
+          },
+          {
+            "parent": 15,
+            "child": 392,
+            "n_shared": 532,
+            "mean_parent_shared": 31.41707992553711,
+            "mean_child_shared": 6.846973419189453,
+            "child_over_parent": 0.21793793170522982,
+            "parent_shared_over_all": 0.6973095522055959,
+            "parent_label": "feature 15",
+            "child_label": "feature 392"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 116,
+            "child": 283,
+            "n_shared": 33,
+            "mean_parent_shared": 6.316702365875244,
+            "mean_child_shared": 21.75390625,
+            "child_over_parent": 3.4438707081595687,
+            "parent_shared_over_all": 0.9215323091105757,
+            "parent_label": "feature 116",
+            "child_label": "feature 283"
+          },
+          {
+            "parent": 105,
+            "child": 159,
+            "n_shared": 52,
+            "mean_parent_shared": 6.435734748840332,
+            "mean_child_shared": 22.02734375,
+            "child_over_parent": 3.4226618419861308,
+            "parent_shared_over_all": 1.01704224254692,
+            "parent_label": "feature 105",
+            "child_label": "feature 159"
+          },
+          {
+            "parent": 80,
+            "child": 159,
+            "n_shared": 55,
+            "mean_parent_shared": 8.581835746765137,
+            "mean_child_shared": 28.335458755493164,
+            "child_over_parent": 3.301794580043555,
+            "parent_shared_over_all": 1.4121113321034169,
+            "parent_label": "feature 80",
+            "child_label": "feature 159"
+          },
+          {
+            "parent": 11,
+            "child": 159,
+            "n_shared": 51,
+            "mean_parent_shared": 10.940984725952148,
+            "mean_child_shared": 32.21308135986328,
+            "child_over_parent": 2.944257959107964,
+            "parent_shared_over_all": 1.1277606285168627,
+            "parent_label": "feature 11",
+            "child_label": "feature 159"
+          },
+          {
+            "parent": 1,
+            "child": 159,
+            "n_shared": 72,
+            "mean_parent_shared": 8.17138671875,
+            "mean_child_shared": 23.53331184387207,
+            "child_over_parent": 2.879965500821631,
+            "parent_shared_over_all": 1.0645138646882952,
+            "parent_label": "feature 1",
+            "child_label": "feature 159"
+          },
+          {
+            "parent": 105,
+            "child": 211,
+            "n_shared": 133,
+            "mean_parent_shared": 6.268084526062012,
+            "mean_child_shared": 17.758384704589844,
+            "child_over_parent": 2.8331437827222046,
+            "parent_shared_over_all": 0.9905483976026924,
+            "parent_label": "feature 105",
+            "child_label": "feature 211"
+          },
+          {
+            "parent": 1,
+            "child": 462,
+            "n_shared": 63,
+            "mean_parent_shared": 8.186476707458496,
+            "mean_child_shared": 22.109296798706055,
+            "child_over_parent": 2.7007096689791865,
+            "parent_shared_over_all": 1.0664796879629819,
+            "parent_label": "feature 1",
+            "child_label": "feature 462"
+          },
+          {
+            "parent": 24,
+            "child": 159,
+            "n_shared": 55,
+            "mean_parent_shared": 10.553977012634277,
+            "mean_child_shared": 27.987836837768555,
+            "child_over_parent": 2.6518758572492644,
+            "parent_shared_over_all": 1.1171062925161483,
+            "parent_label": "feature 24",
+            "child_label": "feature 159"
+          }
+        ]
+      }
+    },
+    "1->2": {
+      "summary": {
+        "n_edges": 280,
+        "child_over_parent": {
+          "p10": 0.5011196732521057,
+          "p50": 0.9637296199798584,
+          "p90": 1.938280701637268
+        },
+        "frac_child_stronger": 0.46785715222358704,
+        "parent_shared_over_all": {
+          "p10": 0.6106683015823364,
+          "p50": 1.1604944467544556,
+          "p90": 2.1619298458099365
+        },
+        "frac_parent_halved_on_child": 0.06785714626312256,
+        "mean_parent_shared": {
+          "p10": 3.321819543838501,
+          "p50": 5.6518778800964355,
+          "p90": 14.813833236694336
+        },
+        "mean_child_shared": {
+          "p10": 3.066694498062134,
+          "p50": 5.79296875,
+          "p90": 14.456302642822266
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 320,
+            "child": 1694,
+            "n_shared": 61,
+            "mean_parent_shared": 2.0859375,
+            "mean_child_shared": 5.79296875,
+            "child_over_parent": 2.7771535580524342,
+            "parent_shared_over_all": 0.28935276609089067,
+            "parent_label": "feature 320",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 405,
+            "child": 1694,
+            "n_shared": 61,
+            "mean_parent_shared": 2.3671875,
+            "mean_child_shared": 5.79296875,
+            "child_over_parent": 2.447194719471947,
+            "parent_shared_over_all": 0.3142866584897153,
+            "parent_label": "feature 405",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 457,
+            "child": 1694,
+            "n_shared": 62,
+            "mean_parent_shared": 1.874732255935669,
+            "mean_child_shared": 5.7292399406433105,
+            "child_over_parent": 3.056031026565912,
+            "parent_shared_over_all": 0.31894545313537875,
+            "parent_label": "feature 457",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 446,
+            "child": 1936,
+            "n_shared": 62,
+            "mean_parent_shared": 1.7575132846832275,
+            "mean_child_shared": 4.5109944343566895,
+            "child_over_parent": 2.5666915144654205,
+            "parent_shared_over_all": 0.3355142956937277,
+            "parent_label": "feature 446",
+            "child_label": "feature 1936"
+          },
+          {
+            "parent": 417,
+            "child": 1936,
+            "n_shared": 64,
+            "mean_parent_shared": 1.80877685546875,
+            "mean_child_shared": 4.4317474365234375,
+            "child_over_parent": 2.450134975535684,
+            "parent_shared_over_all": 0.33984440163579144,
+            "parent_label": "feature 417",
+            "child_label": "feature 1936"
+          },
+          {
+            "parent": 247,
+            "child": 1694,
+            "n_shared": 62,
+            "mean_parent_shared": 2.302639961242676,
+            "mean_child_shared": 5.744046211242676,
+            "child_over_parent": 2.494548130808414,
+            "parent_shared_over_all": 0.3426791312629512,
+            "parent_label": "feature 247",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 311,
+            "child": 1694,
+            "n_shared": 64,
+            "mean_parent_shared": 4.201324462890625,
+            "mean_child_shared": 5.6169586181640625,
+            "child_over_parent": 1.3369494948027516,
+            "parent_shared_over_all": 0.3476227097099193,
+            "parent_label": "feature 311",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 187,
+            "child": 1670,
+            "n_shared": 61,
+            "mean_parent_shared": 1.9775390625,
+            "mean_child_shared": 2.2421875,
+            "child_over_parent": 1.1338271604938273,
+            "parent_shared_over_all": 0.35951418772913374,
+            "parent_label": "feature 187",
+            "child_label": "feature 1670"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 245,
+            "child": 1406,
+            "n_shared": 31,
+            "mean_parent_shared": 7.247227668762207,
+            "mean_child_shared": 44.16733932495117,
+            "child_over_parent": 6.094377235494624,
+            "parent_shared_over_all": 1.5925487117923125,
+            "parent_label": "feature 245",
+            "child_label": "feature 1406"
+          },
+          {
+            "parent": 168,
+            "child": 1406,
+            "n_shared": 32,
+            "mean_parent_shared": 10.028564453125,
+            "mean_child_shared": 43.93463134765625,
+            "child_over_parent": 4.380949192979039,
+            "parent_shared_over_all": 1.4130535403530486,
+            "parent_label": "feature 168",
+            "child_label": "feature 1406"
+          },
+          {
+            "parent": 401,
+            "child": 744,
+            "n_shared": 44,
+            "mean_parent_shared": 4.557572841644287,
+            "mean_child_shared": 19.520174026489258,
+            "child_over_parent": 4.283019647678685,
+            "parent_shared_over_all": 1.0261908386767336,
+            "parent_label": "feature 401",
+            "child_label": "feature 744"
+          },
+          {
+            "parent": 362,
+            "child": 768,
+            "n_shared": 52,
+            "mean_parent_shared": 3.965707540512085,
+            "mean_child_shared": 14.907846450805664,
+            "child_over_parent": 3.7591895767685983,
+            "parent_shared_over_all": 0.8647802002180279,
+            "parent_label": "feature 362",
+            "child_label": "feature 768"
+          },
+          {
+            "parent": 362,
+            "child": 1988,
+            "n_shared": 74,
+            "mean_parent_shared": 4.587547302246094,
+            "mean_child_shared": 16.310651779174805,
+            "child_over_parent": 3.5554187683664864,
+            "parent_shared_over_all": 1.000381403322992,
+            "parent_label": "feature 362",
+            "child_label": "feature 1988"
+          },
+          {
+            "parent": 219,
+            "child": 1694,
+            "n_shared": 61,
+            "mean_parent_shared": 1.837890625,
+            "mean_child_shared": 5.79296875,
+            "child_over_parent": 3.1519659936238043,
+            "parent_shared_over_all": 0.5576311221319097,
+            "parent_label": "feature 219",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 457,
+            "child": 1694,
+            "n_shared": 62,
+            "mean_parent_shared": 1.874732255935669,
+            "mean_child_shared": 5.7292399406433105,
+            "child_over_parent": 3.056031026565912,
+            "parent_shared_over_all": 0.31894545313537875,
+            "parent_label": "feature 457",
+            "child_label": "feature 1694"
+          },
+          {
+            "parent": 354,
+            "child": 1694,
+            "n_shared": 62,
+            "mean_parent_shared": 1.9074156284332275,
+            "mean_child_shared": 5.736391067504883,
+            "child_over_parent": 3.0074153645353205,
+            "parent_shared_over_all": 0.3721684788464076,
+            "parent_label": "feature 354",
+            "child_label": "feature 1694"
+          }
+        ]
+      }
+    },
+    "2->3": {
+      "summary": {
+        "n_edges": 762,
+        "child_over_parent": {
+          "p10": 0.5106955170631409,
+          "p50": 0.8836536407470703,
+          "p90": 2.76900577545166
+        },
+        "frac_child_stronger": 0.41863515973091125,
+        "parent_shared_over_all": {
+          "p10": 0.5174335241317749,
+          "p50": 1.2588058710098267,
+          "p90": 2.1979782581329346
+        },
+        "frac_parent_halved_on_child": 0.08530183881521225,
+        "mean_parent_shared": {
+          "p10": 2.1225244998931885,
+          "p50": 5.289398193359375,
+          "p90": 13.647604942321777
+        },
+        "mean_child_shared": {
+          "p10": 2.3959600925445557,
+          "p50": 5.67038631439209,
+          "p90": 12.554732322692871
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 1501,
+            "child": 4217,
+            "n_shared": 61,
+            "mean_parent_shared": 4.68359375,
+            "mean_child_shared": 4.2890625,
+            "child_over_parent": 0.9157631359466222,
+            "parent_shared_over_all": 0.1338761321711899,
+            "parent_label": "feature 1501",
+            "child_label": "feature 4217"
+          },
+          {
+            "parent": 1501,
+            "child": 3014,
+            "n_shared": 63,
+            "mean_parent_shared": 4.789372444152832,
+            "mean_child_shared": 2.144345283508301,
+            "child_over_parent": 0.44772990793945305,
+            "parent_shared_over_all": 0.13689971687883035,
+            "parent_label": "feature 1501",
+            "child_label": "feature 3014"
+          },
+          {
+            "parent": 1554,
+            "child": 5936,
+            "n_shared": 46,
+            "mean_parent_shared": 2.95461106300354,
+            "mean_child_shared": 2.38385272026062,
+            "child_over_parent": 0.8068245428680181,
+            "parent_shared_over_all": 0.1594316046440445,
+            "parent_label": "feature 1554",
+            "child_label": "feature 5936"
+          },
+          {
+            "parent": 1554,
+            "child": 2624,
+            "n_shared": 45,
+            "mean_parent_shared": 3.388476610183716,
+            "mean_child_shared": 2.4274089336395264,
+            "child_over_parent": 0.7163717542993214,
+            "parent_shared_over_all": 0.18284310582362256,
+            "parent_label": "feature 1554",
+            "child_label": "feature 2624"
+          },
+          {
+            "parent": 1297,
+            "child": 5963,
+            "n_shared": 62,
+            "mean_parent_shared": 1.9053837060928345,
+            "mean_child_shared": 24.398311614990234,
+            "child_over_parent": 12.804933482411911,
+            "parent_shared_over_all": 0.21882504540373565,
+            "parent_label": "feature 1297",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1297,
+            "child": 3772,
+            "n_shared": 62,
+            "mean_parent_shared": 2.0325887203216553,
+            "mean_child_shared": 8.06205940246582,
+            "child_over_parent": 3.966399755081789,
+            "parent_shared_over_all": 0.23343398895940617,
+            "parent_label": "feature 1297",
+            "child_label": "feature 3772"
+          },
+          {
+            "parent": 1297,
+            "child": 3513,
+            "n_shared": 62,
+            "mean_parent_shared": 2.042039394378662,
+            "mean_child_shared": 3.6629598140716553,
+            "child_over_parent": 1.7937752935399152,
+            "parent_shared_over_all": 0.23451935783970437,
+            "parent_label": "feature 1297",
+            "child_label": "feature 3513"
+          },
+          {
+            "parent": 1297,
+            "child": 5838,
+            "n_shared": 62,
+            "mean_parent_shared": 2.0523722171783447,
+            "mean_child_shared": 1.8279675245285034,
+            "child_over_parent": 0.8906608212820388,
+            "parent_shared_over_all": 0.23570603767277898,
+            "parent_label": "feature 1297",
+            "child_label": "feature 5838"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 1557,
+            "child": 5963,
+            "n_shared": 61,
+            "mean_parent_shared": 1.76171875,
+            "mean_child_shared": 24.765625,
+            "child_over_parent": 14.057649667405766,
+            "parent_shared_over_all": 0.2825166718537205,
+            "parent_label": "feature 1557",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 996,
+            "child": 5963,
+            "n_shared": 61,
+            "mean_parent_shared": 1.783203125,
+            "mean_child_shared": 24.765625,
+            "child_over_parent": 13.888280394304491,
+            "parent_shared_over_all": 0.5220239096891802,
+            "parent_label": "feature 996",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1455,
+            "child": 5963,
+            "n_shared": 63,
+            "mean_parent_shared": 1.7843036651611328,
+            "mean_child_shared": 24.05440902709961,
+            "child_over_parent": 13.48111843110929,
+            "parent_shared_over_all": 0.4704508567630652,
+            "parent_label": "feature 1455",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1297,
+            "child": 5963,
+            "n_shared": 62,
+            "mean_parent_shared": 1.9053837060928345,
+            "mean_child_shared": 24.398311614990234,
+            "child_over_parent": 12.804933482411911,
+            "parent_shared_over_all": 0.21882504540373565,
+            "parent_label": "feature 1297",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1020,
+            "child": 5963,
+            "n_shared": 61,
+            "mean_parent_shared": 1.9775390625,
+            "mean_child_shared": 24.765625,
+            "child_over_parent": 12.523456790123456,
+            "parent_shared_over_all": 0.520511846689983,
+            "parent_label": "feature 1020",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1220,
+            "child": 5963,
+            "n_shared": 61,
+            "mean_parent_shared": 2.0546875,
+            "mean_child_shared": 24.765625,
+            "child_over_parent": 12.053231939163497,
+            "parent_shared_over_all": 0.4462129148899838,
+            "parent_label": "feature 1220",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1670,
+            "child": 5963,
+            "n_shared": 61,
+            "mean_parent_shared": 2.2421875,
+            "mean_child_shared": 24.765625,
+            "child_over_parent": 11.045296167247386,
+            "parent_shared_over_all": 0.7629717717799578,
+            "parent_label": "feature 1670",
+            "child_label": "feature 5963"
+          },
+          {
+            "parent": 1828,
+            "child": 5963,
+            "n_shared": 79,
+            "mean_parent_shared": 2.0639092922210693,
+            "mean_child_shared": 19.603120803833008,
+            "child_over_parent": 9.498053464712672,
+            "parent_shared_over_all": 0.49406860589722973,
+            "parent_label": "feature 1828",
+            "child_label": "feature 5963"
+          }
+        ]
+      }
+    }
+  }
+}
