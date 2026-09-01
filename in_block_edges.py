@@ -221,13 +221,18 @@ def main():
     if cache is None and not args.skip_sres:
         raise SystemExit("[ib] token cache missing - rerun collect_statistics.py or pass --skip-sres")
 
-    W_dec = load_w_dec(args.w_dec)
-    d_sae = int(stats["fire_count"].numel())
-    if W_dec.shape[0] != d_sae:
-        raise SystemExit(
-            f"[ib] decoder has {W_dec.shape[0]} features but the statistics have {d_sae}. "
-            "Pass --w-dec pointing at this SAE's decoder; the default is gemma's."
-        )
+    # The decoder feeds the S_res probes and nothing else, so --skip-sres must
+    # not require it: the default load pulls the released SAE through sae_lens,
+    # which a coverage-only machine need not have installed.
+    W_dec = None
+    if not args.skip_sres:
+        W_dec = load_w_dec(args.w_dec)
+        d_sae = int(stats["fire_count"].numel())
+        if W_dec.shape[0] != d_sae:
+            raise SystemExit(
+                f"[ib] decoder has {W_dec.shape[0]} features but the statistics have {d_sae}. "
+                "Pass --w-dec pointing at this SAE's decoder; the default is gemma's."
+            )
 
     blocks = [analyse_block(b, stats, ranges, cache, labels, W_dec, device, not args.skip_sres)
               for b in have]
