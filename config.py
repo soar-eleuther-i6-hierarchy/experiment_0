@@ -138,6 +138,13 @@ MIN_FIRE_COUNT = 20       # rare-feature guard (same as warm-up)
 # co-fire count kills those. Excluded edges are REPORTED, not silently dropped.
 # NOTE: any value <= EDGE_TAU * MIN_FIRE_COUNT (= 10) is vacuous — every kept
 # edge already satisfies it. 30 matches the warm-up task's guard.
+# The converse also holds: with MIN_JOINT = 30 > MIN_FIRE_COUNT, the per-endpoint
+# guard is subsumed in the joint gate (cofire <= min(fire_p, fire_c), so
+# co-fire >= 30 forces both endpoints >= 30). MIN_FIRE_COUNT still binds on its
+# own wherever keep_edges runs WITHOUT the joint guard (the calibration stages
+# and the legacy_guards path), and as the per-feature testability filter — it is
+# a feature-level guard, MIN_JOINT an edge-level one. State the pair gate as two
+# effective conditions: R >= EDGE_TAU and co-fire >= MIN_JOINT.
 MIN_JOINT = 30
 
 # Which adjacent block pairs to compute. B3->B4 is the 6144 x 24576 monster;
@@ -277,7 +284,12 @@ def scope_line(total_tokens=None, bold=("**", "**"), sep="　·　", n_docs=None
     if total_tokens:
         bits.append(f"{int(total_tokens):,} tokens over "
                     f"{n_docs or cfg.get('n_docs') or N_DOCS} docs")
-    bits.append(f"edge: reverse coverage ≥ {EDGE_TAU}, both endpoints fire ≥ {MIN_FIRE_COUNT}")
+    # Every caller of this line gates edges with the FULL keep_edges gate
+    # (including MIN_JOINT), so the line must state all of it: it used to omit
+    # the co-fire guard and thereby described a looser gate than the one that
+    # produced the numbers on the page.
+    bits.append(f"edge: reverse coverage ≥ {EDGE_TAU}, co-fire ≥ {MIN_JOINT}, "
+                f"both endpoints fire ≥ {MIN_FIRE_COUNT}")
     return sep.join(bits)
 
 
