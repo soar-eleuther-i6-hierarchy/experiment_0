@@ -71,8 +71,8 @@ from validation.synthetic_toy_world import (  # noqa: E402
 )
 
 # One child holding >= this fraction of the parent's energy flags a feature split
-# (matches run_metrics.py's n_share_energy_ge_09 gate).
-SPLIT_SHARE_MIN = 0.9
+# (same constant as run_metrics.py's n_share_energy_ge_09 gate).
+SPLIT_SHARE_MIN = C.SHARE_ENERGY_SPLIT
 
 # Deleting the superparent's out-edges must drop both the out-degree Gini and the
 # top-1 edge share by at least this much; otherwise degree_stats is not

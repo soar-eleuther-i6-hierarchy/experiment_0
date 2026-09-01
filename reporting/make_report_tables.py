@@ -950,6 +950,53 @@ HEAD = r"""% ===================================================================
 """
 
 
+def threshold_macros() -> str:
+    r"""Three LaTeX \newcommand per tunable threshold, generated from config.
+
+    For each constant NAME the paper gets \Name (its math symbol, e.g. \tau —
+    what equations and prose use everywhere), \NameName (the constant's
+    identifier in typewriter font — stated once at the symbol's first use, so
+    a reader can find the exact knob in the released configuration) and
+    \NameVal (its current value). Re-choosing a threshold in config.py
+    re-numbers the paper on the next build instead of requiring prose edits.
+    Copy the file beside the paper sources and \input it from the methodology
+    section.
+    """
+    def num(x):
+        if 0 < abs(x) < 1e-2:           # 1e-3 reads as a power of ten in math mode
+            m, e = f"{x:e}".split("e")
+            m = m.rstrip("0").rstrip(".")
+            return (("" if m in ("1", "-1") else m + r" \times ")
+                    + f"10^{{{int(e)}}}")
+        return f"{x:g}"
+
+    SPEC = [  # (config constant, math symbol)
+        ("FIRE_THRESHOLD",          r"\theta"),
+        ("EDGE_TAU",                r"\tau"),
+        ("MIN_FIRE_COUNT",          r"n_{\mathrm{fire}}"),
+        ("MIN_JOINT",               r"n_{\mathrm{co}}"),
+        ("FREQ_HIGH_MASS",          r"\mu"),
+        ("FREQ_SURVIVAL_MIN",       r"\sigma"),
+        ("RECON_REL_GAIN_MIN",      r"\delta"),
+        ("SRES_RANK_TOP_K",         r"k"),
+        ("SUPERPARENT_OUTDEG_FRAC", r"\phi"),
+        ("SIBLING_REDUNDANCY_FLAG", r"\rho"),
+        ("SHARE_ENERGY_SPLIT",      r"\eta"),
+    ]
+    L = ["% thresholds_macros.tex — GENERATED from config.py by reporting/make_report_tables.py.",
+         "% Do not edit by hand: re-run `python3 -m reporting.make_report_tables` after",
+         "% changing a threshold, then copy this file beside the paper sources.",
+         "% \\<Name> is the math symbol (use everywhere); \\<Name>Name is the constant's",
+         "% identifier (state once at first use); \\<Name>Val is its current value."]
+    for const, sym in SPEC:
+        camel = "".join(w.capitalize() for w in const.split("_"))
+        shown = const.replace("_", r"\_")
+        L.append(f"\\newcommand{{\\{camel}}}{{\\ensuremath{{{sym}}}}}")
+        L.append(f"\\newcommand{{\\{camel}Name}}{{\\texttt{{{shown}}}}}")
+        L.append(f"\\newcommand{{\\{camel}Val}}{{{num(getattr(C, const))}}}")
+    return "\n".join(L) + "\n"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -973,6 +1020,8 @@ def main() -> int:
                 L += ["", r"% " + "-" * 73, f"% {section}", r"% " + "-" * 73]
             L += ["", f"% [{slot}]", tex]
         (args.out / "tables.tex").write_text("\n".join(L) + "\n")
+        (args.out / "thresholds_macros.tex").write_text(threshold_macros())
+        print(f"[tab] wrote {args.out / 'thresholds_macros.tex'}")
 
     print(f"[tab] {'plan for' if args.list else 'wrote'} {args.out / 'tables.tex'}")
     for w in written:

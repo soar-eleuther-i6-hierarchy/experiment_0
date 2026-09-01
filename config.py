@@ -174,6 +174,14 @@ SRES_MIN_NEG = 10             # fewer negatives than this -> child untestable (n
 SRES_STEPS = 300              # probe Adam steps (train_probe default; here for scoring<->gemma symmetry)
 SRES_LR = 0.05                # probe Adam lr (train_probe default)
 
+# --- Joint-child: share-energy split flag -----------------------------------
+# One child holding at least this share of its parent's activation energy is a
+# copy of the parent, not a refinement (feature splitting). Was hard-coded as
+# 0.9 in run_metrics ("n_share_energy_ge_09") and as SPLIT_SHARE_MIN in the
+# Tier-1 calibration; lives here so the paper's η, the pipeline and the
+# calibration can never disagree.
+SHARE_ENERGY_SPLIT = 0.9
+
 # --- Metric 3: sibling redundancy ------------------------------------------
 # Mean pairwise child-child co-activation (Jaccard) above this = feature
 # splitting in disguise rather than real refinement.

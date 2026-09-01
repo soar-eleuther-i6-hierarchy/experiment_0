@@ -179,7 +179,7 @@ def analyse_pair(stats, p_blk, c_blk, labels=None, legacy_guards=False):
             "r_supp_mean": _nanmean(rs[has_edges]) if n_edges else float("nan"),
             "r_mass_mean": _nanmean(rm[has_edges]) if n_edges else float("nan"),
             # rename/duplicate candidates: one child holds ~all parent energy
-            "n_share_energy_ge_09": int((max_share[has_edges] >= 0.9).sum()) if n_edges else 0,
+            "n_share_energy_ge_09": int((max_share[has_edges] >= C.SHARE_ENERGY_SPLIT).sum()) if n_edges else 0,
         }
 
     # --- Metric 4: out-degree / superparents --------------------------------
