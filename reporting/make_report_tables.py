@@ -242,13 +242,22 @@ def t_battery():
 # Topic: nothing in the battery tests atomicity. Out-degree gets partial credit
 # there only because a composed child surfaces as multi-parented, a symptom the
 # metric reports without naming its cause.
+#
+# Three cells re-graded against the Tier-1 scorecard (2026-09-01):
+# Reconstruction x Superparent is Y, not x — rejecting superparent edges is that
+# metric's designated calibration job and it rejects 33/33 with a wide margin.
+# S_res x Absorption drops to x: an absorbed edge never reaches the candidate
+# set (R = 0), and the self-labeled probe cannot grade what it never sees.
+# S_res x Frequency drops Y -> P: the mechanism is plausible (a coincidental
+# parent's decoder should rank low against the child probe) but no calibration
+# case measures it; restore Y only once one does.
 MATRIX = [
     ("1 Reverse coverage",        "P", "x", "x", "x", "x", "x", "x", "x", "x"),
     ("1 Forward coverage",        "P", "x", "x", "x", "P", "x", "x", "x", "x"),
     ("2 Independence null",       "P", "x", "x", "x", "Y", "P", "x", "Y", "x"),
     ("3 Frequency control",       "P", "x", "x", "x", "P", "x", "x", "Y", "x"),
-    ("4 Reconstruction",          "P", "x", "x", "x", "x", "x", "x", "P", "x"),
-    (r"5 Probe $S_\mathrm{res}$", "Y", "x", "P", "x", "P", "P", "P", "Y", "x"),
+    ("4 Reconstruction",          "P", "x", "x", "x", "Y", "x", "x", "P", "x"),
+    (r"5 Probe $S_\mathrm{res}$", "Y", "x", "x", "x", "P", "P", "P", "P", "x"),
     ("6 Out-degree",              "x", "x", "x", "P", "Y", "Y", "x", "P", "x"),
     ("7 Sibling redundancy",      "P", "Y", "x", "x", "x", "x", "Y", "x", "x"),
     ("8 Joint-child",             "P", "Y", "x", "x", "Y", "x", "x", "x", "x"),
