@@ -4,7 +4,9 @@ In-block (same-level) directed-edge analysis for config.IN_BLOCK_BLOCKS.
 Complements the cross-block graph: within each block it finds directed
 parent→child edges (asymmetric containment) and co-extensive duplicates
 (renames/splits), then grades the edges with the same gates as the cross-block
-pipeline — PMI (chance-level) and probe-S_res (genuine refinement).
+pipeline — PMI (chance-level) and probe-S_res (genuine refinement). The
+direction/duplicate rule itself is metrics/in_block.py; this module is the
+stage runner around it.
 
 Within-block co-firing comes from collect_statistics's `within_cofire` when
 available (B1, B2, B3); for B0 (not cached by default) it is rebuilt from the
@@ -29,76 +31,14 @@ from run_metrics import source_structure
 from run_token_metrics import load_w_dec
 from metrics import (
     degree_stats,
+    directed_coverage,
+    duplicate_pairs,
     find_superparents,
     independence_scores,
     sres_rank_check,
     train_probe,
 )
 from utils.io import TokenCache
-
-
-# ---------------------------------------------------------------------------
-# Direction and duplicates from coverage asymmetry
-#
-# Hierarchy need not respect the Matryoshka block boundaries: two features in
-# the SAME block can stand in a parent/child (refinement) or duplicate relation.
-# Unlike the cross-block graph, a block gives no ordering to fix edge direction
-# or forbid cycles, so we derive both from coverage asymmetry.
-#
-# For a within-block co-firing matrix `cofire[C, C]` (symmetric) and firing
-# counts `fire[C]`, define reverse coverage
-#
-#     R[i, j] = P(i fires | j fires) = cofire[i, j] / fire[j].
-#
-# If child j is contained in parent i then R[i, j] ≈ 1 (j almost always
-# co-fires with i) while R[j, i] ≪ 1. So:
-#
-#     parent_of[i, j]  (i is parent of j)  iff  R[i, j] ≥ τ  AND  R[j, i] < τ
-#     duplicate[i, j]  (co-extensive)      iff  R[i, j] ≥ τ  AND  R[j, i] ≥ τ
-#
-# both restricted to i≠j and to pairs with enough support. `parent_of` is
-# antisymmetric by construction (if R[j,i] < τ then j→i cannot also hold), so
-# the in-block graph is acyclic; co-extensive pairs are renames/splits, reported
-# separately and NEVER drawn as an edge (that is what would create 2-cycles).
-# ---------------------------------------------------------------------------
-
-
-def directed_coverage(
-    cofire: torch.Tensor,      # [C, C] within-block co-firing counts (symmetric)
-    fire: torch.Tensor,        # [C]    per-feature firing counts
-    tau: float,
-    min_fire: int,
-    min_joint: int,
-) -> dict[str, torch.Tensor]:
-    """Directed within-block edges + duplicate flags.
-
-    Returns {"R", "parent_of", "duplicate"}:
-      R[i, j]          = P(i | j)                                  [C, C] float
-      parent_of[i, j]  = i is parent of j (asymmetric containment) [C, C] bool
-      duplicate[i, j]  = i, j co-extensive (rename/split, no edge) [C, C] bool
-    """
-    cofire = cofire.double()
-    fire = fire.double()
-    C_feats = fire.shape[0]
-    R = cofire / fire.clamp(min=1.0).unsqueeze(0)      # divide column j by fire[j]
-
-    eye = torch.eye(C_feats, dtype=torch.bool, device=R.device)
-    support = (
-        (cofire >= min_joint)
-        & (fire.unsqueeze(0) >= min_fire)              # child j fires enough
-        & (fire.unsqueeze(1) >= min_fire)              # parent i fires enough
-        & ~eye
-    )
-    ge = R >= tau
-    parent_of = ge & ~ge.T & support                  # j⊆i but not i⊆j
-    duplicate = ge & ge.T & support                   # co-extensive both ways
-    return {"R": R, "parent_of": parent_of, "duplicate": duplicate}
-
-
-def duplicate_pairs(duplicate: torch.Tensor) -> list[tuple[int, int]]:
-    """Unordered co-extensive pairs (upper triangle of the symmetric flag)."""
-    ij = torch.nonzero(torch.triu(duplicate, diagonal=1), as_tuple=False)
-    return [(int(i), int(j)) for i, j in ij.tolist()]
 
 
 def within_cofire_from_cache(cache: TokenCache, ranges, b: int) -> torch.Tensor:

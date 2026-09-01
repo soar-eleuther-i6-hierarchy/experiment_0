@@ -53,7 +53,7 @@ from metrics import (  # noqa: E402
 )
 from metrics.coverage import joint_child_coverage_exact  # noqa: E402
 from metrics.reconstruction import per_token_ablation_gain  # noqa: E402
-from in_block_edges import directed_coverage, duplicate_pairs  # noqa: E402
+from metrics import directed_coverage, duplicate_pairs  # noqa: E402
 from validation.synthetic_toy_world import build_world, P  # noqa: E402
 
 CHECKS: list[tuple[str, str]] = []

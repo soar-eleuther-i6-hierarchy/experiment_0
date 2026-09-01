@@ -8,6 +8,7 @@ per-edge reconstruction sums, ...) so the same code runs on:
 """
 
 from .coverage import coverage_legs, joint_child_coverage_upper, keep_edges
+from .in_block import directed_coverage, duplicate_pairs
 from .independence_null import independence_scores
 from .joint_child import r_mass, r_supp, share_energy
 from .outdegree import degree_stats, find_superparents
@@ -20,6 +21,8 @@ __all__ = [
     "coverage_legs",
     "joint_child_coverage_upper",
     "keep_edges",
+    "directed_coverage",
+    "duplicate_pairs",
     "independence_scores",
     "share_energy",
     "r_supp",

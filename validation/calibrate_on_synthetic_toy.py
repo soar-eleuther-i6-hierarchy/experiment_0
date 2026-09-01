@@ -62,7 +62,7 @@ from metrics.sres import (  # noqa: E402
     train_probe,
 )
 from metrics.sibling_redundancy import parent_conditioned_redundancy  # noqa: E402
-from in_block_edges import directed_coverage, duplicate_pairs  # noqa: E402
+from metrics import directed_coverage, duplicate_pairs  # noqa: E402
 from validation.synthetic_toy_world import (  # noqa: E402
     GENUINE_TREE,
     IN_BLOCK_DUP,

@@ -31,14 +31,10 @@ sys.path.insert(0, str(ROOT))
 import metrics as M  # noqa: E402
 
 # Not in metrics.__all__, but they are metric functions and they are graded:
-# the first two live in coverage.py/reconstruction.py without being re-exported,
-# the last two in in_block_edges.py because that module is a stage runner rather
-# than part of the pure-function package.
+# they live in coverage.py/reconstruction.py without being re-exported.
 EXTRA = {
     "joint_child_coverage_exact",
     "per_token_ablation_gain",
-    "directed_coverage",
-    "duplicate_pairs",
 }
 
 # The calibration is one file, but the world builder legitimately calls some of
