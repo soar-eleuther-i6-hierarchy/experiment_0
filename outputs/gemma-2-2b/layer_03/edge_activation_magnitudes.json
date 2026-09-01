@@ -1,0 +1,718 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 3,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "3-res-matryoshka-dc",
+    "sae_id": "blocks.3.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "block_values": [
+    {
+      "block": 0,
+      "n_firings": 679452,
+      "p10": 1.6328125,
+      "p50": 4.96875,
+      "p90": 24.359375
+    },
+    {
+      "block": 1,
+      "n_firings": 622767,
+      "p10": 1.4716796875,
+      "p50": 2.76171875,
+      "p90": 10.1640625
+    },
+    {
+      "block": 2,
+      "n_firings": 988106,
+      "p10": 1.44140625,
+      "p50": 2.486328125,
+      "p90": 7.53515625
+    },
+    {
+      "block": 3,
+      "n_firings": 1105615,
+      "p10": 1.416015625,
+      "p50": 2.220703125,
+      "p90": 6.18359375
+    },
+    {
+      "block": 4,
+      "n_firings": 806099,
+      "p10": 1.4111328125,
+      "p50": 2.1796875,
+      "p90": 6.3046875
+    }
+  ],
+  "pairs": {
+    "0->1": {
+      "summary": {
+        "n_edges": 1971,
+        "child_over_parent": {
+          "p10": 0.1389254927635193,
+          "p50": 0.5768664479255676,
+          "p90": 1.1229429244995117
+        },
+        "frac_child_stronger": 0.13292744755744934,
+        "parent_shared_over_all": {
+          "p10": 0.8692871928215027,
+          "p50": 1.0731847286224365,
+          "p90": 1.2662972211837769
+        },
+        "frac_parent_halved_on_child": 0.0,
+        "mean_parent_shared": {
+          "p10": 5.712092399597168,
+          "p50": 8.666367530822754,
+          "p90": 34.65976333618164
+        },
+        "mean_child_shared": {
+          "p10": 3.38920521736145,
+          "p50": 4.953704833984375,
+          "p90": 8.415555953979492
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 17,
+            "child": 217,
+            "n_shared": 146,
+            "mean_parent_shared": 5.2256927490234375,
+            "mean_child_shared": 1.7390905618667603,
+            "child_over_parent": 0.3327961756250894,
+            "parent_shared_over_all": 0.5705491136008457,
+            "parent_label": "words or phrases related to science and technology concepts, research, and experimentation",
+            "child_label": "mathematical formulas and notation"
+          },
+          {
+            "parent": 70,
+            "child": 461,
+            "n_shared": 40,
+            "mean_parent_shared": 22.016063690185547,
+            "mean_child_shared": 8.066553115844727,
+            "child_over_parent": 0.3663939762056867,
+            "parent_shared_over_all": 0.613165675601306,
+            "parent_label": "proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters",
+            "child_label": "mathematical formulas with exponents, and superscripts"
+          },
+          {
+            "parent": 52,
+            "child": 313,
+            "n_shared": 306,
+            "mean_parent_shared": 5.224644660949707,
+            "mean_child_shared": 8.295129776000977,
+            "child_over_parent": 1.5876926210888251,
+            "parent_shared_over_all": 0.6172517452758601,
+            "parent_label": "sections from legal and scientific publications, including signal phrases like \"discussing\", \"note\", \"see\", and citations",
+            "child_label": "code snippets and structured data, particularly key-value pairs enclosed in quotes and brackets."
+          },
+          {
+            "parent": 111,
+            "child": 184,
+            "n_shared": 241,
+            "mean_parent_shared": 5.274620532989502,
+            "mean_child_shared": 3.059999942779541,
+            "child_over_parent": 0.5801365090893509,
+            "parent_shared_over_all": 0.6218112283616156,
+            "parent_label": "code, formatting and markup syntax, and specialized terminology",
+            "child_label": "uses of the word \"first\" and subsequent ordinal numbers"
+          },
+          {
+            "parent": 70,
+            "child": 194,
+            "n_shared": 313,
+            "mean_parent_shared": 22.763248443603516,
+            "mean_child_shared": 10.283914566040039,
+            "child_over_parent": 0.45177710868106896,
+            "parent_shared_over_all": 0.63397539211447,
+            "parent_label": "proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters",
+            "child_label": "decimal numbers"
+          },
+          {
+            "parent": 70,
+            "child": 325,
+            "n_shared": 1305,
+            "mean_parent_shared": 23.086872100830078,
+            "mean_child_shared": 6.28608512878418,
+            "child_over_parent": 0.2722796358610297,
+            "parent_shared_over_all": 0.6429885799947517,
+            "parent_label": "proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters",
+            "child_label": "computer code"
+          },
+          {
+            "parent": 70,
+            "child": 439,
+            "n_shared": 54,
+            "mean_parent_shared": 23.095630645751953,
+            "mean_child_shared": 19.904170989990234,
+            "child_over_parent": 0.861815435797648,
+            "parent_shared_over_all": 0.6432325127517549,
+            "parent_label": "proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters",
+            "child_label": "statistical data from scientific publications"
+          },
+          {
+            "parent": 70,
+            "child": 505,
+            "n_shared": 120,
+            "mean_parent_shared": 23.193620681762695,
+            "mean_child_shared": 17.537019729614258,
+            "child_over_parent": 0.756113931940076,
+            "parent_shared_over_all": 0.6459616167132186,
+            "parent_label": "proper nouns that have mixed upper and lowercase letters or consist of uppercase letters followed by lowercase letters",
+            "child_label": "legal and scientific research article formatting like spacing, section dividers, values, and symbols"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 73,
+            "child": 140,
+            "n_shared": 248,
+            "mean_parent_shared": 4.750814914703369,
+            "mean_child_shared": 24.076940536499023,
+            "child_over_parent": 5.067960122374571,
+            "parent_shared_over_all": 0.7870856933756918,
+            "parent_label": "scientific conclusions and methodology",
+            "child_label": "mentions of a male person as \"he\" or with \"him\" possessive pronouns."
+          },
+          {
+            "parent": 94,
+            "child": 140,
+            "n_shared": 355,
+            "mean_parent_shared": 5.97678804397583,
+            "mean_child_shared": 26.278650283813477,
+            "child_over_parent": 4.396784709523112,
+            "parent_shared_over_all": 1.1426031359287767,
+            "parent_label": "words related to texting or messaging and intimate interactions",
+            "child_label": "mentions of a male person as \"he\" or with \"him\" possessive pronouns."
+          },
+          {
+            "parent": 58,
+            "child": 505,
+            "n_shared": 60,
+            "mean_parent_shared": 4.211962699890137,
+            "mean_child_shared": 16.60706329345703,
+            "child_over_parent": 3.942832469501737,
+            "parent_shared_over_all": 0.8716108753540222,
+            "parent_label": "words and abbreviations involved in scientific research and reporting of clinical trials.",
+            "child_label": "legal and scientific research article formatting like spacing, section dividers, values, and symbols"
+          },
+          {
+            "parent": 94,
+            "child": 306,
+            "n_shared": 433,
+            "mean_parent_shared": 6.3447489738464355,
+            "mean_child_shared": 23.2835693359375,
+            "child_over_parent": 3.6697384611927504,
+            "parent_shared_over_all": 1.2129474930108701,
+            "parent_label": "words related to texting or messaging and intimate interactions",
+            "child_label": "first and second person pronouns"
+          },
+          {
+            "parent": 73,
+            "child": 306,
+            "n_shared": 354,
+            "mean_parent_shared": 5.926595211029053,
+            "mean_child_shared": 21.489852905273438,
+            "child_over_parent": 3.626003150220561,
+            "parent_shared_over_all": 0.9818817160384183,
+            "parent_label": "scientific conclusions and methodology",
+            "child_label": "first and second person pronouns"
+          },
+          {
+            "parent": 116,
+            "child": 178,
+            "n_shared": 106,
+            "mean_parent_shared": 6.719081878662109,
+            "mean_child_shared": 23.90323829650879,
+            "child_over_parent": 3.557515554679973,
+            "parent_shared_over_all": 1.628062842517509,
+            "parent_label": "mathematical equations and formulas",
+            "child_label": "URLs"
+          },
+          {
+            "parent": 94,
+            "child": 197,
+            "n_shared": 274,
+            "mean_parent_shared": 3.7614905834198,
+            "mean_child_shared": 12.776541709899902,
+            "child_over_parent": 3.3966698643929534,
+            "parent_shared_over_all": 0.719097097765411,
+            "parent_label": "words related to texting or messaging and intimate interactions",
+            "child_label": "years in the 2000s and 2010s"
+          },
+          {
+            "parent": 52,
+            "child": 140,
+            "n_shared": 301,
+            "mean_parent_shared": 7.1468119621276855,
+            "mean_child_shared": 23.415035247802734,
+            "child_over_parent": 3.2762909352986274,
+            "parent_shared_over_all": 0.8443410878740664,
+            "parent_label": "sections from legal and scientific publications, including signal phrases like \"discussing\", \"note\", \"see\", and citations",
+            "child_label": "mentions of a male person as \"he\" or with \"him\" possessive pronouns."
+          }
+        ]
+      }
+    },
+    "1->2": {
+      "summary": {
+        "n_edges": 1387,
+        "child_over_parent": {
+          "p10": 0.5543437600135803,
+          "p50": 0.8849565982818604,
+          "p90": 2.0089261531829834
+        },
+        "frac_child_stronger": 0.39365535974502563,
+        "parent_shared_over_all": {
+          "p10": 0.7651117444038391,
+          "p50": 1.1081109046936035,
+          "p90": 1.4675098657608032
+        },
+        "frac_parent_halved_on_child": 0.04902667552232742,
+        "mean_parent_shared": {
+          "p10": 3.1391868591308594,
+          "p50": 4.840383052825928,
+          "p90": 6.60500955581665
+        },
+        "mean_child_shared": {
+          "p10": 2.2859766483306885,
+          "p50": 4.038110256195068,
+          "p90": 11.06694221496582
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 209,
+            "child": 2021,
+            "n_shared": 62,
+            "mean_parent_shared": 1.3678489923477173,
+            "mean_child_shared": 1.309491515159607,
+            "child_over_parent": 0.9573363159862054,
+            "parent_shared_over_all": 0.23806369107584172,
+            "parent_label": "source code and equations",
+            "child_label": "bold math symbols"
+          },
+          {
+            "parent": 209,
+            "child": 1593,
+            "n_shared": 62,
+            "mean_parent_shared": 1.3751417398452759,
+            "mean_child_shared": 1.8646830320358276,
+            "child_over_parent": 1.3559933336367438,
+            "parent_shared_over_all": 0.2393329381908855,
+            "parent_label": "source code and equations",
+            "child_label": "horizontal lines made of equals signs"
+          },
+          {
+            "parent": 223,
+            "child": 2021,
+            "n_shared": 62,
+            "mean_parent_shared": 1.5722498893737793,
+            "mean_child_shared": 1.3118857145309448,
+            "child_over_parent": 0.8344002587613242,
+            "parent_shared_over_all": 0.2585965541080793,
+            "parent_label": "questions that ask \"What are...\" or \"What is...\"",
+            "child_label": "bold math symbols"
+          },
+          {
+            "parent": 223,
+            "child": 954,
+            "n_shared": 61,
+            "mean_parent_shared": 1.57421875,
+            "mean_child_shared": 1.453125,
+            "child_over_parent": 0.9230769230769231,
+            "parent_shared_over_all": 0.2589203834032192,
+            "parent_label": "questions that ask \"What are...\" or \"What is...\"",
+            "child_label": "the phrase \"required by\""
+          },
+          {
+            "parent": 223,
+            "child": 1593,
+            "n_shared": 61,
+            "mean_parent_shared": 1.57421875,
+            "mean_child_shared": 1.8623046875,
+            "child_over_parent": 1.183002481389578,
+            "parent_shared_over_all": 0.2589203834032192,
+            "parent_label": "questions that ask \"What are...\" or \"What is...\"",
+            "child_label": "horizontal lines made of equals signs"
+          },
+          {
+            "parent": 209,
+            "child": 1678,
+            "n_shared": 65,
+            "mean_parent_shared": 1.5574820041656494,
+            "mean_child_shared": 3.178530693054199,
+            "child_over_parent": 2.0408137522956187,
+            "parent_shared_over_all": 0.27106787135872595,
+            "parent_label": "source code and equations",
+            "child_label": "LaTeX code"
+          },
+          {
+            "parent": 223,
+            "child": 1678,
+            "n_shared": 64,
+            "mean_parent_shared": 1.6847686767578125,
+            "mean_child_shared": 3.1858367919921875,
+            "child_over_parent": 1.8909639263492524,
+            "parent_shared_over_all": 0.27710313559145905,
+            "parent_label": "questions that ask \"What are...\" or \"What is...\"",
+            "child_label": "LaTeX code"
+          },
+          {
+            "parent": 209,
+            "child": 954,
+            "n_shared": 64,
+            "mean_parent_shared": 1.5928497314453125,
+            "mean_child_shared": 1.480926513671875,
+            "child_over_parent": 0.9297339758020481,
+            "parent_shared_over_all": 0.2772233547112479,
+            "parent_label": "source code and equations",
+            "child_label": "the phrase \"required by\""
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 504,
+            "child": 1765,
+            "n_shared": 62,
+            "mean_parent_shared": 1.5375031232833862,
+            "mean_child_shared": 35.69380187988281,
+            "child_over_parent": 23.21543373756378,
+            "parent_shared_over_all": 0.5106510291247621,
+            "parent_label": "words, symbols, and abbreviations used to describe quantitative data",
+            "child_label": "questions, especially on programming forums"
+          },
+          {
+            "parent": 193,
+            "child": 1765,
+            "n_shared": 67,
+            "mean_parent_shared": 1.667793869972229,
+            "mean_child_shared": 33.59238052368164,
+            "child_over_parent": 20.141805968048676,
+            "parent_shared_over_all": 0.37769637555378316,
+            "parent_label": "horizontal lines possibly representing the start or end of a section",
+            "child_label": "questions, especially on programming forums"
+          },
+          {
+            "parent": 154,
+            "child": 1015,
+            "n_shared": 32,
+            "mean_parent_shared": 2.8316650390625,
+            "mean_child_shared": 47.041168212890625,
+            "child_over_parent": 16.612546881062205,
+            "parent_shared_over_all": 0.7101883506609037,
+            "parent_label": "words from scientific documents related to proteins, genes and their characteristics",
+            "child_label": "mentions of licenses, particularly the Apache license"
+          },
+          {
+            "parent": 326,
+            "child": 1765,
+            "n_shared": 61,
+            "mean_parent_shared": 2.28515625,
+            "mean_child_shared": 35.96875,
+            "child_over_parent": 15.74017094017094,
+            "parent_shared_over_all": 0.506785845037521,
+            "parent_label": "the word 'out'.",
+            "child_label": "questions, especially on programming forums"
+          },
+          {
+            "parent": 145,
+            "child": 1765,
+            "n_shared": 78,
+            "mean_parent_shared": 2.2496745586395264,
+            "mean_child_shared": 30.116899490356445,
+            "child_over_parent": 13.387224998699105,
+            "parent_shared_over_all": 0.591514487932083,
+            "parent_label": "words, terms, and related symbols in source code, math formulas, and statistics",
+            "child_label": "questions, especially on programming forums"
+          },
+          {
+            "parent": 263,
+            "child": 1765,
+            "n_shared": 80,
+            "mean_parent_shared": 2.184948682785034,
+            "mean_child_shared": 28.905664443969727,
+            "child_over_parent": 13.229447753951485,
+            "parent_shared_over_all": 0.6057070777003414,
+            "parent_label": "a variety of words, often nouns, sometimes adjectives, and sometimes verbs, with few shared characteristics",
+            "child_label": "questions, especially on programming forums"
+          },
+          {
+            "parent": 369,
+            "child": 1253,
+            "n_shared": 110,
+            "mean_parent_shared": 2.283771276473999,
+            "mean_child_shared": 25.48023796081543,
+            "child_over_parent": 11.157088375397791,
+            "parent_shared_over_all": 0.8547512883289634,
+            "parent_label": "mathematical notation for absolute values and norms",
+            "child_label": "question marks"
+          },
+          {
+            "parent": 199,
+            "child": 1502,
+            "n_shared": 39,
+            "mean_parent_shared": 3.6543469429016113,
+            "mean_child_shared": 35.372520446777344,
+            "child_over_parent": 9.679573669239785,
+            "parent_shared_over_all": 1.0342968812735378,
+            "parent_label": "technical or scientific terms, including programming code, chemical formulas, and mathematical notations",
+            "child_label": "code snippets which use the term \"com\""
+          }
+        ]
+      }
+    },
+    "2->3": {
+      "summary": {
+        "n_edges": 4379,
+        "child_over_parent": {
+          "p10": 0.5146640539169312,
+          "p50": 0.8517047166824341,
+          "p90": 1.9492629766464233
+        },
+        "frac_child_stronger": 0.3943822681903839,
+        "parent_shared_over_all": {
+          "p10": 0.5507326722145081,
+          "p50": 0.9932869672775269,
+          "p90": 1.4214860200881958
+        },
+        "frac_parent_halved_on_child": 0.07353276759386063,
+        "mean_parent_shared": {
+          "p10": 2.0182759761810303,
+          "p50": 4.315059661865234,
+          "p90": 6.380661487579346
+        },
+        "mean_child_shared": {
+          "p10": 1.9910874366760254,
+          "p50": 3.4434258937835693,
+          "p90": 8.698221206665039
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 1766,
+            "child": 2404,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 17.421875,
+            "child_over_parent": 13.214814814814815,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 1766,
+            "child": 4488,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 1.9521484375,
+            "child_over_parent": 1.4807407407407407,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "legal citations of cases"
+          },
+          {
+            "parent": 1766,
+            "child": 4750,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 1.908203125,
+            "child_over_parent": 1.4474074074074075,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "the phrase \"behind the\""
+          },
+          {
+            "parent": 1766,
+            "child": 4815,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 3.73046875,
+            "child_over_parent": 2.8296296296296295,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "the word \"bottom\""
+          },
+          {
+            "parent": 1766,
+            "child": 5601,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 1.3896484375,
+            "child_over_parent": 1.0540740740740742,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "asterisks"
+          },
+          {
+            "parent": 1766,
+            "child": 5679,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 2.365234375,
+            "child_over_parent": 1.7940740740740742,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "the letters \"UT\" or \"ut\""
+          },
+          {
+            "parent": 1766,
+            "child": 5876,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 1.4833984375,
+            "child_over_parent": 1.1251851851851853,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "positions or ordinals in mathematical text"
+          },
+          {
+            "parent": 1766,
+            "child": 6815,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 2.220703125,
+            "child_over_parent": 1.6844444444444444,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "math multiple choice questions"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 1766,
+            "child": 2404,
+            "n_shared": 61,
+            "mean_parent_shared": 1.318359375,
+            "mean_child_shared": 17.421875,
+            "child_over_parent": 13.214814814814815,
+            "parent_shared_over_all": 0.1150599432840375,
+            "parent_label": "the names of days of the week",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 609,
+            "child": 2404,
+            "n_shared": 61,
+            "mean_parent_shared": 1.3291015625,
+            "mean_child_shared": 17.421875,
+            "child_over_parent": 13.10800881704629,
+            "parent_shared_over_all": 0.38605613540263883,
+            "parent_label": "SQL commands and syntax",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 751,
+            "child": 2404,
+            "n_shared": 61,
+            "mean_parent_shared": 1.361328125,
+            "mean_child_shared": 17.421875,
+            "child_over_parent": 12.79770444763271,
+            "parent_shared_over_all": 0.44061649317725615,
+            "parent_label": "historical figures or groups of people in Europe",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 2021,
+            "child": 3948,
+            "n_shared": 61,
+            "mean_parent_shared": 1.3095703125,
+            "mean_child_shared": 16.6875,
+            "child_over_parent": 12.742729306487696,
+            "parent_shared_over_all": 0.8993332039855491,
+            "parent_label": "bold math symbols",
+            "child_label": "answer lines in what appear to be question and answer pairs"
+          },
+          {
+            "parent": 540,
+            "child": 2404,
+            "n_shared": 62,
+            "mean_parent_shared": 1.3484280109405518,
+            "mean_child_shared": 17.17001724243164,
+            "child_over_parent": 12.733358476034073,
+            "parent_shared_over_all": 0.5074578320560715,
+            "parent_label": "words related to philosophy, particularly existentialism, and social/political theory, especially capitalism and class",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 1531,
+            "child": 2404,
+            "n_shared": 62,
+            "mean_parent_shared": 1.3661478757858276,
+            "mean_child_shared": 17.196130752563477,
+            "child_over_parent": 12.587312879780322,
+            "parent_shared_over_all": 0.41071427163479857,
+            "parent_label": "chemical formulas and related terminology",
+            "child_label": "question delimiters"
+          },
+          {
+            "parent": 1928,
+            "child": 3948,
+            "n_shared": 61,
+            "mean_parent_shared": 1.3603515625,
+            "mean_child_shared": 16.6875,
+            "child_over_parent": 12.267049533381192,
+            "parent_shared_over_all": 0.32500485309034766,
+            "parent_label": "the word \"down\" and its inflections",
+            "child_label": "answer lines in what appear to be question and answer pairs"
+          },
+          {
+            "parent": 1737,
+            "child": 3948,
+            "n_shared": 61,
+            "mean_parent_shared": 1.3662109375,
+            "mean_child_shared": 16.6875,
+            "child_over_parent": 12.214438884917799,
+            "parent_shared_over_all": 0.21831692296907454,
+            "parent_label": "the word \"of\" that is often part of a longer phrase",
+            "child_label": "answer lines in what appear to be question and answer pairs"
+          }
+        ]
+      }
+    }
+  }
+}

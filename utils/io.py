@@ -62,6 +62,11 @@ class TokenCache:
         m[self.feature_rows(f)] = True
         return m
 
+    def feature_vals(self, f: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """(rows, activation values) for feature f, row-aligned."""
+        lo, hi = int(self.f_bounds[f]), int(self.f_bounds[f + 1])
+        return self.f_rows[lo:hi], self.f_vals[lo:hi]
+
     def chunks_dense(self, g0: int, g1: int, values: bool = False):
         """Yield (row_lo, dense [chunk, g1-g0]) for global feature range [g0, g1)."""
         n_chunks = len(self.r_bounds) - 1

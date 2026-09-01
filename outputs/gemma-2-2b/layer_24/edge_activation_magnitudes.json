@@ -1,0 +1,718 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 24,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "24-res-matryoshka-dc",
+    "sae_id": "blocks.24.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "block_values": [
+    {
+      "block": 0,
+      "n_firings": 677187,
+      "p10": 13.015625,
+      "p50": 37.9375,
+      "p90": 165.0
+    },
+    {
+      "block": 1,
+      "n_firings": 597346,
+      "p10": 11.515625,
+      "p50": 19.546875,
+      "p90": 65.0
+    },
+    {
+      "block": 2,
+      "n_firings": 851798,
+      "p10": 11.34375,
+      "p50": 17.765625,
+      "p90": 51.78125
+    },
+    {
+      "block": 3,
+      "n_firings": 1163676,
+      "p10": 11.296875,
+      "p50": 16.953125,
+      "p90": 43.09375
+    },
+    {
+      "block": 4,
+      "n_firings": 780092,
+      "p10": 11.3203125,
+      "p50": 17.28125,
+      "p90": 45.78125
+    }
+  ],
+  "pairs": {
+    "0->1": {
+      "summary": {
+        "n_edges": 2273,
+        "child_over_parent": {
+          "p10": 0.11549235880374908,
+          "p50": 0.44905728101730347,
+          "p90": 0.8713212013244629
+        },
+        "frac_child_stronger": 0.06291244924068451,
+        "parent_shared_over_all": {
+          "p10": 0.7890499234199524,
+          "p50": 1.010992169380188,
+          "p90": 1.3909252882003784
+        },
+        "frac_parent_halved_on_child": 0.0021997359581291676,
+        "mean_parent_shared": {
+          "p10": 42.31534957885742,
+          "p50": 71.17191314697266,
+          "p90": 267.1413269042969
+        },
+        "mean_child_shared": {
+          "p10": 19.7206974029541,
+          "p50": 31.805021286010742,
+          "p90": 50.77716064453125
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 54,
+            "child": 186,
+            "n_shared": 132,
+            "mean_parent_shared": 26.446674346923828,
+            "mean_child_shared": 16.086706161499023,
+            "child_over_parent": 0.6082695294869906,
+            "parent_shared_over_all": 0.4377506249127067,
+            "parent_label": "Medical concepts related to arteries, blood flow, surgical procedures, and pulmonary conditions.",
+            "child_label": "characters and symbols associated with mathematical expressions and code."
+          },
+          {
+            "parent": 49,
+            "child": 220,
+            "n_shared": 91,
+            "mean_parent_shared": 31.39620590209961,
+            "mean_child_shared": 12.056662559509277,
+            "child_over_parent": 0.38401654636565474,
+            "parent_shared_over_all": 0.4378671513835467,
+            "parent_label": "what appears to be the start of a disjointed large quantity of mixed news stories and blog posts about various topics.",
+            "child_label": "references to figures, tables, and supplementary materials within scientific literature"
+          },
+          {
+            "parent": 32,
+            "child": 493,
+            "n_shared": 313,
+            "mean_parent_shared": 132.268798828125,
+            "mean_child_shared": 143.616943359375,
+            "child_over_parent": 1.0857960806463223,
+            "parent_shared_over_all": 0.45362722049680015,
+            "parent_label": "numbers within a document",
+            "child_label": "mixed English and Russian text related to website coding"
+          },
+          {
+            "parent": 32,
+            "child": 220,
+            "n_shared": 148,
+            "mean_parent_shared": 140.77195739746094,
+            "mean_child_shared": 14.211782455444336,
+            "child_over_parent": 0.1009560619755982,
+            "parent_shared_over_all": 0.482789534069056,
+            "parent_label": "numbers within a document",
+            "child_label": "references to figures, tables, and supplementary materials within scientific literature"
+          },
+          {
+            "parent": 32,
+            "child": 264,
+            "n_shared": 173,
+            "mean_parent_shared": 140.86077880859375,
+            "mean_child_shared": 36.07667922973633,
+            "child_over_parent": 0.25611585804703313,
+            "parent_shared_over_all": 0.48309415473704237,
+            "parent_label": "numbers within a document",
+            "child_label": "code-related tokens, especially within the Javascript language"
+          },
+          {
+            "parent": 85,
+            "child": 156,
+            "n_shared": 159,
+            "mean_parent_shared": 38.472286224365234,
+            "mean_child_shared": 60.827239990234375,
+            "child_over_parent": 1.581066423645791,
+            "parent_shared_over_all": 0.5024590167201379,
+            "parent_label": "code and jargon related to technology and electronics",
+            "child_label": "number sequences"
+          },
+          {
+            "parent": 32,
+            "child": 395,
+            "n_shared": 464,
+            "mean_parent_shared": 152.1442413330078,
+            "mean_child_shared": 30.397966384887695,
+            "child_over_parent": 0.19979702234246072,
+            "parent_shared_over_all": 0.5217917598251548,
+            "parent_label": "numbers within a document",
+            "child_label": "code syntax with underscores and hyphens"
+          },
+          {
+            "parent": 32,
+            "child": 231,
+            "n_shared": 469,
+            "mean_parent_shared": 152.30819702148438,
+            "mean_child_shared": 36.98265838623047,
+            "child_over_parent": 0.24281462921535174,
+            "parent_shared_over_all": 0.5223540599587252,
+            "parent_label": "numbers within a document",
+            "child_label": "capitalized words or acronyms separated by underscores"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 92,
+            "child": 493,
+            "n_shared": 232,
+            "mean_parent_shared": 40.0927734375,
+            "mean_child_shared": 131.34902954101562,
+            "child_over_parent": 3.2761272987455854,
+            "parent_shared_over_all": 0.8976336473233639,
+            "parent_label": "technical terms, questions, and answers related to professional contexts",
+            "child_label": "mixed English and Russian text related to website coding"
+          },
+          {
+            "parent": 49,
+            "child": 192,
+            "n_shared": 128,
+            "mean_parent_shared": 60.4688720703125,
+            "mean_child_shared": 196.33251953125,
+            "child_over_parent": 3.2468361457603647,
+            "parent_shared_over_all": 0.843329058401709,
+            "parent_label": "what appears to be the start of a disjointed large quantity of mixed news stories and blog posts about various topics.",
+            "child_label": "code snippets and questions about programming, some of which are in Russian"
+          },
+          {
+            "parent": 49,
+            "child": 493,
+            "n_shared": 184,
+            "mean_parent_shared": 56.7421875,
+            "mean_child_shared": 179.85182189941406,
+            "child_over_parent": 3.169631447490706,
+            "parent_shared_over_all": 0.7913548561049077,
+            "parent_label": "what appears to be the start of a disjointed large quantity of mixed news stories and blog posts about various topics.",
+            "child_label": "mixed English and Russian text related to website coding"
+          },
+          {
+            "parent": 92,
+            "child": 192,
+            "n_shared": 163,
+            "mean_parent_shared": 45.810916900634766,
+            "mean_child_shared": 141.28067016601562,
+            "child_over_parent": 3.0839956875881263,
+            "parent_shared_over_all": 1.025656668248403,
+            "parent_label": "technical terms, questions, and answers related to professional contexts",
+            "child_label": "code snippets and questions about programming, some of which are in Russian"
+          },
+          {
+            "parent": 49,
+            "child": 247,
+            "n_shared": 211,
+            "mean_parent_shared": 55.96889877319336,
+            "mean_child_shared": 153.6319580078125,
+            "child_over_parent": 2.7449523105749485,
+            "parent_shared_over_all": 0.7805701857195861,
+            "parent_label": "what appears to be the start of a disjointed large quantity of mixed news stories and blog posts about various topics.",
+            "child_label": "mixed English and Russian words or phrases related to web development or programming, possibly in a question-answer format"
+          },
+          {
+            "parent": 92,
+            "child": 247,
+            "n_shared": 311,
+            "mean_parent_shared": 48.709808349609375,
+            "mean_child_shared": 132.36459350585938,
+            "child_over_parent": 2.7174115027475954,
+            "parent_shared_over_all": 1.0905596989303294,
+            "parent_label": "technical terms, questions, and answers related to professional contexts",
+            "child_label": "mixed English and Russian words or phrases related to web development or programming, possibly in a question-answer format"
+          },
+          {
+            "parent": 92,
+            "child": 243,
+            "n_shared": 740,
+            "mean_parent_shared": 30.42466163635254,
+            "mean_child_shared": 80.29554748535156,
+            "child_over_parent": 2.6391599172104314,
+            "parent_shared_over_all": 0.6811751258812714,
+            "parent_label": "technical terms, questions, and answers related to professional contexts",
+            "child_label": "the article \"a\""
+          },
+          {
+            "parent": 19,
+            "child": 192,
+            "n_shared": 135,
+            "mean_parent_shared": 69.91845703125,
+            "mean_child_shared": 178.54364013671875,
+            "child_over_parent": 2.5535981158296845,
+            "parent_shared_over_all": 1.0757510218009638,
+            "parent_label": "Japanese names or media terms plus numbers",
+            "child_label": "code snippets and questions about programming, some of which are in Russian"
+          }
+        ]
+      }
+    },
+    "1->2": {
+      "summary": {
+        "n_edges": 424,
+        "child_over_parent": {
+          "p10": 0.3507983386516571,
+          "p50": 0.744568407535553,
+          "p90": 1.4432809352874756
+        },
+        "frac_child_stronger": 0.26179245114326477,
+        "parent_shared_over_all": {
+          "p10": 0.7443192601203918,
+          "p50": 1.4749641418457031,
+          "p90": 2.462697744369507
+        },
+        "frac_parent_halved_on_child": 0.05188679322600365,
+        "mean_parent_shared": {
+          "p10": 20.126026153564453,
+          "p50": 50.51154708862305,
+          "p90": 93.9349136352539
+        },
+        "mean_child_shared": {
+          "p10": 14.221988677978516,
+          "p50": 36.500633239746094,
+          "p90": 74.31883239746094
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 387,
+            "child": 1065,
+            "n_shared": 61,
+            "mean_parent_shared": 11.4140625,
+            "mean_child_shared": 11.2109375,
+            "child_over_parent": 0.9822039698836413,
+            "parent_shared_over_all": 0.2755401280967355,
+            "parent_label": "contractions with the word \"not.\"",
+            "child_label": "math equations"
+          },
+          {
+            "parent": 208,
+            "child": 1114,
+            "n_shared": 61,
+            "mean_parent_shared": 25.125,
+            "mean_child_shared": 15.8125,
+            "child_over_parent": 0.6293532338308457,
+            "parent_shared_over_all": 0.3328318058254743,
+            "parent_label": "instances of the word \"There\"",
+            "child_label": "math problems involving sequences, and the commas separating the values in the sequence."
+          },
+          {
+            "parent": 208,
+            "child": 1170,
+            "n_shared": 61,
+            "mean_parent_shared": 25.125,
+            "mean_child_shared": 10.8046875,
+            "child_over_parent": 0.4300373134328358,
+            "parent_shared_over_all": 0.3328318058254743,
+            "parent_label": "instances of the word \"There\"",
+            "child_label": "occurrences of C# (C Sharp) code"
+          },
+          {
+            "parent": 276,
+            "child": 1065,
+            "n_shared": 63,
+            "mean_parent_shared": 11.52430534362793,
+            "mean_child_shared": 11.320188522338867,
+            "child_over_parent": 0.9822881453412787,
+            "parent_shared_over_all": 0.33511231873206454,
+            "parent_label": "US legal and code citations.",
+            "child_label": "math equations"
+          },
+          {
+            "parent": 400,
+            "child": 1065,
+            "n_shared": 62,
+            "mean_parent_shared": 11.416960716247559,
+            "mean_child_shared": 11.308341979980469,
+            "child_over_parent": 0.9904861951471451,
+            "parent_shared_over_all": 0.3399259347092843,
+            "parent_label": "mentions of spans of time",
+            "child_label": "math equations"
+          },
+          {
+            "parent": 393,
+            "child": 1065,
+            "n_shared": 61,
+            "mean_parent_shared": 14.5390625,
+            "mean_child_shared": 11.2109375,
+            "child_over_parent": 0.7710908113917249,
+            "parent_shared_over_all": 0.3500405850492357,
+            "parent_label": "words used in electrical engineering contexts",
+            "child_label": "math equations"
+          },
+          {
+            "parent": 505,
+            "child": 1114,
+            "n_shared": 61,
+            "mean_parent_shared": 11.0703125,
+            "mean_child_shared": 15.8125,
+            "child_over_parent": 1.4283697953422725,
+            "parent_shared_over_all": 0.3527741363280961,
+            "parent_label": "language associated with death and professional accomplishments.",
+            "child_label": "math problems involving sequences, and the commas separating the values in the sequence."
+          },
+          {
+            "parent": 505,
+            "child": 1170,
+            "n_shared": 61,
+            "mean_parent_shared": 11.0703125,
+            "mean_child_shared": 10.8046875,
+            "child_over_parent": 0.9760056457304164,
+            "parent_shared_over_all": 0.3527741363280961,
+            "parent_label": "language associated with death and professional accomplishments.",
+            "child_label": "occurrences of C# (C Sharp) code"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 191,
+            "child": 1210,
+            "n_shared": 106,
+            "mean_parent_shared": 29.09316062927246,
+            "mean_child_shared": 262.96734619140625,
+            "child_over_parent": 9.038802952430622,
+            "parent_shared_over_all": 0.9031945665722212,
+            "parent_label": "place names in Argentina",
+            "child_label": "code snippets and Japanese error messages related to Java"
+          },
+          {
+            "parent": 375,
+            "child": 2044,
+            "n_shared": 48,
+            "mean_parent_shared": 26.81852149963379,
+            "mean_child_shared": 118.99853515625,
+            "child_over_parent": 4.437177312622358,
+            "parent_shared_over_all": 0.8865537502446426,
+            "parent_label": "phrases related to biological or medical study writeups.",
+            "child_label": "section headers, particularly those related to inventions and prior art"
+          },
+          {
+            "parent": 503,
+            "child": 2044,
+            "n_shared": 48,
+            "mean_parent_shared": 38.02457809448242,
+            "mean_child_shared": 159.1673126220703,
+            "child_over_parent": 4.185906079656578,
+            "parent_shared_over_all": 1.4344959498313574,
+            "parent_label": "scientific words and data analysis terms from experimental studies",
+            "child_label": "section headers, particularly those related to inventions and prior art"
+          },
+          {
+            "parent": 240,
+            "child": 844,
+            "n_shared": 40,
+            "mean_parent_shared": 59.13750076293945,
+            "mean_child_shared": 230.9734344482422,
+            "child_over_parent": 3.9057016523936303,
+            "parent_shared_over_all": 2.008398263059121,
+            "parent_label": "lines of text that look like the start of a Wikipedia category list, or some other kind of references",
+            "child_label": "lines of text starting with a URL"
+          },
+          {
+            "parent": 250,
+            "child": 616,
+            "n_shared": 250,
+            "mean_parent_shared": 24.35715675354004,
+            "mean_child_shared": 73.86656188964844,
+            "child_over_parent": 3.0326430394595527,
+            "parent_shared_over_all": 1.1806316232855638,
+            "parent_label": "technical language common in scientific publications",
+            "child_label": "words related to scientific studies and cognitive processing, especially concerning stimuli and learning"
+          },
+          {
+            "parent": 394,
+            "child": 2044,
+            "n_shared": 50,
+            "mean_parent_shared": 36.15562438964844,
+            "mean_child_shared": 108.45984649658203,
+            "child_over_parent": 2.999805654791422,
+            "parent_shared_over_all": 0.9309659494409183,
+            "parent_label": "the language style of technical writing about electrical engineering",
+            "child_label": "section headers, particularly those related to inventions and prior art"
+          },
+          {
+            "parent": 172,
+            "child": 2034,
+            "n_shared": 51,
+            "mean_parent_shared": 33.561885833740234,
+            "mean_child_shared": 98.00965118408203,
+            "child_over_parent": 2.9202665091468596,
+            "parent_shared_over_all": 1.1950413790035557,
+            "parent_label": "file comparison outputs including numerical diffs and code insertion",
+            "child_label": "timestamps"
+          },
+          {
+            "parent": 180,
+            "child": 865,
+            "n_shared": 136,
+            "mean_parent_shared": 77.03963470458984,
+            "mean_child_shared": 222.1707763671875,
+            "child_over_parent": 2.8838503352087037,
+            "parent_shared_over_all": 2.5076237967927884,
+            "parent_label": "text having to do with dictionaries, encoding and compiling",
+            "child_label": "Greek words"
+          }
+        ]
+      }
+    },
+    "2->3": {
+      "summary": {
+        "n_edges": 4867,
+        "child_over_parent": {
+          "p10": 0.6158865094184875,
+          "p50": 0.9446207880973816,
+          "p90": 1.6356021165847778
+        },
+        "frac_child_stronger": 0.4349702000617981,
+        "parent_shared_over_all": {
+          "p10": 0.805128812789917,
+          "p50": 1.0328470468521118,
+          "p90": 1.6670808792114258
+        },
+        "frac_parent_halved_on_child": 0.037600163370370865,
+        "mean_parent_shared": {
+          "p10": 19.230865478515625,
+          "p50": 24.880916595458984,
+          "p90": 51.52894973754883
+        },
+        "mean_child_shared": {
+          "p10": 16.892364501953125,
+          "p50": 25.234786987304688,
+          "p90": 47.44434356689453
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 1762,
+            "child": 3200,
+            "n_shared": 61,
+            "mean_parent_shared": 11.5546875,
+            "mean_child_shared": 11.875,
+            "child_over_parent": 1.0277214334009466,
+            "parent_shared_over_all": 0.21489926277793753,
+            "parent_label": "technical specifications for camera lenses",
+            "child_label": "sentences that describe the authors of a study"
+          },
+          {
+            "parent": 1762,
+            "child": 4616,
+            "n_shared": 61,
+            "mean_parent_shared": 11.5546875,
+            "mean_child_shared": 12.015625,
+            "child_over_parent": 1.039891818796484,
+            "parent_shared_over_all": 0.21489926277793753,
+            "parent_label": "technical specifications for camera lenses",
+            "child_label": "code pertaining to error messages"
+          },
+          {
+            "parent": 1762,
+            "child": 5445,
+            "n_shared": 61,
+            "mean_parent_shared": 11.5546875,
+            "mean_child_shared": 10.4453125,
+            "child_over_parent": 0.9039891818796484,
+            "parent_shared_over_all": 0.21489926277793753,
+            "parent_label": "technical specifications for camera lenses",
+            "child_label": "LaTeX, code snippets, and/or data"
+          },
+          {
+            "parent": 1762,
+            "child": 7270,
+            "n_shared": 61,
+            "mean_parent_shared": 11.5546875,
+            "mean_child_shared": 20.359375,
+            "child_over_parent": 1.762001352265044,
+            "parent_shared_over_all": 0.21489926277793753,
+            "parent_label": "technical specifications for camera lenses",
+            "child_label": "the letter \"A\" followed by a colon"
+          },
+          {
+            "parent": 1762,
+            "child": 7843,
+            "n_shared": 61,
+            "mean_parent_shared": 11.5546875,
+            "mean_child_shared": 11.0078125,
+            "child_over_parent": 0.9526707234617985,
+            "parent_shared_over_all": 0.21489926277793753,
+            "parent_label": "technical specifications for camera lenses",
+            "child_label": "statistical analysis values, particularly p-values often found in scientific papers"
+          },
+          {
+            "parent": 928,
+            "child": 2597,
+            "n_shared": 61,
+            "mean_parent_shared": 15.796875,
+            "mean_child_shared": 14.5078125,
+            "child_over_parent": 0.9183976261127597,
+            "parent_shared_over_all": 0.25965758268267236,
+            "parent_label": "code or text broken up into single characters and numbers",
+            "child_label": "the description of baseball plays, specifically those involving the Toronto team"
+          },
+          {
+            "parent": 928,
+            "child": 3113,
+            "n_shared": 61,
+            "mean_parent_shared": 15.796875,
+            "mean_child_shared": 16.875,
+            "child_over_parent": 1.0682492581602374,
+            "parent_shared_over_all": 0.25965758268267236,
+            "parent_label": "code or text broken up into single characters and numbers",
+            "child_label": "technical documents about elements"
+          },
+          {
+            "parent": 928,
+            "child": 3411,
+            "n_shared": 61,
+            "mean_parent_shared": 15.796875,
+            "mean_child_shared": 16.625,
+            "child_over_parent": 1.0524233432245302,
+            "parent_shared_over_all": 0.25965758268267236,
+            "parent_label": "code or text broken up into single characters and numbers",
+            "child_label": "mathematical expressions, especially those involving variables and exponents"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 1720,
+            "child": 3416,
+            "n_shared": 68,
+            "mean_parent_shared": 19.142578125,
+            "mean_child_shared": 244.96783447265625,
+            "child_over_parent": 12.79701369758188,
+            "parent_shared_over_all": 1.1140977846533457,
+            "parent_label": "words related to specific processes or named items, often in technical descriptions.",
+            "child_label": "a seemingly random collection of abbreviations and foreign words"
+          },
+          {
+            "parent": 1862,
+            "child": 3416,
+            "n_shared": 75,
+            "mean_parent_shared": 18.487709045410156,
+            "mean_child_shared": 225.94583129882812,
+            "child_over_parent": 12.221407787403626,
+            "parent_shared_over_all": 1.0284131034108117,
+            "parent_label": "html href tags with \"management\", \"core\", and versions",
+            "child_label": "a seemingly random collection of abbreviations and foreign words"
+          },
+          {
+            "parent": 558,
+            "child": 3416,
+            "n_shared": 84,
+            "mean_parent_shared": 28.121000289916992,
+            "mean_child_shared": 233.45237731933594,
+            "child_over_parent": 8.301709573362585,
+            "parent_shared_over_all": 1.1649886203545954,
+            "parent_label": "proper nouns associated with political entities or processes and dates",
+            "child_label": "a seemingly random collection of abbreviations and foreign words"
+          },
+          {
+            "parent": 2042,
+            "child": 2572,
+            "n_shared": 32,
+            "mean_parent_shared": 18.437744140625,
+            "mean_child_shared": 126.668212890625,
+            "child_over_parent": 6.870049390235828,
+            "parent_shared_over_all": 0.7692923165613919,
+            "parent_label": "words related to court cases, delays in projects, the auditing market and expressing opinions",
+            "child_label": "words related to software code errors and software libraries"
+          },
+          {
+            "parent": 2042,
+            "child": 5553,
+            "n_shared": 32,
+            "mean_parent_shared": 18.440673828125,
+            "mean_child_shared": 126.248291015625,
+            "child_over_parent": 6.846186435068116,
+            "parent_shared_over_all": 0.7694145541879955,
+            "parent_label": "words related to court cases, delays in projects, the auditing market and expressing opinions",
+            "child_label": "code-related terms"
+          },
+          {
+            "parent": 748,
+            "child": 3808,
+            "n_shared": 54,
+            "mean_parent_shared": 23.499855041503906,
+            "mean_child_shared": 145.1776580810547,
+            "child_over_parent": 6.177810791796435,
+            "parent_shared_over_all": 0.8751023499724131,
+            "parent_label": "people and publications related to Argentinian history and journalism, especially identifying journalists, collaborators, magazine names, and historical events.",
+            "child_label": "text describing people competing in races"
+          },
+          {
+            "parent": 1354,
+            "child": 2572,
+            "n_shared": 38,
+            "mean_parent_shared": 22.813528060913086,
+            "mean_child_shared": 127.64103698730469,
+            "child_over_parent": 5.594971397957287,
+            "parent_shared_over_all": 1.0767320863462713,
+            "parent_label": "words related to the operation of a computer program",
+            "child_label": "words related to software code errors and software libraries"
+          },
+          {
+            "parent": 2042,
+            "child": 3670,
+            "n_shared": 30,
+            "mean_parent_shared": 20.58984375,
+            "mean_child_shared": 114.2328109741211,
+            "child_over_parent": 5.548017379885221,
+            "parent_shared_over_all": 0.8590860397706803,
+            "parent_label": "words related to court cases, delays in projects, the auditing market and expressing opinions",
+            "child_label": "dates in the year 2008 or 2018"
+          }
+        ]
+      }
+    }
+  }
+}

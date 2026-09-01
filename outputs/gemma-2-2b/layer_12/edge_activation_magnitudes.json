@@ -1,0 +1,718 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 12,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "12-res-matryoshka-dc",
+    "sae_id": "blocks.12.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "block_values": [
+    {
+      "block": 0,
+      "n_firings": 629247,
+      "p10": 3.654296875,
+      "p50": 9.828125,
+      "p90": 39.09375
+    },
+    {
+      "block": 1,
+      "n_firings": 556031,
+      "p10": 3.1640625,
+      "p50": 5.4453125,
+      "p90": 16.078125
+    },
+    {
+      "block": 2,
+      "n_firings": 753850,
+      "p10": 3.076171875,
+      "p50": 4.70703125,
+      "p90": 13.234375
+    },
+    {
+      "block": 3,
+      "n_firings": 1362205,
+      "p10": 3.0390625,
+      "p50": 4.34375,
+      "p90": 10.078125
+    },
+    {
+      "block": 4,
+      "n_firings": 1098834,
+      "p10": 3.02734375,
+      "p50": 4.24609375,
+      "p90": 9.5703125
+    }
+  ],
+  "pairs": {
+    "0->1": {
+      "summary": {
+        "n_edges": 1473,
+        "child_over_parent": {
+          "p10": 0.0986735001206398,
+          "p50": 0.5616229176521301,
+          "p90": 0.9546539187431335
+        },
+        "frac_child_stronger": 0.07535641640424728,
+        "parent_shared_over_all": {
+          "p10": 0.821144700050354,
+          "p50": 1.0312988758087158,
+          "p90": 1.3042324781417847
+        },
+        "frac_parent_halved_on_child": 0.0006788866012357175,
+        "mean_parent_shared": {
+          "p10": 10.583243370056152,
+          "p50": 13.807498931884766,
+          "p90": 75.16804504394531
+        },
+        "mean_child_shared": {
+          "p10": 5.75640344619751,
+          "p50": 8.275674819946289,
+          "p90": 12.646032333374023
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 44,
+            "child": 209,
+            "n_shared": 656,
+            "mean_parent_shared": 29.05810546875,
+            "mean_child_shared": 7.842972755432129,
+            "child_over_parent": 0.2699065417002739,
+            "parent_shared_over_all": 0.36691451296766453,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "terms related to legal proceedings and court cases"
+          },
+          {
+            "parent": 44,
+            "child": 147,
+            "n_shared": 154,
+            "mean_parent_shared": 39.86112594604492,
+            "mean_child_shared": 6.407201290130615,
+            "child_over_parent": 0.16073809101135908,
+            "parent_shared_over_all": 0.5033234402898243,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "phrases associated with legal terminology and courtroom proceedings"
+          },
+          {
+            "parent": 44,
+            "child": 369,
+            "n_shared": 124,
+            "mean_parent_shared": 40.794403076171875,
+            "mean_child_shared": 8.368951797485352,
+            "child_over_parent": 0.20514950989376482,
+            "parent_shared_over_all": 0.5151078604418075,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "references to legal terminology and case citations"
+          },
+          {
+            "parent": 44,
+            "child": 433,
+            "n_shared": 89,
+            "mean_parent_shared": 40.79669952392578,
+            "mean_child_shared": 6.813355922698975,
+            "child_over_parent": 0.16700752762372822,
+            "parent_shared_over_all": 0.5151368575149335,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "references to legal cases and citations within legal documents"
+          },
+          {
+            "parent": 44,
+            "child": 402,
+            "n_shared": 119,
+            "mean_parent_shared": 40.845619201660156,
+            "mean_child_shared": 6.381237030029297,
+            "child_over_parent": 0.15622818688399107,
+            "parent_shared_over_all": 0.5157545626075709,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "numbers and related numerical values or identifiers"
+          },
+          {
+            "parent": 44,
+            "child": 287,
+            "n_shared": 396,
+            "mean_parent_shared": 41.887142181396484,
+            "mean_child_shared": 5.724648952484131,
+            "child_over_parent": 0.13666840596794508,
+            "parent_shared_over_all": 0.5289057949639117,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "structured data or code snippets with regions and associated parameters"
+          },
+          {
+            "parent": 44,
+            "child": 394,
+            "n_shared": 120,
+            "mean_parent_shared": 42.61080551147461,
+            "mean_child_shared": 9.369482040405273,
+            "child_over_parent": 0.2198851189959828,
+            "parent_shared_over_all": 0.5380434374228712,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "legal citations and references in judicial contexts"
+          },
+          {
+            "parent": 44,
+            "child": 145,
+            "n_shared": 598,
+            "mean_parent_shared": 42.681827545166016,
+            "mean_child_shared": 10.517786979675293,
+            "child_over_parent": 0.24642307006524838,
+            "parent_shared_over_all": 0.5389402273023725,
+            "parent_label": "technical terminology related to programming and coding concepts",
+            "child_label": "numerical values and their occurrences in contexts that may relate to documentation or references"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 105,
+            "child": 271,
+            "n_shared": 240,
+            "mean_parent_shared": 11.156461715698242,
+            "mean_child_shared": 36.46025466918945,
+            "child_over_parent": 3.268084057321353,
+            "parent_shared_over_all": 0.9629901828227923,
+            "parent_label": "references to ecosystem dynamics and environmental conditions",
+            "child_label": "parentheses and related symbols"
+          },
+          {
+            "parent": 114,
+            "child": 271,
+            "n_shared": 444,
+            "mean_parent_shared": 11.824565887451172,
+            "mean_child_shared": 31.567092895507812,
+            "child_over_parent": 2.6696196034569364,
+            "parent_shared_over_all": 0.9590191316448896,
+            "parent_label": "mathematical symbols and notations commonly used in scientific writing",
+            "child_label": "parentheses and related symbols"
+          },
+          {
+            "parent": 63,
+            "child": 244,
+            "n_shared": 347,
+            "mean_parent_shared": 9.039259910583496,
+            "mean_child_shared": 23.042097091674805,
+            "child_over_parent": 2.549113237102108,
+            "parent_shared_over_all": 0.9489307354271241,
+            "parent_label": "technical terms related to mathematics and programming",
+            "child_label": "abbreviations and acronyms related to medical and clinical terms"
+          },
+          {
+            "parent": 114,
+            "child": 244,
+            "n_shared": 499,
+            "mean_parent_shared": 10.35633373260498,
+            "mean_child_shared": 19.236915588378906,
+            "child_over_parent": 1.8575024796482826,
+            "parent_shared_over_all": 0.8399396880867961,
+            "parent_label": "mathematical symbols and notations commonly used in scientific writing",
+            "child_label": "abbreviations and acronyms related to medical and clinical terms"
+          },
+          {
+            "parent": 105,
+            "child": 511,
+            "n_shared": 227,
+            "mean_parent_shared": 7.93565034866333,
+            "mean_child_shared": 14.581265449523926,
+            "child_over_parent": 1.8374379929655007,
+            "parent_shared_over_all": 0.6849800209795972,
+            "parent_label": "references to ecosystem dynamics and environmental conditions",
+            "child_label": "specific formatting elements or symbols used in code or documentation"
+          },
+          {
+            "parent": 105,
+            "child": 220,
+            "n_shared": 320,
+            "mean_parent_shared": 10.245538711547852,
+            "mean_child_shared": 17.863922119140625,
+            "child_over_parent": 1.7435805595079168,
+            "parent_shared_over_all": 0.8843622152235353,
+            "parent_label": "references to ecosystem dynamics and environmental conditions",
+            "child_label": "elements related to programming and file structures in Python, specifically within Django's database management context"
+          },
+          {
+            "parent": 30,
+            "child": 153,
+            "n_shared": 1100,
+            "mean_parent_shared": 6.686834335327148,
+            "mean_child_shared": 11.542791366577148,
+            "child_over_parent": 1.7261967005217314,
+            "parent_shared_over_all": 1.1592044707293454,
+            "parent_label": "phrases related to healthcare and training in a medical context",
+            "child_label": "words associated with clinical study designs and outcomes"
+          },
+          {
+            "parent": 34,
+            "child": 410,
+            "n_shared": 124,
+            "mean_parent_shared": 10.87890625,
+            "mean_child_shared": 18.205833435058594,
+            "child_over_parent": 1.6734985132405744,
+            "parent_shared_over_all": 1.3248587787154977,
+            "parent_label": "error codes or error messages related to system calls",
+            "child_label": "references to financial transactions or economic concepts"
+          }
+        ]
+      }
+    },
+    "1->2": {
+      "summary": {
+        "n_edges": 621,
+        "child_over_parent": {
+          "p10": 0.46076080203056335,
+          "p50": 0.8196608424186707,
+          "p90": 1.5587096214294434
+        },
+        "frac_child_stronger": 0.32367148995399475,
+        "parent_shared_over_all": {
+          "p10": 0.6212165355682373,
+          "p50": 1.0731736421585083,
+          "p90": 1.6277085542678833
+        },
+        "frac_parent_halved_on_child": 0.05797101557254791,
+        "mean_parent_shared": {
+          "p10": 4.887254238128662,
+          "p50": 9.51762866973877,
+          "p90": 14.226616859436035
+        },
+        "mean_child_shared": {
+          "p10": 3.724071502685547,
+          "p50": 7.357571125030518,
+          "p90": 15.753746032714844
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 370,
+            "child": 775,
+            "n_shared": 61,
+            "mean_parent_shared": 2.87890625,
+            "mean_child_shared": 7.05859375,
+            "child_over_parent": 2.451831750339213,
+            "parent_shared_over_all": 0.24087832777927126,
+            "parent_label": "proper names and specific identifiers within text",
+            "child_label": "complex mathematical expressions, particularly relating to specific equations and their components"
+          },
+          {
+            "parent": 196,
+            "child": 775,
+            "n_shared": 63,
+            "mean_parent_shared": 3.4178757667541504,
+            "mean_child_shared": 7.007006645202637,
+            "child_over_parent": 2.0501057157665423,
+            "parent_shared_over_all": 0.29624456811632344,
+            "parent_label": "the word \"with\" and its variations in different contexts",
+            "child_label": "complex mathematical expressions, particularly relating to specific equations and their components"
+          },
+          {
+            "parent": 250,
+            "child": 1466,
+            "n_shared": 62,
+            "mean_parent_shared": 3.724609375,
+            "mean_child_shared": 4.710874557495117,
+            "child_over_parent": 1.26479694464473,
+            "parent_shared_over_all": 0.31898568469476607,
+            "parent_label": "questions and interrogative phrases",
+            "child_label": "mathematical expressions and calculations"
+          },
+          {
+            "parent": 307,
+            "child": 775,
+            "n_shared": 61,
+            "mean_parent_shared": 2.84765625,
+            "mean_child_shared": 7.05859375,
+            "child_over_parent": 2.478737997256516,
+            "parent_shared_over_all": 0.31932512316166506,
+            "parent_label": "expressions of necessity or requirement",
+            "child_label": "complex mathematical expressions, particularly relating to specific equations and their components"
+          },
+          {
+            "parent": 250,
+            "child": 1659,
+            "n_shared": 61,
+            "mean_parent_shared": 3.736328125,
+            "mean_child_shared": 3.306640625,
+            "child_over_parent": 0.8849973863042342,
+            "parent_shared_over_all": 0.31998931034141975,
+            "parent_label": "questions and interrogative phrases",
+            "child_label": "legal terminology related to jurisdiction and sovereign immunity"
+          },
+          {
+            "parent": 250,
+            "child": 1883,
+            "n_shared": 61,
+            "mean_parent_shared": 3.736328125,
+            "mean_child_shared": 3.72265625,
+            "child_over_parent": 0.996340825927862,
+            "parent_shared_over_all": 0.31998931034141975,
+            "parent_label": "questions and interrogative phrases",
+            "child_label": "references to citations or legal documentation"
+          },
+          {
+            "parent": 250,
+            "child": 1001,
+            "n_shared": 62,
+            "mean_parent_shared": 3.7519216537475586,
+            "mean_child_shared": 4.124180793762207,
+            "child_over_parent": 1.0992182604993423,
+            "parent_shared_over_all": 0.3213247825865723,
+            "parent_label": "questions and interrogative phrases",
+            "child_label": "mathematical expressions and notations related to functions and scaling laws"
+          },
+          {
+            "parent": 250,
+            "child": 1052,
+            "n_shared": 62,
+            "mean_parent_shared": 3.857264280319214,
+            "mean_child_shared": 3.1943359375,
+            "child_over_parent": 0.8281350992200223,
+            "parent_shared_over_all": 0.33034661185276337,
+            "parent_label": "questions and interrogative phrases",
+            "child_label": "mathematical symbols and notations used in equations"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 273,
+            "child": 915,
+            "n_shared": 30,
+            "mean_parent_shared": 7.311718940734863,
+            "mean_child_shared": 58.809635162353516,
+            "child_over_parent": 8.043202376764617,
+            "parent_shared_over_all": 1.0422671959324503,
+            "parent_label": "terms related to cellular morphology and dynamics in biological studies",
+            "child_label": "categorization labels related to people and their achievements"
+          },
+          {
+            "parent": 360,
+            "child": 1965,
+            "n_shared": 42,
+            "mean_parent_shared": 5.914015769958496,
+            "mean_child_shared": 38.18257141113281,
+            "child_over_parent": 6.456285017887393,
+            "parent_shared_over_all": 0.8650110604139148,
+            "parent_label": "technical terms related to nanotechnology and materials science",
+            "child_label": "references to software licenses"
+          },
+          {
+            "parent": 450,
+            "child": 1786,
+            "n_shared": 36,
+            "mean_parent_shared": 6.6357421875,
+            "mean_child_shared": 36.82986068725586,
+            "child_over_parent": 5.550224774650478,
+            "parent_shared_over_all": 0.8993884991145494,
+            "parent_label": "terms related to statistical models and their application in scientific research",
+            "child_label": "references to inventions and their descriptions in a technical context"
+          },
+          {
+            "parent": 316,
+            "child": 1965,
+            "n_shared": 39,
+            "mean_parent_shared": 8.721003532409668,
+            "mean_child_shared": 47.44801712036133,
+            "child_over_parent": 5.440660234115413,
+            "parent_shared_over_all": 1.417269353066271,
+            "parent_label": "legislative terms and concepts related to law and governance",
+            "child_label": "references to software licenses"
+          },
+          {
+            "parent": 260,
+            "child": 1040,
+            "n_shared": 31,
+            "mean_parent_shared": 7.927734375,
+            "mean_child_shared": 40.69424057006836,
+            "child_over_parent": 5.133148847468588,
+            "parent_shared_over_all": 0.6722207199222657,
+            "parent_label": "elements related to programming imports and source packages",
+            "child_label": "Android layout attributes and configurations"
+          },
+          {
+            "parent": 202,
+            "child": 1965,
+            "n_shared": 56,
+            "mean_parent_shared": 8.254324913024902,
+            "mean_child_shared": 37.69935989379883,
+            "child_over_parent": 4.567225096059784,
+            "parent_shared_over_all": 1.3215736266931004,
+            "parent_label": "technical terms and concepts related to programming and computational theory",
+            "child_label": "references to software licenses"
+          },
+          {
+            "parent": 510,
+            "child": 1337,
+            "n_shared": 109,
+            "mean_parent_shared": 6.465470790863037,
+            "mean_child_shared": 25.069093704223633,
+            "child_over_parent": 3.877381016035386,
+            "parent_shared_over_all": 1.0034004720152054,
+            "parent_label": "culinary dishes and ingredients from various cuisines",
+            "child_label": "technical terms related to protocols and standards in telecommunications"
+          },
+          {
+            "parent": 450,
+            "child": 1598,
+            "n_shared": 56,
+            "mean_parent_shared": 6.2408270835876465,
+            "mean_child_shared": 22.91751480102539,
+            "child_over_parent": 3.6721919216917103,
+            "parent_shared_over_all": 0.845862896017059,
+            "parent_label": "terms related to statistical models and their application in scientific research",
+            "child_label": "legal terminology and formal structure related to court opinions and judgments"
+          }
+        ]
+      }
+    },
+    "2->3": {
+      "summary": {
+        "n_edges": 1747,
+        "child_over_parent": {
+          "p10": 0.4970540404319763,
+          "p50": 0.9133334755897522,
+          "p90": 1.6202094554901123
+        },
+        "frac_child_stronger": 0.39496278762817383,
+        "parent_shared_over_all": {
+          "p10": 0.4868762791156769,
+          "p50": 0.7598093748092651,
+          "p90": 1.518406629562378
+        },
+        "frac_parent_halved_on_child": 0.11734402179718018,
+        "mean_parent_shared": {
+          "p10": 3.0716543197631836,
+          "p50": 4.3828125,
+          "p90": 13.13033390045166
+        },
+        "mean_child_shared": {
+          "p10": 3.01953125,
+          "p50": 3.8984375,
+          "p90": 13.6796875
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 936,
+            "child": 2168,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 3.880859375,
+            "child_over_parent": 1.3063773833004602,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "structured programming elements and syntax in code snippets"
+          },
+          {
+            "parent": 936,
+            "child": 2209,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 3.15625,
+            "child_over_parent": 1.0624589086127547,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "mathematical expressions and variables related to probability or statistical measures"
+          },
+          {
+            "parent": 936,
+            "child": 3519,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 4.296875,
+            "child_over_parent": 1.4464168310322156,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "modal verbs"
+          },
+          {
+            "parent": 936,
+            "child": 3671,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 4.9765625,
+            "child_over_parent": 1.6752136752136753,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "mathematical expressions and symbols related to variables and parameters in equations"
+          },
+          {
+            "parent": 936,
+            "child": 3903,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 3.3828125,
+            "child_over_parent": 1.138724523339908,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "character patterns and formats typically used in coding or structured data representation"
+          },
+          {
+            "parent": 936,
+            "child": 4094,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 5.44140625,
+            "child_over_parent": 1.831689677843524,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "mathematical expressions involving variables and functions"
+          },
+          {
+            "parent": 936,
+            "child": 5145,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 3.005859375,
+            "child_over_parent": 1.0118343195266273,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "proper nouns, specifically names and titles"
+          },
+          {
+            "parent": 936,
+            "child": 5889,
+            "n_shared": 61,
+            "mean_parent_shared": 2.970703125,
+            "mean_child_shared": 3.001953125,
+            "child_over_parent": 1.0105193951347797,
+            "parent_shared_over_all": 0.2028393133226407,
+            "parent_label": "terms related to inventions and their descriptions",
+            "child_label": "sections or markers within a structured document, likely indicating different segments or results in a research context"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 987,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 2.85546875,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.5444596443228455,
+            "parent_shared_over_all": 0.4244206109724139,
+            "parent_label": "instances of the phrase \"go\" combined with various prepositions and actions",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1587,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 2.912109375,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.417169684775319,
+            "parent_shared_over_all": 0.6339531167491002,
+            "parent_label": "vocabulary related to veterinary conditions and their classifications",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1604,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 2.953125,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.328042328042328,
+            "parent_shared_over_all": 0.4448154700337263,
+            "parent_label": "numerical data and statistics related to health and medical outcomes",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1401,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 2.96484375,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.303030303030303,
+            "parent_shared_over_all": 0.5302681391106491,
+            "parent_label": "terms that describe complex systems or phenomena",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1916,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 2.986328125,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.257684761281884,
+            "parent_shared_over_all": 0.4538692620119704,
+            "parent_label": "legal and medical terms related to injuries and their effects",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1085,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 3.05859375,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.109833971902938,
+            "parent_shared_over_all": 0.5970180260401265,
+            "parent_label": "programmatic elements that indicate control flow and error handling in code",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 1972,
+            "child": 6420,
+            "n_shared": 62,
+            "mean_parent_shared": 3.0375189781188965,
+            "mean_child_shared": 18.48853302001953,
+            "child_over_parent": 6.08672181250676,
+            "parent_shared_over_all": 0.5914708789121185,
+            "parent_label": "visual elements or images in the document",
+            "child_label": "formatted strings used in programming and their associated methods"
+          },
+          {
+            "parent": 904,
+            "child": 6420,
+            "n_shared": 61,
+            "mean_parent_shared": 3.1015625,
+            "mean_child_shared": 18.6875,
+            "child_over_parent": 6.025188916876575,
+            "parent_shared_over_all": 0.4461220269582081,
+            "parent_label": "medical imaging terms related to CT scans and their diagnostic applications",
+            "child_label": "formatted strings used in programming and their associated methods"
+          }
+        ]
+      }
+    }
+  }
+}

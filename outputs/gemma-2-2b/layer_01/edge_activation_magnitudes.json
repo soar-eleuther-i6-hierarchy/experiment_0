@@ -1,0 +1,718 @@
+{
+  "total_tokens": 48571,
+  "n_docs": 400,
+  "config": {
+    "layer": 1,
+    "sae_release": "gemma-2-2b-res-matryoshka-dc",
+    "sae_source": "1-res-matryoshka-dc",
+    "sae_id": "blocks.1.hook_resid_post",
+    "matryoshka_steps": [
+      128,
+      512,
+      2048,
+      8192,
+      32768
+    ],
+    "block_ranges": [
+      [
+        0,
+        128
+      ],
+      [
+        128,
+        512
+      ],
+      [
+        512,
+        2048
+      ],
+      [
+        2048,
+        8192
+      ],
+      [
+        8192,
+        32768
+      ]
+    ],
+    "fire_threshold": 0.001,
+    "context_size": 128,
+    "sibling_blocks": [
+      1,
+      2,
+      3
+    ],
+    "freq_high_mass": 0.5,
+    "freq_mid_mass": 0.4,
+    "bos_excluded": true,
+    "min_joint": 30,
+    "local_freq_buckets": false,
+    "n_docs": 400
+  },
+  "block_values": [
+    {
+      "block": 0,
+      "n_firings": 725235,
+      "p10": 1.302734375,
+      "p50": 5.12109375,
+      "p90": 26.0
+    },
+    {
+      "block": 1,
+      "n_firings": 436246,
+      "p10": 1.13671875,
+      "p50": 2.03125,
+      "p90": 9.296875
+    },
+    {
+      "block": 2,
+      "n_firings": 712190,
+      "p10": 1.111328125,
+      "p50": 1.7705078125,
+      "p90": 7.328125
+    },
+    {
+      "block": 3,
+      "n_firings": 924468,
+      "p10": 1.1337890625,
+      "p50": 1.900390625,
+      "p90": 5.8203125
+    },
+    {
+      "block": 4,
+      "n_firings": 1024787,
+      "p10": 1.1240234375,
+      "p50": 1.8056640625,
+      "p90": 5.25
+    }
+  ],
+  "pairs": {
+    "0->1": {
+      "summary": {
+        "n_edges": 2929,
+        "child_over_parent": {
+          "p10": 0.17049352824687958,
+          "p50": 0.5535181760787964,
+          "p90": 1.7851358652114868
+        },
+        "frac_child_stronger": 0.25332877039909363,
+        "parent_shared_over_all": {
+          "p10": 0.7845380306243896,
+          "p50": 1.0017344951629639,
+          "p90": 1.272422194480896
+        },
+        "frac_parent_halved_on_child": 0.004779788199812174,
+        "mean_parent_shared": {
+          "p10": 3.926286458969116,
+          "p50": 8.722384452819824,
+          "p90": 23.49757957458496
+        },
+        "mean_child_shared": {
+          "p10": 2.468709707260132,
+          "p50": 4.926592826843262,
+          "p90": 12.423253059387207
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 96,
+            "child": 148,
+            "n_shared": 61,
+            "mean_parent_shared": 1.3525390625,
+            "mean_child_shared": 2.193359375,
+            "child_over_parent": 1.6216606498194945,
+            "parent_shared_over_all": 0.18534716589018302,
+            "parent_label": "sequences of formatting and style code in document markup",
+            "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+          },
+          {
+            "parent": 73,
+            "child": 219,
+            "n_shared": 609,
+            "mean_parent_shared": 1.4643690586090088,
+            "mean_child_shared": 18.870662689208984,
+            "child_over_parent": 12.886548359014126,
+            "parent_shared_over_all": 0.20968851707487474,
+            "parent_label": "references to formal mathematical expressions involving parentheses and their nested structures",
+            "child_label": "references to self-organization and emergent states in physical systems"
+          },
+          {
+            "parent": 73,
+            "child": 193,
+            "n_shared": 176,
+            "mean_parent_shared": 1.4799083471298218,
+            "mean_child_shared": 1.3543701171875,
+            "child_over_parent": 0.9151716184412404,
+            "parent_shared_over_all": 0.21191364628473597,
+            "parent_label": "references to formal mathematical expressions involving parentheses and their nested structures",
+            "child_label": "examples of the word \"such.\""
+          },
+          {
+            "parent": 17,
+            "child": 148,
+            "n_shared": 61,
+            "mean_parent_shared": 5.8671875,
+            "mean_child_shared": 2.193359375,
+            "child_over_parent": 0.37383488681757654,
+            "parent_shared_over_all": 0.22396580681819175,
+            "parent_label": "sequences of special characters and formatted code snippets",
+            "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+          },
+          {
+            "parent": 111,
+            "child": 148,
+            "n_shared": 64,
+            "mean_parent_shared": 1.6942138671875,
+            "mean_child_shared": 2.188812255859375,
+            "child_over_parent": 1.2919338569061172,
+            "parent_shared_over_all": 0.23911368766202568,
+            "parent_label": "segments of text that are enclosed by quotation marks",
+            "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+          },
+          {
+            "parent": 95,
+            "child": 219,
+            "n_shared": 705,
+            "mean_parent_shared": 2.396977424621582,
+            "mean_child_shared": 17.491622924804688,
+            "child_over_parent": 7.2973665688846205,
+            "parent_shared_over_all": 0.3177614708939824,
+            "parent_label": "references to color spaces, especially HSV",
+            "child_label": "references to self-organization and emergent states in physical systems"
+          },
+          {
+            "parent": 91,
+            "child": 148,
+            "n_shared": 69,
+            "mean_parent_shared": 1.1990772485733032,
+            "mean_child_shared": 3.1964163780212402,
+            "child_over_parent": 2.665730153603055,
+            "parent_shared_over_all": 0.3311904456789257,
+            "parent_label": "expressions of nested parentheses",
+            "child_label": "complex numerical relationships and patterns involving mathematical operations and derivatives"
+          },
+          {
+            "parent": 95,
+            "child": 281,
+            "n_shared": 471,
+            "mean_parent_shared": 3.0871007442474365,
+            "mean_child_shared": 2.0155959129333496,
+            "child_over_parent": 0.6529090172030343,
+            "parent_shared_over_all": 0.40924944190696355,
+            "parent_label": "references to color spaces, especially HSV",
+            "child_label": "references to the concept of a \"between\" or \"comparison\" indicating the neuron looks for the idea of relationships, comparisons, or connections between entities"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 106,
+            "child": 223,
+            "n_shared": 30,
+            "mean_parent_shared": 2.8213541507720947,
+            "mean_child_shared": 71.02692413330078,
+            "child_over_parent": 25.174763726086454,
+            "parent_shared_over_all": 0.5417946225166218,
+            "parent_label": "code snippets involving C preprocessor directives and language syntax",
+            "child_label": "URLs and web addresses within the document"
+          },
+          {
+            "parent": 73,
+            "child": 219,
+            "n_shared": 609,
+            "mean_parent_shared": 1.4643690586090088,
+            "mean_child_shared": 18.870662689208984,
+            "child_over_parent": 12.886548359014126,
+            "parent_shared_over_all": 0.20968851707487474,
+            "parent_label": "references to formal mathematical expressions involving parentheses and their nested structures",
+            "child_label": "references to self-organization and emergent states in physical systems"
+          },
+          {
+            "parent": 90,
+            "child": 223,
+            "n_shared": 30,
+            "mean_parent_shared": 7.176562309265137,
+            "mean_child_shared": 71.05168914794922,
+            "child_over_parent": 9.900518672598935,
+            "parent_shared_over_all": 1.1054679905244815,
+            "parent_label": "expressions of structured mathematical or formal notation",
+            "child_label": "URLs and web addresses within the document"
+          },
+          {
+            "parent": 124,
+            "child": 237,
+            "n_shared": 122,
+            "mean_parent_shared": 5.016857624053955,
+            "mean_child_shared": 40.51512908935547,
+            "child_over_parent": 8.075798064330266,
+            "parent_shared_over_all": 1.348758360183327,
+            "parent_label": "references to legal proceedings and related information",
+            "child_label": "questions or prompts asking for specific information"
+          },
+          {
+            "parent": 121,
+            "child": 395,
+            "n_shared": 86,
+            "mean_parent_shared": 3.552518606185913,
+            "mean_child_shared": 28.360862731933594,
+            "child_over_parent": 7.98331152511053,
+            "parent_shared_over_all": 0.6658044027871987,
+            "parent_label": "references or mentions of texting and communication",
+            "child_label": "references to specific punctuation marks, primarily periods and dots"
+          },
+          {
+            "parent": 65,
+            "child": 395,
+            "n_shared": 82,
+            "mean_parent_shared": 4.53862190246582,
+            "mean_child_shared": 34.916683197021484,
+            "child_over_parent": 7.6932346309903785,
+            "parent_shared_over_all": 1.1125762573142206,
+            "parent_label": "mathematical expressions involving complex notation and algebraic structures",
+            "child_label": "references to specific punctuation marks, primarily periods and dots"
+          },
+          {
+            "parent": 114,
+            "child": 204,
+            "n_shared": 87,
+            "mean_parent_shared": 4.100642204284668,
+            "mean_child_shared": 31.31311798095703,
+            "child_over_parent": 7.636149759234947,
+            "parent_shared_over_all": 0.7182882967386205,
+            "parent_label": "descriptive imagery related to physical appearance and facial features",
+            "child_label": "the concept of the number one"
+          },
+          {
+            "parent": 124,
+            "child": 395,
+            "n_shared": 142,
+            "mean_parent_shared": 3.8361024856567383,
+            "mean_child_shared": 28.345523834228516,
+            "child_over_parent": 7.389146650855388,
+            "parent_shared_over_all": 1.031317945568615,
+            "parent_label": "references to legal proceedings and related information",
+            "child_label": "references to specific punctuation marks, primarily periods and dots"
+          }
+        ]
+      }
+    },
+    "1->2": {
+      "summary": {
+        "n_edges": 1861,
+        "child_over_parent": {
+          "p10": 0.514701783657074,
+          "p50": 1.0582880973815918,
+          "p90": 2.2404661178588867
+        },
+        "frac_child_stronger": 0.5507791638374329,
+        "parent_shared_over_all": {
+          "p10": 0.19959871470928192,
+          "p50": 0.9100813269615173,
+          "p90": 1.298015832901001
+        },
+        "frac_parent_halved_on_child": 0.40139710903167725,
+        "mean_parent_shared": {
+          "p10": 1.1787109375,
+          "p50": 3.0479307174682617,
+          "p90": 6.532967567443848
+        },
+        "mean_child_shared": {
+          "p10": 1.1997994184494019,
+          "p50": 2.231114625930786,
+          "p90": 8.6234712600708
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 403,
+            "child": 1845,
+            "n_shared": 64,
+            "mean_parent_shared": 1.13702392578125,
+            "mean_child_shared": 1.3534698486328125,
+            "child_over_parent": 1.190361801492297,
+            "parent_shared_over_all": 0.05505316985067633,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "references to network-related technology or terminology"
+          },
+          {
+            "parent": 403,
+            "child": 668,
+            "n_shared": 61,
+            "mean_parent_shared": 1.138671875,
+            "mean_child_shared": 1.1669921875,
+            "child_over_parent": 1.0248713550600344,
+            "parent_shared_over_all": 0.055132961336315296,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "references to specific gene names"
+          },
+          {
+            "parent": 403,
+            "child": 678,
+            "n_shared": 61,
+            "mean_parent_shared": 1.138671875,
+            "mean_child_shared": 1.2470703125,
+            "child_over_parent": 1.0951972555746141,
+            "parent_shared_over_all": 0.055132961336315296,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "references to the defendant"
+          },
+          {
+            "parent": 403,
+            "child": 1846,
+            "n_shared": 61,
+            "mean_parent_shared": 1.138671875,
+            "mean_child_shared": 1.306640625,
+            "child_over_parent": 1.1475128644939965,
+            "parent_shared_over_all": 0.055132961336315296,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "judgments and related legal final decisions"
+          },
+          {
+            "parent": 403,
+            "child": 2036,
+            "n_shared": 61,
+            "mean_parent_shared": 1.138671875,
+            "mean_child_shared": 1.0888671875,
+            "child_over_parent": 0.9562607204116638,
+            "parent_shared_over_all": 0.055132961336315296,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "references to executing commands or scripts"
+          },
+          {
+            "parent": 403,
+            "child": 1647,
+            "n_shared": 62,
+            "mean_parent_shared": 1.1546119451522827,
+            "mean_child_shared": 2.2271926403045654,
+            "child_over_parent": 1.9289534026177246,
+            "parent_shared_over_all": 0.055904758102968514,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "references to filtering or filtering devices"
+          },
+          {
+            "parent": 403,
+            "child": 955,
+            "n_shared": 63,
+            "mean_parent_shared": 1.1644965410232544,
+            "mean_child_shared": 1.8383556604385376,
+            "child_over_parent": 1.5786699192967604,
+            "parent_shared_over_all": 0.05638335694601044,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "calculations involving the variable l"
+          },
+          {
+            "parent": 403,
+            "child": 1791,
+            "n_shared": 66,
+            "mean_parent_shared": 1.1871596574783325,
+            "mean_child_shared": 1.6623165607452393,
+            "child_over_parent": 1.4002468415041969,
+            "parent_shared_over_all": 0.05748067457605925,
+            "parent_label": "patterns indicative of structured, formatted data, such as tables, listings, or code blocks",
+            "child_label": "structures related to tensor products in mathematical decomposition"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 140,
+            "child": 565,
+            "n_shared": 35,
+            "mean_parent_shared": 1.5686384439468384,
+            "mean_child_shared": 46.272403717041016,
+            "child_over_parent": 29.49845064399633,
+            "parent_shared_over_all": 0.2393212299452169,
+            "parent_label": "references to physical or structural components and their functions, particularly in technical or scientific contexts",
+            "child_label": "inquiries about methods or processes"
+          },
+          {
+            "parent": 352,
+            "child": 565,
+            "n_shared": 49,
+            "mean_parent_shared": 1.7983498573303223,
+            "mean_child_shared": 47.90276336669922,
+            "child_over_parent": 26.637065736369895,
+            "parent_shared_over_all": 0.376012585421083,
+            "parent_label": "references to specific chemical compounds or ingredients, especially those associated with powders, acids, or complex chemical names",
+            "child_label": "inquiries about methods or processes"
+          },
+          {
+            "parent": 184,
+            "child": 2015,
+            "n_shared": 116,
+            "mean_parent_shared": 1.964591145515442,
+            "mean_child_shared": 32.52853775024414,
+            "child_over_parent": 16.557408305792684,
+            "parent_shared_over_all": 0.5821786448813718,
+            "parent_label": "references to technical terminology and concepts related to scientific processes or procedures",
+            "child_label": "patterns that represent optional or variable components in regular expressions"
+          },
+          {
+            "parent": 361,
+            "child": 662,
+            "n_shared": 30,
+            "mean_parent_shared": 3.106738328933716,
+            "mean_child_shared": 34.78642654418945,
+            "child_over_parent": 11.197089313965085,
+            "parent_shared_over_all": 0.9579257804453715,
+            "parent_label": "references to specific technical and statistical details",
+            "child_label": "code snippets related to retrieving or processing list items from data structures"
+          },
+          {
+            "parent": 267,
+            "child": 1338,
+            "n_shared": 126,
+            "mean_parent_shared": 2.296231746673584,
+            "mean_child_shared": 25.566335678100586,
+            "child_over_parent": 11.134039808977048,
+            "parent_shared_over_all": 0.6583109632141666,
+            "parent_label": "links to or references external websites or resources",
+            "child_label": "references to the word \"that.\""
+          },
+          {
+            "parent": 139,
+            "child": 1760,
+            "n_shared": 36,
+            "mean_parent_shared": 2.553032875061035,
+            "mean_child_shared": 27.55181121826172,
+            "child_over_parent": 10.791796489343303,
+            "parent_shared_over_all": 0.870149894959033,
+            "parent_label": "references or mentions of specific projects, software, or technical configurations",
+            "child_label": "references to the act of establishing or confirming a fact or rule"
+          },
+          {
+            "parent": 134,
+            "child": 565,
+            "n_shared": 31,
+            "mean_parent_shared": 3.5600428581237793,
+            "mean_child_shared": 38.30411911010742,
+            "child_over_parent": 10.759454488785153,
+            "parent_shared_over_all": 1.0789650509711726,
+            "parent_label": "references or citations in a text",
+            "child_label": "inquiries about methods or processes"
+          },
+          {
+            "parent": 267,
+            "child": 2005,
+            "n_shared": 100,
+            "mean_parent_shared": 2.397822380065918,
+            "mean_child_shared": 25.113525390625,
+            "child_over_parent": 10.473471929949461,
+            "parent_shared_over_all": 0.6874361714249351,
+            "parent_label": "links to or references external websites or resources",
+            "child_label": "references to the word \"that,\" indicating it detects when \"that\" is used to introduce a clause or phrase"
+          }
+        ]
+      }
+    },
+    "2->3": {
+      "summary": {
+        "n_edges": 16729,
+        "child_over_parent": {
+          "p10": 0.6117410659790039,
+          "p50": 0.9567781090736389,
+          "p90": 1.4338743686676025
+        },
+        "frac_child_stronger": 0.44109031558036804,
+        "parent_shared_over_all": {
+          "p10": 0.2372385412454605,
+          "p50": 0.4531860947608948,
+          "p90": 0.8675866723060608
+        },
+        "frac_parent_halved_on_child": 0.563213586807251,
+        "mean_parent_shared": {
+          "p10": 1.1039258241653442,
+          "p50": 1.4326171875,
+          "p90": 2.2460262775421143
+        },
+        "mean_child_shared": {
+          "p10": 1.1229051351547241,
+          "p50": 1.340410828590393,
+          "p90": 1.8804813623428345
+        }
+      },
+      "extremes": {
+        "weakest_parent_on_child": [
+          {
+            "parent": 1338,
+            "child": 2092,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.13671875,
+            "child_over_parent": 0.7202970297029703,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to property-like entities within code, such as property names or property objects"
+          },
+          {
+            "parent": 1338,
+            "child": 2179,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.5439453125,
+            "child_over_parent": 0.9783415841584159,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to court decisions or rulings"
+          },
+          {
+            "parent": 1338,
+            "child": 2261,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.146484375,
+            "child_over_parent": 0.7264851485148515,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to chest-related medical issues or findings"
+          },
+          {
+            "parent": 1338,
+            "child": 2310,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.1083984375,
+            "child_over_parent": 0.7023514851485149,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "mathematical expressions and array-based structures in documents"
+          },
+          {
+            "parent": 1338,
+            "child": 2474,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.8203125,
+            "child_over_parent": 1.1534653465346534,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to the technique of pattern lithography"
+          },
+          {
+            "parent": 1338,
+            "child": 2485,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.1533203125,
+            "child_over_parent": 0.7308168316831684,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to specific types of transportation, specifically taxis and cabs"
+          },
+          {
+            "parent": 1338,
+            "child": 2578,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 2.06640625,
+            "child_over_parent": 1.3094059405940595,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to measures of diversity or biodiversity"
+          },
+          {
+            "parent": 1338,
+            "child": 2595,
+            "n_shared": 61,
+            "mean_parent_shared": 1.578125,
+            "mean_child_shared": 1.6748046875,
+            "child_over_parent": 1.0612623762376239,
+            "parent_shared_over_all": 0.07500147756333671,
+            "parent_label": "references to the word \"that.\"",
+            "child_label": "references to the scientific term \"inflammatory marker\" or similar, specifically detecting mentions of \"IL-9\" as an indicator of inflammatory response"
+          }
+        ],
+        "strongest_child_over_parent": [
+          {
+            "parent": 737,
+            "child": 3180,
+            "n_shared": 32,
+            "mean_parent_shared": 1.75372314453125,
+            "mean_child_shared": 23.820556640625,
+            "child_over_parent": 13.58284898896739,
+            "parent_shared_over_all": 0.6973895562148859,
+            "parent_label": "ambiguous or uncertain status indicators, often relating to conditions or situations that are yet to be resolved or determined",
+            "child_label": "references to the letter \"t\" or words beginning with \"t.\""
+          },
+          {
+            "parent": 1939,
+            "child": 2607,
+            "n_shared": 34,
+            "mean_parent_shared": 1.3935546875,
+            "mean_child_shared": 15.4375,
+            "child_over_parent": 11.077785564120532,
+            "parent_shared_over_all": 0.31049384578575606,
+            "parent_label": "references to cardiac resynchronization therapy (CRT) and its associated procedures or outcomes",
+            "child_label": "expressions of the third person singular present tense form of the verb \"to be.\""
+          },
+          {
+            "parent": 763,
+            "child": 2607,
+            "n_shared": 35,
+            "mean_parent_shared": 1.5098772048950195,
+            "mean_child_shared": 15.562723159790039,
+            "child_over_parent": 10.307277379468816,
+            "parent_shared_over_all": 0.4086893345295443,
+            "parent_label": "references to gene expression levels",
+            "child_label": "expressions of the third person singular present tense form of the verb \"to be.\""
+          },
+          {
+            "parent": 2021,
+            "child": 7357,
+            "n_shared": 55,
+            "mean_parent_shared": 1.3778941631317139,
+            "mean_child_shared": 13.733522415161133,
+            "child_over_parent": 9.967037224359252,
+            "parent_shared_over_all": 0.26131602411991955,
+            "parent_label": "references to the Android OS or related error conditions",
+            "child_label": "references to specific rugby players and related sports achievements"
+          },
+          {
+            "parent": 1811,
+            "child": 5239,
+            "n_shared": 54,
+            "mean_parent_shared": 1.4662362337112427,
+            "mean_child_shared": 13.950376510620117,
+            "child_over_parent": 9.5144126095628,
+            "parent_shared_over_all": 0.33692332160444527,
+            "parent_label": "enzymes involved in phosphate metabolism, specifically phosphatases",
+            "child_label": "references to technological or system-related issues and support scenarios"
+          },
+          {
+            "parent": 615,
+            "child": 6666,
+            "n_shared": 39,
+            "mean_parent_shared": 1.4495192766189575,
+            "mean_child_shared": 12.168068885803223,
+            "child_over_parent": 8.39455472036603,
+            "parent_shared_over_all": 0.7058390862406108,
+            "parent_label": "code snippets related to object-oriented class definitions and interface implementation",
+            "child_label": "references to URL paths or website addresses"
+          },
+          {
+            "parent": 541,
+            "child": 6666,
+            "n_shared": 39,
+            "mean_parent_shared": 1.4152143001556396,
+            "mean_child_shared": 11.879657745361328,
+            "child_over_parent": 8.39424654206423,
+            "parent_shared_over_all": 0.8001061894798819,
+            "parent_label": "references to rules or regulations",
+            "child_label": "references to URL paths or website addresses"
+          },
+          {
+            "parent": 961,
+            "child": 6666,
+            "n_shared": 45,
+            "mean_parent_shared": 1.433984398841858,
+            "mean_child_shared": 11.89084243774414,
+            "child_over_parent": 8.29217001757317,
+            "parent_shared_over_all": 0.6144991486300125,
+            "parent_label": "statistical correlations and associations",
+            "child_label": "references to URL paths or website addresses"
+          }
+        ]
+      }
+    }
+  }
+}
