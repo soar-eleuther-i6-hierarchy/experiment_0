@@ -58,10 +58,10 @@ BASE_N_LAYERS = 26
 # The matryoshka SAE is released for layers 0-24; the SAE id, hook name, the
 # Neuronpedia / dataset "source" name, and the per-layer output dir are all
 # derived from this single number so nothing has to be edited by hand per layer.
-LAYER = int(os.environ.get("EXP0_LAYER", "6"))
+LAYER = int(os.environ.get("EXP0_LAYER", "12"))
 SAE_ID = f"blocks.{LAYER}.hook_resid_post"
 HOOK_NAME = SAE_ID
-SAE_SOURCE = f"{LAYER}-res-matryoshka-dc"  # e.g. "6-res-matryoshka-dc"
+SAE_SOURCE = f"{LAYER}-res-matryoshka-dc"  # e.g. "12-res-matryoshka-dc"
 MODEL_KWARGS = {"center_writing_weights": False}
 PREPEND_BOS = True
 
