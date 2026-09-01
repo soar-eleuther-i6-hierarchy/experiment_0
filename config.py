@@ -1,20 +1,15 @@
 """
 Central configuration for the hierarchy-metric suite.
 
-The suite treats the metrics as *competing measurements of the same edge*. The
-edges come from the warm-up task's crude activation-coverage graph; here we
-add the richer signals:
+Everything tunable lives here: the model/SAE pair, the corpus slice, the block
+structure, and every metric threshold. The thresholds are global and identical
+for every SAE source and layer — holding them fixed is what makes cross-source
+comparisons meaningful — and reporting/make_report_tables.py generates the
+paper's threshold macros from this file, so a value changed here re-numbers
+the paper on the next build.
 
-    1. Activation coverage, three legs (forward / reverse / joint-child)
-    2. Reconstruction condition (Tree SAE)   - pair must improve reconstruction
-    3. Child diversity / sibling redundancy  - co-activation among children
-    4. Out-degree distribution               - superparent / poly-parenting detector
-    5. Token-frequency-controlled coverage   - condition on token frequency
-
-The SAE / model / block structure is identical to the warm-up task
-(gemma-2-2b, layer-6 residual Matryoshka SAE). We deliberately reuse the
-warm-up's cached statistics where possible so both stages describe the
-SAME sampled corpus.
+The metric implementations are pure functions in metrics/; the pipeline stages
+sit at the repo root; per-run outputs land under outputs/<source>/.
 """
 
 from __future__ import annotations
@@ -24,17 +19,7 @@ import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Where the warm-up task lives (its outputs are our starting point)
-# ---------------------------------------------------------------------------
-# NOTE for collaborators: adjust WARMUP_DIR if your checkout differs.
-WARMUP_DIR = Path(
-    "/Users/ruqiya/Codeing-repos/Research/eleuther/I-6-Hierarchy-in-SAEs/Warm-up task"
-)
-WARMUP_ACT_STATS = WARMUP_DIR / "outputs" / "activation_stats.pt"   # stage 01 warm-up
-WARMUP_GRAPH = WARMUP_DIR / "outputs" / "parent_child_graph.pt"     # stage 02 warm-up
-
-# ---------------------------------------------------------------------------
-# Model + SAE (must match the warm-up exactly)
+# Model + SAE
 # ---------------------------------------------------------------------------
 MODEL_NAME = "google/gemma-2-2b"
 SAE_RELEASE = "gemma-2-2b-res-matryoshka-dc"
@@ -120,7 +105,7 @@ def block_of(feature_idx: int) -> int:
 
 
 # ---------------------------------------------------------------------------
-# Dataset (same slice as the warm-up so counts are comparable)
+# Dataset (one fixed slice, so counts are comparable across layers and runs)
 # ---------------------------------------------------------------------------
 DATASET = "NeelNanda/pile-10k"
 N_DOCS = 400
@@ -131,13 +116,13 @@ BATCH_DOCS = 8
 # Thresholds
 # ---------------------------------------------------------------------------
 FIRE_THRESHOLD = 1e-3     # feature "fires" above this (post-JumpReLU)
-EDGE_TAU = 0.5            # reverse-coverage edge criterion (same as warm-up)
-MIN_FIRE_COUNT = 20       # rare-feature guard (same as warm-up)
+EDGE_TAU = 0.5            # reverse-coverage edge criterion
+MIN_FIRE_COUNT = 20       # rare-feature guard
 # Joint-support guard: a child firing MIN_FIRE_COUNT times
 # inside a near-always-on parent hits R = 1.0 by chance; requiring a minimum
 # co-fire count kills those. Excluded edges are REPORTED, not silently dropped.
 # NOTE: any value <= EDGE_TAU * MIN_FIRE_COUNT (= 10) is vacuous — every kept
-# edge already satisfies it. 30 matches the warm-up task's guard.
+# edge already satisfies it.
 # The converse also holds: with MIN_JOINT = 30 > MIN_FIRE_COUNT, the per-endpoint
 # guard is subsumed in the joint gate (cofire <= min(fire_p, fire_c), so
 # co-fire >= 30 forces both endpoints >= 30). MIN_FIRE_COUNT still binds on its
@@ -148,7 +133,7 @@ MIN_FIRE_COUNT = 20       # rare-feature guard (same as warm-up)
 MIN_JOINT = 30
 
 # Which adjacent block pairs to compute. B3->B4 is the 6144 x 24576 monster;
-# the warm-up skipped it on the 4 GB GPU. On the A40 it fits (~8-10 GB extra):
+# it does not fit on a 4 GB GPU. On the A40 it fits (~8-10 GB extra):
 # enable with EXP0_B3B4=1. Caveat: B4 is 24576 mostly-rare features, so many
 # B3->B4 edges are unsupported (dropped by MIN_FIRE_COUNT) — a thin, noisy pair.
 INCLUDE_B3_B4 = os.environ.get("EXP0_B3B4", "0") == "1"
@@ -367,7 +352,9 @@ SOURCES = {
     },
     SOURCE_NAME: {
         "label": "gemma-2-2b",
-        "layers": [1, 3, 6, 12, 18, 24],
+        # NAV_LAYERS, not a second literal: the reporting scripts iterate
+        # NAV_LAYERS and the nav bar reads this entry — one list, one truth.
+        "layers": NAV_LAYERS,
         "pages": NAV_PAGES,
     },
 }
