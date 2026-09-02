@@ -76,6 +76,13 @@ PAPER_DIR = C.OUT_DIR / "paper_figuers"
 # cross-architecture results land.
 GRAPH_LAYER = 12
 
+# Which PCFG layer that same figure's middle panel draws. The PCFG base model
+# has four blocks, so there is no exact middle; L2 is the upper of the two
+# middle layers and the only one of them that carries probe-confirmed edges
+# (L1 scores 327 edges and confirms none, which would read as a dead probe).
+# An editorial choice like GRAPH_LAYER, not a computed one.
+PCFG_GRAPH_LAYER = 2
+
 # --- palette ---------------------------------------------------------------
 # Categorical slots are Okabe-Ito, assigned in fixed order and never cycled. The
 # repo's screen palette (#2E9E5B green beside #D98A3D orange) separates by only
@@ -113,8 +120,8 @@ def _text_on(bg):
     return "white" if 1.05 / (L + 0.05) > (L + 0.05) / (_lum(INK) + 0.05) else INK
 
 
-def _fit_width(fig, t, avail_in, floor=5.2):
-    """Shrink a text artist until it fits `avail_in` inches.
+def _fit_width(fig, t, avail_in, floor=5.2, wrap=False):
+    """Fit a text artist into `avail_in` inches: wrap first, then shrink.
 
     Header labels sit over a column group, so a name wider than its group runs
     into the neighbouring one -- "Reconstruction" printed straight through
@@ -122,6 +129,13 @@ def _fit_width(fig, t, avail_in, floor=5.2):
     width is measured with the renderer rather than estimated from a character
     count: the names are mixed-case and some carry mathtext, and a per-character
     guess is wrong in both directions on exactly those.
+
+    Shrinking alone is not enough over a ONE-column group: "1 Activation
+    coverage" hit the 5.2pt floor and still overhung its neighbour, because no
+    readable size fits twenty-one characters into one cell. With `wrap`, the
+    label is broken across lines until it fits or it runs out of spaces, and
+    only the remainder is taken out of the font size -- two readable lines beat
+    one illegible one.
     """
     try:
         r = fig.canvas.get_renderer()
@@ -129,6 +143,14 @@ def _fit_width(fig, t, avail_in, floor=5.2):
         fig.canvas.draw()
         r = fig.canvas.get_renderer()
     lim = avail_in * fig.dpi * 0.86              # visible air on either side
+    if wrap:
+        words = t.get_text().split()
+        lines = 1
+        while t.get_window_extent(r).width > lim and lines < len(words):
+            lines += 1
+            per = -(-len(words) // lines)          # ceiling, no new import
+            t.set_text("\n".join(" ".join(words[i:i + per])
+                                 for i in range(0, len(words), per)))
     while t.get_fontsize() > floor and t.get_window_extent(r).width > lim:
         t.set_fontsize(t.get_fontsize() - 0.2)
     return t
@@ -988,7 +1010,7 @@ def calibration_toy_tree_recovered(tt):
     n_tp = len(found & set(truth))
     heads = (("before — the tree as constructed",
               f"{len(truth)} edges over {tt['n_features']} features"),
-             ("after — the tree the metric battery recovered",
+             ("after — the tree the metrics recovered",
               f"{n_tp}/{len(truth)} recovered, {len(spurious)} false, "
               f"{len(recovered)}/{tt['n_features']} features learned"))
 
@@ -1341,7 +1363,7 @@ def calibration_toy_world_before_after(w):
     fig.subplots_adjust(left=0.02, right=0.99,
                         top=0.90 if TITLES else 0.985, bottom=0.22)
     heads = (("before: the world as declared", "the planted structures as injected"),
-             ("after: what the metric battery recovered",
+             ("after: what the metrics recovered",
               f"{len(w['recovered'])}/{len(w['true_edges'])} true edges recovered, "
               f"{len(w['candidates']) - len(w['survivors'])} candidates rejected"))
     for ax, (tag, detail) in zip(axes, heads):
@@ -1937,7 +1959,7 @@ def cross_source_funnel_shares(runs):
     ax.set_ylabel("% of that run's candidate edges")
     ax.set_ylim(-4, 108)
     ax.legend(fontsize=8.5, frameon=False, loc="center right")
-    _title(ax, "The same battery, unchanged, on two SAE sources — block pair B0→B1, every "
+    _title(ax, "The same metric set, unchanged, on two SAE sources — block pair B0→B1, every "
                "graded layer",
            "one marker per run, tick = source mean; shares rather than counts, because the "
            "dictionaries differ in size and in block count",
@@ -2031,7 +2053,7 @@ def cross_source_layer_response(rows):
                    label="the two sources at the same layer index"),
     ], fontsize=8, frameon=False, loc="upper left", bbox_to_anchor=(0.02, 0.99),
         labelspacing=0.9)
-    _title(fig, "Two base models, one battery: the shape of B0→B1 agrees, its strength does not",
+    _title(fig, "Two base models, one metric set: the shape of B0→B1 agrees, its strength does not",
            f"{n_agree} of {len(panels)} measures agree to within {gaps[n_agree - 1]:.1f} points "
            f"at the same layer index — across a 2.6B-parameter language model and a "
            f"{oth[0]['n_layers']}-block transformer on synthetic grammar, with dictionaries "
@@ -2380,7 +2402,8 @@ def sres_null_rate_vs_dictionary_size(observed):
 #     and a location claim wants the whole map on one canvas, not a bar chart
 #     per pair.
 # ---------------------------------------------------------------------------
-def tangle_lives_in_top_block_pair(layers, pcfg):
+def tangle_lives_in_top_block_pair(layers, pcfg, name="tangle_lives_in_top_block_pair",
+                                   in_block=None):
     """The WHOLE battery per block pair AND per layer, one panel per source.
 
     The earlier version averaged each cell over a source's graded layers, which
@@ -2401,60 +2424,72 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
     per-pair number the battery emits is a column now, grouped under the metric
     that emits it, so the header names both the instrument and its output
     ("Out-degree / superparent" -> "fan-out Gini") instead of a bare quantity.
-    The panels stack vertically for the same reason: 17 columns side by side
+    The panels stack vertically for the same reason: 19 columns side by side
     halve at \\textwidth, and a cell nobody can read is not evidence.
     """
-    # (metric family, what it emits, reader, format). Families follow the battery
-    # order of the Metrics section, so the figure and the section can be read
-    # against each other; the battery's numbering is deliberately NOT carried
-    # here -- "2b" is a cross-reference the figure cannot resolve on its own, and
-    # it competed for width with the name that actually identifies the metric.
-    # The family is drawn once over its own columns; the second element is the
-    # column's own header.
+    # (metric family, what it emits, reader, format). Family names and their
+    # order are the Metrics table's, numbers included, so a reader can carry a
+    # row of the table straight onto a column group here. The family is drawn
+    # once over its own columns; the second element is the column's own header.
+    # Metric 1 is named as the Metrics section names it, "Activation
+    # coverage", rather than split into its reverse and forward halves: only
+    # reverse gates, forward is reported but not gated on, and no per-pair
+    # number for either mean is persisted -- only the candidate set they
+    # produce, which is the column here.
     COLS = [
-        ("Coverage", "candidates",
-         lambda q, s: q["n_candidate_edges"], "{:,.0f}"),
-        ("Joint-child", "R$_{\\rm supp}$",
-         lambda q, s: q["joint_child"]["r_supp_mean"], "{:.2f}"),
-        ("Joint-child", "R$_{\\rm mass}$",
-         lambda q, s: q["joint_child"]["r_mass_mean"], "{:.2f}"),
-        ("Joint-child", "split\nchildren",
-         lambda q, s: q["joint_child"]["n_share_energy_ge_09"], "{:,.0f}"),
-        ("Joint-child", "mean\ncoverage",
-         lambda q, s: q["joint_child_cov_mean"], "{:.2f}"),
-        ("Reconstruction\nablation", "% pass",
-         lambda q, s: 100 * q["reconstruction"]["frac_pass"], "{:.0f}"),
-        ("Probe-based\n$S_{\\rm res}$", "% pass",
-         lambda q, s: 100 * s["sres"]["frac_pass"], "{:.1f}"),
-        ("Siblings", "mean\nJaccard",
-         lambda q, s: q["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
-        ("Out-degree / superparent", "multi-\nparented %",
-         lambda q, s: 100 * q["degree"]["poly_frac"], "{:.0f}"),
-        ("Out-degree / superparent", "fan-out\nGini",
-         lambda q, s: q["degree"]["outdeg_gini"], "{:.2f}"),
-        ("Out-degree / superparent", "max\nfan-out",
-         lambda q, s: q["degree"]["max_outdeg"], "{:,.0f}"),
-        ("Out-degree / superparent", "top-1 edge\nshare %",
-         lambda q, s: 100 * q["degree"]["top1_edge_share"], "{:.0f}"),
-        ("Out-degree / superparent", "super-\nparents",
-         lambda q, s: q["n_superparents"], "{:.0f}"),
-        ("Frequency control", "% freq-\ndriven",
-         lambda q, s: 100 * q["freq_control"]["frac_freq_driven"], "{:.1f}"),
-        ("Frequency control", "mean\nsurvival",
-         lambda q, s: q["freq_control"]["mean_survival"], "{:.2f}"),
-        ("Independence null", "% at\nchance",
-         lambda q, s: 100 * q["independence_null"]["frac_chance_level"], "{:.0f}"),
-        ("Independence null", "mean\nPMI",
-         lambda q, s: q["independence_null"]["mean_edge_pmi"], "{:.2f}"),
+        ("1 Activation coverage", "candidates",
+         lambda q, s, b: q["n_candidate_edges"], "{:,.0f}"),
+        ("2 Independence null", "% at\nchance",
+         lambda q, s, b: 100 * q["independence_null"]["frac_chance_level"], "{:.0f}"),
+        ("2 Independence null", "mean\nPMI",
+         lambda q, s, b: q["independence_null"]["mean_edge_pmi"], "{:.2f}"),
+        ("3 Frequency control", "% freq-\ndriven",
+         lambda q, s, b: 100 * q["freq_control"]["frac_freq_driven"], "{:.1f}"),
+        ("3 Frequency control", "mean\nsurvival",
+         lambda q, s, b: q["freq_control"]["mean_survival"], "{:.2f}"),
+        ("4 Reconstruction", "% pass",
+         lambda q, s, b: 100 * q["reconstruction"]["frac_pass"], "{:.0f}"),
+        ("5 Probe $S_{\\rm res}$", "% pass",
+         lambda q, s, b: 100 * s["sres"]["frac_pass"], "{:.1f}"),
+        ("6 Out-degree", "multi-\nparented %",
+         lambda q, s, b: 100 * q["degree"]["poly_frac"], "{:.0f}"),
+        ("6 Out-degree", "fan-out\nGini",
+         lambda q, s, b: q["degree"]["outdeg_gini"], "{:.2f}"),
+        ("6 Out-degree", "max\nfan-out",
+         lambda q, s, b: q["degree"]["max_outdeg"], "{:,.0f}"),
+        ("6 Out-degree", "top-1 edge\nshare %",
+         lambda q, s, b: 100 * q["degree"]["top1_edge_share"], "{:.0f}"),
+        ("6 Out-degree", "super-\nparents",
+         lambda q, s, b: q["n_superparents"], "{:.0f}"),
+        ("7 Sibling redundancy", "mean\nJaccard",
+         lambda q, s, b: q["sibling_redundancy"]["mean_redundancy"], "{:.2f}"),
+        ("8 Joint-child", "R$_{\\rm supp}$",
+         lambda q, s, b: q["joint_child"]["r_supp_mean"], "{:.2f}"),
+        ("8 Joint-child", "R$_{\\rm mass}$",
+         lambda q, s, b: q["joint_child"]["r_mass_mean"], "{:.2f}"),
+        ("8 Joint-child", "split\nchildren",
+         lambda q, s, b: q["joint_child"]["n_share_energy_ge_09"], "{:,.0f}"),
+        ("8 Joint-child", "mean\ncoverage",
+         lambda q, s, b: q["joint_child_cov_mean"], "{:.2f}"),
+        # Metric 9 is a WITHIN-block quantity while every row here is a
+        # BETWEEN-block pair, so it cannot be read off the pair report. Each
+        # row takes its own parent block's numbers -- row Bk->Bk+1 reports
+        # block Bk -- which is the only reading that keeps one value per row.
+        ("9 In-block coverage", "same-level\nedges",
+         lambda q, s, b: b["n_edges"], "{:,.0f}"),
+        ("9 In-block coverage", "dupli-\ncates",
+         lambda q, s, b: b["n_duplicates"], "{:,.0f}"),
     ]
 
-    def safe(fn, q, s):
+    def safe(fn, q, s, b):
         # a sub-metric with nothing to score is absent, never zero
         try:
-            v = fn(q, s)
+            v = fn(q, s, b)
             return float(v) if v is not None else np.nan
         except (TypeError, KeyError, ZeroDivisionError):
             return np.nan
+
+    ib_by_label = in_block or {}
 
     def source_grid(named_reports):
         """[(block pair, layer label, row values, note)] for one source, pair-major.
@@ -2475,13 +2510,16 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
             if pr in pairs:
                 for lab, r in named_reports:
                     q = _pair(r, pr)
+                    # metric 9 is per BLOCK: this row's parent block is k
+                    b = (ib_by_label.get(lab) or {}).get(k)
                     # the strict test lives in second_pass.json, which every
                     # metrics_report.json embeds -- read from the report so the
                     # probe column costs this figure no extra argument
                     s = (r.get("second_pass") or {}).get(pr) or {}
                     # a layer where the pair proposes nothing is shown as an
                     # empty row rather than dropped: the absence is a measurement
-                    vals = [safe(fn, q, s) if q else np.nan for _, _, fn, _ in COLS]
+                    vals = [safe(fn, q, s, b) if q else np.nan
+                            for _, _, fn, _ in COLS]
                     if q and q["n_candidate_edges"] == 0:
                         vals = [0.0] + [np.nan] * (len(COLS) - 1)
                     out.append((name, lab, vals, None))
@@ -2515,10 +2553,17 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
 
     # Geometry in inches, placed by hand rather than by tight_layout: the two
     # header rows and the block-pair labels all live OUTSIDE the axes, which
-    # tight_layout does not see, and at 17 columns a guessed margin is the
+    # tight_layout does not see, and at 19 columns a guessed margin is the
     # difference between a readable header and a clipped one.
     NC, CELL_W, CELL_H = len(COLS), 0.64, 0.235
-    ML, MR, MT, MB, GAP = 1.40, 0.22, 1.18, 0.62, 1.42
+    # The left margin carries two things: the block-pair label and, when a
+    # panel spans several layers, the layer tick beside it. Pinned to one
+    # layer there is no tick, so the margin sized for both left about two
+    # thirds of an inch of dead white down the whole figure. The margin and
+    # the label's own offset both follow whether any panel is actually ticked.
+    TICKED = any(len({lay for _, lay, _, _ in g if lay}) > 1 for _, g in panels)
+    LBL_X = -1.85 if TICKED else -1.15
+    ML, MR, MT, MB, GAP = (1.40 if TICKED else 0.92), 0.22, 1.18, 0.20, 1.08
     rows = [len(g) for _, g in panels]
     W = ML + MR + NC * CELL_W
     H = MT + MB + sum(rows) * CELL_H + GAP * (len(panels) - 1)
@@ -2529,6 +2574,13 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
         axes.append(fig.add_axes([ML / W, (top - h) / H, NC * CELL_W / W, h / H]))
         top -= h + GAP
     axes = np.array(axes)
+
+    # every group header is fitted independently, which left them at a
+    # spread of sizes -- a wide group kept 7pt beside a one-column group at
+    # 5.4pt, and the size difference reads as emphasis the figure does not
+    # mean. They are collected here and levelled to the smallest fit once both
+    # panels are drawn, so the header row is one typographic voice.
+    heads = []
 
     for ax, (src, grid) in zip(axes, panels):
         M = np.array([v for _, _, v, _ in grid], dtype=float)
@@ -2578,12 +2630,28 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
         for a, b, fam in spans:
             ax.plot([a + 0.08, b - 0.08], [-1.62, -1.62], color="#C9CCD1",
                     lw=0.9, clip_on=False, solid_capstyle="butt")
-            _fit_width(fig, ax.text((a + b) / 2, -1.80, fam, ha="center",
-                                    va="bottom", fontsize=7.0, fontweight="bold",
-                                    color=INK, linespacing=1.3),
-                       (b - a) * CELL_W)
+            # va="bottom", not "top": this axis is inverted (set_ylim(n, 0)),
+            # so a top-anchored label grows DOWN in display -- straight into
+            # the column names a tenth of an inch below. Bottom-anchored, the
+            # extra wrapped lines stack upward into the empty band under the
+            # panel name instead.
+            heads.append((_fit_width(fig, ax.text((a + b) / 2, -1.72, fam,
+                                                  ha="center", va="bottom",
+                                                  fontsize=7.0,
+                                                  fontweight="bold", color=INK,
+                                                  linespacing=1.15),
+                                     (b - a) * CELL_W, wrap=True),
+                          (b - a) * CELL_W))
+        # A panel pinned to ONE layer repeats that layer on every row, which
+        # is noise: the layer is a property of the panel, not of the row. When
+        # the panel holds a single layer the tick column is dropped and the
+        # layer joins the panel name instead; the full-depth figure, where the
+        # rows really do differ by layer, is untouched because it has several.
+        lays = sorted({lay for _, lay, _, _ in grid if lay})
+        one_layer = lays[0] if len(lays) == 1 else None
         ax.set_yticks(np.arange(len(grid)) + 0.5)
-        ax.set_yticklabels([lay for _, lay, _, _ in grid], fontsize=7.4)
+        ax.set_yticklabels([] if one_layer else
+                           [lay for _, lay, _, _ in grid], fontsize=7.4)
         # the block pair is a GROUP over consecutive layer rows, so it is drawn
         # once per group outside the layer ticks rather than repeated per row
         bounds, prev = [], None
@@ -2593,21 +2661,36 @@ def tangle_lives_in_top_block_pair(layers, pcfg):
                 prev = pr
         for k, b in enumerate(bounds):
             stop = bounds[k + 1] if k + 1 < len(bounds) else len(grid)
-            ax.text(-1.85, (b + stop) / 2, grid[b][0], fontsize=8.2,
+            ax.text(LBL_X, (b + stop) / 2, grid[b][0], fontsize=8.2,
                     fontweight="bold", color=INK, ha="left", va="center")
             if b:
                 ax.axhline(b, color=INK, lw=1.0)
-        ax.text(0, -3.20, src, fontsize=10.5, fontweight="bold", color=INK,
+        # -2.98, not -3.20: this axis is inverted, so a less negative y sits
+        # LOWER. Dropping the per-panel legend line pulled the panels together
+        # and left the lower panel's name crowding the panel above it; the
+        # name moves down toward its own grid and the gap absorbs the rest.
+        ax.text(0, -2.98,
+                f"{src} layer {one_layer[1:]}" if one_layer else src,
+                fontsize=10.5, fontweight="bold", color=INK,
                 ha="left", va="bottom")
         for spine in ax.spines.values():
             spine.set_visible(False)
         ax.tick_params(length=0)
-        ax.set_xlabel("one row = one block pair at one layer;  header reads "
-                      "metric → the number it emits;  colour ranks within a "
-                      "column of this panel;  — : nothing to score",
-                      fontsize=7, color=MUTED, labelpad=8, loc="left")
+        # the reading rules (what a row is, what the colour ranks over, what a
+        # dash means) live in the LaTeX caption, not under every panel: they
+        # were identical on both panels and cost a line of height each
+        ax.set_xlabel("", labelpad=0)
 
-    return _finish(fig, axes, "tangle_lives_in_top_block_pair", tight=False)
+    if heads:
+        size = min(t.get_fontsize() for t, _ in heads)
+        for t, avail in heads:
+            t.set_fontsize(size)
+            # the common size is smaller than some headers were fitted at, so
+            # re-fit at it: a label that now fits on one line loses its break,
+            # and the floor is dropped since the size is already settled.
+            t.set_text(" ".join(t.get_text().split()))
+            _fit_width(fig, t, avail, floor=size, wrap=True)
+    return _finish(fig, axes, name, tight=False)
 
 
 # ---------------------------------------------------------------------------
@@ -2674,7 +2757,7 @@ def battery_questions_gemma(layers, second):
                 fontweight="bold", color=INK, va="top")
         ax.text(0, 1.19, "\n".join(textwrap.wrap(q, 38)), transform=ax.transAxes,
                 fontsize=7.3, color=MUTED, va="top", style="italic")
-    lines = _title(fig, "The metric battery, question by question — gemma-2-2b, block pair B0→B1, "
+    lines = _title(fig, "The metric set, question by question — gemma-2-2b, block pair B0→B1, "
                    "every graded layer",
                    "each panel is the question one metric asks and its measured answer; the "
                    "questions the edges pass are about quality, the ones they fail are about "
@@ -2719,10 +2802,10 @@ def recovered_graph_toy_vs_pcfg_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg
     ax.scatter([px[p] for p in t_parents], [1] * len(t_parents), s=90, color=INK, zorder=3)
     ax.scatter([cx[c] for c in order], [0] * len(order), s=48, color=MUTED, zorder=3)
     n_fp = tt["false_positives"]
-    ax.set_title(f"trained toy — {len(found)}/{len(true_edges)} true edges recovered, "
-                 f"{n_fp} false positive{'s' if n_fp != 1 else ''}\n"
-                 "green = recovered · dashed = missed (never learned)",
-                 fontsize=9.5, loc="left")
+    # Panel titles carry the model, the layer and the block pair; the edge
+    # counts and the colour key live in the LaTeX caption, so the numbers have
+    # one home and cannot drift between the PNG and the paper.
+    ax.set_title("trained toy", fontsize=9.5, loc="left")
 
     # -- a probed SAE: every candidate edge that reached the probe ------------
     def draw_probed(ax, sp_x, label):
@@ -2744,8 +2827,8 @@ def recovered_graph_toy_vs_pcfg_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg
         cx = {c: i / max(len(children) - 1, 1) for i, c in enumerate(children)}
         for e in edges:
             if not e["pass"]:
-                ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=0.35,
-                        color=CAT[0], alpha=0.07, zorder=1)
+                ax.plot([px[e["parent"]], cx[e["child"]]], [1, 0], lw=0.45,
+                        color=CAT[0], alpha=0.18, zorder=1)
         n_pass = 0
         for e in edges:
             if e["pass"]:
@@ -2759,13 +2842,7 @@ def recovered_graph_toy_vs_pcfg_vs_gemma(tt, sp, where, sp_pcfg=None, where_pcfg
         sizes = [8 + 150 * deg[p] / max_deg for p in px]
         ax.scatter(list(px.values()), [1] * len(px), s=sizes, color=INK, zorder=4)
         ax.scatter(list(cx.values()), [0] * len(cx), s=5, color=MUTED, zorder=4)
-        key = ((f"blue = candidate, unconfirmed · green = probe-confirmed ({n_pass})"
-                if n_pass else
-                "blue = candidate, unconfirmed · probe-confirmed: none")
-               + f"\ndot area = a parent's child count (max {max_deg})")
-        ax.set_title(f"{label} — {len(edges):,} candidate edges "
-                     f"({len(px)} parents × {len(cx)} children)\n" + key,
-                     fontsize=9.5, loc="left")
+        ax.set_title(label, fontsize=9.5, loc="left")
 
     if n_panels == 3:
         draw_probed(axes[1], sp_pcfg, where_pcfg)
@@ -3230,32 +3307,67 @@ def build(dry: bool) -> tuple[list[str], list[tuple[str, str]]]:
         f"config (k={C.SRES_RANK_TOP_K}) + {len(observed)} measured pass rates",
         lambda: sres_null_rate_vs_dictionary_size(observed))
 
+    # metric 9 lives in its own file, one entry per block, so it is loaded
+    # per run and keyed by the same label source_grid puts on the row
+    def _ib(base, lay_name, label):
+        j = _json(base / lay_name / "in_block_edges.json") or {}
+        return {label: {b["block"]: b for b in j.get("blocks", [])}}
+
+    ib_map: dict = {}
+    for L, _ in layers:
+        ib_map.update(_ib(G, f"layer_{L:02d}", f"L{L}"))
+    for n, _, _ in pcfg:
+        lay = n.replace("PCFG layer ", "")
+        ib_map.update(_ib(C.OUT_DIR / "pcfg-matryoshka",
+                          f"layer_{int(lay):02d}", f"L{lay}"))
+
     run("tangle_lives_in_top_block_pair", bool(layers or pcfg),
         f"{len(layers)} gemma + {len(pcfg)} PCFG layer reports, all block pairs"
         if (layers or pcfg) else "needs metrics_report.json for at least one source",
-        lambda: tangle_lives_in_top_block_pair(layers, [(n, r) for n, r, _ in pcfg]))
+        lambda: tangle_lives_in_top_block_pair(
+            layers, [(n, r) for n, r, _ in pcfg], in_block=ib_map))
+
+    # the same grid at ONE depth per source: gemma at GRAPH_LAYER and PCFG at
+    # PCFG_GRAPH_LAYER, its relative-depth twin. The full-depth version above
+    # is the appendix's; this one is what the main text can carry, because at
+    # one layer per source the rows are block pairs alone and the grid fits
+    # without the reader hunting for which of six layers a row belongs to.
+    one_g = [(L, r) for L, r in layers if L == GRAPH_LAYER]
+    one_p = [(n, r) for n, r, _ in pcfg if n.endswith(f"layer {PCFG_GRAPH_LAYER}")]
+    run("metrics_result_mid_layers", bool(one_g or one_p),
+        f"gemma layer_{GRAPH_LAYER:02d} + PCFG layer_{PCFG_GRAPH_LAYER:02d} "
+        "metrics_report.json, all block pairs"
+        if (one_g or one_p) else
+        f"needs a metrics_report.json at gemma layer_{GRAPH_LAYER:02d} "
+        f"or PCFG layer_{PCFG_GRAPH_LAYER:02d}",
+        lambda: tangle_lives_in_top_block_pair(
+            one_g, one_p, name="metrics_result_mid_layers", in_block=ib_map))
 
     run("battery_questions_gemma", bool(layers),
         f"{len(layers)} gemma layer reports + {len(second)} second passes"
         if layers else "needs gemma metrics_report.json",
         lambda: battery_questions_gemma(layers, second))
 
-    # the recovered graph itself, drawn at GRAPH_LAYER (see the constant). The
-    # PCFG panel is drawn at the PCFG layer with the LARGEST probe-scored edge
-    # set -- a stated rule, so the panel does not quietly follow whichever run
-    # happened to finish first. Chosen over depth-matching the gemma panel
-    # because this figure's job is to show the full funnel visually --
-    # candidate, rejected, and probe-CONFIRMED edges -- and the largest scored
-    # set is the one panel guaranteed to carry all three stages (a
-    # depth-matched layer can have zero confirmed edges, which reads as a dead
-    # probe). Depth-matched cross-source comparisons live in the tables.
+    # the recovered graph itself, drawn at GRAPH_LAYER and PCFG_GRAPH_LAYER
+    # (see the constants). Both panels name their layer explicitly so neither
+    # quietly follows whichever run happened to finish first. This figure's job
+    # is to show the full funnel visually -- candidate, rejected, and
+    # probe-CONFIRMED edges -- so the named PCFG layer must carry all three
+    # stages; a layer that scores edges but confirms none reads as a dead
+    # probe. If PCFG_GRAPH_LAYER has no scored edges we fall back to the
+    # largest scored set rather than dropping the panel. Depth-matched
+    # cross-source comparisons live in the tables.
     s_gl = second.get(GRAPH_LAYER)
+    scored = [(lab, spx) for lab, _, spx in pcfg
+              if spx and "0->1" in spx and spx["0->1"]["sres"]["n_edges_scored"]]
+    want = f"layer {PCFG_GRAPH_LAYER}"
     sp_p, sp_p_name = None, ""
-    for lab, _, spx in pcfg:
-        if spx and "0->1" in spx and spx["0->1"]["sres"]["n_edges_scored"]:
-            if (sp_p is None or spx["0->1"]["sres"]["n_edges_scored"]
-                    > sp_p["0->1"]["sres"]["n_edges_scored"]):
-                sp_p, sp_p_name = spx, lab
+    for lab, spx in scored:
+        if lab.endswith(want):
+            sp_p, sp_p_name = spx, lab
+    if sp_p is None and scored:
+        sp_p_name, sp_p = max(scored,
+                              key=lambda t: t[1]["0->1"]["sres"]["n_edges_scored"])
     run("recovered_graph_toy_vs_pcfg_vs_gemma", bool(tt and s_gl),
         f"trained_toy_calibration.json + gemma layer_{GRAPH_LAYER:02d}"
         + (f" + {sp_p_name}" if sp_p else "") + " second_pass.json"
@@ -3488,7 +3600,7 @@ def _captions():
             "six quantities are computed from that one co-firing matrix, and all five moved. The "
             "sixth, multi-parenting, is a ratio over children that already have a parent, does "
             "not read the matrix, and did not move. Agreement among detectors that share an "
-            r"input is far weaker evidence than the word \emph{battery} implies. The grey value "
+            r"input is far weaker evidence than their number implies. The grey value "
             "in each pair is the withdrawn one, plotted to size the error and not as a result.")
 
     toy = _json(C.OUT_DIR / "synthetic_toy_calibration.json")
@@ -3500,7 +3612,7 @@ def _captions():
             "planted look-alike structures that a naive co-firing analysis would mistake for "
             "parent--child links, such as a feature pair that co-fires only through shared "
             "frequent tokens, a pair lifted together by a shared topic, and an always-on "
-            r"``super-parent''. Each row is one metric of the battery (Table~\ref{tab:battery}) "
+            r"``super-parent''. Each row is one of the metrics (Table~\ref{tab:battery}) "
             "applied to this world, and a row passes when the metric tells its planted target "
             f"apart from healthy structure; {sum(r['pass'] for r in toy)} of {len(toy)} rows "
             r"pass. \emph{Left:} metrics that return a score. The bar is the separation: the "
@@ -3513,9 +3625,9 @@ def _captions():
             "through: an absorbed child that coverage cannot even propose (the child fires "
             "exactly where its parent is silent), a shared-topic pair, and a composed "
             "child's two component edges that every filter accepts. They pass when nothing "
-            "catches them, documenting the battery's limits, "
+            "catches them, documenting the metric set's limits, "
             "and a code change that made them catchable would fail them visibly. Passing "
-            "this tier is what licenses running the same battery on real models, where no "
+            "this tier is what licenses running the same metrics on real models, where no "
             "ground truth exists.")
 
     # DRAFT CAPTION -- the prose is a draft and is meant to be rewritten by hand
@@ -3615,7 +3727,7 @@ def _captions():
                     "200{,}000 draws; the latents that recovered them co-fire "
                     f"{cof[w[0]]['learned']:,} times. The SAE conflated two concepts the "
                     "grammar keeps apart: a defect nobody injected, which the synthetic tier "
-                    "structurally cannot produce, and which the rest of the battery misses, "
+                    "structurally cannot produce, and which the rest of the metrics miss, "
                     "since both of that parent's edges are still counted as recovered."
                 )
             elif red:
@@ -3659,7 +3771,7 @@ def _captions():
             "is a failure of the metrics; it is the ceiling the SAE set for them."
             if n_missed else
             "Nothing was dropped and nothing was invented: on this checkpoint the "
-            "battery reproduces the tree exactly.")
+            "metrics reproduce the tree exactly.")
 
         comp = _json(C.OUT_DIR / "batch_topk_toy_calibration.json")
         if comp:
@@ -3679,7 +3791,7 @@ def _captions():
         else:
             companion_clause = ""
         d["calibration_toy_tree_recovered"] = (
-            r"\textbf{What an edge is, and what the battery did with it.} "
+            r"\textbf{What an edge is, and what the metrics did with it.} "
             "The toy world is a generative process: each node is a feature that fires "
             "with the probability printed beneath it, \\emph{conditional on its parent "
             "firing}. Feature~1 at $p=0.2$ under a parent at $p=0.15$ therefore fires on "
@@ -3687,18 +3799,18 @@ def _captions():
             "fires only on draws where its parent fires, so "
             "$P(\\text{parent}\\mid\\text{child})=1$ while "
             "$P(\\text{child}\\mid\\text{parent})$ stays small, and it is that asymmetry "
-            "the battery measures. Hollow nodes (the root, and one hidden sibling per "
+            "the metrics measure. Hollow nodes (the root, and one hidden sibling per "
             f"family) carry no feature index, {links_clause}. "
             "\\textbf{Left}: the known tree. "
             f"\\textbf{{Right}}: the same tree after a Matryoshka SAE "
             f"(\\texttt{{{arch}}}{k_clause}) is "
             "trained on the world's activations, each latent is matched to the true "
-            "feature its decoder points at, and the battery is run on the learned "
+            "feature its decoder points at, and the metrics are run on the learned "
             f"latents alone. It returned {tt['true_positives']} of "
             f"{len(tt['true_edges'])} true edges with {tt['false_positives']} false "
             f"positives. The reading that matters is the decomposition: the SAE learned "
             f"{tt['n_recovered_features']} of {tt['n_features']} features, leaving "
-            f"{n_test} edges with both endpoints present, and the battery returned "
+            f"{n_test} edges with both endpoints present, and the metrics returned "
             f"\\emph{{all}} {n_test} of them. {ceiling_clause}{companion_clause}")
         d["calibration_trained_toy_recovery"] = (
             r"\textbf{The same world, after a real training run.} The toy world's ground "
@@ -3706,7 +3818,7 @@ def _captions():
             "(its edges). Here a Matryoshka SAE is actually trained on the world's "
             "activations, each learned latent is matched to the true feature it represents, "
             "and an edge counts as recovered when the SAE learned latents for both of its "
-            "features and the battery keeps the link between them. Precision "
+            "features and the metrics keep the link between them. Precision "
             rf"{tt['precision']:.2f}, recall {tt['recall']:.2f}: {tt['true_positives']} of "
             f"{len(tt['true_edges'])} true edges recovered with {tt['false_positives']} false "
             f"positives. The SAE recovered {tt['n_recovered_features']} of {tt['n_features']} "
@@ -3892,7 +4004,9 @@ def _captions():
             "candidate set shows as a dash rather than as a number. Colour ranks "
             "\\emph{within} a column of its own panel (the columns are different quantities on "
             "different scales, and the two sources have different dictionaries), so the reading "
-            "is locational. Three things read off it. The structural pathology "
+            "is locational. Metric 9 is a within-block quantity while every row is a "
+            "between-block pair, so each row reports its own parent block. "
+            "Three things read off it. The structural pathology "
             "(multi-parenting, base-rate co-firing, superparents) sits in the outermost pair "
             "B0$\\rightarrow$B1 and it is not an average effect: multi-parenting is 89--100\\% at "
             "\\emph{every} graded layer of gemma and 99--100\\% at three of the four PCFG layers. "
@@ -3907,9 +4021,22 @@ def _captions():
             "computed, because its co-firing matrix is 6{,}144$\\times$24{,}576 and does not "
             "fit this run's memory budget. It is drawn because a pair silently absent from a "
             "grid reads as a pair with nothing in it, which is a claim the run never tested.")
+    if _json(G / f"layer_{GRAPH_LAYER:02d}" / "metrics_report.json") or _json(
+            C.OUT_DIR / "pcfg-matryoshka"
+            / f"layer_{PCFG_GRAPH_LAYER:02d}" / "metrics_report.json"):
+        # Two lines, by request. The reading rules that do not fit -- metric 9
+        # reporting each row's parent block, and the deep PCFG pairs resting on
+        # a handful of edges -- are the two a reader can get wrong, so they
+        # belong in the body text or the appendix rather than being dropped.
+        d["metrics_result_mid_layers"] = (
+            r"\textbf{The metrics result at mid layers.} This figure displays the "
+            "results of all metrics across the middle layer and all its blocks: "
+            rf"\texttt{{gemma-2-2b}} at layer {GRAPH_LAYER} and the PCFG SAE at "
+            rf"layer {PCFG_GRAPH_LAYER}.")
+
     if lay:
         d["battery_questions_gemma"] = (
-            "Each metric of the battery was built to answer one plain-language question about "
+            "Each of the metrics was built to answer one plain-language question about "
             "a candidate edge; each panel titles that question and plots its measured answer "
             r"on \texttt{gemma-2-2b}, block pair B0$\rightarrow$B1, at every graded layer. Read "
             "as a whole the figure shows the split the paper's results rest on: the questions "
@@ -3923,21 +4050,31 @@ def _captions():
         s = sp_gl["0->1"]["sres"]
         n_par = len({e["parent"] for e in s["edges"]})
         n_chi = len({e["child"] for e in s["edges"]})
-        # the PCFG middle panel: same largest-probe-scored-set rule as build()
+        # the PCFG middle panel: PCFG_GRAPH_LAYER, the same constant build()
+        # draws, with build()'s largest-scored fallback. Both sites must name
+        # the same layer or the caption describes a panel that is not there.
         mid = ""
         best, best_name = None, ""
+        cands = []
         for q in sorted((C.OUT_DIR / "pcfg-matryoshka").glob("layer_*/second_pass.json")):
             spx = _json(q)
             if spx and "0->1" in spx and spx["0->1"]["sres"]["n_edges_scored"]:
-                if (best is None or spx["0->1"]["sres"]["n_edges_scored"]
-                        > best["0->1"]["sres"]["n_edges_scored"]):
-                    best, best_name = spx, q.parent.name.replace("_", "~")
+                cands.append((q.parent.name.replace("_", "~"), spx))
+        for name, spx in cands:
+            if name == f"layer~{PCFG_GRAPH_LAYER:02d}":
+                best, best_name = spx, name
+        if best is None and cands:
+            best_name, best = max(cands,
+                                  key=lambda t: t[1]["0->1"]["sres"]["n_edges_scored"])
         grad = ""
         if best:
             b = best["0->1"]["sres"]
+            b_par = len({e["parent"] for e in b["edges"]})
+            b_chi = len({e["child"] for e in b["edges"]})
             mid = (rf"\emph{{Middle:}} a Matryoshka SAE trained on a PCFG corpus "
-                   f"({best_name.replace('layer~0', 'layer~')}) repeats the tangle at "
-                   f"small scale ({b['n_edges_scored']:,} candidate edges, "
+                   f"({best_name.replace('layer~0', 'layer~')}, B0$\\rightarrow$B1) "
+                   f"repeats the tangle at small scale ({b['n_edges_scored']:,} "
+                   f"candidate edges, {b_par} parents $\\times$ {b_chi} children, "
                    f"{b['n_pass']} probe-confirmed), and ")
             # the dictionary sizes that make "ascending scale" a number, not a vibe
             rr = _json(C.OUT_DIR / "pcfg-matryoshka"
@@ -3960,7 +4097,9 @@ def _captions():
             f"substantial multi-parenting among the {s['n_edges_scored']:,} candidate edges "
             f"that reached the probe ({n_par} parents $\\times$ {n_chi} children), with "
             f"only the {s['n_pass']} probe-confirmed edges in green." + grad +
-            " Each child is placed "
+            " Blue marks a candidate edge that reached the probe but was not "
+            "confirmed, green a probe-confirmed edge, and on the toy panel a dashed "
+            "line marks a true edge the SAE never learned. Each child is placed "
             "beneath its best-matching parent, so a clean hierarchy would appear as "
             "near-vertical lines, and a parent's dot area scales with its child count, "
             "so the hub parents that own most of the tangle are visible at a glance.")
@@ -4074,11 +4213,13 @@ TEX_ORDER = [
     # of its columns read closely -- the funnel is coverage against the probe,
     # multi-parenting is the out-degree column across layers -- and a reader
     # who meets those one at a time never learns that the columns disagree.
-    # It is a full-page figure at 17 columns x 52 rows; the manuscript is
+    # It is a full-page figure at 19 columns x 47 rows; the manuscript is
     # expected to give it its own page (\clearpage, or sidewaysfigure*).
     ("MAIN 1", "tangle_lives_in_top_block_pair", True,
      "One instrument, untuned, on both sources.",
-     "What the metric battery finds"),
+     "What the metrics find"),
+    ("MAIN 1b", "metrics_result_mid_layers", True,
+     "The metrics result at mid layers.", None),
     ("MAIN 2", "funnel_coverage_to_sres", False,
      "Coverage proposes; the strict test disposes.", None),
     ("MAIN 3", "multiparenting_by_layer", False,
@@ -4116,12 +4257,12 @@ TEX_ORDER = [
     ("APP 0g", "calibration_trained_toy_recovery", True,
      "The same tree, after a real training run.", None),
     ("APP 0h", "calibration_toy_tree_recovered", True,
-     "That tree drawn, before and after the metric battery.", None),
+     "That tree drawn, before and after the metrics.", None),
     # the overview matrix moved to MAIN 1; the section it used to open now
     # starts at the slice, which is one cell of that matrix read closely
     ("APP 1b", "a_slice_of_the_tangle", False,
      "A slice of the tangle: every child in it has many parents.",
-     "Appendix: what the battery finds"),
+     "Appendix: what the metrics find"),
     # the single-child twin of the slice: emitted so the manuscript can choose
     # between them; expected to be commented in/out there, not both shown
     ("APP 1b'", "one_child_many_parents", False,
@@ -4143,7 +4284,7 @@ TEX_ORDER = [
     ("APP 7", "edge_survival_by_block_pair", True,
      "What each filter removes, by block pair and by depth.", None),
     ("APP 8", "cross_source_funnel_shares", False,
-     "One unchanged battery across SAE sources.", None),
+     "One unchanged metric set across SAE sources.", None),
     # The two cross-source depth figures sit together and immediately after the
     # funnel that establishes the sources are comparable at all. The alignment
     # check follows the result it qualifies rather than preceding it: it is a
@@ -4159,7 +4300,7 @@ TEX_ORDER = [
     ("APP 12", "pcfg_formatting_sweep", True,
      "The formatting-density axis, swept.", None),
     ("APP 13", "battery_questions_gemma", True,
-     "The battery, question by question.", None),
+     "The metrics, question by question.", None),
 ]
 
 TEX_HEAD = r"""% ===========================================================================
@@ -4257,14 +4398,15 @@ CLAIMS = {
     "funnel_coverage_to_sres": "co-firing proposes far more edges than survive the strict test",
     "edge_survival_by_block_pair": "what each filter removes, by block pair and by depth",
     "depth_profile_across_layers": "no measure is monotonic in depth once BOS is excluded",
+    "metrics_result_mid_layers": "every metric at one fixed depth per source, so the axis carries architecture and not depth",
     "multiparenting_by_layer": "the graph is not a tree — the one claim BOS exclusion left standing",
     "superparent_fanout_vs_firing": "the superparent gate reads fan-out; firing rate is handled per edge",
     "calibration_synthetic_toy_scorecard": "every metric scored against a known tree, plus two demonstrated blind spots",
     "calibration_toy_world_before_after": "which gate removed which injected pathology, on the world where the answer was fixed first",
     "calibration_toy_world_gate_verdicts": "the same gate verdicts in one panel — blocks as rows, the declared world kept as the faded edges",
     "calibration_trained_toy_recovery": "the same tree after a real training run, and the nesting control",
-    "calibration_toy_tree_recovered": "the tree drawn: which edges the battery returned, and which features were never learned",
-    "cross_source_funnel_shares": "one unchanged battery across two SAE sources",
+    "calibration_toy_tree_recovered": "the tree drawn: which edges the metrics returned, and which features were never learned",
+    "cross_source_funnel_shares": "one unchanged metric set across two SAE sources",
     "shared_input_moved_every_metric": "five of six metrics share an input and failed together — the battery's own failure mode",
     "base_rate_vs_frequency_capture": "the over-connection is base rate, not frequency capture — the hypothesis's premise, tested",
     "in_block_relations": "same-level structure concentrates in B0 on both sources, read as a per-pair rate",
@@ -4273,7 +4415,7 @@ CLAIMS = {
     "calibration_reverse_coverage": "what reverse coverage proposes at full resolution, and the true edge it structurally cannot",
     "calibration_gate_funnel_by_role": "what each composed gate removes, counted by the structure it was planted as",
     "calibration_seed_sweep": "the Tier-1 scorecard re-run per seed — whether 14/14 is a result or one draw",
-    "tangle_lives_in_top_block_pair": "the whole battery, every column, on both sources with one untuned instrument",
+    "tangle_lives_in_top_block_pair": "every metric, every column, on both sources with one untuned instrument",
     "cross_source_layer_response": "the shape of B0→B1 is the same on both base models at the layers both graded; its strength is not",
     "cross_source_alignment_check": "which alignment across two models of different depth the data prefers — block index or relative depth",
 }

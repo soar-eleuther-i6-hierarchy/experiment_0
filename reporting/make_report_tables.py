@@ -213,7 +213,7 @@ def t_battery():
          "asymmetry", r"\texttt{in\_block\_edges}"),
     ]
     return table(
-        "battery", r"\textbf{The metric battery.} Eight questions about the same edge, plus an "
+        "battery", r"\textbf{The metric set.} Eight questions about the same edge, plus an "
         "unnumbered in-block measurement that grades same-level pairs rather than candidate "
         "edges. Metric~1 defines the candidate set and 2--8 grade it: 2--5 weigh a single edge "
         "with increasingly demanding evidence, from chance to frequency to reconstruction to "
@@ -385,7 +385,7 @@ def t_tiers(toy, tt, align_json):
         r"we do not control its dictionary, which is why the $S_\mathrm{res}$ column of "
         r"Table~\ref{tab:gemma} exists for one layer only. It has no known answer at all. "
         "A fourth source, a Matryoshka SAE over a transformer trained on a PCFG corpus, runs "
-        "through the same battery but is not a rung: its grammar is known and nothing yet maps "
+        "through the same metrics but is not a rung: its grammar is known and nothing yet maps "
         "a latent to a grammar symbol, so it has no recovery score to license anything. It is "
         r"reported beside gemma in Table~\ref{tab:sources} and Table~\ref{tab:layers}.",
         ["Tier", "Runs on", "Ground truth", "Result"], rows,
@@ -422,7 +422,7 @@ def t_tier1(toy):
         "class it must keep from the class it must reject; rows scored categorically have no "
         "margin, because their answer is right or it is not and a value of $1.0$ on a ratio scale "
         "would read as no separation. The last two rows are negative controls that pass when the "
-        "battery does \\emph{not} act.",
+        "metrics do \\emph{not} act.",
         ["Row", "The job it claims", "", "Margin"], rows, align="llcr", star=True)
 
 
@@ -590,7 +590,7 @@ def t_sources(layers, second, pcfg):
 
     n_pairs = sum(len(r["pairs"]) for _, r in layers) + sum(len(r["pairs"]) for _, r, _ in pcfg)
     return table(
-        "sources", r"\textbf{The same battery across SAE sources, every graded run.} "
+        "sources", r"\textbf{The same metric set across SAE sources, every graded run.} "
         f"All {len(layers) + len(pcfg)} graded runs, and within each run every block pair it "
         f"graded --- {n_pairs} pairs in total, not the outermost one alone. Identical metric "
         "code and identical global thresholds; only the block structure follows the source, "
@@ -657,7 +657,7 @@ def t_layers(rs):
             r"and not design: it is what makes the two densities directly comparable rather "
             r"than merely each normalised by itself.")
     return table(
-        "layers", r"\textbf{The same battery on two base models, layer by layer.} Rows are "
+        "layers", r"\textbf{The same metric set on two base models, layer by layer.} Rows are "
         r"ordered by position in their own network, $(L{+}1)/N$, so the sources interleave; "
         rf"layer{'s' if len(shared) > 1 else ''} "
         + " and ".join(str(s) for s in shared) + " carry an SAE on both, which is where the "
@@ -825,8 +825,8 @@ def t_bos(matched):
         "never co-occur anywhere else. Every quantity computed from that one co-firing matrix "
         "moved, and the one that is not --- a ratio over children that already have a parent --- "
         "did not. \\textbf{The \\emph{before} column is withdrawn} and is reproduced only to size "
-        "the error. Agreement among detectors that share an input is much weaker evidence than a "
-        "battery implies.",
+        "the error. Agreement among detectors that share an input is much weaker evidence than "
+        "their number implies.",
         ["Quantity", "Reads co-fire", "Before", "After", "Change"], rows, star=True)
 
 
